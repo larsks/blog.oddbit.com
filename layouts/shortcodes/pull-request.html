@@ -1,0 +1,9 @@
+<!--
+{{ $pr_spec := .Get 0 }}
+{{ $pr_split := split $pr_spec "/" }}
+{{ $owner := index $pr_split 0 }}
+{{ $repo := index $pr_split 1 }}
+{{ $pr := index $pr_split 2 }}
+{{ $url := printf "https://github.com/%s/%s/pull/%s" $owner $repo $pr }}
+-->
+<a href="{{ $url }}" class="pull-request">#{{$pr}}</a>
