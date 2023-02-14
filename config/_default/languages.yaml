@@ -1,6 +1,21 @@
 en:
+  title: "blog.oddbit.com"
+  copyright: "Lars Kellogg-Stedman"
+  readMore: "read more"
   params:
     logo:
       logoText: "the odd bit blog"
       logoHomeLink: "/"
       subtitle: "one of these things is not like the others"
+
+  menu:
+    main:
+      - identifier: "about"
+        name: "About Me"
+        url: "https://oddbit.com"
+      - identifier: "posts"
+        name: "Posts"
+        url: "/posts"
+      - identifier: "github"
+        name: "Github"
+        url: "https://github.com/larsks"
