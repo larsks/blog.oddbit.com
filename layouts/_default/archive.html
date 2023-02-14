@@ -1,0 +1,24 @@
+{{ define "main" }}
+<div id="post-index" class="container">
+  <ul class="archive-nav">
+    {{ range (where .Site.RegularPages "Type" "posts").GroupByDate "2006" -}}
+    <li><a id="toc_{{ .Key }}" href="#{{ .Key }}">{{ .Key }}</a></li>
+    {{ end }}
+  </ul>
+
+  {{ range (where .Site.RegularPages "Type" "posts").GroupByDate "2006" -}}
+  <h2 id="{{ .Key }}"><a href="#">{{ .Key }}</a></h2>
+  {{ range .Pages.GroupByDate "Jan" }}
+  <h3>{{ .Key }}</h3>
+
+  <ol class="post-list">
+    {{ range .Pages }}
+    <li><a href="{{ .Permalink }}">{{ .Title }}</a> <time class="post-stub-date" datetime="{{ .Date.Format " 2006-01-02"
+        }}">Published {{ dateFormat (default "Mon, Jan 2, 2006" .Site.Params.dateFormat) .Date }}</time></li>
+    {{ end }}
+  </ol>
+
+  {{ end }}
+  {{ end }}
+</div>
+{{ end }}
