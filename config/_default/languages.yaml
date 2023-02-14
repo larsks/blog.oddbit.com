@@ -10,12 +10,35 @@ en:
 
   menu:
     main:
+      - identifier: "home"
+        name: "/"
+        url: "/"
+        weight: 1
       - identifier: "about"
-        name: "About Me"
+        name: "/about"
         url: "https://oddbit.com"
+        weight: 2
       - identifier: "posts"
-        name: "Posts"
+        name: "/posts"
         url: "/posts"
+        weight: 3
+      - identifier: "archive"
+        name: "/archive"
+        url: "/archive"
+        weight: 4
+      - identifier: "feed"
+        name: "/feed"
+        url: "/rss.xml"
+        weight: 5
       - identifier: "github"
-        name: "Github"
+        name: "→Github"
         url: "https://github.com/larsks"
+        weight: 10
+      - identifier: "twitter"
+        name: "→Twitter"
+        url: "https://twitter.com/larsks"
+        weight: 10
+      - identifier: "mastodon"
+        name: "→Mastodon"
+        url: "https://hachyderm.io/@larsks"
+        weight: 10
