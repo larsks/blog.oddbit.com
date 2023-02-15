@@ -1,0 +1,368 @@
+<!doctype html><html lang=en><head><title>Packet, packet, who's got the packet? :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
+The original code looked like this:
+c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Packet, packet, who's got the packet?"><meta property="og:description" content="In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
+The original code looked like this:
+c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl."><meta property="og:url" content="https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2023-02-14 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/>Packet, packet, who&rsquo;s got the packet?</a></h1><div class=post-meta><time class=post-date>2023-02-14 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/kernel/>kernel</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/routing/>routing</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/ebpf/>ebpf</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/pwru/>pwru</a>&nbsp;</span><div class=post-content><div><p>In <a href=https://unix.stackexchange.com/q/735522/4989>this question</a>, August Vrubel has some C code that sets up a <a href=https://docs.kernel.org/networking/tuntap.html>tun</a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&rsquo;d like to take a slightly extended look at <a href=https://unix.stackexchange.com/a/735534/4989>my answer</a> because I think it&rsquo;s a great opportunity for learning a bit more about performing network diagnostics.</p><p>The original code looked like this:</p><div class=collapsable-code><input id=984153267 type=checkbox>
+<label for=984153267><span class=collapsable-code__language>c</span>
+<span class=collapsable-code__title>original sendpacket.c</span>
+<span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
+
+#include &lt;arpa/inet.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;linux/if.h&gt;
+#include &lt;linux/if_tun.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;poll.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/ioctl.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+static int tunAlloc(void) {
+  int fd;
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+
+  fd = open(&#34;/dev/net/tun&#34;, O_RDWR);
+  ioctl(fd, TUNSETIFF, (void *)&amp;ifr);
+  ioctl(fd, TUNSETOWNER, geteuid());
+  return fd;
+}
+
+// this is a test
+static void bringInterfaceUp(void) {
+  int sock;
+  struct sockaddr_in addr = {.sin_family = AF_INET};
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;};
+
+  inet_aton(&#34;172.30.0.1&#34;, &amp;addr.sin_addr);
+  memcpy(&amp;ifr.ifr_addr, &amp;addr, sizeof(struct sockaddr));
+
+  sock = socket(AF_INET, SOCK_DGRAM, 0);
+  ioctl(sock, SIOCSIFADDR, &amp;ifr);
+  ioctl(sock, SIOCGIFFLAGS, &amp;ifr);
+  ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+  ioctl(sock, SIOCSIFFLAGS, &amp;ifr);
+  close(sock);
+}
+
+static void emitPacket(int tap_fd) {
+  unsigned char packet[] = {
+      0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+      172,  30,   0,    1,    192,  168,  255,  8,    0xa2, 0x9a, 0x27, 0x11,
+      0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+      0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+      0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+
+  write(tap_fd, packet, sizeof(packet));
+}
+
+int main() {
+  int tap_fd;
+
+  tap_fd = tunAlloc();
+  bringInterfaceUp();
+  emitPacket(tap_fd);
+  close(tap_fd);
+
+  return 0;
+}
+
+
+</code></pre></div><p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&rsquo;s going on.</p><p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the <code>tun</code> interface (and also some minimal error checking), giving us:</p><div class=collapsable-code><input id=678129345 type=checkbox>
+<label for=678129345><span class=collapsable-code__language>c</span>
+<span class=collapsable-code__title>sendpacket.c with prompts and error checking</span>
+<span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
+
+#include &lt;arpa/inet.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;linux/if.h&gt;
+#include &lt;linux/if_tun.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;poll.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/ioctl.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#define must(x) _must(#x, __FILE__, __LINE__, __func__, (x))
+
+void _must(const char *call, const char *filename, int line,
+           const char *funcname, int err) {
+  char buf[1024];
+  snprintf(buf, 1023, &#34;%s (@ %s:%d)&#34;, call, filename, line);
+  if (err &lt; 0) {
+    perror(buf);
+    exit(1);
+  }
+}
+
+static int tunAlloc(void) {
+  int fd;
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+
+  fd = open(&#34;/dev/net/tun&#34;, O_RDWR);
+  must(ioctl(fd, TUNSETIFF, (void *)&amp;ifr));
+  must(ioctl(fd, TUNSETOWNER, geteuid()));
+  return fd;
+}
+
+static void bringInterfaceUp(void) {
+  int sock;
+  struct sockaddr_in addr = {.sin_family = AF_INET};
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;};
+
+  inet_aton(&#34;172.30.0.1&#34;, &amp;addr.sin_addr);
+  memcpy(&amp;ifr.ifr_addr, &amp;addr, sizeof(struct sockaddr));
+
+  sock = socket(AF_INET, SOCK_DGRAM, 0);
+  must(ioctl(sock, SIOCSIFADDR, &amp;ifr));
+  must(ioctl(sock, SIOCGIFFLAGS, &amp;ifr));
+  ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+  must(ioctl(sock, SIOCSIFFLAGS, &amp;ifr));
+  close(sock);
+}
+
+static void emitPacket(int tap_fd) {
+  unsigned char packet[] = {
+      0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+      172,  30,   0,    1,    192,  168,  255,  8,    0xa2, 0x9a, 0x27, 0x11,
+      0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+      0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+      0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+
+  write(tap_fd, packet, sizeof(packet));
+}
+
+void prompt(char *promptString) {
+  printf(&#34;%s\n&#34;, promptString);
+  getchar();
+}
+
+int main() {
+  int tap_fd;
+
+  tap_fd = tunAlloc();
+
+  bringInterfaceUp();
+  prompt(&#34;interface is up&#34;);
+  emitPacket(tap_fd);
+  prompt(&#34;sent packet&#34;);
+  close(tap_fd);
+  printf(&#34;all done&#34;);
+
+  return 0;
+}
+
+
+</code></pre></div><p>We start by compiling the code:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>gcc -o sendpacket sendpacket.c
+</span></span></code></pre></div><p>If we try running this as a regular user, it will simply fail (which confirms that at least some of our error handling is working correctly):</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>$ ./sendpacket
+</span></span><span style=display:flex><span>ioctl<span style=color:#f92672>(</span>fd, TUNSETIFF, <span style=color:#f92672>(</span>void *<span style=color:#f92672>)</span>&amp;ifr<span style=color:#f92672>)</span> <span style=color:#f92672>(</span>@ sendpacket-pause.c:33<span style=color:#f92672>)</span>: Operation not permitted
+</span></span></code></pre></div><p>We need to run it as <code>root</code>:</p><pre tabindex=0><code>$ sudo ./sendpacket
+interface is up
+</code></pre><p>The <code>interface is up</code> prompt means that the code has configured the interface but has not yet sent the packet. Let&rsquo;s take a look at the interface configuration:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>$ ip addr show tun0
+</span></span><span style=display:flex><span>3390: tun0: &lt;POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>1500</span> qdisc fq_codel state UNKNOWN group default qlen <span style=color:#ae81ff>500</span>
+</span></span><span style=display:flex><span>    link/none 
+</span></span><span style=display:flex><span>    inet 172.30.0.1/32 scope global tun0
+</span></span><span style=display:flex><span>       valid_lft forever preferred_lft forever
+</span></span><span style=display:flex><span>    inet6 fe80::c7ca:fe15:5d5c:2c49/64 scope link stable-privacy 
+</span></span><span style=display:flex><span>       valid_lft forever preferred_lft forever
+</span></span></code></pre></div><p>The code will emit a TCP <code>SYN</code> packet targeting address <code>192.168.255.8</code>, port <code>10001</code>. In another terminal, let&rsquo;s watch for that on all interfaces. If we start <code>tcpdump</code> and press RETURN at the <code>interface is up</code> prompt, we&rsquo;ll see something like:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span><span style=color:#75715e># tcpdump -nn -i any port 10001</span>
+</span></span><span style=display:flex><span>22:36:35.336643 tun0  In  IP 172.30.0.1.41626 &gt; 192.168.255.8.10001: Flags <span style=color:#f92672>[</span>S<span style=color:#f92672>]</span>, seq 2148230009, win 64240, options <span style=color:#f92672>[</span>mss 1460,sackOK,TS val <span style=color:#ae81ff>1534484436</span> ecr 0,nop,wscale 7<span style=color:#f92672>]</span>, length <span style=color:#ae81ff>0</span>
+</span></span></code></pre></div><p>And indeed, we see the problem that was described: the packet enters the system on <code>tun0</code>, but never goes anywhere else. What&rsquo;s going on?</p><h2 id=introducing-pwru-packet-where-are-you>Introducing pwru (Packet, Where are you?)<a href=#introducing-pwru-packet-where-are-you class=hanchor arialabel=Anchor>&#8983;</a></h2><p><a href=https://github.com/cilium/pwru><code>pwru</code></a> is a nifty utility written by the folks at Cilium that takes advantage of <a href=https://ebpf.io/>eBPF</a> to attach traces to hundreds of kernel functions to trace packet processing through the Linux kernel. It&rsquo;s especially useful when packets seem to be getting dropped with no obvious explanation. Let&rsquo;s see what it can tell us!</p><p>A convenient way to run <code>pwru</code> is using their official Docker image. We&rsquo;ll run it like this, filtering by protocol and destination port so that we only see results relating to the synthesized packet created by the <code>sendpacket.c</code> code:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>docker run --privileged --rm -t --pid<span style=color:#f92672>=</span>host <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>  -v /sys/kernel/debug/:/sys/kernel/debug/ <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>  cilium/pwru --filter-proto tcp --filter-port <span style=color:#ae81ff>10001</span>
+</span></span></code></pre></div><p>If we run <code>sendpacket</code> while <code>pwru</code> is running, the output looks something like this:</p><pre tabindex=0><code>2023/02/15 03:42:33 Per cpu buffer size: 4096 bytes
+2023/02/15 03:42:33 Attaching kprobes (via kprobe-multi)...
+1469 / 1469 [-----------------------------------------------------------------------------] 100.00% ? p/s
+2023/02/15 03:42:33 Attached (ignored 0)
+2023/02/15 03:42:33 Listening for events..
+               SKB    CPU          PROCESS                     FUNC
+0xffff8ce13e987900      6 [sendpacket-orig]        netif_receive_skb
+0xffff8ce13e987900      6 [sendpacket-orig]   skb_defer_rx_timestamp
+0xffff8ce13e987900      6 [sendpacket-orig]      __netif_receive_skb
+0xffff8ce13e987900      6 [sendpacket-orig] __netif_receive_skb_one_core
+0xffff8ce13e987900      6 [sendpacket-orig]                   ip_rcv
+0xffff8ce13e987900      6 [sendpacket-orig]              ip_rcv_core
+0xffff8ce13e987900      6 [sendpacket-orig] kfree_skb_reason(SKB_DROP_REASON_IP_CSUM)
+0xffff8ce13e987900      6 [sendpacket-orig]   skb_release_head_state
+0xffff8ce13e987900      6 [sendpacket-orig]               sock_wfree
+0xffff8ce13e987900      6 [sendpacket-orig]         skb_release_data
+0xffff8ce13e987900      6 [sendpacket-orig]            skb_free_head
+0xffff8ce13e987900      6 [sendpacket-orig]             kfree_skbmem
+</code></pre><p>And now we have a big blinking sign that tells us why the packet is being dropped:</p><pre tabindex=0><code>0xffff8ce13e987900      6 [sendpacket-orig] kfree_skb_reason(SKB_DROP_REASON_IP_CSUM)
+</code></pre><h2 id=fixing-the-checksum>Fixing the checksum<a href=#fixing-the-checksum class=hanchor arialabel=Anchor>&#8983;</a></h2><p>It looks like the synthesized packet data includes a bad checksum. We could update the code to correctly calculate the checksum&mldr;or we could just use <a href=https://www.wireshark.org/>Wireshark</a> and have it tell us the correct values. Because this isn&rsquo;t meant to be an IP networking primer, we&rsquo;ll just use Wireshark, which gives us the following updated code:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#66d9ef>static</span> <span style=color:#66d9ef>void</span> <span style=color:#a6e22e>emitPacket</span>(<span style=color:#66d9ef>int</span> tap_fd) {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>uint16_t</span> cs;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>uint8_t</span> packet[] <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>0x45</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x3c</span>, <span style=color:#ae81ff>0xd8</span>, <span style=color:#ae81ff>0x6f</span>, <span style=color:#ae81ff>0x40</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x3f</span>, <span style=color:#ae81ff>0x06</span>, <span style=color:#ae81ff>0xf7</span>, <span style=color:#ae81ff>0x7b</span>,
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>172</span>,  <span style=color:#ae81ff>30</span>,   <span style=color:#ae81ff>0</span>,    <span style=color:#ae81ff>1</span>,    <span style=color:#ae81ff>192</span>,  <span style=color:#ae81ff>168</span>,  <span style=color:#ae81ff>255</span>,  <span style=color:#ae81ff>8</span>,    <span style=color:#ae81ff>0xa2</span>, <span style=color:#ae81ff>0x9a</span>, <span style=color:#ae81ff>0x27</span>, <span style=color:#ae81ff>0x11</span>,
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>0x80</span>, <span style=color:#ae81ff>0x0b</span>, <span style=color:#ae81ff>0x63</span>, <span style=color:#ae81ff>0x79</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0xa0</span>, <span style=color:#ae81ff>0x02</span>, <span style=color:#ae81ff>0xfa</span>, <span style=color:#ae81ff>0xf0</span>,
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>0x78</span>, <span style=color:#ae81ff>0xc3</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x02</span>, <span style=color:#ae81ff>0x04</span>, <span style=color:#ae81ff>0x05</span>, <span style=color:#ae81ff>0xb4</span>, <span style=color:#ae81ff>0x04</span>, <span style=color:#ae81ff>0x02</span>, <span style=color:#ae81ff>0x08</span>, <span style=color:#ae81ff>0x0a</span>,
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>0x5b</span>, <span style=color:#ae81ff>0x76</span>, <span style=color:#ae81ff>0x5f</span>, <span style=color:#ae81ff>0xd4</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x00</span>, <span style=color:#ae81ff>0x01</span>, <span style=color:#ae81ff>0x03</span>, <span style=color:#ae81ff>0x03</span>, <span style=color:#ae81ff>0x07</span>,
+</span></span><span style=display:flex><span>  };
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>write</span>(tap_fd, packet, <span style=color:#66d9ef>sizeof</span>(packet));
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>If we repeat our invocation of <code>pwru</code> and run a test with the updated code, we see:</p><pre tabindex=0><code>2023/02/15 04:17:29 Per cpu buffer size: 4096 bytes
+2023/02/15 04:17:29 Attaching kprobes (via kprobe-multi)...
+1469 / 1469 [-----------------------------------------------------------------------------] 100.00% ? p/s
+2023/02/15 04:17:29 Attached (ignored 0)
+2023/02/15 04:17:29 Listening for events..
+               SKB    CPU          PROCESS                     FUNC
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]        netif_receive_skb
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]   skb_defer_rx_timestamp
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]      __netif_receive_skb
+0xffff8cd8a6c5ef00      9 [sendpacket-chec] __netif_receive_skb_one_core
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]                   ip_rcv
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]              ip_rcv_core
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]               sock_wfree
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]             nf_hook_slow
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]              nf_checksum
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]           nf_ip_checksum
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]  __skb_checksum_complete
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]       tcp_v4_early_demux
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]     ip_route_input_noref
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]      ip_route_input_slow
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]      fib_validate_source
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]    __fib_validate_source
+0xffff8cd8a6c5ef00      9 [sendpacket-chec] ip_handle_martian_source
+0xffff8cd8a6c5ef00      9 [sendpacket-chec] kfree_skb_reason(SKB_DROP_REASON_NOT_SPECIFIED)
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]   skb_release_head_state
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]         skb_release_data
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]            skb_free_head
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]             kfree_skbmem
+</code></pre><h2 id=dealing-with-martians>Dealing with martians<a href=#dealing-with-martians class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Looking at the above output, we&rsquo;re no longer seeing the <code>SKB_DROP_REASON_IP_CSUM</code> error; instead, we&rsquo;re getting dropped by the routing logic:</p><pre tabindex=0><code>0xffff8cd8a6c5ef00      9 [sendpacket-chec]      fib_validate_source
+0xffff8cd8a6c5ef00      9 [sendpacket-chec]    __fib_validate_source
+0xffff8cd8a6c5ef00      9 [sendpacket-chec] ip_handle_martian_source
+0xffff8cd8a6c5ef00      9 [sendpacket-chec] kfree_skb_reason(SKB_DROP_REASON_NOT_SPECIFIED)
+</code></pre><p>Specifically, the packet is being dropped as a &ldquo;martian source&rdquo;, which means a packet that has a source address that is invalid for the interface on which it is being received. Unlike the previous error, we can actually get kernel log messages about this problem. If we had the <code>log_martians</code> sysctl enabled for all interfaces:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>sysctl -w net.ipv4.conf.all.log_martians<span style=color:#f92672>=</span><span style=color:#ae81ff>1</span>
+</span></span></code></pre></div><p>Or if we enabled it specifically for <code>tun0</code> after the interface is created:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>sysctl -w net.ipv4.conf.tun0.log_martians<span style=color:#f92672>=</span><span style=color:#ae81ff>1</span>
+</span></span></code></pre></div><p>We would see the following message logged by the kernel:</p><pre tabindex=0><code>Feb 14 12:14:03 madhatter kernel: IPv4: martian source 192.168.255.8 from 172.30.0.1, on dev tun0
+</code></pre><p>We&rsquo;re seeing this particular error because <code>tun0</code> is configured with address <code>172.30.0.1</code>, but it claims to be receiving a packet with the same source address from &ldquo;somewhere else&rdquo; on the network. This is a problem because we would never be able to reply to that packet (our replies would get routed to the local host). To deal with this problem, we can either change the source address of the packet, or we can change the IP address assigned to the <code>tun0</code> interface. Since changing the source address would mean mucking about with checksums again, let&rsquo;s change the address of <code>tun0</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#66d9ef>static</span> <span style=color:#66d9ef>void</span> <span style=color:#a6e22e>bringInterfaceUp</span>(<span style=color:#66d9ef>void</span>) {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>int</span> sock;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>struct</span> sockaddr_in addr <span style=color:#f92672>=</span> {.sin_family <span style=color:#f92672>=</span> AF_INET};
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>struct</span> ifreq ifr <span style=color:#f92672>=</span> {.ifr_name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;tun0&#34;</span>};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>inet_aton</span>(<span style=color:#e6db74>&#34;172.30.0.10&#34;</span>, <span style=color:#f92672>&amp;</span>addr.sin_addr);
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>memcpy</span>(<span style=color:#f92672>&amp;</span>ifr.ifr_addr, <span style=color:#f92672>&amp;</span>addr, <span style=color:#66d9ef>sizeof</span>(<span style=color:#66d9ef>struct</span> sockaddr));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  sock <span style=color:#f92672>=</span> <span style=color:#a6e22e>socket</span>(AF_INET, SOCK_DGRAM, <span style=color:#ae81ff>0</span>);
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>must</span>(<span style=color:#a6e22e>ioctl</span>(sock, SIOCSIFADDR, <span style=color:#f92672>&amp;</span>ifr));
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>must</span>(<span style=color:#a6e22e>ioctl</span>(sock, SIOCGIFFLAGS, <span style=color:#f92672>&amp;</span>ifr));
+</span></span><span style=display:flex><span>  ifr.ifr_flags <span style=color:#f92672>|=</span> IFF_UP <span style=color:#f92672>|</span> IFF_RUNNING;
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>must</span>(<span style=color:#a6e22e>ioctl</span>(sock, SIOCSIFFLAGS, <span style=color:#f92672>&amp;</span>ifr));
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>close</span>(sock);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>With this change, <code>tun0</code> now looks like:</p><pre tabindex=0><code>3452: tun0: &lt;POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 500
+    link/none 
+    inet 172.30.0.10/32 scope global tun0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::bda3:ddc8:e60e:106b/64 scope link stable-privacy 
+       valid_lft forever preferred_lft forever
+</code></pre><p>And if we repeat our earlier test in which we use <code>tcpdump</code> to watch for our synthesized packet on any interface, we now see the desired behavior:</p><pre tabindex=0><code># tcpdump -nn -i any port 10001
+23:37:55.897786 tun0  In  IP 172.30.0.1.41626 &gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
+23:37:55.897816 eth0  Out IP 172.30.0.1.41626 &gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
+</code></pre><p>The packet is correctly handled by the kernel and sent out to our default gateway.</p><h2 id=finishing-up>Finishing up<a href=#finishing-up class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The final version of the code looks like this:</p><div class=collapsable-code><input id=398142756 type=checkbox>
+<label for=398142756><span class=collapsable-code__language>c</span>
+<span class=collapsable-code__title>working sendpacket.c</span>
+<span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
+
+#include &lt;arpa/inet.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;linux/if.h&gt;
+#include &lt;linux/if_tun.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;poll.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/ioctl.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#define must(x) _must(#x, __FILE__, __LINE__, __func__, (x))
+
+void _must(const char *call, const char *filename, int line,
+           const char *funcname, int err) {
+  char buf[1024];
+  snprintf(buf, 1023, &#34;%s (@ %s:%d)&#34;, call, filename, line);
+  if (err &lt; 0) {
+    perror(buf);
+    exit(1);
+  }
+}
+
+static int tunAlloc(void) {
+  int fd;
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+
+  fd = open(&#34;/dev/net/tun&#34;, O_RDWR);
+  must(ioctl(fd, TUNSETIFF, (void *)&amp;ifr));
+  must(ioctl(fd, TUNSETOWNER, geteuid()));
+  return fd;
+}
+
+static void bringInterfaceUp(void) {
+  int sock;
+  struct sockaddr_in addr = {.sin_family = AF_INET};
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;};
+
+  inet_aton(&#34;172.30.0.10&#34;, &amp;addr.sin_addr);
+  memcpy(&amp;ifr.ifr_addr, &amp;addr, sizeof(struct sockaddr));
+
+  sock = socket(AF_INET, SOCK_DGRAM, 0);
+  must(ioctl(sock, SIOCSIFADDR, &amp;ifr));
+  must(ioctl(sock, SIOCGIFFLAGS, &amp;ifr));
+  ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+  must(ioctl(sock, SIOCSIFFLAGS, &amp;ifr));
+  close(sock);
+}
+
+static void emitPacket(int tap_fd) {
+  uint16_t cs;
+  uint8_t packet[] = {
+      0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0xf7, 0x7b,
+      172,  30,   0,    1,    192,  168,  255,  8,    0xa2, 0x9a, 0x27, 0x11,
+      0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+      0x78, 0xc3, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+      0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07,
+  };
+
+  write(tap_fd, packet, sizeof(packet));
+}
+
+void prompt(char *promptString) {
+  printf(&#34;%s\n&#34;, promptString);
+  getchar();
+}
+
+int main() {
+  int tap_fd;
+
+  tap_fd = tunAlloc();
+
+  bringInterfaceUp();
+  prompt(&#34;interface is up&#34;);
+  emitPacket(tap_fd);
+  prompt(&#34;sent packet&#34;);
+  close(tap_fd);
+  printf(&#34;all done&#34;);
+
+  return 0;
+}
+
+
+</code></pre></div></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>
