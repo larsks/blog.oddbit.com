@@ -1,0 +1,2 @@
+posts: '/post/:year-:month-:day-:filename/'
+tags: '/tag/:slug/'
