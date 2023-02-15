@@ -1,0 +1,1147 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>neutron on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/neutron/</link><description>Recent content in neutron on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 13 Aug 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/neutron/rss.xml" rel="self" type="application/rss+xml"/><item><title>Provider external networks (in an appropriate amount of detail)</title><link>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</link><pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</guid><description>In Quantum in Too Much Detail, I discussed the architecture of a Neutron deployment in detail. Since that article was published, Neutron gained the ability to handle multiple external networks with a single L3 agent. While I wrote about that back in 2014, I covered the configuration side of it in much more detail than I discussed the underlying network architecture. This post addresses the architecture side.
+The players This document describes the architecture that results from a particular OpenStack configuration, specifically:</description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+Neutron deployment in detail. Since that article was published,
+Neutron gained the ability to handle multiple external networks with a
+single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
+covered the configuration side of it in much more detail than I
+discussed the underlying network architecture. This post addresses
+the architecture side.&lt;/p>
+&lt;h2 id="the-players">The players&lt;/h2>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p>
+&lt;ul>
+&lt;li>Neutron networking using VXLAN or GRE tunnels;&lt;/li>
+&lt;li>A dedicated network controller;&lt;/li>
+&lt;li>Two external networks&lt;/li>
+&lt;/ul>
+&lt;h2 id="the-lay-of-the-land">The lay of the land&lt;/h2>
+&lt;p>This is a simplified architecture diagram of the network connectivity
+in this scenario:&lt;/p>
+&lt;p>Everything on the compute hosts is identical to &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">my previous
+article&lt;/a>, so I will only be discussing the network host here.&lt;/p>
+&lt;p>For the purposes of this article, we have two external networks and
+two internal networks defined:&lt;/p>
+&lt;pre>&lt;code>$ neutron net-list
++--------------------------------------+-----------+----------...------------------+
+| id | name | subnets ... |
++--------------------------------------+-----------+----------...------------------+
+| 6f0a5622-4d2b-4e4d-b34a-09b70cacf3f1 | net1 | beb767f8-... 192.168.101.0/24 |
+| 972f2853-2ba6-474d-a4be-a400d4e3dc97 | net2 | f6d0ca0f-... 192.168.102.0/24 |
+| 12136507-9bbe-406f-b68b-151d2a78582b | external2 | 106db3d6-... 172.24.5.224/28 |
+| 973a6eb3-eaf8-4697-b90b-b30315b0e05d | external1 | fe8e8193-... 172.24.4.224/28 |
++--------------------------------------+-----------+----------...------------------+
+&lt;/code>&lt;/pre>
+&lt;p>And two routers:&lt;/p>
+&lt;pre>&lt;code>$ neutron router-list
++--------------------------------------+---------+-----------------------...-------------------+...
+| id | name | external_gateway_info ... |...
++--------------------------------------+---------+-----------------------...-------------------+...
+| 1b19e179-5d67-4d80-8449-bab42119a4c5 | router2 | {&amp;quot;network_id&amp;quot;: &amp;quot;121365... &amp;quot;172.24.5.226&amp;quot;}]} |...
+| e2117de3-58ca-420d-9ac6-c4eccf5e7a53 | router1 | {&amp;quot;network_id&amp;quot;: &amp;quot;973a6e... &amp;quot;172.24.4.227&amp;quot;}]} |...
++--------------------------------------+---------+-----------------------...-------------------+...
+&lt;/code>&lt;/pre>
+&lt;p>And our logical connectivity is:&lt;/p>
+&lt;pre>&lt;code>+---------+ +----------+ +-------------+
+| | | | | |
+| net1 +----&amp;gt; router1 +----&amp;gt; external1 |
+| | | | | |
++---------+ +----------+ +-------------+
++---------+ +----------+ +-------------+
+| | | | | |
+| net2 +----&amp;gt; router2 +----&amp;gt; external2 |
+| | | | | |
++---------+ +----------+ +-------------+
+&lt;/code>&lt;/pre>
+&lt;h2 id="router-attachments-to-integration-bridge">Router attachments to integration bridge&lt;/h2>
+&lt;p>In the &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">legacy model&lt;/a>, in which an L3 agent supported a single
+external network, the &lt;code>qrouter-...&lt;/code> namespaces that implement Neutron
+routers were attached to both the integration bridge &lt;code>br-int&lt;/code> and the
+external network bridge (the &lt;code>external_network_bridge&lt;/code> configuration
+option from your &lt;code>l3_agent.ini&lt;/code>, often named &lt;code>br-ex&lt;/code>).&lt;/p>
+&lt;p>In the provider network model, &lt;em>both&lt;/em> interfaces in a &lt;code>qrouter&lt;/code>
+namespace are attached to the integration bridge. For the
+configuration we&amp;rsquo;ve described above, the configuration of the
+integration bridge ends up looking something like:&lt;/p>
+&lt;pre>&lt;code>Bridge br-int
+fail_mode: secure
+Port &amp;quot;qvoc532d46c-33&amp;quot;
+tag: 3
+Interface &amp;quot;qvoc532d46c-33&amp;quot;
+Port br-int
+Interface br-int
+type: internal
+Port &amp;quot;qg-09e9da38-fb&amp;quot;
+tag: 4
+Interface &amp;quot;qg-09e9da38-fb&amp;quot;
+type: internal
+Port &amp;quot;qvo3ccea690-c2&amp;quot;
+tag: 2
+Interface &amp;quot;qvo3ccea690-c2&amp;quot;
+Port &amp;quot;int-br-ex2&amp;quot;
+Interface &amp;quot;int-br-ex2&amp;quot;
+type: patch
+options: {peer=&amp;quot;phy-br-ex2&amp;quot;}
+Port &amp;quot;tapd2ff89e7-16&amp;quot;
+tag: 2
+Interface &amp;quot;tapd2ff89e7-16&amp;quot;
+type: internal
+Port patch-tun
+Interface patch-tun
+type: patch
+options: {peer=patch-int}
+Port &amp;quot;int-br-ex1&amp;quot;
+Interface &amp;quot;int-br-ex1&amp;quot;
+type: patch
+options: {peer=&amp;quot;phy-br-ex1&amp;quot;}
+Port &amp;quot;qr-affdbcee-5c&amp;quot;
+tag: 3
+Interface &amp;quot;qr-affdbcee-5c&amp;quot;
+type: internal
+Port &amp;quot;qr-b37877cd-42&amp;quot;
+tag: 2
+Interface &amp;quot;qr-b37877cd-42&amp;quot;
+type: internal
+Port &amp;quot;qg-19250d3f-5c&amp;quot;
+tag: 1
+Interface &amp;quot;qg-19250d3f-5c&amp;quot;
+type: internal
+Port &amp;quot;tap0881edf5-e5&amp;quot;
+tag: 3
+Interface &amp;quot;tap0881edf5-e5&amp;quot;
+type: internal
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>qr-...&lt;/code> interface on each router is attached to an internal
+network. The VLAN tag associated with this interface is whatever VLAN
+Neutron has selected internally for the private network. In the above
+output, these ports are on the network named &lt;code>net1&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>Port &amp;quot;qr-affdbcee-5c&amp;quot;
+tag: 3
+Interface &amp;quot;qr-affdbcee-5c&amp;quot;
+type: internal
+Port &amp;quot;tap0881edf5-e5&amp;quot;
+tag: 3
+Interface &amp;quot;tap0881edf5-e5&amp;quot;
+type: internal
+&lt;/code>&lt;/pre>
+&lt;p>Where &lt;code>qr-affdbcee-5c&lt;/code> is &lt;code>router1&lt;/code>&amp;rsquo;s interface on that network, and
+&lt;code>tap0881edf5-e5&lt;/code> is the port attached to a &lt;code>dhcp-...&lt;/code> namespace. The
+same router is attached to the &lt;code>external1&lt;/code> network; this attachment is
+represented by:&lt;/p>
+&lt;pre>&lt;code>Port &amp;quot;qg-09e9da38-fb&amp;quot;
+tag: 4
+Interface &amp;quot;qg-09e9da38-fb&amp;quot;
+type: internal
+&lt;/code>&lt;/pre>
+&lt;p>The external bridges are connected to the integration bridge using OVS
+&amp;ldquo;patch&amp;rdquo; interfaces (the &lt;code>int-br-ex1&lt;/code> on the integration bridge and the
+&lt;code>phy-br-ex1&lt;/code> interface on the &lt;code>br-ex1&lt;/code>).&lt;/p>
+&lt;h2 id="from-here-to-there">From here to there&lt;/h2>
+&lt;p>Connectivity between the &lt;code>qg-...&lt;/code> interface and the appropriate
+external bridge (&lt;code>br-ex1&lt;/code> in this case) happens due to the VLAN tag
+assigned on egress by the &lt;code>qg-...&lt;/code> interface and the following
+OpenFlow rules associated with &lt;code>br-ex1&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># ovs-ofctl dump-flows br-ex1
+NXST_FLOW reply (xid=0x4):
+cookie=0x0, duration=794.876s, table=0, n_packets=0, n_bytes=0, idle_age=794, priority=1 actions=NORMAL
+cookie=0x0, duration=785.833s, table=0, n_packets=0, n_bytes=0, idle_age=785, priority=4,in_port=3,dl_vlan=4 actions=strip_vlan,NORMAL
+cookie=0x0, duration=792.945s, table=0, n_packets=24, n_bytes=1896, idle_age=698, priority=2,in_port=3 actions=drop
+&lt;/code>&lt;/pre>
+&lt;p>Each of these rules contains some state information (like the
+packet/byte counts), some conditions (like
+&lt;code>priority=4,in_port=3,dl_vlan=4&lt;/code>) and one or more actions (like
+&lt;code>actions=strip_vlan,NORMAL&lt;/code>). So, the second rule there matches
+packets associated with VLAN tag 4 and strips the VLAN tag (after
+which the packet is delivered to any physical interfaces that are
+attached to this OVS bridge).&lt;/p>
+&lt;p>Putting this all together:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>An outbound packet from a Nova server running on a compute node
+enters via &lt;code>br-tun&lt;/code> (&lt;strong>H&lt;/strong>)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Flow rules on &lt;code>br-tun&lt;/code> translate the tunnel id into an internal
+VLAN tag.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The packet gets delivered to the &lt;code>qr-...&lt;/code> interface of the
+appropriate router. (&lt;strong>O&lt;/strong>)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The packet exits the &lt;code>qg-...&lt;/code> interface of the router (where it
+is assigned the VLAN tag associated with the external network).
+(&lt;strong>N&lt;/strong>)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The packet is delivered to the external bridge, where a flow rule
+strip the VLAN tag. (&lt;strong>P&lt;/strong>)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The packet is sent out the physical interface associated with the
+bridge.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;h2 id="for-the-sake-of-completeness">For the sake of completeness&lt;/h2>
+&lt;p>The second private network, &lt;code>net2&lt;/code>, is attached to &lt;code>router2&lt;/code> on the
+&lt;code>qr-b37877cd-42&lt;/code> interface. It exits on the &lt;code>qg-19250d3f-5c&lt;/code>
+interface, where packets will be assigned to VLAN 1:&lt;/p>
+&lt;pre>&lt;code>Port &amp;quot;qr-b37877cd-42&amp;quot;
+tag: 2
+Interface &amp;quot;qr-b37877cd-42&amp;quot;
+type: internal
+Port &amp;quot;qg-19250d3f-5c&amp;quot;
+tag: 1
+Interface &amp;quot;qg-19250d3f-5c&amp;quot;
+type: internal
+&lt;/code>&lt;/pre>
+&lt;p>The network interface configuration in the associated router namespace
+looks like this:&lt;/p>
+&lt;pre>&lt;code># ip netns exec qrouter-1b19e179-5d67-4d80-8449-bab42119a4c5 ip a
+30: qg-19250d3f-5c: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state UNKNOWN
+link/ether fa:16:3e:01:e9:e3 brd ff:ff:ff:ff:ff:ff
+inet 172.24.5.226/28 brd 172.24.5.239 scope global qg-19250d3f-5c
+valid_lft forever preferred_lft forever
+inet6 fe80::f816:3eff:fe01:e9e3/64 scope link
+valid_lft forever preferred_lft forever
+37: qr-b37877cd-42: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state UNKNOWN
+link/ether fa:16:3e:4c:6c:f2 brd ff:ff:ff:ff:ff:ff
+inet 192.168.102.1/24 brd 192.168.102.255 scope global qr-b37877cd-42
+valid_lft forever preferred_lft forever
+inet6 fe80::f816:3eff:fe4c:6cf2/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>
+&lt;p>OpenFlow rules attached to &lt;code>br-ex2&lt;/code> will match these packets:&lt;/p>
+&lt;pre>&lt;code># ovs-ofctl dump-flows br-ex2
+NXST_FLOW reply (xid=0x4):
+cookie=0x0, duration=3841.678s, table=0, n_packets=0, n_bytes=0, idle_age=3841, priority=1 actions=NORMAL
+cookie=0x0, duration=3831.396s, table=0, n_packets=0, n_bytes=0, idle_age=3831, priority=4,in_port=3,dl_vlan=1 actions=strip_vlan,NORMAL
+cookie=0x0, duration=3840.085s, table=0, n_packets=26, n_bytes=1980, idle_age=3742, priority=2,in_port=3 actions=drop
+&lt;/code>&lt;/pre>
+&lt;p>We can see that the second rule here will patch traffic on VLAN 1
+(&lt;code>priority=4,in_port=3,dl_vlan=1&lt;/code>) and strip the VLAN tag, after which
+the packet will be delivered to any other interfaces attached to this
+bridge.&lt;/p></content></item><item><title>OpenStack Networking without DHCP</title><link>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</link><pubDate>Fri, 26 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</guid><description>In an OpenStack environment, cloud-init generally fetches information from the metadata service provided by Nova. It also has support for reading this information from a configuration drive, which under OpenStack means a virtual CD-ROM device attached to your instance containing the same information that would normally be available via the metadata service.
+It is possible to generate your network configuration from this configuration drive, rather than relying on the DHCP server provided by your OpenStack environment.</description><content>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
+information from the metadata service provided by Nova. It also has
+support for reading this information from a &lt;em>configuration drive&lt;/em>,
+which under OpenStack means a virtual CD-ROM device attached to your
+instance containing the same information that would normally be
+available via the metadata service.&lt;/p>
+&lt;p>It is possible to generate your network configuration from this
+configuration drive, rather than relying on the DHCP server provided
+by your OpenStack environment. In order to do this you will need to
+make the following changes to your Nova configuration:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>You must be using a subnet that does have a DHCP server. This
+means that you have created it using &lt;code>neutron subnet-create --disable-dhcp ...&lt;/code>, or that you disabled DHCP on an existing
+network using &lt;code>neutron net-update --disable-dhcp ...&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You must set &lt;code>flat_inject&lt;/code> to &lt;code>true&lt;/code> in &lt;code>/etc/nova/nova.conf&lt;/code>.
+This causes Nova to embed network configuration information in the
+meta-data embedded on the configuration drive.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You must ensure that &lt;code>injected_network_template&lt;/code> in
+&lt;code>/etc/nova/nova.conf&lt;/code> points to an appropriately formatted
+template.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Cloud-init expects the network configuration information to be
+presented in the format of a Debian &lt;code>/etc/network/interfaces&lt;/code> file,
+even if you&amp;rsquo;re using it on RHEL (or a derivative). The template is
+rendered using the &lt;a href="http://jinja.pocoo.org/docs/dev/">Jinja2&lt;/a> template engine, and receives a
+top-level key called &lt;code>interfaces&lt;/code> that contains a list of
+dictionaries, one for each interface.&lt;/p>
+&lt;p>A template similar to the following ought to be sufficient:&lt;/p>
+&lt;pre>&lt;code>{% for interface in interfaces %}
+auto {{ interface.name }}
+iface {{ interface.name }} inet static
+address {{ interface.address }}
+netmask {{ interface.netmask }}
+broadcast {{ interface.broadcast }}
+gateway {{ interface.gateway }}
+dns-nameservers {{ interface.dns }}
+{% endfor %}
+&lt;/code>&lt;/pre>
+&lt;p>This will directly populate &lt;code>/etc/network/interfaces&lt;/code> on an Ubuntu
+system, or will get translated into
+&lt;code>/etc/sysconfig/network-scripts/ifcfg-eth0&lt;/code> on a RHEL system (a RHEL
+environment can only configure a single network interface using this
+mechanism).&lt;/p></content></item><item><title>Cloud-init and the case of the changing hostname</title><link>https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/</link><pubDate>Wed, 10 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/</guid><description>Setting the stage I ran into a problem earlier this week deploying RDO Icehouse under RHEL 6. My target systems were a set of libvirt guests deployed from the RHEL 6 KVM guest image, which includes cloud-init in order to support automatic configuration in cloud environments. I take advantage of this when using libvirt by attaching a configuration drive so that I can pass in ssh keys and a user-data script.</description><content>&lt;h2 id="setting-the-stage">Setting the stage&lt;/h2>
+&lt;p>I ran into a problem earlier this week deploying RDO Icehouse under
+RHEL 6. My target systems were a set of libvirt guests deployed from
+the RHEL 6 KVM guest image, which includes &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> in order to
+support automatic configuration in cloud environments. I take
+advantage of this when using &lt;code>libvirt&lt;/code> by attaching a configuration
+drive so that I can pass in ssh keys and a &lt;code>user-data&lt;/code> script.&lt;/p>
+&lt;p>Once the systems were up, I used &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a> to deploy OpenStack
+onto a single controller and two compute nodes, and at the conclusion
+of the &lt;code>packstack&lt;/code> run everything was functioning correctly. Running
+&lt;code>neutron agent-list&lt;/code> showed all agents in good order:&lt;/p>
+&lt;pre>&lt;code>+--------------------------------------+--------------------+------------+-------+----------------+
+| id | agent_type | host | alive | admin_state_up |
++--------------------------------------+--------------------+------------+-------+----------------+
+| 0d51d200-d902-4e05-847a-858b69c03088 | DHCP agent | controller | :-) | True |
+| 192f76e9-a816-4bd9-8a90-a263a1d54031 | Open vSwitch agent | compute-0 | :-) | True |
+| 3d97d7ba-1b1f-43f8-9582-f860fbfe50df | Open vSwitch agent | controller | :-) | True |
+| 54d387a6-dca1-4ace-8c1b-7788fb0bc090 | Metadata agent | controller | :-) | True |
+| 92fc83bf-0995-43c3-92d1-70002c734604 | L3 agent | controller | :-) | True |
+| e06575c2-43b3-4691-80bc-454f501debfe | Open vSwitch agent | compute-1 | :-) | True |
++--------------------------------------+--------------------+------------+-------+----------------+
+&lt;/code>&lt;/pre>
+&lt;h2 id="a-problem-rears-its-ugly-head">A problem rears its ugly head&lt;/h2>
+&lt;p>After rebooting the system, I found that I was missing an expected
+Neutron router namespace. Specifically, given:&lt;/p>
+&lt;pre>&lt;code># neutron router-list
++--------------------------------------+---------+-----------------------------------------------------------------------------+
+| id | name | external_gateway_info |
++--------------------------------------+---------+-----------------------------------------------------------------------------+
+| e83eec10-0de2-4bfa-8e58-c1bcbe702f51 | router1 | {&amp;quot;network_id&amp;quot;: &amp;quot;b53a9ecd-01fc-4bee-b20d-8fbe0cd2e010&amp;quot;, &amp;quot;enable_snat&amp;quot;: true} |
++--------------------------------------+---------+-----------------------------------------------------------------------------+
+&lt;/code>&lt;/pre>
+&lt;p>I expected to see:&lt;/p>
+&lt;pre>&lt;code># ip netns
+qrouter-e83eec10-0de2-4bfa-8e58-c1bcbe702f51
+&lt;/code>&lt;/pre>
+&lt;p>But the &lt;code>qrouter&lt;/code> namespace was missing.&lt;/p>
+&lt;p>The output of &lt;code>neutron agent-list&lt;/code> shed some light on the problem:&lt;/p>
+&lt;pre>&lt;code>+--------------------------------------+--------------------+------------------------+-------+----------------+
+| id | agent_type | host | alive | admin_state_up |
++--------------------------------------+--------------------+------------------------+-------+----------------+
+| 0832e8f3-61f9-49cf-b49c-886cc94d3d28 | Metadata agent | controller.localdomain | :-) | True |
+| 0d51d200-d902-4e05-847a-858b69c03088 | DHCP agent | controller | xxx | True |
+| 192f76e9-a816-4bd9-8a90-a263a1d54031 | Open vSwitch agent | compute-0 | :-) | True |
+| 3be34828-ca8d-4638-9b3a-4e2f688a9ca9 | L3 agent | controller.localdomain | :-) | True |
+| 3d97d7ba-1b1f-43f8-9582-f860fbfe50df | Open vSwitch agent | controller | xxx | True |
+| 54d387a6-dca1-4ace-8c1b-7788fb0bc090 | Metadata agent | controller | xxx | True |
+| 87b53741-f28b-4582-9ea8-6062ab9962e9 | Open vSwitch agent | controller.localdomain | :-) | True |
+| 92fc83bf-0995-43c3-92d1-70002c734604 | L3 agent | controller | xxx | True |
+| e06575c2-43b3-4691-80bc-454f501debfe | Open vSwitch agent | compute-1 | :-) | True |
+| e327b7f9-c9ce-49f8-89c1-b699d9f7d253 | DHCP agent | controller.localdomain | :-) | True |
++--------------------------------------+--------------------+------------------------+-------+----------------+
+&lt;/code>&lt;/pre>
+&lt;p>There were two sets of Neutron agents registered using different
+hostnames &amp;ndash; one set using the short name of the host, and the other
+set using the fully qualified hostname.&lt;/p>
+&lt;h2 id="whats-up-with-that">What&amp;rsquo;s up with that?&lt;/h2>
+&lt;p>In the &lt;code>cc_set_hostname.py&lt;/code> module, &lt;code>cloud-init&lt;/code> performs the
+following operation:&lt;/p>
+&lt;pre>&lt;code>(hostname, fqdn) = util.get_hostname_fqdn(cfg, cloud)
+try:
+log.debug(&amp;quot;Setting the hostname to %s (%s)&amp;quot;, fqdn, hostname)
+cloud.distro.set_hostname(hostname, fqdn)
+except Exception:
+util.logexc(log, &amp;quot;Failed to set the hostname to %s (%s)&amp;quot;, fqdn,
+hostname)
+raise
+&lt;/code>&lt;/pre>
+&lt;p>It starts by retrieving the hostname (both the qualified and
+unqualified version) from the cloud environment, and then calls
+&lt;code>cloud.distro.set_hostname(hostname, fqdn)&lt;/code>. This ends up calling:&lt;/p>
+&lt;pre>&lt;code>def set_hostname(self, hostname, fqdn=None):
+writeable_hostname = self._select_hostname(hostname, fqdn)
+self._write_hostname(writeable_hostname, self.hostname_conf_fn)
+self._apply_hostname(hostname)
+&lt;/code>&lt;/pre>
+&lt;p>Where, on a RHEL system, &lt;code>_select_hostname&lt;/code> is:&lt;/p>
+&lt;pre>&lt;code>def _select_hostname(self, hostname, fqdn):
+# See: http://bit.ly/TwitgL
+# Should be fqdn if we can use it
+if fqdn:
+return fqdn
+return hostname
+&lt;/code>&lt;/pre>
+&lt;p>So:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>cloud-init&lt;/code> sets &lt;code>writeable_hostname&lt;/code> to the fully qualified name
+of the system (assuming it is available).&lt;/li>
+&lt;li>&lt;code>cloud-init&lt;/code> writes the fully qualified hostname to &lt;code>/etc/sysconfig/network&lt;/code>.&lt;/li>
+&lt;li>&lt;code>cloud-init&lt;/code> sets the hostname to the &lt;em>unqualified&lt;/em> hostname&lt;/li>
+&lt;/ul>
+&lt;p>The result is that your system will probably have a different hostname
+after your first reboot, which throws off Neutron.&lt;/p>
+&lt;h2 id="and-they-all-lived-happily-ever-after">And they all lived happily ever after?&lt;/h2>
+&lt;p>It turns out this bug was reported upstream back in October of 2013 as
+&lt;a href="https://bugs.launchpad.net/cloud-init/+bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
+been marked as &amp;ldquo;low&amp;rdquo; priority and has been fixed. There are patches
+attached to the bug report that purport to fix the problem.&lt;/p></content></item><item><title>Booting an instance with multiple fixed addresses</title><link>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</guid><description>This article expands on my answer to Add multiple specific IPs to instance, a question posted to ask.openstack.org.
+In order to serve out SSL services from an OpenStack instance, you will generally want one local ip address for each SSL virtual host you support. It is possible to create an instance with multiple fixed addresses, but there are a few complications to watch out for.
+Assumptions This article assumes that the following resources exist:</description><content>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
+instance&lt;/a>, a question posted to &lt;a href="https://ask.openstack.org/">ask.openstack.org&lt;/a>.&lt;/p>
+&lt;p>In order to serve out SSL services from an OpenStack instance, you
+will generally want one local ip address for each SSL virtual host you
+support. It is possible to create an instance with multiple fixed
+addresses, but there are a few complications to watch out for.&lt;/p>
+&lt;h1 id="assumptions">Assumptions&lt;/h1>
+&lt;p>This article assumes that the following resources exist:&lt;/p>
+&lt;ul>
+&lt;li>a private network &lt;code>net0&lt;/code>.&lt;/li>
+&lt;li>a private network &lt;code>net0-subnet0&lt;/code>, associated with &lt;code>net0&lt;/code>, assigned
+the range &lt;code>10.0.0.0/24&lt;/code>.&lt;/li>
+&lt;li>a public network &lt;code>external&lt;/code> assigned the range &lt;code>192.168.200.0/24&lt;/code>.&lt;/li>
+&lt;li>an image named &lt;code>fedora-20-x86_64&lt;/code>, with hopefully self-evident
+contents.&lt;/li>
+&lt;/ul>
+&lt;h1 id="creating-a-port">Creating a port&lt;/h1>
+&lt;p>Start by creating a port in Neutron:&lt;/p>
+&lt;pre>&lt;code>$ neutron port-create net0 \
+--fixed-ip subnet_id=net0-subnet0 \
+--fixed-ip subnet_id=net0-subnet0
+&lt;/code>&lt;/pre>
+&lt;p>This will create a neutron port to which have been allocated to fixed
+ip addresses from &lt;code>net0-subnet0&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>+-----------------------+----------------------------------------------------------------------------------+
+| Field | Value |
++-----------------------+----------------------------------------------------------------------------------+
+| admin_state_up | True |
+| allowed_address_pairs | |
+| binding:vnic_type | normal |
+| device_id | |
+| device_owner | |
+| fixed_ips | {&amp;quot;subnet_id&amp;quot;: &amp;quot;f8ca90fd-cb82-4218-9627-6fa66e4c9c3c&amp;quot;, &amp;quot;ip_address&amp;quot;: &amp;quot;10.0.0.18&amp;quot;} |
+| | {&amp;quot;subnet_id&amp;quot;: &amp;quot;f8ca90fd-cb82-4218-9627-6fa66e4c9c3c&amp;quot;, &amp;quot;ip_address&amp;quot;: &amp;quot;10.0.0.19&amp;quot;} |
+| id | 3c564dd5-fd45-4f61-88df-715f71667b3b |
+| mac_address | fa:16:3e:e1:15:7f |
+| name | |
+| network_id | bb4e5e37-74e1-41bd-880e-b59e94236c5e |
+| security_groups | 52f7a87c-380f-4a07-a6ff-d64be495f25b |
+| status | DOWN |
+| tenant_id | 4dfe8e38f68449b6a0c9cd73037726f7 |
++-----------------------+----------------------------------------------------------------------------------+
+&lt;/code>&lt;/pre>
+&lt;p>If you want, you can specify an explicit set of addresses rather than
+having neutron allocate them for you:&lt;/p>
+&lt;pre>&lt;code>$ neutron port-create net0 \
+--fixed-ip subnet_id=net0-subnet0,ip_address=10.0.0.18 \
+--fixed-ip subnet_id=net0-subnet0,ip_address=10.0.0.19
+&lt;/code>&lt;/pre>
+&lt;h1 id="boot-an-instance">Boot an instance&lt;/h1>
+&lt;p>You can boot an instance using this port using the &lt;code>port-id=...&lt;/code>
+parameter to the &lt;code>--nic&lt;/code> option:&lt;/p>
+&lt;pre>&lt;code>$ nova boot \
+--nic port-id=3c564dd5-fd45-4f61-88df-715f71667b3b \
+--flavor m1.tiny \
+--image fedora-20-x86_64 \
+--key-name lars test0
+&lt;/code>&lt;/pre>
+&lt;p>This is where the first complication arises: the instance will boot
+and receive a DHCP lease for one of the fixed addresses you created,
+but you don&amp;rsquo;t know which one. This isn&amp;rsquo;t an insurmountable problem;
+you can assign floating ips to each one and then try logging in to
+both and see which works.&lt;/p>
+&lt;p>Rather than playing network roulette, you can pass in a script via the
+&lt;code>--user-data&lt;/code> option that will take care of configuring the network
+correctly. For example, something like this:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+cat &amp;gt; /etc/sysconfig/network-scripts/ifcfg-eth0 &amp;lt;&amp;lt;EOF
+DEVICE=eth0
+BOOTPROTO=none
+IPADDR=10.0.0.18
+NETMASK=255.255.255.0
+GATEWAY=10.0.0.1
+ONBOOT=yes
+EOF
+cat &amp;gt; /etc/sysconfig/network-scripts/ifcfg-eth0:0 &amp;lt;&amp;lt;EOF
+DEVICE=eth0:0
+BOOTPROTO=none
+IPADDR=10.0.0.19
+NETMASK=255.255.255.0
+GATEWAY=10.0.0.1
+ONBOOT=yes
+EOF
+ifdown eth0
+ifup eth0
+ifup eth0:0
+&lt;/code>&lt;/pre>
+&lt;p>And boot the instance like this:&lt;/p>
+&lt;pre>&lt;code>$ nova boot --nic port-id=3c564dd5-fd45-4f61-88df-715f71667b3b \
+--flavor m1.tiny --image fedora-20-x86_64 --key-name lars \
+--user-data userdata.txt test0
+&lt;/code>&lt;/pre>
+&lt;p>Assuming that your image uses &lt;a href="http://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> or something similar, it
+should execute the &lt;code>user-data&lt;/code> script at boot and set up the
+persistent network configuration.&lt;/p>
+&lt;p>At this stage, you can verify that both addresses have been assigned
+by using the &lt;code>ip netns&lt;/code> command to run &lt;code>ping&lt;/code> inside an appropriate
+namespace. Something like:&lt;/p>
+&lt;pre>&lt;code>$ sudo ip netns exec qdhcp-bb4e5e37-74e1-41bd-880e-b59e94236c5e ping -c1 10.0.0.18
+PING 10.0.0.18 (10.0.0.18) 56(84) bytes of data.
+64 bytes from 10.0.0.18: icmp_seq=1 ttl=64 time=1.60 ms
+--- 10.0.0.18 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.606/1.606/1.606/0.000 ms
+$ sudo ip netns exec qdhcp-bb4e5e37-74e1-41bd-880e-b59e94236c5e ping -c1 10.0.0.19
+PING 10.0.0.19 (10.0.0.19) 56(84) bytes of data.
+64 bytes from 10.0.0.19: icmp_seq=1 ttl=64 time=1.60 ms
+--- 10.0.0.19 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.701/1.701/1.701/0.000 ms
+&lt;/code>&lt;/pre>
+&lt;p>This assumes that the UUID of the &lt;code>net0&lt;/code> network is &lt;code>bb4e5e37-74e1-41bd-880e-b59e94236c5e&lt;/code>. On your system, the namespace will be something different.&lt;/p>
+&lt;h1 id="assign-floating-ips">Assign floating ips&lt;/h1>
+&lt;p>Assign a floating ip address to each of the fixed addresses. You will
+need to use the &lt;code>--fixed-address&lt;/code> option to &lt;code>nova add-floating-ip&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ nova add-floating-ip --fixed-address 10.0.0.19 test0 192.168.200.6
+$ nova add-floating-ip --fixed-address 10.0.0.18 test0 192.168.200.4
+&lt;/code>&lt;/pre>
+&lt;p>With these changes in place, the system is accessible via either
+address:&lt;/p>
+&lt;pre>&lt;code>$ ssh fedora@192.168.200.4 uptime
+14:51:52 up 4 min, 0 users, load average: 0.00, 0.02, 0.02
+$ ssh fedora@192.168.200.6 uptime
+14:51:54 up 4 min, 0 users, load average: 0.00, 0.02, 0.02
+&lt;/code>&lt;/pre>
+&lt;p>And looking at the network configuration on the system, we can see
+that both addresses have been assigned to &lt;code>eth0&lt;/code> as expected:&lt;/p>
+&lt;pre>&lt;code>$ ssh fedora@192.168.200.4 /sbin/ip a
+[...]
+2: eth0: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+link/ether fa:16:3e:bf:f9:6a brd ff:ff:ff:ff:ff:ff
+inet 10.0.0.18/24 brd 10.0.0.255 scope global eth0
+valid_lft forever preferred_lft forever
+inet 10.0.0.19/24 brd 10.0.0.255 scope global secondary eth0:0
+valid_lft forever ...
+&lt;/code>&lt;/pre></content></item><item><title>Multiple external networks with a single L3 agent</title><link>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</guid><description>In the old days (so, like, last year), Neutron supported a single external network per L3 agent. You would run something like this&amp;hellip;
+$ neutron net-create external --router:external=true &amp;hellip;and neutron would map this to the bridge defined in external_network_bridge in /etc/neutron/l3_agent.ini. If you wanted to support more than a single external network, you would need to run multiple L3 agents, each with a unique value for external_network_bridge.
+There is now a better option available.</description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
+external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>$ neutron net-create external --router:external=true
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and neutron would map this to the bridge defined in
+&lt;code>external_network_bridge&lt;/code> in &lt;code>/etc/neutron/l3_agent.ini&lt;/code>. If you
+wanted to support more than a single external network, you would need
+to run multiple L3 agents, each with a unique value for
+&lt;code>external_network_bridge&lt;/code>.&lt;/p>
+&lt;p>There is now a better option available.&lt;/p>
+&lt;h2 id="assumptions">Assumptions&lt;/h2>
+&lt;p>In this post, I&amp;rsquo;m assuming:&lt;/p>
+&lt;ul>
+&lt;li>You&amp;rsquo;re using the ML2 plugin for Neutron.&lt;/li>
+&lt;li>You&amp;rsquo;re using the Open vSwitch mechanism driver for the ML2 plugin&lt;/li>
+&lt;li>You have &lt;code>eth1&lt;/code> and &lt;code>eth2&lt;/code> connected directly to networks that you
+would like to make available as external networks in OpenStack.&lt;/li>
+&lt;/ul>
+&lt;h2 id="create-your-bridges">Create your bridges&lt;/h2>
+&lt;p>For each external network you wish to support, create a new OVS
+bridge. For example, assuming that we want to make a network attached
+to &lt;code>eth1&lt;/code> and a network attached to &lt;code>eth2&lt;/code> available to tenants:&lt;/p>
+&lt;pre>&lt;code># ovs-vsctl add-br br-eth1
+# ovs-vsctl add-port br-eth1 eth1
+# ovs-vsctl add-br br-eth2
+# ovs-vsctl add-port br-eth2 eth2
+&lt;/code>&lt;/pre>
+&lt;p>Realistically, you would accomplish this via your system&amp;rsquo;s native
+network configuration mechanism, but I&amp;rsquo;m going to gloss over that
+detail for now.&lt;/p>
+&lt;h2 id="configure-the-l3-agent">Configure the L3 Agent&lt;/h2>
+&lt;p>Start with the following comment in &lt;code>l3_agent.ini&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># When external_network_bridge is set, each L3 agent can be associated
+# with no more than one external network. This value should be set to the UUID
+# of that external network. To allow L3 agent support multiple external
+# networks, both the external_network_bridge and gateway_external_network_id
+# must be left empty.
+&lt;/code>&lt;/pre>
+&lt;p>Following those instructions, make sure that both
+&lt;code>external_network_bridge&lt;/code> and &lt;code>gateway_external_network_id&lt;/code> are unset
+in &lt;code>l3_agent.ini&lt;/code>.&lt;/p>
+&lt;h2 id="configure-the-ml2-plugin">Configure the ML2 Plugin&lt;/h2>
+&lt;p>We are creating &amp;ldquo;flat&amp;rdquo; networks in this example, so we need to make
+sure that we can create flat networks. Make sure that the
+&lt;code>type_drivers&lt;/code> parameter of the &lt;code>[ml2]&lt;/code> section of your plugin
+configuration includes &lt;code>flat&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[ml2]
+type_drivers = local,flat,gre,vxlan
+&lt;/code>&lt;/pre>
+&lt;p>In the &lt;code>[ml2_type_flat]&lt;/code> section, need to create a list of physical
+network names that can be used to create flat networks. If you want
+all physical networks to be available for flat networks, you can use
+&lt;code>*&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[ml2_type_flat]
+flat_networks = *
+&lt;/code>&lt;/pre>
+&lt;p>Both of these changes probably go in &lt;code>/etc/neutron/plugin.ini&lt;/code>, but
+&lt;em>may&lt;/em> going elsewhere depending on how your system is configured.&lt;/p>
+&lt;h2 id="configure-the-open-vswitch-agent">Configure the Open vSwitch Agent&lt;/h2>
+&lt;p>For each bridge, you will need to add entries to both the
+&lt;code>network_vlan_ranges&lt;/code> and &lt;code>bridge_mappings&lt;/code> parameters of the &lt;code>[ovs]&lt;/code>
+section of your plugin configuration. For the purposes of this post,
+that means:&lt;/p>
+&lt;pre>&lt;code>[ovs]
+network_vlan_ranges = physnet1,physnet2
+bridge_mappings = physnet1:br-eth1,physnet2:br-eth2
+&lt;/code>&lt;/pre>
+&lt;p>This will probably go in &lt;code>/etc/neutron/plugin.ini&lt;/code>. Specifically, it
+needs to go wherever your &lt;code>neutron-openvswitch-agent&lt;/code> process is
+looking for configuration information. So you if you see this:&lt;/p>
+&lt;pre>&lt;code>$ ps -fe | grep openvswitch-agent
+neutron 12529 1 0 09:50 ? 00:00:08 /usr/bin/python /usr/bin/neutron-openvswitch-agent --config-file /usr/share/neutron/neutron-dist.conf --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini --log-file /var/log/neutron/openvswitch-agent.log
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;then you would make the changes to &lt;code>/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini&lt;/code>.&lt;/p>
+&lt;h2 id="restart-neutron">Restart Neutron&lt;/h2>
+&lt;p>You will need to restart both the l3 agent and the openvswitch agent.
+If you&amp;rsquo;re on a recent Fedora/RHEL/CentOS, you can restart all Neutron
+services like this:&lt;/p>
+&lt;pre>&lt;code># openstack-service restart neutron
+&lt;/code>&lt;/pre>
+&lt;h2 id="inspect-your-open-vswitch-configuration">Inspect your Open vSwitch Configuration&lt;/h2>
+&lt;p>As root, run &lt;code>ovs-vsctl show&lt;/code>. You should see something like this:&lt;/p>
+&lt;pre>&lt;code>f4a4312b-307e-4c3c-b728-9434000a34ff
+Bridge br-int
+Port br-int
+Interface br-int
+type: internal
+Port &amp;quot;int-br-eth2&amp;quot;
+Interface &amp;quot;int-br-eth2&amp;quot;
+Port int-br-ex
+Interface int-br-ex
+Port &amp;quot;int-br-eth1&amp;quot;
+Interface &amp;quot;int-br-eth1&amp;quot;
+Bridge &amp;quot;br-eth2&amp;quot;
+Port &amp;quot;br-eth2&amp;quot;
+Interface &amp;quot;br-eth2&amp;quot;
+type: internal
+Port &amp;quot;phy-br-eth2&amp;quot;
+Interface &amp;quot;phy-br-eth2&amp;quot;
+Port &amp;quot;eth2&amp;quot;
+Interface &amp;quot;eth2&amp;quot;
+Bridge &amp;quot;br-eth1&amp;quot;
+Port &amp;quot;br-eth1&amp;quot;
+Interface &amp;quot;br-eth1&amp;quot;
+type: internal
+Port &amp;quot;phy-br-eth1&amp;quot;
+Interface &amp;quot;phy-br-eth1&amp;quot;
+Port &amp;quot;eth1&amp;quot;
+Interface &amp;quot;eth1&amp;quot;
+ovs_version: &amp;quot;2.0.1&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Here you can see the OVS bridge &lt;code>br-eth1&lt;/code> and &lt;code>br-eth2&lt;/code>, each with the
+appropriate associated physical interface and links to the integration
+bridge, &lt;code>br-int&lt;/code>.&lt;/p>
+&lt;h2 id="create-your-external-networks">Create your external networks&lt;/h2>
+&lt;p>With admin credentials, use the &lt;code>net-create&lt;/code> and &lt;code>subnet-create&lt;/code>
+commands to create the appropiate networks:&lt;/p>
+&lt;pre>&lt;code>$ neutron net-create external1 -- --router:external=true \
+--provider:network_type=flat \
+--provider:physical_network=physnet1
++---------------------------+--------------------------------------+
+| Field | Value |
++---------------------------+--------------------------------------+
+| admin_state_up | True |
+| id | 23f4b5f6-14fd-4bab-a8b0-445257bbc0d1 |
+| name | external1 |
+| provider:network_type | flat |
+| provider:physical_network | physnet1 |
+| provider:segmentation_id | |
+| router:external | True |
+| shared | False |
+| status | ACTIVE |
+| subnets | |
+| tenant_id | 6f736b1361b74789a81d4d53d88be3c5 |
++---------------------------+--------------------------------------+
+$ neutron subnet-create --disable-dhcp external1 10.1.0.0/24
++------------------+--------------------------------------------+
+| Field | Value |
++------------------+--------------------------------------------+
+| allocation_pools | {&amp;quot;start&amp;quot;: &amp;quot;10.1.0.2&amp;quot;, &amp;quot;end&amp;quot;: &amp;quot;10.1.0.254&amp;quot;} |
+| cidr | 10.1.0.0/24 |
+| dns_nameservers | |
+| enable_dhcp | False |
+| gateway_ip | 10.1.0.1 |
+| host_routes | |
+| id | 363ba289-a989-4acb-ac3b-ffaeb90796fc |
+| ip_version | 4 |
+| name | |
+| network_id | 23f4b5f6-14fd-4bab-a8b0-445257bbc0d1 |
+| tenant_id | 6f736b1361b74789a81d4d53d88be3c5 |
++------------------+--------------------------------------------+
+$ neutron net-create external2 -- --router:external=true \
+--provider:network_type=flat \
+--provider:physical_network=physnet2
++---------------------------+--------------------------------------+
+| Field | Value |
++---------------------------+--------------------------------------+
+| admin_state_up | True |
+| id | 762be5de-31a2-46b8-925c-0967871f8181 |
+| name | external2 |
+| provider:network_type | flat |
+| provider:physical_network | physnet2 |
+| provider:segmentation_id | |
+| router:external | True |
+| shared | False |
+| status | ACTIVE |
+| subnets | |
+| tenant_id | 6f736b1361b74789a81d4d53d88be3c5 |
++---------------------------+--------------------------------------+
+$ neutron subnet-create --disable-dhcp external2 10.2.0.0/24
++------------------+--------------------------------------------+
+| Field | Value |
++------------------+--------------------------------------------+
+| allocation_pools | {&amp;quot;start&amp;quot;: &amp;quot;10.2.0.2&amp;quot;, &amp;quot;end&amp;quot;: &amp;quot;10.2.0.254&amp;quot;} |
+| cidr | 10.2.0.0/24 |
+| dns_nameservers | |
+| enable_dhcp | False |
+| gateway_ip | 10.2.0.1 |
+| host_routes | |
+| id | edffc5c6-0e16-4da0-8eba-9d79ab9fd2fe |
+| ip_version | 4 |
+| name | |
+| network_id | 762be5de-31a2-46b8-925c-0967871f8181 |
+| tenant_id | 6f736b1361b74789a81d4d53d88be3c5 |
++------------------+--------------------------------------------+
+&lt;/code>&lt;/pre>
+&lt;p>This assumes that &lt;code>eth1&lt;/code> is connected to a network using
+&lt;code>10.1.0.0/24&lt;/code> and &lt;code>eth2&lt;/code> is connected to a network using
+&lt;code>10.2.0.0/24&lt;/code>, and that each network has a gateway sitting at the
+corresponding &lt;code>.1&lt;/code> address.&lt;/p>
+&lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Flat networks with ML2 and OpenVSwitch</title><link>https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/</link><pubDate>Mon, 19 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/</guid><description>Due to an unfortunate incident involving sleep mode and an overheated backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant reinstalling OpenStack I used this as an excuse to finally move to the ML2 network plugin for Neutron.
+I was attempting to add an external network using the normal incantation:
+neutron net-create external -- --router:external=true \ --provider:network_type=flat \ --provider:physical_network=physnet1 While this command completed successfully, I was left without any connectivity between br-int and br-ex, despite having in my /etc/neutron/plugins/ml2/ml2_conf.</description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
+backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant
+reinstalling OpenStack I used this as an excuse to finally move to the ML2
+network plugin for Neutron.&lt;/p>
+&lt;p>I was attempting to add an external network using the normal incantation:&lt;/p>
+&lt;pre>&lt;code>neutron net-create external -- --router:external=true \
+--provider:network_type=flat \
+--provider:physical_network=physnet1
+&lt;/code>&lt;/pre>
+&lt;p>While this command completed successfully, I was left without any
+connectivity between &lt;code>br-int&lt;/code> and &lt;code>br-ex&lt;/code>, despite having in my
+&lt;code>/etc/neutron/plugins/ml2/ml2_conf.ini&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[ml2_type_flat]
+flat_networks = *
+[ovs]
+network_vlan_ranges = physnet1
+bridge_mappings = physnet1:br-ex
+&lt;/code>&lt;/pre>
+&lt;p>The reason this is failing is very simple, but not terribly clear from
+the existing documentation. This is how the &lt;code>neutron-server&lt;/code> process
+is running:&lt;/p>
+&lt;pre>&lt;code>/usr/bin/python /usr/bin/neutron-server \
+--config-file /usr/share/neutron/neutron-dist.conf \
+--config-file /etc/neutron/neutron.conf \
+--config-file /etc/neutron/plugin.ini \
+--log-file /var/log/neutron/server.log
+&lt;/code>&lt;/pre>
+&lt;p>This is how the &lt;code>neutron-openvswitch-agent&lt;/code> process is running:&lt;/p>
+&lt;pre>&lt;code>/usr/bin/python /usr/bin/neutron-openvswitch-agent \
+--config-file /usr/share/neutron/neutron-dist.conf \
+--config-file /etc/neutron/neutron.conf \
+--config-file /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini \
+--log-file /var/log/neutron/openvswitch-agent.log
+&lt;/code>&lt;/pre>
+&lt;p>Note in particular that &lt;code>neutron-server&lt;/code> is looking at
+&lt;code>/etc/neutron/plugin.ini&lt;/code>, which is a symlink to
+&lt;code>/etc/neutron/plugins/ml2/ml2_conf.ini&lt;/code>, while
+&lt;code>neutron-openvswitch-agent&lt;/code> is looking explicitly at
+&lt;code>/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini&lt;/code>. The
+physical network configuration needs to go into the
+&lt;code>ovs_neutron_plugin.ini&lt;/code> configuration file.&lt;/p></content></item><item><title>Visualizing Neutron Networking with GraphViz</title><link>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</link><pubDate>Mon, 23 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</guid><description>I&amp;rsquo;ve put together a few tools to help gather information about your Neutron and network configuration and visualize it in different ways. All of these tools are available as part of my neutron-diag repository on GitHub.
+In this post I&amp;rsquo;m going to look at a tool that will help you visualize the connectivity of network devices on your system.
+mk-network-dot There are a lot of devices involved in your Neutron network configuration.</description><content>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
+Neutron and network configuration and visualize it in different ways.
+All of these tools are available as part of my &lt;a href="http://github.com/larsks/neutron-diag/">neutron-diag&lt;/a>
+repository on GitHub.&lt;/p>
+&lt;p>In this post I&amp;rsquo;m going to look at a tool that will help you visualize
+the connectivity of network devices on your system.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="mk-network-dot">mk-network-dot&lt;/h2>
+&lt;p>There are a lot of devices involved in your Neutron network
+configuration. Information originating in one of your instances has
+two traverse &lt;em>at least&lt;/em> seven network devices before seeing the light
+of day. Understanding how everything connects is critical if you&amp;rsquo;re
+trying to debug problems in your envionment.&lt;/p>
+&lt;p>The &lt;code>mk-network-dot&lt;/code> tool interrogates your system for information
+about network devices and generates &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot format&lt;/a> output showing how
+everything connects. You can use &lt;a href="http://www.graphviz.org/">GraphViz&lt;/a> to render this into a
+variety of output formats. The script must be run as &lt;code>root&lt;/code>, so I
+usually do something like this:&lt;/p>
+&lt;pre>&lt;code>sudo sh mk-network-dot | dot -Tsvg -o network.svg
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;em>dot&lt;/em> language is a language designed for describing graphs, and
+the syntax looks something like this:&lt;/p>
+&lt;pre>&lt;code>digraph example {
+A -&amp;gt; B
+A -&amp;gt; C
+C -&amp;gt; D
+B -&amp;gt; D
+}
+&lt;/code>&lt;/pre>
+&lt;p>Which would produce output like this:&lt;/p>
+&lt;p>&lt;img src="dot-example.svg" alt="Dot output example">&lt;/p>
+&lt;p>When run on my laptop, with a simple all-in-one configuration and five
+instances across two networks, the result of running &lt;code>mk-network-dot&lt;/code>
+looks like this:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="network.svg" />
+&lt;/figure>
+&lt;p>There are a few caveats with this tool:&lt;/p>
+&lt;ul>
+&lt;li>As of this writing, it doesn&amp;rsquo;t know about either bond interfaces or
+VLAN interfaces.&lt;/li>
+&lt;li>It&amp;rsquo;s had only limited testing.&lt;/li>
+&lt;/ul>
+&lt;p>If you try this out and something doesn&amp;rsquo;t work as you expect, please
+open a new issues on the &lt;a href="https://github.com/larsks/neutron-diag/issues">GitHub issues page&lt;/a>.&lt;/p></content></item><item><title>An introduction to OpenStack Heat</title><link>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</link><pubDate>Fri, 06 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</guid><description>Heat is a template-based orchestration mechanism for use with OpenStack. With Heat, you can deploy collections of resources &amp;ndash; networks, servers, storage, and more &amp;ndash; all from a single, parameterized template.
+In this article I will introduce Heat templates and the heat command line client.
+Writing templates Because Heat began life as an analog of AWS CloudFormation, it supports the template formats used by the CloudFormation (CFN) tools. It also supports its own native template format, called HOT (&amp;ldquo;Heat Orchestration Templates&amp;rdquo;).</description><content>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
+OpenStack. With Heat, you can deploy collections of resources &amp;ndash;
+networks, servers, storage, and more &amp;ndash; all from a single,
+parameterized template.&lt;/p>
+&lt;p>In this article I will introduce Heat templates and the &lt;code>heat&lt;/code> command
+line client.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="writing-templates">Writing templates&lt;/h2>
+&lt;p>Because Heat began life as an analog of AWS &lt;a href="http://aws.amazon.com/cloudformation/">CloudFormation&lt;/a>, it
+supports the template formats used by the CloudFormation (CFN) tools.
+It also supports its own native template format, called HOT (&amp;ldquo;Heat
+Orchestration Templates&amp;rdquo;). In this article I will be using the HOT
+template syntax, which is fully specified on &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html">the OpenStack
+website&lt;/a>.&lt;/p>
+&lt;blockquote>
+&lt;p>NB: Heat is under active development, and there are a variety of
+discussions going on right now regarding the HOT specification. I
+will try to keep this post up-to-date as the spec evolves.&lt;/p>
+&lt;/blockquote>
+&lt;p>A HOT template is written using &lt;a href="http://en.wikipedia.org/wiki/YAML">YAML&lt;/a> syntax and has three major
+sections:&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>parameters&lt;/em> &amp;ndash; these are input parameters that you provide when you
+deploy from the template.&lt;/li>
+&lt;li>&lt;em>resources&lt;/em> &amp;ndash; these are things created by the template.&lt;/li>
+&lt;li>&lt;em>outputs&lt;/em> &amp;ndash; these are output parameters generated by Heat and
+available to you via the API.&lt;/li>
+&lt;/ul>
+&lt;h3 id="parameters">Parameters&lt;/h3>
+&lt;p>The &lt;code>parameters&lt;/code> section defines the list of available parameters.
+For each parameter, you define a data type, an optional default value
+(that will be used if you do not otherwise specify a value for the
+parameter), an optional description, constraints to validate the data,
+and so forth. The definition from &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html">the spec&lt;/a> looks like this:&lt;/p>
+&lt;pre>&lt;code>parameters:
+&amp;lt;param name&amp;gt;:
+type: &amp;lt;string | number | json | comma_delimited_list&amp;gt;
+description: &amp;lt;description of the parameter&amp;gt;
+default: &amp;lt;default value for parameter&amp;gt;
+hidden: &amp;lt;true | false&amp;gt;
+constraints:
+&amp;lt;parameter constraints&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>A simple example might look like this:&lt;/p>
+&lt;pre>&lt;code>parameters:
+flavor:
+type: string
+default: m1.small
+constraints:
+- allowed_values: [m1.nano, m1.tiny, m1.small, m1.large]
+description: Value must be one of 'm1.tiny', 'm1.small' or 'm1.large'
+&lt;/code>&lt;/pre>
+&lt;p>This defines one parameter named &lt;code>flavor&lt;/code> with a default value of
+&lt;code>m1.small&lt;/code>. Any value passed in when you deploy from this template
+must match of one the values in the &lt;code>allowed_values&lt;/code> constraint.&lt;/p>
+&lt;h3 id="resources">Resources&lt;/h3>
+&lt;p>The &lt;code>resources&lt;/code> section of your template defines the items that will
+be created by Heat when you deploy from your template. This may
+include storage, networks, ports, routers, security groups, firewall
+rules, or any other of the &lt;a href="http://docs.openstack.org/developer/heat/template_guide/openstack.html">many available resources&lt;/a>.&lt;/p>
+&lt;p>The definition of this section from &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html">the spec&lt;/a> looks like
+this:&lt;/p>
+&lt;pre>&lt;code>resources:
+&amp;lt;resource ID&amp;gt;:
+type: &amp;lt;resource type&amp;gt;
+properties:
+&amp;lt;property name&amp;gt;: &amp;lt;property value&amp;gt;
+# more resource specific metadata
+&lt;/code>&lt;/pre>
+&lt;p>Here&amp;rsquo;s a simple example that would create a single server:&lt;/p>
+&lt;pre>&lt;code>resources:
+instance0:
+type: OS::Nova::Server
+properties:
+name: instance0
+image: cirros
+flavor: m1.tiny
+key_name: mykey
+&lt;/code>&lt;/pre>
+&lt;p>The complete list of resources and their available properties can be
+found &lt;a href="http://docs.openstack.org/developer/heat/template_guide/openstack.html">in the documentation&lt;/a>.&lt;/p>
+&lt;p>You&amp;rsquo;ll notice that the above example is static: it will always result
+in an instance using the &lt;code>cirros&lt;/code> image and the &lt;code>m1.tiny&lt;/code> flavor.
+This isn&amp;rsquo;t terribly useful, so let&amp;rsquo;s redefine this example assuming
+that we have available the &lt;code>parameter&lt;/code> section from the previous
+example:&lt;/p>
+&lt;pre>&lt;code>resources:
+instance0:
+type: OS::Nova::Server
+properties:
+name: instance0
+image: cirros
+flavor: {get_param: flavor}
+key_name: mykey
+&lt;/code>&lt;/pre>
+&lt;p>Here we are using the &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#get-param">get_param&lt;/a> &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#intrinsic-functions">intrinsic function&lt;/a> to
+retrieve an insert the value of the &lt;code>flavor&lt;/code> parameter.&lt;/p>
+&lt;h3 id="outputs">Outputs&lt;/h3>
+&lt;p>The &lt;code>outputs&lt;/code> section of your template defines parameters that will be
+available to you (via the API or command line client) after your stack
+has been deployed. This may include things like this ip addresses
+assigned to your instances. The &lt;code>outputs&lt;/code> section definition is:&lt;/p>
+&lt;pre>&lt;code>outputs:
+&amp;lt;parameter name&amp;gt;:
+description: &amp;lt;description&amp;gt;
+value: &amp;lt;parameter value&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>In order to make the &lt;code>outputs&lt;/code> section useful, we&amp;rsquo;ll need another
+template function, &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#get-attr">get_attr&lt;/a>. Where &lt;code>get_param&lt;/code> accesses values from
+your &lt;code>parameters&lt;/code> section, &lt;code>get_attr&lt;/code> accesses attributes of your
+resources. For example:&lt;/p>
+&lt;pre>&lt;code>outputs:
+instance_ip:
+value: {get_attr: [instance0, first_address]}
+&lt;/code>&lt;/pre>
+&lt;p>You will again want to refer to the &lt;a href="http://docs.openstack.org/developer/heat/template_guide/openstack.html">list of resource types&lt;/a>
+for a list of available attributes.&lt;/p>
+&lt;h3 id="putting-it-all-together">Putting it all together&lt;/h3>
+&lt;p>Using the above information, let&amp;rsquo;s put together a slightly more
+complete template. This example will:&lt;/p>
+&lt;ul>
+&lt;li>Deploy a single instance&lt;/li>
+&lt;li>Assign it a floating ip address&lt;/li>
+&lt;li>Ensure ssh access via an ssh key published to Nova&lt;/li>
+&lt;/ul>
+&lt;p>We&amp;rsquo;ll get the flavor name, image name, key name, and network
+information from user-provided parameters.&lt;/p>
+&lt;p>Since this is a complete example, we need to add the
+&lt;code>heat_template_version&lt;/code> key to our template:&lt;/p>
+&lt;pre>&lt;code>heat_template_version: 2013-05-23
+&lt;/code>&lt;/pre>
+&lt;p>And a description provides useful documentation:&lt;/p>
+&lt;pre>&lt;code>description: &amp;gt;
+A simple HOT template for demonstrating Heat.
+&lt;/code>&lt;/pre>
+&lt;p>We define parameters for the key name, flavor, and image, as well as
+network ids for address provisioning:&lt;/p>
+&lt;pre>&lt;code>parameters:
+key_name:
+type: string
+default: lars
+description: Name of an existing key pair to use for the instance
+flavor:
+type: string
+description: Instance type for the instance to be created
+default: m1.small
+constraints:
+- allowed_values: [m1.nano, m1.tiny, m1.small, m1.large]
+description: Value must be one of 'm1.tiny', 'm1.small' or 'm1.large'
+image:
+type: string
+default: cirros
+description: ID or name of the image to use for the instance
+private_net_id:
+type: string
+description: Private network id
+private_subnet_id:
+type: string
+description: Private subnet id
+public_net_id:
+type: string
+description: Public network id
+&lt;/code>&lt;/pre>
+&lt;p>In the &lt;code>resources&lt;/code> section, we define a single instance of
+&lt;code>OS::Nova::Server&lt;/code>, attach to it an instance of &lt;code>OS::Neutron::Port&lt;/code>,
+and attach to that port an instance of &lt;code>OS::Neutron::FloatingIP&lt;/code>.
+Note that use of the &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#get-resource">get_resource&lt;/a> function here to refer to a
+resource defined elsewhere in the template:&lt;/p>
+&lt;pre>&lt;code>resources:
+instance0:
+type: OS::Nova::Server
+properties:
+name: instance0
+image: { get_param: image }
+flavor: { get_param: flavor }
+key_name: { get_param: key_name }
+networks:
+- port: { get_resource: instance0_port0 }
+instance0_port0:
+type: OS::Neutron::Port
+properties:
+network_id: { get_param: private_net_id }
+security_groups:
+- default
+fixed_ips:
+- subnet_id: { get_param: private_subnet_id }
+instance0_public:
+type: OS::Neutron::FloatingIP
+properties:
+floating_network_id: { get_param: public_net_id }
+port_id: { get_resource: instance0_port0 }
+&lt;/code>&lt;/pre>
+&lt;p>As outputs we provide the fixed and floating ip addresses assigned to
+our instance:&lt;/p>
+&lt;pre>&lt;code>outputs:
+instance0_private_ip:
+description: IP address of instance0 in private network
+value: { get_attr: [ instance0, first_address ] }
+instance0_public_ip:
+description: Floating IP address of instance0 in public network
+value: { get_attr: [ instance0_public, floating_ip_address ] }
+&lt;/code>&lt;/pre>
+&lt;h2 id="filling-in-the-blanks">Filling in the blanks&lt;/h2>
+&lt;p>Now that we have a complete template, what do we do with it?&lt;/p>
+&lt;p>When you deploy from a template, you need to provide values for any
+parameters required by the template (and you may also want to override
+default values). You can do this using the &lt;code>-P&lt;/code> (aka &lt;code>--parameter&lt;/code>)
+command line option, which takes a semicolon-delimited list of
+&lt;code>name=value&lt;/code> pairs:&lt;/p>
+&lt;pre>&lt;code>heat stack-create -P 'param1=value1;param2=value2' ...
+&lt;/code>&lt;/pre>
+&lt;p>While this works, it&amp;rsquo;s not terribly useful, especially as the
+parameter list grows long. You can also provide parameters via an
+&lt;a href="https://wiki.openstack.org/wiki/Heat/Environments">environment file&lt;/a>, which a YAML configuration file containing a
+&lt;code>parameters&lt;/code> key (you can use environment files for other things, too,
+but here we&amp;rsquo;re going to focus on their use for template parameters).
+A sample file, equivalent to arguments to &lt;code>-P&lt;/code> in the above command
+line, might look like:&lt;/p>
+&lt;pre>&lt;code>parameters:
+param1: value1
+param2: value2
+&lt;/code>&lt;/pre>
+&lt;p>An environment file appropriate to our example template from the
+previous section might look like this:&lt;/p>
+&lt;pre>&lt;code>parameters:
+image: fedora-19-x86_64
+flavor: m1.small
+private_net_id: 99ab8ebf-ad2f-4a4b-9890-fee37cea4254
+private_subnet_id: ed8ad5f5-4c47-4204-9ca3-1b3bc4de286d
+public_net_id: 7e687cc3-8155-4ec2-bd11-ba741ecbf4f0
+&lt;/code>&lt;/pre>
+&lt;p>You would, of course, need to replace the network ids with ones
+appropriate to your environment.&lt;/p>
+&lt;h2 id="command-line-client">Command line client&lt;/h2>
+&lt;p>With the template in a file called &lt;code>template.yml&lt;/code> and the parameters
+in a file called &lt;code>environment.yml&lt;/code>, we could deploy an instance like
+this:&lt;/p>
+&lt;pre>&lt;code>heat stack-create -f template.yml \
+-e environment.yml mystack
+&lt;/code>&lt;/pre>
+&lt;p>This would, assuming no errors, create a stack called &lt;code>mystack&lt;/code>. You
+can view the status of your stacks with the &lt;code>stack-list&lt;/code> subcommand:&lt;/p>
+&lt;pre>&lt;code>$ heat stack-list
++-------+------------+-----------------+----------------------+
+| id | stack_name | stack_status | creation_time |
++-------+------------+-----------------+----------------------+
+| 0...6 | mystack | CREATE_COMPLETE | 2013-12-06T21:37:32Z |
++-------+------------+-----------------+----------------------+
+&lt;/code>&lt;/pre>
+&lt;p>You can view detailed information about your stack &amp;ndash; including the
+values of your outputs &amp;ndash; using the &lt;code>stack-show&lt;/code> subcommand:&lt;/p>
+&lt;pre>&lt;code>$ heat stack-show mystack
+&lt;/code>&lt;/pre>
+&lt;p>(The output is a little too verbose to include here.)&lt;/p>
+&lt;p>If you want more convenient access to the values of your outputs,
+you&amp;rsquo;re going to have to either make direct use of the Heat &lt;a href="http://api.openstack.org/api-ref-orchestration.html">REST
+API&lt;/a>, or wait for my &lt;a href="https://review.openstack.org/#/c/60591/">proposed change&lt;/a> to the
+&lt;a href="https://launchpad.net/python-heatclient">python-heatclient&lt;/a> package, which will add the &lt;code>output-list&lt;/code> and
+&lt;code>output-get&lt;/code> subcommands:&lt;/p>
+&lt;pre>&lt;code>$ heat output-list mystack
+instance0_private_ip
+instance0_public_ip
+$ heat output-get mystack instance0_public_ip
+192.168.122.203
+&lt;/code>&lt;/pre>
+&lt;h2 id="working-with-neutron">Working with Neutron&lt;/h2>
+&lt;p>If you are using Heat in an environment that uses &lt;a href="https://wiki.openstack.org/wiki/Neutron">Neutron&lt;/a> for
+networking you may need to take a few additional steps. By default,
+your virtual instances will not be associated with &lt;em>any&lt;/em> security
+groups, which means that they will have neither outbound or inbound
+network connectivity. This is in contrast to instances started using
+the &lt;code>nova boot&lt;/code> command, which will automatically be members of the
+&lt;code>default&lt;/code> security group.&lt;/p>
+&lt;p>In order to provide your instances with appropriate network
+connectivity, you will need to associate each &lt;code>OS::Neutron::Port&lt;/code>
+resource in your template with one or more security groups. For
+example, the following configuration snippet would create a port
+&lt;code>instance0_port0&lt;/code> and assign it to the &lt;code>default&lt;/code> and &lt;code>webserver&lt;/code>
+security groups:&lt;/p>
+&lt;pre>&lt;code>instance0_port0:
+type: OS::Neutron::Port
+properties:
+network_id: { get_param: private_net_id }
+security_groups:
+- default
+- webserver
+fixed_ips:
+- subnet_id: { get_param: private_subnet_id }
+&lt;/code>&lt;/pre>
+&lt;p>For this to work, you will need to be running a (very) recent version
+of Heat. Until commit &lt;a href="https://github.com/openstack/heat/commit/902154c">902154c&lt;/a>, Heat was unable to look up Neutron security
+groups by name. It worked fine if you specified security groups by
+UUID:&lt;/p>
+&lt;pre>&lt;code>security_groups:
+- 4296f3ff-9dc0-4b0b-a633-c30eacc8493d
+- 8c49cd42-7c42-4a1f-af1d-492a0687fc12
+&lt;/code>&lt;/pre>
+&lt;h2 id="see-also">See also&lt;/h2>
+&lt;ul>
+&lt;li>The Heat project maintains a &lt;a href="https://github.com/openstack/heat-templates">repository of example
+templates&lt;/a>.&lt;/li>
+&lt;/ul></content></item><item><title>Why does the Neutron documentation recommend three interfaces?</title><link>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</link><pubDate>Mon, 28 Oct 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</guid><description>The documentation for configuring Neutron recommends that a network controller has three physical interfaces:
+Before you start, set up a machine to be a dedicated network node. Dedicated network nodes should have the following NICs: the management NIC (called MGMT_INTERFACE), the data NIC (called DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).
+People occasionally ask, &amp;ldquo;why three interfaces? What if I only have two?&amp;rdquo;, so I wanted to provide an extended answer that might help people understand what the interfaces are for and what trade-offs are involved in using fewer interfaces.</description><content>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
+that a network controller has three physical interfaces:&lt;/p>
+&lt;blockquote>
+&lt;p>Before you start, set up a machine to be a dedicated network node.
+Dedicated network nodes should have the following NICs: the
+management NIC (called MGMT_INTERFACE), the data NIC (called
+DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p>
+&lt;/blockquote>
+&lt;p>People occasionally ask, &amp;ldquo;why three interfaces? What if I only have
+two?&amp;rdquo;, so I wanted to provide an extended answer that might help
+people understand what the interfaces are for and what trade-offs are
+involved in using fewer interfaces.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>The &lt;code>MGMT_INTERFACE&lt;/code> is used for communication between nodes. This
+can include traffic from services to the messaging server (&lt;code>qpid&lt;/code>,
+&lt;code>rabbitmq&lt;/code>, etc), traffic between nova and neutron, connections to the
+database, and other traffic used to manage your OpenStack environment.&lt;/p>
+&lt;p>The &lt;code>DATA_INTERFACE&lt;/code> is used for instance traffic&amp;hellip;that is, traffic
+generated by or inbound to instances running in your OpenStack
+environment. If you are using GRE or VXLAN tunnels your tunnel
+endpoints will be associated with this interface.&lt;/p>
+&lt;p>The &lt;code>EXTERNAL_INTERFACE&lt;/code> is used to provide public access to your
+instances. The network attached to this interface is generally open
+to external traffic, and ip addresses are managed by the floating-ip
+functionality in Neutron or Nova.&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>You want your &lt;code>MGMT_INTERFACE&lt;/code> seperate from your &lt;code>DATA_INTERFACE&lt;/code>
+in order to avoid accidentally granting management access to your
+OpenStack hosts to your tenants. A typical OpenStack environment
+may not use authentication in all cases, and a tenant host with
+access to the management network could intentionally or accidentally
+cause problems.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You want your &lt;code>EXTERNAL_INTERFACE&lt;/code> separate from your
+&lt;code>DATA_INTERFACE&lt;/code> because your network controller &lt;em>must&lt;/em> be acting as
+a router between these two interfaces in order for the netfilter
+&lt;code>PREROUTING&lt;/code> and &lt;code>POSTROUTING&lt;/code> rules to activate. These rules are
+used to map floating ip addresses to internal addresses via &lt;code>SNAT&lt;/code>
+and &lt;code>DNAT&lt;/code> rules, which only work packets traverse the &lt;code>FORWARD&lt;/code>
+chain.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You want your &lt;code>MGMT_INTERFACE&lt;/code> separate from your
+&lt;code>EXTERNAL_INTERFACE&lt;/code> because they have dramatically different access
+requirements. Your &lt;code>MGMT_INTERFACE&lt;/code> should typically only be
+available to other hosts in your OpenStack deployment, while your
+&lt;code>EXTERNAL_INTERFACE&lt;/code> will generally require much broader access.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>If you are deploying a proof-of-concept (POC) deployment to which you
+are not actually providing public access, you can elect to not have an
+&lt;code>EXTERNAL_INTERFACE&lt;/code>. Rather than adding this device to &lt;code>br-ex&lt;/code>, you
+will set up outbound NAT rules so that &amp;ldquo;external&amp;rdquo; traffic from your
+instances will masquerade using the primary ip address of your network
+controller.&lt;/p></content></item></channel></rss>

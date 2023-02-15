@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>bash on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/bash/</link><description>Recent content in bash on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 08 Mar 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/bash/rss.xml" rel="self" type="application/rss+xml"/><item><title>Converting hexadecimal ip addresses to dotted quads with Bash</title><link>https://blog.oddbit.com/post/2015-03-08-converting-hexadecimal-ip-addr/</link><pubDate>Sun, 08 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-08-converting-hexadecimal-ip-addr/</guid><description>This is another post that is primarily for my own benefit for the next time I forget how to do this.
+I wanted to read routing information directly from /proc/net/route using bash, because you never know what may or may not be available in the minimal environment of a Docker container (for example, the iproute package is not installed by default in the Fedora Docker images). The contents of /proc/net/route looks something like:</description><content>&lt;p>This is another post that is primarily for my own benefit for the next
+time I forget how to do this.&lt;/p>
+&lt;p>I wanted to read routing information directly from &lt;code>/proc/net/route&lt;/code>
+using &lt;code>bash&lt;/code>, because you never know what may or may not be available
+in the minimal environment of a Docker container (for example, the
+&lt;code>iproute&lt;/code> package is not installed by default in the Fedora Docker
+images). The contents of &lt;code>/proc/net/route&lt;/code> looks something like:&lt;/p>
+&lt;pre>&lt;code>Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT
+eth0 00000000 0101A8C0 0003 0 0 1024 00000000 0 0 0
+eth0 37E9BB42 0101A8C0 0007 0 0 20 FFFFFFFF 0 0 0
+&lt;/code>&lt;/pre>
+&lt;p>If I want the address of the default gateway, I can trivially get the
+hexadecimal form like this:&lt;/p>
+&lt;pre>&lt;code>awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route
+&lt;/code>&lt;/pre>
+&lt;p>Which gives me:&lt;/p>
+&lt;pre>&lt;code>0101A8C0
+&lt;/code>&lt;/pre>
+&lt;p>This is in little-endian order; that is, the above bytes represent &lt;code>1 1 168 192&lt;/code>, which you may recognize better as &lt;code>192.168.1.1&lt;/code>. So, we
+need to convert this into a sequence of individual octets, reverse the
+order, and produce the decimal equivalent of each octet.&lt;/p>
+&lt;p>The following gives us the octets in the correct order, prefixed by
+&lt;code>0x&lt;/code> (which we&amp;rsquo;re going to want in the next step):&lt;/p>
+&lt;pre>&lt;code>awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route |
+sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
+&lt;/code>&lt;/pre>
+&lt;p>We can put this into a bash array like this:&lt;/p>
+&lt;pre>&lt;code>octets=($(
+awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route |
+sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
+))
+&lt;/code>&lt;/pre>
+&lt;p>And we convert those hexadecimal octets into decimal like this:&lt;/p>
+&lt;pre>&lt;code>printf &amp;quot;%d.&amp;quot; ${octets[@]} | sed 's/\.$/\n/'
+&lt;/code>&lt;/pre>
+&lt;p>An interesting feature of the Bash &lt;code>printf&lt;/code> command &amp;ndash; and one that
+may be surprising to people who are coming from a C background &amp;ndash; is
+that:&lt;/p>
+&lt;blockquote>
+&lt;p>The format is re-used as necessary to consume all of the arguments.&lt;/p>
+&lt;/blockquote>
+&lt;p>That means, that a command like this:&lt;/p>
+&lt;pre>&lt;code>printf &amp;quot;%d.&amp;quot; 1 2 3 4
+&lt;/code>&lt;/pre>
+&lt;p>Will yield:&lt;/p>
+&lt;pre>&lt;code>1.2.3.4.
+&lt;/code>&lt;/pre>
+&lt;p>If we put this all together, we might end up with something like:&lt;/p>
+&lt;pre>&lt;code>hexaddr=$(awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route)
+ipaddr=$(printf &amp;quot;%d.&amp;quot; $(
+echo $hexaddr | sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
+) | sed 's/\.$/\n/')&lt;/code>&lt;/pre></content></item></channel></rss>

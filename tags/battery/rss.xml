@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>battery on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/battery/</link><description>Recent content in battery on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 14 May 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/battery/rss.xml" rel="self" type="application/rss+xml"/><item><title>A DIY CPAP Battery Box</title><link>https://blog.oddbit.com/post/2019-05-14-a-diy-cpap-battery-box/</link><pubDate>Tue, 14 May 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-14-a-diy-cpap-battery-box/</guid><description>A year or so ago I was diagnosed with sleep apnea, and since them I&amp;rsquo;ve been sleeping with a CPAP. This past weekend, I joined my daughter on a scout camping trip to a campground without readily accessible electricity. This would be the first time I found myself in this situation, and as the date approached, I realized I was going to have to build or buy some sort of battery solution for my CPAP.</description><content>&lt;p>A year or so ago I was diagnosed with &lt;a href="https://en.wikipedia.org/wiki/Sleep_apnea">sleep apnea&lt;/a>, and since them I&amp;rsquo;ve been sleeping with a &lt;a href="https://en.wikipedia.org/wiki/Continuous_positive_airway_pressure">CPAP&lt;/a>. This past weekend, I joined my daughter on a &lt;a href="https://www.scouting.org/scoutsbsa/">scout&lt;/a> camping trip to a &lt;a href="https://www.mass.gov/locations/harold-parker-state-forest">campground&lt;/a> without readily accessible electricity. This would be the first time I found myself in this situation, and as the date approached, I realized I was going to have to build or buy some sort of battery solution for my CPAP. I opted for the &amp;ldquo;build&amp;rdquo; option because it seemed like a fun project.&lt;/p>
+&lt;p>This is what I ended up with:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="batterybox-003.jpg" />
+&lt;/figure>
+&lt;figure class="left" >
+&lt;img src="batterybox-005.jpg" />
+&lt;/figure>
+&lt;figure class="left" >
+&lt;img src="batterybox-001.jpg" />
+&lt;/figure>
+&lt;p>It has a pair of 10Ah SLA batteries, two 12V ports, two USB charging ports, and an integrated 4A charger (just plug in an extension cord and it&amp;rsquo;s all set). There are fuses on all of the output ports.&lt;/p>
+&lt;h2 id="batteries">Batteries&lt;/h2>
+&lt;figure class="left" >
+&lt;img src="12v-10ah-batteries.jpg" />
+&lt;/figure>
+&lt;p>I spent some time looking at battery options. I wanted something that would easily last a couple of nights. According to the &lt;a href="https://www.resmed.com/us/dam/documents/articles/198103_battery-guide_glo_eng.pdf">documentation from ResMed&lt;/a>, my AirSense CPAP draws around 1A when the heat and humidity are disabled. That means for two nights, with the heat and humidity off, I&amp;rsquo;ll need at least 16Ah.&lt;/p>
+&lt;p>I looked at some &lt;a href="https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery">LiFePO4&lt;/a> batteries, but they were typically two- to three- times the cost of an equivalent &lt;a href="https://en.wikipedia.org/wiki/Sealed_lead-acid_battery">SLA&lt;/a> battery. I ended up purchasing a pair of 10Ah SLA batteries. Testing confirms that it does last for two nights. With the integrated 4A charger, they charge up relatively quickly as well (for a single night of use, it took around an hour for a full charge).&lt;/p>
+&lt;p>The batteries are held in place by a roughly U-shaped piece of wood on the bottom of the case. The charger and the foam bad hold the batteries in when the top is closed.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="resmed-battery-excerpt.png" />
+&lt;figcaption class="center" >ResMed battery data&lt;/figcaption>
+&lt;/figure>
+&lt;h2 id="parts-list">Parts list&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://www.amazon.com/gp/product/B00009XVKW">Pelican 1300 case&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.amazon.com/dp/B01FG7NW60">Motopower MP00207 4A Charger&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.amazon.com/gp/product/B009ANV81S">NOCO 13A 125V port plug with extension cord&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.amazon.com/gp/product/B07KSGMC39">YonHan 4.8A Dual USB charger&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.amazon.com/gp/product/B012IE1EKA">AutoEC 30A 12V switches&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.amazon.com/gp/product/B07QN2ML4X">12V Sockets&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2 id="panel-design">Panel design&lt;/h2>
+&lt;p>I used &lt;a href="https://www.qcad.org/">qcad&lt;/a> to design the panel layout. The cross-hairs are for identifying the center point:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="panel-layout.png" />
+&lt;/figure>
+&lt;p>I used a 1 1/8&amp;quot; hole saw to make the holes for the 12V and USB ports and a 2&amp;quot; hole saw for the through-plug on the back. I used a &lt;a href="https://www.amazon.com/gp/product/B001OEPYWK">step bit&lt;/a> to drill the smaller holes for the switches.&lt;/p>
+&lt;h2 id="a-few-extra-pictures">A few extra pictures&lt;/h2>
+&lt;figure class="left" >
+&lt;img src="batterybox-002.jpg" />
+&lt;/figure>
+&lt;figure class="left" >
+&lt;img src="batterybox-004.jpg" />
+&lt;/figure></content></item></channel></rss>

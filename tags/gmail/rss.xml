@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>gmail on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gmail/</link><description>Recent content in gmail on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 07 Jul 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gmail/rss.xml" rel="self" type="application/rss+xml"/><item><title>Better bulk filtering for Gmail</title><link>https://blog.oddbit.com/post/2017-07-07-better-bulk-filtering-for-gmai/</link><pubDate>Fri, 07 Jul 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-07-07-better-bulk-filtering-for-gmai/</guid><description>I use Gmail extensively for my personal email, and recently my workplace has been migrated over to Gmail as well. I find that for my work email I rely much more extensively on filters and labels to organize things (like zillions of internal and upstream mailing lists), and that has posed some challenges. While Gmail is in general fairly snappy, attempting to apply an action to thousands of messages (for example, trying to mark 16000 messages as &amp;ldquo;read&amp;rdquo;, or applying a new filter to all your existing messages) results in a very poor experience: it is not possible to interact with Gmail (in the same tab) while the action is running, and frequently actions will timeout.</description><content>&lt;p>I use Gmail extensively for my personal email, and recently my
+workplace has been migrated over to Gmail as well. I find that for my
+work email I rely much more extensively on filters and labels to
+organize things (like zillions of internal and upstream mailing
+lists), and that has posed some challenges. While Gmail is in general
+fairly snappy, attempting to apply an action to thousands of messages
+(for example, trying to mark 16000 messages as &amp;ldquo;read&amp;rdquo;, or applying a
+new filter to all your existing messages) results in a very poor
+experience: it is not possible to interact with Gmail (in the same
+tab) while the action is running, and frequently actions will timeout.&lt;/p>
+&lt;p>Fortunately, we can take advantage of Gmail&amp;rsquo;s IMAP interface to
+overcome most of these obstacles. The naive approach won&amp;rsquo;t work: If
+you attempt to perform an IMAP action against thousands of messages
+you will encounter the same timeouts you see with the browser. The
+big advantage to IMAP is that it makes it easy, with a little bit of
+code, to split a large operation up into smaller chunks. Gmail
+provides a few [IMAP extensions][] that provide us with a mechanism
+for accessing Gmail-specific features, such as the rich search syntax
+and support for arbitrary labels.&lt;/p>
+&lt;p>I&amp;rsquo;ve written a small tool to take care of this; you can find it in my
+&lt;a href="https://github.com/larsks/gmailfilters">gmailfilters&lt;/a> repository on GitHub. The project provides two
+commands, the &lt;code>gmf bulk-filter&lt;/code> command, which I will discuss here,
+and the &lt;code>gmf manage-filters&lt;/code> command, which can translate between a
+simpler YAML syntax and the XML syntax used by Gmail&amp;rsquo;s filter
+import/export. I may write about that in a future post.&lt;/p>
+&lt;h2 id="installing-gmf">Installing gmf&lt;/h2>
+&lt;p>The &lt;code>gmailfilters&lt;/code> project is a standard Python package. You can
+install it directly from GitHub like this:&lt;/p>
+&lt;pre>&lt;code>pip install git+https://github.com/larsks/gmailfilters
+&lt;/code>&lt;/pre>
+&lt;p>This will install the &lt;code>gmf&lt;/code> command, which provides the following
+subcommands:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>bulk-filter&lt;/code> &amp;ndash; a command line tool for applying bulk actions to
+Gmail messages.&lt;/li>
+&lt;li>&lt;code>manage-filters&lt;/code> &amp;ndash; translate between a YAML filter syntax and the
+XML syntax used by Gmail for filter import/export.&lt;/li>
+&lt;li>&lt;code>apply-filters&lt;/code> &amp;ndash; read the YAML filters file and apply (a supported
+subset of) the actions to your mail.&lt;/li>
+&lt;/ul>
+&lt;p>This article is going to focus on the &lt;code>gmf bulk-filter&lt;/code> command.&lt;/p>
+&lt;h2 id="configuring-gmf">Configuring gmf&lt;/h2>
+&lt;p>Once installed, you will need to create a configuration file. By
+default, &lt;code>gmf&lt;/code> will look for a file named &lt;code>gmailfilters.yml&lt;/code> located
+in your current directory or in your &lt;code>$XDG_CONFIG_HOME&lt;/code> directory,
+typically &lt;code>$HOME/.config&lt;/code>. The configuration file looks something
+like this:&lt;/p>
+&lt;pre>&lt;code>accounts:
+default:
+host: imap.gmail.com
+ssl: true
+username: username@example.com
+password: secret-password
+&lt;/code>&lt;/pre>
+&lt;p>You can have multiple accounts in the file; &lt;code>gmf&lt;/code> will use the one
+named &lt;code>default&lt;/code> by default.&lt;/p>
+&lt;h2 id="using-the-bulk-filter-command">Using the bulk-filter command&lt;/h2>
+&lt;p>I have a Gmail filter that applies the label &lt;code>topic/containers&lt;/code> to any
+mail matching the search &lt;code>{docker container kubernetes lxc runc}&lt;/code>. I
+want to apply this filter to all my existing messages, and I want to
+mark all matching messages as read so that I can identity new matches.
+I can use the &lt;code>bulk-filter&lt;/code> tool to accomplish this task using the
+&lt;code>--label&lt;/code> and &lt;code>--flag&lt;/code> options:&lt;/p>
+&lt;pre>&lt;code>gmf bulk-filter --query '{docker container kubernetes lxc runc}' \
+--label topic/containers --flag seen
+&lt;/code>&lt;/pre>
+&lt;p>It turns out I had close to 15000 freecycle messages gathering dust in
+my account. The messages were already labeled with the &lt;code>freecycle&lt;/code>
+label. We can weed those out like this:&lt;/p>
+&lt;p>gmf bulk-filter &amp;ndash;query &amp;rsquo;label:freecycle&amp;rsquo; &amp;ndash;trash&lt;/p>
+&lt;p>The &lt;code>--trash&lt;/code> option acts like Gmail&amp;rsquo;s &amp;ldquo;move to trash&amp;rdquo; option. You
+can also use &lt;code>--delete&lt;/code>, which will use an IMAP delete operation, but
+the behavior of an IMAP delete is controlled by your Gmail
+configuration (it may simply archive a message, or it may delete it
+completely).&lt;/p>
+&lt;p>The &lt;code>bulk-filter&lt;/code> tool can also be used to remove labels by preceding
+them with a &lt;code>-&lt;/code>. For example, if I want to find all messages labeled
+&lt;code>fedora-devel-list&lt;/code> and modify them so that they are labeled &lt;code>list&lt;/code>,
+&lt;code>list/fedora&lt;/code>, and &lt;code>list/fedora/devel&lt;/code> I can run:&lt;/p>
+&lt;pre>&lt;code>gmf bulk-filter --query 'label:fedora-devel-list' \
+--label list --label list/fedora --label list/fedora-devel
+--label='-fedora-devel-list'
+&lt;/code>&lt;/pre>
+&lt;p>This exposes a quirk of Python&amp;rsquo;s &lt;code>argparse&lt;/code> argument parser: if the
+argument to an option starts with &lt;code>-&lt;/code>, argparse assumes that you&amp;rsquo;ve
+made a mistake unless you explicitly attach it to the option with &lt;code>=&lt;/code>.&lt;/p>
+&lt;p>By default, the &lt;code>bulk-filter&lt;/code> tool operates on the &lt;code>[Gmail]/All mail&lt;/code>
+folder, which contains all of your messages. You can limit it to
+specific folders instead by providing an optional list of folders
+(that may contain wildcards). For example, if I want to perform the
+above labelling operation only on internal company mailing lists, I
+could limit it like this:&lt;/p>
+&lt;pre>&lt;code>gmf bulk-filter --query '{docker container kubernetes lxc runc}' \
+--label topic/containers list/internal/*
+&lt;/code>&lt;/pre>
+&lt;p>This assumes, of course, that you have filters in place that apply
+labels nested under &lt;code>list/internal&lt;/code> to internal company mailing lists.&lt;/p>
+&lt;p>The default behavior of &lt;code>bulk-filter&lt;/code> is to operate on 200 messages at
+a time. You can change this using the &lt;code>--size&lt;/code> parameter, for
+example:&lt;/p>
+&lt;pre>&lt;code>gmf bulk-filter --size 50 ...&lt;/code>&lt;/pre></content></item></channel></rss>

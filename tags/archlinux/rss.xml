@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>archlinux on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/archlinux/</link><description>Recent content in archlinux on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Apr 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/archlinux/rss.xml" rel="self" type="application/rss+xml"/><item><title>Did Arch Linux eat your KVM?</title><link>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</link><pubDate>Mon, 08 Apr 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</guid><description>A recent update to Arch Linux replaced the qemu-kvm package with an updated version of qemu. A side effect of this change is that the qemu-kvm binary is no longer available, and any libvirt guests on your system utilizing that binary will no longer operate. As is typical with Arch, there is no announcement about this incompatible change, and queries to #archlinux will be met with the knowledge, grace and decorum you would expect of that channel:</description><content>&lt;p>A recent update to &lt;a href="https://www.archlinux.org/">Arch Linux&lt;/a> replaced the &lt;code>qemu-kvm&lt;/code> package with
+an updated version of &lt;code>qemu&lt;/code>. A side effect of this change is that
+the &lt;code>qemu-kvm&lt;/code> binary is no longer available, and any &lt;code>libvirt&lt;/code> guests
+on your system utilizing that binary will no longer operate. As is
+typical with Arch, there is no announcement about this incompatible
+change, and queries to &lt;code>#archlinux&lt;/code> will be met with the knowledge,
+grace and decorum you would expect of that channel:&lt;/p>
+&lt;pre>&lt;code>2013-04-08T18:00 &amp;lt; gtmanfred&amp;gt; USE --enable-kvm for fucks sake
+2013-04-08T18:00 &amp;lt; gtmanfred&amp;gt; DO I HAVE TO SAY IT AGAIN?
+&lt;/code>&lt;/pre>
+&lt;p>The emulator binary is hardcoded into your domain in the &lt;code>&amp;lt;emulator&amp;gt;&lt;/code>
+emulator, and typically looks something like this:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;emulator&amp;gt;/usr/bin/qemu-kvm&amp;lt;/emulator&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>In order to get your guests working again after the upgrade you&amp;rsquo;ll
+need to replace this path with an appropriate selection from one of
+the other binaries provided by the &lt;code>qemu&lt;/code> package, which include
+&lt;code>qemu-system-i386&lt;/code> and &lt;code>qemu-system-x86_64&lt;/code>. You&amp;rsquo;ll want to select
+the one appropriate for your &lt;em>guest&lt;/em> architecture. You can do this
+manually running &lt;code>virsh edit&lt;/code> for each affected guest, but if you have
+more than a couple that rapidly becomes annoying.&lt;/p>
+&lt;p>We can use &lt;a href="https://en.wikipedia.org/wiki/XSLT">XSLT&lt;/a> to write a transformation that will set the
+&lt;code>&amp;lt;emulator&amp;gt;&lt;/code> to an appropriate value, and we can set things up to run
+this automatically across all of our guests. The following stylesheet
+will replace the &lt;code>&amp;lt;emulator&amp;gt;&lt;/code> tag with a path to an appropriate &lt;code>qemu&lt;/code> (by
+extracting the &lt;code>arch&lt;/code> attribute of the &lt;code>domain/os/type&lt;/code> element:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;?xml version=&amp;quot;1.0&amp;quot;?&amp;gt;
+&amp;lt;xsl:stylesheet version=&amp;quot;1.0&amp;quot; xmlns:xsl=&amp;quot;http://www.w3.org/1999/XSL/Transform&amp;quot;&amp;gt;
+&amp;lt;!-- copy all elements verbatim... --&amp;gt;
+&amp;lt;xsl:template match=&amp;quot;@*|node()&amp;quot;&amp;gt;
+&amp;lt;xsl:copy&amp;gt;
+&amp;lt;xsl:apply-templates select=&amp;quot;@*|node()&amp;quot;/&amp;gt;
+&amp;lt;/xsl:copy&amp;gt;
+&amp;lt;/xsl:template&amp;gt;
+&amp;lt;!-- ...except for the 'emulator' element. --&amp;gt;
+&amp;lt;xsl:template match=&amp;quot;emulator&amp;quot;&amp;gt;
+&amp;lt;emulator&amp;gt;/usr/bin/qemu-system-&amp;lt;xsl:value-of select=&amp;quot;/*/os/type/@arch&amp;quot;/&amp;gt;&amp;lt;/emulator&amp;gt;
+&amp;lt;/xsl:template&amp;gt;
+&amp;lt;/xsl:stylesheet&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;re going to apply this to all of our (inactive) guests via the
+&lt;code>virsh edit&lt;/code> subcommand. This command runs an editor (selected based
+on your &lt;code>VISUAL&lt;/code> or &lt;code>EDITOR&lt;/code> environment variables) on your domain
+XML. We need to create an &amp;ldquo;editor&amp;rdquo; that will apply the above
+transformation to its input file. Something like this will work:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+tmpfile=$(mktemp &amp;quot;$1.patched.XXXXXX&amp;quot;)
+xsltproc -o &amp;quot;$tmpfile&amp;quot; patch-emulator.xsl &amp;quot;$1&amp;quot;
+mv &amp;quot;$tmpfile&amp;quot; &amp;quot;$1&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Assuming the above script has been saved as &amp;ldquo;patch-emulator.sh&amp;rdquo; (and
+made executable), we can run this across all of our inactive guests
+like this:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+VISUAL=./patch-emulator.sh
+export VISUAL
+virsh list --inactive --name | while read vm; do
+[ &amp;quot;$vm&amp;quot; ] || continue
+virsh edit $vm
+done
+&lt;/code>&lt;/pre></content></item></channel></rss>

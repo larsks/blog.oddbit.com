@@ -1,0 +1,722 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>tripleo on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/tripleo/</link><description>Recent content in tripleo on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 07 Jun 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/tripleo/rss.xml" rel="self" type="application/rss+xml"/><item><title>Running Keystone with Docker Compose</title><link>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</link><pubDate>Fri, 07 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</guid><description>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s Keystone service (and the requisite database server) in containers using Docker Compose.
+Running MariaDB The standard mariadb docker image can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple docker command line for starting MariaDB might look something like:</description><content>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
+&lt;h2 id="running-mariadb">Running MariaDB&lt;/h2>
+&lt;p>The standard &lt;a href="https://hub.docker.com/_/mariadb/">mariadb docker image&lt;/a> can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple &lt;code>docker&lt;/code> command line for starting MariaDB might look something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker run \
+-v mariadb_data:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=secret.password
+mariadb
+&lt;/code>&lt;/pre>&lt;p>The above assumes that we have previously created a Docker volume named &lt;code>mariadb_data&lt;/code> by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker volume create mariadb_data
+&lt;/code>&lt;/pre>&lt;p>An equivalent &lt;code>docker-compose.yml&lt;/code> would look like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>version: 3
+services:
+database:
+image: mariadb
+environment:
+MYSQL_ROOT_PASSWORD: secret.password
+volumes:
+- &amp;#34;mariadb_data:/var/lib/mysql&amp;#34;
+volumes:
+mariadb_data:
+&lt;/code>&lt;/pre>&lt;p>Now, rather than typing a long &lt;code>docker run&lt;/code> command line (and possibly forgetting something), you can simply run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker-compose up
+&lt;/code>&lt;/pre>&lt;h3 id="pre-creating-a-database">Pre-creating a database&lt;/h3>
+&lt;p>For the purposes of setting up Keystone in Docker, we will need to make a few changes. In particular, we will need to have the &lt;code>mariadb&lt;/code> container create the &lt;code>keystone&lt;/code> database (and user) for us, and as a matter of best practice we will want to specify an explicit tag for the &lt;code>mariadb&lt;/code> image rather than relying on the default &lt;code>latest&lt;/code>.&lt;/p>
+&lt;p>We can have the &lt;code>mariadb&lt;/code> image create a database for us at startup by setting the &lt;code>MYSQL_DATABASE&lt;/code>, &lt;code>MYSQL_USER&lt;/code>, and &lt;code>MYSQL_PASSWORD&lt;/code> environment variables:&lt;/p>
+&lt;pre tabindex="0">&lt;code>version: 3
+services:
+database:
+image: mariadb:10.4.5-bionic
+environment:
+MYSQL_ROOT_PASSWORD: secret.password
+MYSQL_USER: keystone
+MYSQL_PASSWORD: another.password
+MYSQL_DATABASE: keystone
+volumes:
+- &amp;#34;mariadb_data:/var/lib/mysql&amp;#34;
+volumes:
+mariadb_data:
+&lt;/code>&lt;/pre>&lt;p>When the &lt;code>database&lt;/code> service starts up, it will create a &lt;code>keystone&lt;/code> database accessible by the &lt;code>keystone&lt;/code> user.&lt;/p>
+&lt;h3 id="parameterize-all-the-things">Parameterize all the things&lt;/h3>
+&lt;p>The above example is pretty much what we want, but there is one problem: we&amp;rsquo;ve hardcoded our passwords (and database name) into the &lt;code>docker-compose.yml&lt;/code> file, which makes it hard to share: it would be unsuitable for hosting on a public git repository, because anybody who wanted to use it would need to modify the file first, which would make it difficult to contribute changes or bring in new changes from the upstream repository. We can solve that problem by using environment variables in our &lt;code>docker-compose.yml&lt;/code>. Much like the shell, &lt;code>docker-compose&lt;/code> will replace an expression of the form &lt;code>${MY_VARIABLE}&lt;/code> with the value of the &lt;code>MY_VARIABLE&lt;/code> environment variable. It is possible to provide a fallback value in the event that an environment variable is undefined by writing &lt;code>${MY_VARIABLE:-some_default_value}&lt;/code>.&lt;/p>
+&lt;p>You have a couple options for providing values for this variables. You can of course simply set them in the environment, either like this:&lt;/p>
+&lt;pre>&lt;code>export MY_VARIABLE=some_value
+&lt;/code>&lt;/pre>
+&lt;p>Or as part of the &lt;code>docker-compose&lt;/code> command line, like this:&lt;/p>
+&lt;pre>&lt;code>MY_VARIABLE=some_value docker-compose up
+&lt;/code>&lt;/pre>
+&lt;p>Alternatively, you can also set them in a &lt;code>.env&lt;/code> file in the same directory as your &lt;code>docker-compose.yml&lt;/code> file; &lt;code>docker-compose&lt;/code> reads this file automatically when it runs. A &lt;code>.env&lt;/code> file looks like this:&lt;/p>
+&lt;pre>&lt;code>MY_VARIABLE=some_value
+&lt;/code>&lt;/pre>
+&lt;p>With the above in mind, we can restructure our example &lt;code>docker-compose.yml&lt;/code> so that it looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>version: 3
+services:
+database:
+image: mariadb:${MARIADB_IMAGE_TAG:-10.4.5-bionic}
+environment:
+MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+MYSQL_USER: ${KEYSTONE_DB_USER:-keystone}
+MYSQL_PASSWORD: ${KEYSTONE_DB_PASSWORD}
+MYSQL_DATABASE: ${KEYSTONE_DB_NAME:-keystone}
+volumes:
+- &amp;#34;mariadb_data:/var/lib/mysql&amp;#34;
+volumes:
+mariadb_data:
+&lt;/code>&lt;/pre>&lt;h2 id="running-keystone">Running Keystone&lt;/h2>
+&lt;h3 id="selecting-a-base-image">Selecting a base image&lt;/h3>
+&lt;p>While there is an official MariaDB image available in Docker Hub, there is no such thing as an official Keystone image. A search for &lt;code>keystone&lt;/code> yields over 300 results. I have elected to use the Keystone image produced as part of the &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a> project, &lt;a href="https://hub.docker.com/r/tripleomaster/centos-binary-keystone">tripleo-master/centos-binary-keystone&lt;/a>. The &lt;code>current-rdo&lt;/code> tag follows the head of the Keystone repository, and the images are produced automatically as part of the CI process. Unlike the MariaDB image, which is designed to pretty much be &amp;ldquo;plug and play&amp;rdquo;, the Keystone image is going to require some configuration before it provides us with a useful service.&lt;/p>
+&lt;p>Using the &lt;code>centos-binary-keystone&lt;/code> image, there are two required configuration tasks we will have to complete when starting the container:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>We will need to inject an appropriate configuration file to run Keystone as a &lt;a href="https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface">WSGI&lt;/a> binary under Apache &lt;a href="http://httpd.apache.org/">httpd&lt;/a>. This is certainly not the only way to run Keystone, but the &lt;code>centos-binary-keystone&lt;/code> image has both &lt;code>httpd&lt;/code> and &lt;code>mod_wsgi&lt;/code> installed.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>We will need to inject a minimal configuration for Keystone (for example, we will need to provide Keystone with connection information for the database instance).&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="keystone-wsgi-configuration">Keystone WSGI configuration&lt;/h3>
+&lt;p>We need to configure Keystone as a WSGI service running on port 5000. We will do this with the following configuration file:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Listen 5000
+ErrorLog &amp;#34;/dev/stderr&amp;#34;
+CustomLog &amp;#34;/dev/stderr&amp;#34; combined
+&amp;lt;VirtualHost *:5000&amp;gt;
+ServerName keystone
+ServerSignature Off
+DocumentRoot &amp;#34;/var/www/cgi-bin/keystone&amp;#34;
+&amp;lt;Directory &amp;#34;/var/www/cgi-bin/keystone&amp;#34;&amp;gt;
+Options Indexes FollowSymLinks MultiViews
+AllowOverride None
+Require all granted
+&amp;lt;/Directory&amp;gt;
+WSGIApplicationGroup %{GLOBAL}
+WSGIDaemonProcess keystone_main display-name=keystone-main \
+processes=12 threads=1 user=keystone group=keystone
+WSGIProcessGroup keystone_main
+WSGIScriptAlias / &amp;#34;/var/www/cgi-bin/keystone/main&amp;#34;
+WSGIPassAuthorization On
+&amp;lt;/VirtualHost&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>The easiest way to inject this custom configuration is to bake it into a custom image. Using the &lt;code>tripleomaster/centos-binary-keystone&lt;/code> base image identified earlier, we can start with a custom &lt;code>Dockerfile&lt;/code> that looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ARG KEYSTONE_IMAGE_TAG=current-tripleo
+FROM tripleomaster/centos-binary-keystone:${KEYSTONE_IMAGE_TAG}
+COPY keystone-wsgi-main.conf /etc/httpd/conf.d/keystone-wsgi-main.conf
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>ARG&lt;/code> directive permits us to select an image tag via a build argument (but defaults to &lt;code>current-tripleo&lt;/code>).&lt;/p>
+&lt;p>We can ask &lt;code>docker-compose&lt;/code> to build our custom image for us when we run &lt;code>docker-compose up&lt;/code>. Instead of specifying an &lt;code>image&lt;/code> as we did with the MariaDB container, we use the &lt;code>build&lt;/code> directive:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[...]
+keystone:
+build:
+context: .
+args:
+KEYSTONE_IMAGE_TAG: current-tripleo
+[...]
+&lt;/code>&lt;/pre>&lt;p>This tells &lt;code>docker-compose&lt;/code> to use the &lt;code>Dockerfile&lt;/code> in the current directory (and to set the &lt;code>KEYSTONE_IMAGE_TAG&lt;/code> build argument to &lt;code>current-tripleo&lt;/code>). Note that &lt;code>docker-compose&lt;/code> will only build this image for us by default if it doesn&amp;rsquo;t already exist; we can ask &lt;code>docker-compose&lt;/code> to build it explicitly by running &lt;code>docker-compose build&lt;/code>, or by providing the &lt;code>--build&lt;/code> option to &lt;code>docker-compose up&lt;/code>.&lt;/p>
+&lt;h3 id="configuring-at-build-time-vs-run-time">Configuring at build time vs run time&lt;/h3>
+&lt;p>In the previous section, we used a &lt;code>Dockerfile&lt;/code> to build on a selected base image by adding custom content. Other sorts of configuration must happen when the container starts up (for example, we probably want to be able to set passwords at runtime). One way of solving this problem is to embed some scripts into our custom image and then run them when the container starts in order to perform any necessary initialization.&lt;/p>
+&lt;p>I have placed some custom scripts and templates into the &lt;code>runtime&lt;/code> directory and arranged to copy that directory into the custom image like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ARG KEYSTONE_IMAGE_TAG=current-tripleo
+FROM tripleomaster/centos-binary-keystone:${KEYSTONE_IMAGE_TAG}
+COPY keystone-wsgi-main.conf /etc/httpd/conf.d/keystone-wsgi-main.conf
+COPY runtime /runtime
+CMD [&amp;#34;/bin/sh&amp;#34;, &amp;#34;/runtime/startup.sh&amp;#34;]
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>runtime&lt;/code> directory contains the following files:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>runtime/dtu.py&lt;/code> &amp;ndash; a short Python script for generating files from templates.&lt;/li>
+&lt;li>&lt;code>runtime/startup.sh&lt;/code> &amp;ndash; a shell script that performs all the necessary initialization tasks before starting Keystone&lt;/li>
+&lt;li>&lt;code>runtime/keystone.j2.conf&lt;/code> &amp;ndash; template for the Keystone configuration file&lt;/li>
+&lt;li>&lt;code>runtime/clouds.j2.yaml&lt;/code> &amp;ndash; template for a &lt;code>clouds.yaml&lt;/code> for use by the &lt;code>openshift&lt;/code> command line client.&lt;/li>
+&lt;/ul>
+&lt;h3 id="starting-up">Starting up&lt;/h3>
+&lt;p>The &lt;code>startup.sh&lt;/code> script performs the following actions:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Generates &lt;code>/etc/keystone/keystone.conf&lt;/code> from &lt;code>/runtime/keystone.j2.conf&lt;/code>.&lt;/p>
+&lt;p>The file &lt;code>/runtime/keystone.j2.conf&lt;/code> is a minimal Keystone configuration template. It ensures that Keystone logs to &lt;code>stderr&lt;/code> (by setting &lt;code>log_file&lt;/code> to an empty value) and configures the database connection using values from the environment.&lt;/p>
+&lt;pre tabindex="0">&lt;code>[DEFAULT]
+debug = {{ environ.KEYSTONE_DEBUG|default(&amp;#39;false&amp;#39;) }}
+log_file =
+[database]
+{% set keystone_db_user = environ.KEYSTONE_DB_USER|default(&amp;#39;keystone&amp;#39;) %}
+{% set keystone_db_host = environ.KEYSTONE_DB_HOST|default(&amp;#39;localhost&amp;#39;) %}
+{% set keystone_db_port = environ.KEYSTONE_DB_PORT|default(&amp;#39;3306&amp;#39;) %}
+{% set keystone_db_name = environ.KEYSTONE_DB_NAME|default(&amp;#39;keystone&amp;#39;) %}
+{% set keystone_db_pass = environ.KEYSTONE_DB_PASSWORD|default(&amp;#39;insert-password-here&amp;#39;) %}
+connection = mysql+pymysql://{{ keystone_db_user }}:{{ keystone_db_pass }}@{{ keystone_db_host }}:{{ keystone_db_port }}/{{ keystone_db_name }}
+[token]
+provider = fernet
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Generates &lt;code>/root/clouds.yaml&lt;/code> from &lt;code>/runtime/clouds.j2.yaml&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>clouds.yaml&lt;/code> file can be used with to provide authentication information to the &lt;code>openshift&lt;/code> command line client (and other applications that use the OpenStack Python SDK). We&amp;rsquo;ll see an example of this further on in this article.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Initializes Keystone&amp;rsquo;s fernet token mechanism by running &lt;code>keystone-manage fernet_setup&lt;/code>.&lt;/p>
+&lt;p>Keystone supports various token generation mechanisms. Fernet tokens provide some advantages over the older UUID token mechanism. From the &lt;a href="fernet-faq">FAQ&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>Even though fernet tokens operate very similarly to UUID tokens, they do not require persistence or leverage the configured token persistence driver in any way. The keystone token database no longer suffers bloat as a side effect of authentication. Pruning expired tokens from the token database is no longer required when using fernet tokens. Because fernet tokens do not require persistence, they do not have to be replicated. As long as each keystone node shares the same key repository, fernet tokens can be created and validated instantly across nodes.&lt;/p>
+&lt;/blockquote>
+&lt;/li>
+&lt;li>
+&lt;p>Initializes the Keystone database schema by running &lt;code>keystone-manage db_sync&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>db_sync&lt;/code> command creates the database tables that Keystone requires to operate.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Creates the Keystone &lt;code>admin&lt;/code> user and initial service catalog entries by running &lt;code>keystone-manage bootstrap&lt;/code>&lt;/p>
+&lt;p>Before we can authenticate to Keystone, there needs to exist a user with administrative privileges (so that we can create other users, projects, and so forth).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Starts &lt;code>httpd&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="avoiding-race-conditions">Avoiding race conditions&lt;/h3>
+&lt;p>When we run &lt;code>docker-compose up&lt;/code>, it will bring up both the &lt;code>keystone&lt;/code> container and the &lt;code>database&lt;/code> container in parallel. This is going to cause problems if we try to initialize the Keystone database schema before the database server is actually up and running. There is a &lt;code>depends_on&lt;/code> keyword that can be used to order the startup of containers in your &lt;code>docker-compose.yml&lt;/code> file, but this isn&amp;rsquo;t useful to us: this only delays the startup of the dependent container until the indicated container is &lt;em>running&lt;/em>. It doesn&amp;rsquo;t know anything about application startup, and so it would not wait for the database to be ready.&lt;/p>
+&lt;p>We need to explicitly wait until we can successfully connect to the database before we can complete initializing the Keystone service. It turns out the easiest solution to this problem is to imply run the database schema initialization in a loop until it is successful, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>echo &amp;#34;* initializing database schema&amp;#34;
+while ! keystone-manage db_sync; do
+echo &amp;#34;! database schema initialization failed; retrying in 5 seconds...&amp;#34;
+sleep 5
+done
+&lt;/code>&lt;/pre>&lt;p>This will attempt the &lt;code>db_sync&lt;/code> command every five seconds until it is sucessful.&lt;/p>
+&lt;h2 id="the-final-docker-compose-file">The final docker-compose file&lt;/h2>
+&lt;p>Taking all of the above into account, this is what the final &lt;code>docker-compose.yml&lt;/code> file looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>---
+version: &amp;#34;3&amp;#34;
+services:
+database:
+image: mariadb:10.4.5-bionic
+environment:
+MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+MYSQL_USER: ${KEYSTONE_DB_USER:-keystone}
+MYSQL_PASSWORD: ${KEYSTONE_DB_PASSWORD}
+MYSQL_DATABASE: ${KEYSTONE_DB_NAME:-keystone}
+volumes:
+- mysql:/var/lib/mysql
+keystone:
+build:
+context: .
+args:
+KEYSTONE_IMAGE_TAG: current-tripleo
+environment:
+MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+KEYSTONE_ADMIN_PASSWORD: ${KEYSTONE_ADMIN_PASSWORD}
+KEYSTONE_DB_PASSWORD: ${KEYSTONE_DB_PASSWORD}
+KEYSTONE_DB_USER: ${KEYSTONE_DB_USER:-keystone}
+KEYSTONE_DB_NAME: ${KEYSTONE_DB_NAME:-keystone}
+KEYSTONE_DEBUG: ${KEYSTONE_DEBUG:-&amp;#34;false&amp;#34;}
+ports:
+- &amp;#34;127.0.0.1:5000:5000&amp;#34;
+volumes:
+mysql:
+&lt;/code>&lt;/pre>&lt;h2 id="interacting-with-keystone">Interacting with Keystone&lt;/h2>
+&lt;p>Once Keystone is up and running, we can grab the generated &lt;code>clouds.yaml&lt;/code> file like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker-compose exec keystone cat /root/clouds.yaml &amp;gt; clouds.yaml
+&lt;/code>&lt;/pre>&lt;p>Now we can run the &lt;code>openstack&lt;/code> command line client:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ export OS_CLOUD=openstack-public
+$ openstack catalog list
++----------+----------+-----------------------------------+
+| Name | Type | Endpoints |
++----------+----------+-----------------------------------+
+| keystone | identity | RegionOne |
+| | | internal: http://localhost:5000 |
+| | | RegionOne |
+| | | public: http://localhost:5000 |
+| | | |
++----------+----------+-----------------------------------+
+$ openstack user list
++----------------------------------+-------+
+| ID | Name |
++----------------------------------+-------+
+| e8f460619a854c849feaf278b8d68e2c | admin |
++----------------------------------+-------+
+&lt;/code>&lt;/pre>&lt;h2 id="project-sources">Project sources&lt;/h2>
+&lt;p>You can find everything reference in this article in the &lt;a href="https://github.com/cci-moc/flocx-keystone-dev">flocx-keystone-dev&lt;/a> repository.&lt;/p></content></item><item><title>Connecting another vm to your tripleo-quickstart deployment</title><link>https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/</link><pubDate>Thu, 19 May 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/</guid><description>Let&amp;rsquo;s say that you have set up an environment using tripleo-quickstart and you would like to add another virtual machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo; in quotes because I am using it in the same way as the quickstart does w/r/t the undercloud) and connectivity to the overcloud nodes. How would you go about setting that up?
+For a concrete example, let&amp;rsquo;s presume you have deployed an environment using the default tripleo-quickstart configuration, which looks like this:</description><content>&lt;p>Let&amp;rsquo;s say that you have set up an environment using
+&lt;a href="https://github.com/openstack/tripleo-quickstart/">tripleo-quickstart&lt;/a> and you would like to add another virtual
+machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo;
+in quotes because I am using it in the same way as the quickstart does
+w/r/t the undercloud) and connectivity to the overcloud nodes. How
+would you go about setting that up?&lt;/p>
+&lt;p>For a concrete example, let&amp;rsquo;s presume you have deployed an environment
+using the default tripleo-quickstart configuration, which looks like
+this:&lt;/p>
+&lt;pre>&lt;code>overcloud_nodes:
+- name: control_0
+flavor: control
+- name: compute_0
+flavor: compute
+extra_args: &amp;gt;-
+--neutron-network-type vxlan
+--neutron-tunnel-types vxlan
+--ntp-server pool.ntp.org
+network_isolation: true
+&lt;/code>&lt;/pre>
+&lt;p>That gets you one controller, one compute node, and enables network
+isolation. When your deployment is complete, networking from the
+perspective of the undercloud looks like this:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>eth0&lt;/code> is connected to the host&amp;rsquo;s &lt;code>brext&lt;/code> bridge and gives the
+undercloud NAT access to the outside world. The interface will have
+an address on the &lt;code>192.168.23.0/24&lt;/code> network.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>eth1&lt;/code> is connected to the host&amp;rsquo;s &lt;code>brovc&lt;/code> bridge, which is the
+internal network for the overcloud. The interface is attached to
+the OVS bridge &lt;code>br-ctlplane&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>br-ctlplane&lt;/code> bridge has the address &lt;code>192.0.2.1&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>And your overcloud environment probably looks something like this:&lt;/p>
+&lt;pre>&lt;code>[stack@undercloud ~]$ nova list
++-------...+-------------------------+--------+...+--------------------+
+| ID ...| Name | Status |...| Networks |
++-------...+-------------------------+--------+...+--------------------+
+| 32f6ec...| overcloud-controller-0 | ACTIVE |...| ctlplane=192.0.2.7 |
+| d98474...| overcloud-novacompute-0 | ACTIVE |...| ctlplane=192.0.2.8 |
++-------...+-------------------------+--------+...+--------------------+
+&lt;/code>&lt;/pre>
+&lt;p>We want to set up a new machine that has the same connectivity as the
+undercloud.&lt;/p>
+&lt;h2 id="upload-an-image">Upload an image&lt;/h2>
+&lt;p>Before we can boot a new vm we&amp;rsquo;ll need an image; let&amp;rsquo;s start with the
+standard CentOS 7 cloud image. First we&amp;rsquo;ll download it:&lt;/p>
+&lt;pre>&lt;code>curl -O http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2
+&lt;/code>&lt;/pre>
+&lt;p>Let&amp;rsquo;s add a root password to the image and disable &lt;a href="https://cloudinit.readthedocs.io/en/latest/">cloud-init&lt;/a>,
+since we&amp;rsquo;re not booting in a cloud environment:&lt;/p>
+&lt;pre>&lt;code>virt-customize -a CentOS-7-x86_64-GenericCloud.qcow2 \
+--root-password password:changeme \
+--run-command &amp;quot;yum -y remove cloud-init&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Now let&amp;rsquo;s upload it to libvirt:&lt;/p>
+&lt;pre>&lt;code>virsh vol-create-as oooq_pool centos-7-cloud.qcow2 8G \
+--format qcow2 \
+--allocation 0
+virsh vol-upload --pool oooq_pool centos-7-cloud.qcow2 \
+CentOS-7-x86_64-GenericCloud.qcow2
+&lt;/code>&lt;/pre>
+&lt;h2 id="a-idboot-the-vmboot-the-vma">&lt;!-- raw HTML omitted -->Boot the vm&lt;!-- raw HTML omitted -->&lt;/h2>
+&lt;p>I like to boot from a copy-on-write clone of the image, so that I can
+use the base image multiple times or quickly revert to a pristine
+state, so let&amp;rsquo;s first create that clone:&lt;/p>
+&lt;pre>&lt;code>virsh vol-create-as oooq_pool myguest.qcow2 10G \
+--allocation 0 --format qcow2 \
+--backing-vol centos-7-cloud.qcow2 \
+--backing-vol-format qcow2
+&lt;/code>&lt;/pre>
+&lt;p>And then boot our vm:
+&lt;!-- raw HTML omitted -->&lt;!-- raw HTML omitted -->&lt;/p>
+&lt;pre>&lt;code>virt-install --disk vol=oooq_pool/myguest.qcow2,bus=virtio \
+--import \
+-r 2048 -n myguest --cpu host \
+--os-variant rhel7 \
+-w bridge=brext,model=virtio \
+-w bridge=brovc,model=virtio \
+--serial pty \
+--noautoconsole
+&lt;/code>&lt;/pre>
+&lt;p>The crucial parts of the above command are the two &lt;code>-w ...&lt;/code> arguments,
+which create interfaces attached to the named bridges.&lt;/p>
+&lt;p>We can now connect to the console and log in as &lt;code>root&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ virsh console myguest
+.
+.
+.
+localhost login: root
+Password:
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;ll see that the system already has an ip address on the &amp;ldquo;external&amp;rdquo;
+network:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# ip addr show eth0
+2: eth0: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+link/ether 52:54:00:7f:5c:5a brd ff:ff:ff:ff:ff:ff
+inet 192.168.23.27/24 brd 192.168.23.255 scope global dynamic eth0
+valid_lft 3517sec preferred_lft 3517sec
+inet6 fe80::5054:ff:fe7f:5c5a/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>
+&lt;p>And we have external connectivity:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# ping -c1 google.com
+PING google.com (216.58.219.206) 56(84) bytes of data.
+64 bytes from lga25s40-in-f14.1e100.net (216.58.219.206): icmp_seq=1 ttl=56 time=20.6 ms
+--- google.com ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 20.684/20.684/20.684/0.000 ms
+&lt;/code>&lt;/pre>
+&lt;p>Let&amp;rsquo;s give &lt;code>eth1&lt;/code> an address on the ctlplane network:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# ip addr add 192.0.2.254/24 dev eth1
+[root@localhost ~]# ip link set eth1 up
+&lt;/code>&lt;/pre>
+&lt;p>Now we can access the undercloud:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# ping -c1 192.0.2.1
+PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.
+64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.464 ms
+--- 192.0.2.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.464/0.464/0.464/0.000 ms
+&lt;/code>&lt;/pre>
+&lt;p>As well as all of the overcloud hosts using their addresses on the
+same network:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# ping -c1 192.0.2.1
+PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.
+64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.464 ms
+--- 192.0.2.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.464/0.464/0.464/0.000 ms
+&lt;/code>&lt;/pre>
+&lt;h2 id="allocating-an-address-using-dhcp">Allocating an address using DHCP&lt;/h2>
+&lt;p>In the above instructions we&amp;rsquo;ve manually assigned an ip address on the
+ctlplane network. This works fine for testing, but it could
+ultimately prove problematic if neutron were to allocate the same
+address to another overcloud host. We can use neutron to configure a
+static dhcp lease for our new host.&lt;/p>
+&lt;p>First, we need the MAC address of our guest:&lt;/p>
+&lt;pre>&lt;code>virthost$ virsh dumpxml myguest |
+xmllint --xpath '//interface[source/@bridge=&amp;quot;brovc&amp;quot;]' -
+&amp;lt;interface type=&amp;quot;bridge&amp;quot;&amp;gt;
+&amp;lt;mac address=&amp;quot;52:54:00:42:d6:c2&amp;quot;/&amp;gt;
+&amp;lt;source bridge=&amp;quot;brovc&amp;quot;/&amp;gt;
+&amp;lt;target dev=&amp;quot;tap9&amp;quot;/&amp;gt;
+&amp;lt;model type=&amp;quot;virtio&amp;quot;/&amp;gt;
+&amp;lt;alias name=&amp;quot;net1&amp;quot;/&amp;gt;
+&amp;lt;address type=&amp;quot;pci&amp;quot; domain=&amp;quot;0x0000&amp;quot; bus=&amp;quot;0x00&amp;quot; slot=&amp;quot;0x04&amp;quot; function=&amp;quot;0x0&amp;quot;/&amp;gt;
+&amp;lt;/interface&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And then on the undercloud we run &lt;code>neutron port-create&lt;/code> to create a
+port and associate it with our MAC address:&lt;/p>
+&lt;pre>&lt;code>[stack@undercloud]$ neutron port-create --mac-address 52:54:00:42:d6:c2 ctlplane
+&lt;/code>&lt;/pre>
+&lt;p>Now if we run &lt;code>dhclient&lt;/code> on our guest, it will acquire a lease from
+the neutron-managed DHCP server:&lt;/p>
+&lt;pre>&lt;code>[root@localhost]# dhclient -d eth1
+Internet Systems Consortium DHCP Client 4.2.5
+Copyright 2004-2013 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+Listening on LPF/eth1/52:54:00:42:d6:c2
+Sending on LPF/eth1/52:54:00:42:d6:c2
+Sending on Socket/fallback
+DHCPREQUEST on eth1 to 255.255.255.255 port 67 (xid=0xc90c0ba)
+DHCPACK from 192.0.2.5 (xid=0xc90c0ba)
+bound to 192.0.2.9 -- renewal in 42069 seconds.
+&lt;/code>&lt;/pre>
+&lt;p>We can make this persistent by creating
+&lt;code>/etc/sysconfig/network-scripts/ifcfg-eth1&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[root@localhost]# cd /etc/sysconfig/network-scripts
+[root@localhost]# sed s/eth0/eth1/g ifcfg-eth0 &amp;gt; ifcfg-eth1
+[root@localhost]# ifup eth1
+Determining IP information for eth1... done.
+&lt;/code>&lt;/pre></content></item><item><title>Deploying an HA OpenStack development environment with tripleo-quickstart</title><link>https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/</guid><description>In this article I would like to introduce tripleo-quickstart, a tool that will automatically provision a virtual environment and then use TripleO to deploy an HA OpenStack on top of it.
+Introducing Tripleo-Quickstart The goal of the Tripleo-Quickstart project is to replace the instack-virt-setup tool for quickly setting up virtual TripleO environments, and to ultimately become the tool used by both developers and upstream CI for this purpose. The project is a set of Ansible playbooks that will take care of:</description><content>&lt;p>In this article I would like to introduce &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">tripleo-quickstart&lt;/a>, a
+tool that will automatically provision a virtual environment and then
+use &lt;a href="http://docs.openstack.org/developer/tripleo-docs/">TripleO&lt;/a> to deploy an HA OpenStack on top of it.&lt;/p>
+&lt;h2 id="introducing-tripleo-quickstart">Introducing Tripleo-Quickstart&lt;/h2>
+&lt;p>The goal of the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">Tripleo-Quickstart&lt;/a> project is to replace the
+&lt;code>instack-virt-setup&lt;/code> tool for quickly setting up virtual TripleO
+environments, and to ultimately become the tool used by both
+developers and upstream CI for this purpose. The project is a set of
+&lt;a href="http://ansible.com/">Ansible&lt;/a> playbooks that will take care of:&lt;/p>
+&lt;ul>
+&lt;li>Creating virtual undercloud node&lt;/li>
+&lt;li>Creating virtual overcloud nodes&lt;/li>
+&lt;li>Deploying the undercloud&lt;/li>
+&lt;li>Deploying the overcloud&lt;/li>
+&lt;li>Validating the overcloud&lt;/li>
+&lt;/ul>
+&lt;p>In this article, I will be using &lt;code>tripleo-quickstart&lt;/code> to set up a
+development environment on a 32GB desktop. This is probably the
+minimum sized system if your goal is to create an HA install (a
+single controller/single compute environment could be deployed on
+something smaller).&lt;/p>
+&lt;h2 id="requirements">Requirements&lt;/h2>
+&lt;p>Before we get started, you will need:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>A target system with at least 32GB of RAM.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Ansible 2.0.x. This is what you get if you &lt;code>pip install ansible&lt;/code>;
+it is also available in the Fedora &lt;code>updates-testing&lt;/code> repository and
+in the EPEL &lt;code>epel-testing&lt;/code> repository.&lt;/p>
+&lt;p>Do &lt;strong>not&lt;/strong> use Ansible from the HEAD of the git repository; the
+development version is not necessarily backwards compatible with
+2.0.x and may break in unexpected ways.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>A user account on the target system with which you can (a) log in
+via ssh without a password and (b) use &lt;code>sudo&lt;/code> without a password to
+gain root privileges. In other words, this should work:&lt;/p>
+&lt;pre>&lt;code> ssh -tt targetuser@targethost sudo echo it worked
+&lt;/code>&lt;/pre>
+&lt;p>Your &lt;em>targetuser&lt;/em> could be &lt;code>root&lt;/code>, in which case the &lt;code>sudo&lt;/code> is
+superfluous and you should be all set.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>A copy of the tripleo-quickstart repository:&lt;/p>
+&lt;pre>&lt;code> git clone https://github.com/redhat-openstack/tripleo-quickstart/
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ul>
+&lt;p>The remainder of this document assumes that you are running things
+from inside the &lt;code>tripleo-quickstart&lt;/code> directory.&lt;/p>
+&lt;h2 id="the-quick-way">The quick way&lt;/h2>
+&lt;p>If you just want to take things out for a spin using the defaults
+&lt;em>and&lt;/em> you can ssh to your target host as &lt;code>root&lt;/code>, you can skip the
+remainder of this article and just run:&lt;/p>
+&lt;pre>&lt;code>ansible-playbook playbooks/centosci/minimal.yml \
+-e virthost=my.target.host
+&lt;/code>&lt;/pre>
+&lt;p>Or for an HA deployment:&lt;/p>
+&lt;pre>&lt;code>ansible-playbook playbooks/centosci/ha.yml \
+-e virthost=my.target.host
+&lt;/code>&lt;/pre>
+&lt;p>(Where you replace &lt;code>my.target.host&lt;/code> with the hostname of the host on
+which you want to install your virtual environment.)&lt;/p>
+&lt;p>In the remainder of this article I will discuss ways in which you can
+customize this process (and make subsequent deployments faster).&lt;/p>
+&lt;h2 id="create-an-inventory-file">Create an inventory file&lt;/h2>
+&lt;p>An inventory file tells Ansible to which hosts it should connect and
+provides information about how it should connect. For the quickstart,
+your inventory needs to have your target host listed in the &lt;code>virthost&lt;/code>
+group. For example:&lt;/p>
+&lt;pre>&lt;code>[virthost]
+my.target.host ansible_user=targetuser
+&lt;/code>&lt;/pre>
+&lt;p>I&amp;rsquo;m going to assume you put this into a file named &lt;code>inventory&lt;/code>.&lt;/p>
+&lt;h2 id="creating-a-playbook">Creating a playbook&lt;/h2>
+&lt;p>A playbook tells Ansible what do to do.&lt;/p>
+&lt;p>First, we want to tear down any existing virtual environment, and then
+spin up a new undercloud node and create guests that will be used as
+overcloud nodes. We do this with the &lt;code>libvirt/teardown&lt;/code> and
+&lt;code>libvirt/setup&lt;/code> roles:&lt;/p>
+&lt;pre>&lt;code>- hosts: virthost
+roles:
+- libvirt/teardown
+- libvirt/setup
+&lt;/code>&lt;/pre>
+&lt;p>The next play will generate an Ansible inventory file (by default
+&lt;code>$HOME/.quickstart/hosts&lt;/code>) that we can use in the future to refer to
+our deployment:&lt;/p>
+&lt;pre>&lt;code>- hosts: localhost
+roles:
+- rebuild-inventory
+&lt;/code>&lt;/pre>
+&lt;p>Lastly, we install the undercloud host and deploy the overcloud:&lt;/p>
+&lt;pre>&lt;code>- hosts: undercloud
+roles:
+- overcloud
+&lt;/code>&lt;/pre>
+&lt;p>Put this content in a file named &lt;code>ha.yml&lt;/code> (the actual name doesn&amp;rsquo;t
+matter, but this gives us something to refer to later on in this
+article).&lt;/p>
+&lt;h2 id="configuring-the-deployment">Configuring the deployment&lt;/h2>
+&lt;p>Before we run tripleo-quickstart, we need to make a few configuration
+changes. We&amp;rsquo;ll do this by creating a &lt;a href="http://yaml.org/">YAML&lt;/a> file that describes our
+configuration, and we&amp;rsquo;ll feed this to ansible using the &lt;a href="http://docs.ansible.com/ansible/playbooks_variables.html#passing-variables-on-the-command-line">-e
+@filename.yml&lt;/a> syntax.&lt;/p>
+&lt;h3 id="describing-your-virtual-servers">Describing your virtual servers&lt;/h3>
+&lt;p>By default, tripleo-quickstart will deploy an environment consisting
+of four overcloud nodes:&lt;/p>
+&lt;ul>
+&lt;li>3 controller nodes&lt;/li>
+&lt;li>1 compute node&lt;/li>
+&lt;/ul>
+&lt;p>All of these will have 4GB of memory, which when added to the default
+overcloud node size of 12GB comes to a total memory footprint of 24GB.
+These defaults are defined in
+&lt;code>playbooks/roles/nodes/defaults/main.yml&lt;/code>. There are a number of ways
+we can override this default configuration.&lt;/p>
+&lt;p>To simply change the amount of memory assigned to each class of
+server, we can set the &lt;code>undercloud_memory&lt;/code>, &lt;code>control_memory&lt;/code>, and
+&lt;code>compute_memory&lt;/code> keys. For example:&lt;/p>
+&lt;pre>&lt;code>control_memory: 6000
+compute_memory: 2048
+&lt;/code>&lt;/pre>
+&lt;p>To change the number of CPUs assigned to a server, we can change the
+corresponding &lt;code>_vcpu&lt;/code> key. Your deployments will generally run faster
+if your undercloud host has more CPUs available:&lt;/p>
+&lt;pre>&lt;code>undercloud_vcpu: 4
+&lt;/code>&lt;/pre>
+&lt;p>To change the number and type of nodes, you can provide an
+&lt;code>overcloud_nodes&lt;/code> key with entries for each virtual system. The
+default looks like this:&lt;/p>
+&lt;pre>&lt;code>overcloud_nodes:
+- name: control_0
+flavor: control
+- name: control_1
+flavor: control
+- name: control_2
+flavor: control
+- name: compute_0
+flavor: compute
+&lt;/code>&lt;/pre>
+&lt;p>To create a minimal environment with a single controller and a single
+compute node, we could instead put the following into our configuration
+file:&lt;/p>
+&lt;pre>&lt;code>overcloud_nodes:
+- name: control_0
+flavor: control
+- name: compute_0
+flavor: compute
+&lt;/code>&lt;/pre>
+&lt;p>You may intuit from the above examples that you can actually describe
+custom flavors. This is true, but is beyond the scope of this post;
+take a look at &lt;code>playbooks/roles/nodes/defaults/main.yml&lt;/code> for an
+example.&lt;/p>
+&lt;h3 id="configuring-ha">Configuring HA&lt;/h3>
+&lt;p>To actually deploy an HA OpenStack environment, we need to pass a few
+additional options to the &lt;code>openstack overcloud deploy&lt;/code> command. Based
+on &lt;a href="http://docs.openstack.org/developer/tripleo-docs/basic_deployment/basic_deployment_cli.html#deploy-the-overcloud">the docs&lt;/a> I need:&lt;/p>
+&lt;pre>&lt;code>--control-scale 3 \
+-e /usr/share/openstack-tripleo-heat-templates/environments/puppet-pacemaker.yaml \
+--ntp-server pool.ntp.org
+&lt;/code>&lt;/pre>
+&lt;p>We configure deploy arguments in the &lt;code>extra_args&lt;/code> variable, so for the
+above configuration we would add:&lt;/p>
+&lt;pre>&lt;code>extra_args: &amp;gt;
+--control-scale 3
+-e /usr/share/openstack-tripleo-heat-templates/environments/puppet-pacemaker.yaml
+--ntp-server pool.ntp.org
+&lt;/code>&lt;/pre>
+&lt;h3 id="configuring-nested-kvm">Configuring nested KVM&lt;/h3>
+&lt;p>I want &lt;a href="https://www.kernel.org/doc/Documentation/virtual/kvm/nested-vmx.txt">nested KVM&lt;/a> on my compute hosts,
+which requires changes both to the libvirt XML used to deploy the
+&amp;ldquo;baremetal&amp;rdquo; hosts and the nova.conf configuration. I was able to
+accomplish this by adding the following to the configuration:&lt;/p>
+&lt;pre>&lt;code>baremetal_vm_xml: |
+&amp;lt;cpu mode='host-passthrough'/&amp;gt;
+libvirt_args: --libvirt-type kvm
+&lt;/code>&lt;/pre>
+&lt;p>For this to work, you will need to have your target host correctly
+configured to support nested KVM, which generally means adding the
+following to &lt;code>/etc/modprobe.d/kvm.conf&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>options kvm_intel nested=1
+&lt;/code>&lt;/pre>
+&lt;p>(And possibly unloading/reloading the &lt;code>kvm_intel&lt;/code> module if it was
+already loaded.)&lt;/p>
+&lt;h3 id="disable-some-steps">Disable some steps&lt;/h3>
+&lt;p>The default behavior is to:&lt;/p>
+&lt;ul>
+&lt;li>Install the undercloud&lt;/li>
+&lt;li>Deploy the overcloud&lt;/li>
+&lt;li>Validate the overcloud&lt;/li>
+&lt;/ul>
+&lt;p>You can enable or disable individual steps with the following
+variables:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>step_install_undercloud&lt;/code>&lt;/li>
+&lt;li>&lt;code>step_deploy_overcloud&lt;/code>&lt;/li>
+&lt;li>&lt;code>step_validate_overcloud&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>These all default to &lt;code>true&lt;/code>. If, for example, overcloud validation is
+failing because of a known issue, we could add the following to
+&lt;code>nodes.yml&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>step_validate_overcloud: false
+&lt;/code>&lt;/pre>
+&lt;h2 id="pre-caching-the-undercloud-image">Pre-caching the undercloud image&lt;/h2>
+&lt;p>Fetching the undercloud image from the CentOS CI environment can take
+a really long time. If you&amp;rsquo;re going to be deploying often, you can
+speed up this step by manually saving the image and the corresponding
+&lt;code>.md5&lt;/code> file to a file on your target host:&lt;/p>
+&lt;pre>&lt;code>mkdir -p /usr/share/quickstart_images/mitaka/
+cd /usr/share/quickstart_images/mitaka/
+wget https://ci.centos.org/artifacts/rdo/images/mitaka/delorean/stable/undercloud.qcow2.md5 \
+https://ci.centos.org/artifacts/rdo/images/mitaka/delorean/stable/undercloud.qcow2
+&lt;/code>&lt;/pre>
+&lt;p>And then providing the path to that file in the &lt;code>url&lt;/code> variable when
+you run the playbook. I&amp;rsquo;ve added the following to my &lt;code>nodes.yml&lt;/code>
+file, but you could also do this on the command line:&lt;/p>
+&lt;pre>&lt;code>url: file:///usr/share/quickstart_images/mitaka/undercloud.qcow2
+&lt;/code>&lt;/pre>
+&lt;h2 id="intermission">Intermission&lt;/h2>
+&lt;p>I&amp;rsquo;ve made the examples presented in this article available for
+download at the following URLs:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="ha.yml">ha.yml&lt;/a> playbook&lt;/li>
+&lt;li>&lt;a href="nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
+&lt;li>&lt;a href="nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
+&lt;/ul>
+&lt;h2 id="running-tripleo-quickstart">Running tripleo-quickstart&lt;/h2>
+&lt;p>With all of the above in place, we can run:&lt;/p>
+&lt;pre>&lt;code>ansible-playbook ha.yml -i inventory -e @nodes.yml
+&lt;/code>&lt;/pre>
+&lt;p>Which will proceed through the following phases:&lt;/p>
+&lt;h3 id="tear-down-existing-environment">Tear down existing environment&lt;/h3>
+&lt;p>This step deletes any libvirt guests matching the ones we are about to
+deploy, removes the &lt;code>stack&lt;/code> user from the target host, and otherwise
+ensures a clean slate from which to start.&lt;/p>
+&lt;h3 id="create-overcloud-vms">Create overcloud vms&lt;/h3>
+&lt;p>This uses the node definitions in &lt;code>vm.overcloud.nodes&lt;/code> to create a set
+of libvirt guests. They will &lt;em>not&lt;/em> be booted at this stage; that
+happens later during the ironic discovery process.&lt;/p>
+&lt;h3 id="fetch-the-undercloud-image">Fetch the undercloud image&lt;/h3>
+&lt;p>This will fetch the undercloud appliance image either from the CentOS
+CI environment or from wherever you point the &lt;code>url&lt;/code> variable.&lt;/p>
+&lt;h3 id="configure-the-undercloud-image">Configure the undercloud image&lt;/h3>
+&lt;p>This performs some initial configuration steps such as injecting ssh
+keys into the image.&lt;/p>
+&lt;h3 id="create-undercloud-vm">Create undercloud vm&lt;/h3>
+&lt;p>In this step, tripleo-quickstart uses the configured appliance image
+to create a new &lt;code>undercloud&lt;/code> libvirt guest.&lt;/p>
+&lt;h3 id="install-undercloud">Install undercloud&lt;/h3>
+&lt;p>This runs &lt;code>openstack undercloud install&lt;/code>.&lt;/p>
+&lt;h3 id="deploy-overcloud">Deploy overcloud&lt;/h3>
+&lt;p>This does everything else:&lt;/p>
+&lt;ul>
+&lt;li>Discover the available nodes via the Ironic discovery process&lt;/li>
+&lt;li>Use &lt;code>openstack overcloud deploy&lt;/code> to kick off the provisioning
+process. This feeds &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> a collection of templates that will be
+used to configure the overcloud nodes.&lt;/li>
+&lt;/ul>
+&lt;h2 id="accessing-the-undercloud">Accessing the undercloud&lt;/h2>
+&lt;p>You can ssh directly into the undercloud host by taking advantage of
+the ssh configuration that tripleo-quickstart generated for you. By
+default this will be &lt;code>$HOME/.quickstart/ssh.config.ansible&lt;/code>, but you
+can override that directory by specifying a value for the
+&lt;code>local_working_dir&lt;/code> variable when you run Ansible. You use the &lt;code>-F&lt;/code>
+option to ssh to point it at that file:&lt;/p>
+&lt;pre>&lt;code>ssh -F $HOME/.quickstart/ssh.config.ansible undercloud
+&lt;/code>&lt;/pre>
+&lt;p>The configuration uses an ssh &lt;code>ProxyConnection&lt;/code> configuration to
+automatically proxy your connection to the undercloud vm through your
+physical host.&lt;/p>
+&lt;h2 id="accessing-the-overcloud-hosts">Accessing the overcloud hosts&lt;/h2>
+&lt;p>Once you have logged into the undercloud, you&amp;rsquo;ll need to source in
+some credentials. The file &lt;code>stackrc&lt;/code> contains credentials for the
+undercloud:&lt;/p>
+&lt;pre>&lt;code>. stackrc
+&lt;/code>&lt;/pre>
+&lt;p>Now you can run &lt;code>nova list&lt;/code> to get a list of your overcloud nodes,
+investigate the &lt;code>overcloud&lt;/code> heat stack, and so forth:&lt;/p>
+&lt;pre>&lt;code>$ heat stack-list
++----------...+------------+-----------------+--------------...+--------------+
+| id ...| stack_name | stack_status | creation_time...| updated_time |
++----------...+------------+-----------------+--------------...+--------------+
+| b6cfd621-...| overcloud | CREATE_COMPLETE | 2016-02-19T20...| None |
++----------...+------------+-----------------+--------------...+--------------+
+&lt;/code>&lt;/pre>
+&lt;p>You can find the ip addresses of your overcloud nodes by running &lt;code>nova list&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ nova list
++----------...+-------------------------+--------+...+---------------------+
+| ID ...| Name | Status |...| Networks |
++----------...+-------------------------+--------+...+---------------------+
+| 1fc5d5e8-...| overcloud-controller-0 | ACTIVE |...| ctlplane=192.0.2.9 |
+| ab6439e8-...| overcloud-controller-1 | ACTIVE |...| ctlplane=192.0.2.10 |
+| 82e12f81-...| overcloud-controller-2 | ACTIVE |...| ctlplane=192.0.2.11 |
+| 53402a35-...| overcloud-novacompute-0 | ACTIVE |...| ctlplane=192.0.2.8 |
++----------...+-------------------------+--------+...+---------------------+
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll use the &lt;code>ctlplane&lt;/code> address to log into each host as the
+&lt;code>heat-admin&lt;/code> user. For example, to log into my compute host:&lt;/p>
+&lt;pre>&lt;code>$ ssh heat-admin@192.0.2.8
+&lt;/code>&lt;/pre>
+&lt;h2 id="accessing-the-overcloud-openstack-environment">Accessing the overcloud OpenStack environment&lt;/h2>
+&lt;p>The file &lt;code>overcloudrc&lt;/code> on the undercloud host has administrative
+credentials for the overcloud environment:&lt;/p>
+&lt;pre>&lt;code>. overcloudrc
+&lt;/code>&lt;/pre>
+&lt;p>After sourcing in the overcloud credentials you can use OpenStack
+clients to interact with your deployed cloud environment.&lt;/p>
+&lt;h2 id="if-you-find-bugs">If you find bugs&lt;/h2>
+&lt;p>If anything in the above process doesn&amp;rsquo;t work as described or
+expected, feel free to visit the &lt;code>#rdo&lt;/code> channel on &lt;a href="https://freenode.net/">freenode&lt;/a>, or
+open a bug report on the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart/issues">issue tracker&lt;/a>.&lt;/p></content></item></channel></rss>

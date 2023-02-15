@@ -1,0 +1,845 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>kernel on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/kernel/</link><description>Recent content in kernel on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 14 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/kernel/rss.xml" rel="self" type="application/rss+xml"/><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
+The original code looked like this:
+c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
+&lt;p>The original code looked like this:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="947286351" type="checkbox" />
+&lt;label for="947286351">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#include &amp;lt;arpa/inet.h&amp;gt;
+#include &amp;lt;fcntl.h&amp;gt;
+#include &amp;lt;linux/if.h&amp;gt;
+#include &amp;lt;linux/if_tun.h&amp;gt;
+#include &amp;lt;netinet/in.h&amp;gt;
+#include &amp;lt;poll.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;string.h&amp;gt;
+#include &amp;lt;sys/ioctl.h&amp;gt;
+#include &amp;lt;sys/socket.h&amp;gt;
+#include &amp;lt;sys/stat.h&amp;gt;
+#include &amp;lt;sys/types.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+static int tunAlloc(void) {
+int fd;
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
+ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr);
+ioctl(fd, TUNSETOWNER, geteuid());
+return fd;
+}
+// this is a test
+static void bringInterfaceUp(void) {
+int sock;
+struct sockaddr_in addr = {.sin_family = AF_INET};
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
+inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
+memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
+sock = socket(AF_INET, SOCK_DGRAM, 0);
+ioctl(sock, SIOCSIFADDR, &amp;amp;ifr);
+ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr);
+ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr);
+close(sock);
+}
+static void emitPacket(int tap_fd) {
+unsigned char packet[] = {
+0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
+0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+write(tap_fd, packet, sizeof(packet));
+}
+int main() {
+int tap_fd;
+tap_fd = tunAlloc();
+bringInterfaceUp();
+emitPacket(tap_fd);
+close(tap_fd);
+return 0;
+}
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
+&lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="862953417" type="checkbox" />
+&lt;label for="862953417">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#include &amp;lt;arpa/inet.h&amp;gt;
+#include &amp;lt;fcntl.h&amp;gt;
+#include &amp;lt;linux/if.h&amp;gt;
+#include &amp;lt;linux/if_tun.h&amp;gt;
+#include &amp;lt;netinet/in.h&amp;gt;
+#include &amp;lt;poll.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;stdlib.h&amp;gt;
+#include &amp;lt;string.h&amp;gt;
+#include &amp;lt;sys/ioctl.h&amp;gt;
+#include &amp;lt;sys/socket.h&amp;gt;
+#include &amp;lt;sys/stat.h&amp;gt;
+#include &amp;lt;sys/types.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+#define must(x) _must(#x, __FILE__, __LINE__, __func__, (x))
+void _must(const char *call, const char *filename, int line,
+const char *funcname, int err) {
+char buf[1024];
+snprintf(buf, 1023, &amp;#34;%s (@ %s:%d)&amp;#34;, call, filename, line);
+if (err &amp;lt; 0) {
+perror(buf);
+exit(1);
+}
+}
+static int tunAlloc(void) {
+int fd;
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
+must(ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr));
+must(ioctl(fd, TUNSETOWNER, geteuid()));
+return fd;
+}
+static void bringInterfaceUp(void) {
+int sock;
+struct sockaddr_in addr = {.sin_family = AF_INET};
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
+inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
+memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
+sock = socket(AF_INET, SOCK_DGRAM, 0);
+must(ioctl(sock, SIOCSIFADDR, &amp;amp;ifr));
+must(ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr));
+ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+must(ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr));
+close(sock);
+}
+static void emitPacket(int tap_fd) {
+unsigned char packet[] = {
+0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
+0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+write(tap_fd, packet, sizeof(packet));
+}
+void prompt(char *promptString) {
+printf(&amp;#34;%s\n&amp;#34;, promptString);
+getchar();
+}
+int main() {
+int tap_fd;
+tap_fd = tunAlloc();
+bringInterfaceUp();
+prompt(&amp;#34;interface is up&amp;#34;);
+emitPacket(tap_fd);
+prompt(&amp;#34;sent packet&amp;#34;);
+close(tap_fd);
+printf(&amp;#34;all done&amp;#34;);
+return 0;
+}
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>We start by compiling the code:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>gcc -o sendpacket sendpacket.c
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we try running this as a regular user, it will simply fail (which confirms that at least some of our error handling is working correctly):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ ./sendpacket
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ioctl&lt;span style="color:#f92672">(&lt;/span>fd, TUNSETIFF, &lt;span style="color:#f92672">(&lt;/span>void *&lt;span style="color:#f92672">)&lt;/span>&amp;amp;ifr&lt;span style="color:#f92672">)&lt;/span> &lt;span style="color:#f92672">(&lt;/span>@ sendpacket-pause.c:33&lt;span style="color:#f92672">)&lt;/span>: Operation not permitted
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We need to run it as &lt;code>root&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ sudo ./sendpacket
+interface is up
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>interface is up&lt;/code> prompt means that the code has configured the interface but has not yet sent the packet. Let&amp;rsquo;s take a look at the interface configuration:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ ip addr show tun0
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>3390: tun0: &amp;lt;POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP&amp;gt; mtu &lt;span style="color:#ae81ff">1500&lt;/span> qdisc fq_codel state UNKNOWN group default qlen &lt;span style="color:#ae81ff">500&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> link/none
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> inet 172.30.0.1/32 scope global tun0
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> valid_lft forever preferred_lft forever
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> inet6 fe80::c7ca:fe15:5d5c:2c49/64 scope link stable-privacy
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> valid_lft forever preferred_lft forever
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The code will emit a TCP &lt;code>SYN&lt;/code> packet targeting address &lt;code>192.168.255.8&lt;/code>, port &lt;code>10001&lt;/code>. In another terminal, let&amp;rsquo;s watch for that on all interfaces. If we start &lt;code>tcpdump&lt;/code> and press RETURN at the &lt;code>interface is up&lt;/code> prompt, we&amp;rsquo;ll see something like:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># tcpdump -nn -i any port 10001&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>22:36:35.336643 tun0 In IP 172.30.0.1.41626 &amp;gt; 192.168.255.8.10001: Flags &lt;span style="color:#f92672">[&lt;/span>S&lt;span style="color:#f92672">]&lt;/span>, seq 2148230009, win 64240, options &lt;span style="color:#f92672">[&lt;/span>mss 1460,sackOK,TS val &lt;span style="color:#ae81ff">1534484436&lt;/span> ecr 0,nop,wscale 7&lt;span style="color:#f92672">]&lt;/span>, length &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And indeed, we see the problem that was described: the packet enters the system on &lt;code>tun0&lt;/code>, but never goes anywhere else. What&amp;rsquo;s going on?&lt;/p>
+&lt;h2 id="introducing-pwru-packet-where-are-you">Introducing pwru (Packet, Where are you?)&lt;/h2>
+&lt;p>&lt;a href="https://github.com/cilium/pwru">&lt;code>pwru&lt;/code>&lt;/a> is a nifty utility written by the folks at Cilium that takes advantage of &lt;a href="https://ebpf.io/">eBPF&lt;/a> to attach traces to hundreds of kernel functions to trace packet processing through the Linux kernel. It&amp;rsquo;s especially useful when packets seem to be getting dropped with no obvious explanation. Let&amp;rsquo;s see what it can tell us!&lt;/p>
+&lt;p>A convenient way to run &lt;code>pwru&lt;/code> is using their official Docker image. We&amp;rsquo;ll run it like this, filtering by protocol and destination port so that we only see results relating to the synthesized packet created by the &lt;code>sendpacket.c&lt;/code> code:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>docker run --privileged --rm -t --pid&lt;span style="color:#f92672">=&lt;/span>host &lt;span style="color:#ae81ff">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#ae81ff">&lt;/span> -v /sys/kernel/debug/:/sys/kernel/debug/ &lt;span style="color:#ae81ff">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#ae81ff">&lt;/span> cilium/pwru --filter-proto tcp --filter-port &lt;span style="color:#ae81ff">10001&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we run &lt;code>sendpacket&lt;/code> while &lt;code>pwru&lt;/code> is running, the output looks something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>2023/02/15 03:42:33 Per cpu buffer size: 4096 bytes
+2023/02/15 03:42:33 Attaching kprobes (via kprobe-multi)...
+1469 / 1469 [-----------------------------------------------------------------------------] 100.00% ? p/s
+2023/02/15 03:42:33 Attached (ignored 0)
+2023/02/15 03:42:33 Listening for events..
+SKB CPU PROCESS FUNC
+0xffff8ce13e987900 6 [sendpacket-orig] netif_receive_skb
+0xffff8ce13e987900 6 [sendpacket-orig] skb_defer_rx_timestamp
+0xffff8ce13e987900 6 [sendpacket-orig] __netif_receive_skb
+0xffff8ce13e987900 6 [sendpacket-orig] __netif_receive_skb_one_core
+0xffff8ce13e987900 6 [sendpacket-orig] ip_rcv
+0xffff8ce13e987900 6 [sendpacket-orig] ip_rcv_core
+0xffff8ce13e987900 6 [sendpacket-orig] kfree_skb_reason(SKB_DROP_REASON_IP_CSUM)
+0xffff8ce13e987900 6 [sendpacket-orig] skb_release_head_state
+0xffff8ce13e987900 6 [sendpacket-orig] sock_wfree
+0xffff8ce13e987900 6 [sendpacket-orig] skb_release_data
+0xffff8ce13e987900 6 [sendpacket-orig] skb_free_head
+0xffff8ce13e987900 6 [sendpacket-orig] kfree_skbmem
+&lt;/code>&lt;/pre>&lt;p>And now we have a big blinking sign that tells us why the packet is being dropped:&lt;/p>
+&lt;pre tabindex="0">&lt;code>0xffff8ce13e987900 6 [sendpacket-orig] kfree_skb_reason(SKB_DROP_REASON_IP_CSUM)
+&lt;/code>&lt;/pre>&lt;h2 id="fixing-the-checksum">Fixing the checksum&lt;/h2>
+&lt;p>It looks like the synthesized packet data includes a bad checksum. We could update the code to correctly calculate the checksum&amp;hellip;or we could just use &lt;a href="https://www.wireshark.org/">Wireshark&lt;/a> and have it tell us the correct values. Because this isn&amp;rsquo;t meant to be an IP networking primer, we&amp;rsquo;ll just use Wireshark, which gives us the following updated code:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">static&lt;/span> &lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">emitPacket&lt;/span>(&lt;span style="color:#66d9ef">int&lt;/span> tap_fd) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">uint16_t&lt;/span> cs;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">uint8_t&lt;/span> packet[] &lt;span style="color:#f92672">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x45&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x3c&lt;/span>, &lt;span style="color:#ae81ff">0xd8&lt;/span>, &lt;span style="color:#ae81ff">0x6f&lt;/span>, &lt;span style="color:#ae81ff">0x40&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x3f&lt;/span>, &lt;span style="color:#ae81ff">0x06&lt;/span>, &lt;span style="color:#ae81ff">0xf7&lt;/span>, &lt;span style="color:#ae81ff">0x7b&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">172&lt;/span>, &lt;span style="color:#ae81ff">30&lt;/span>, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#ae81ff">192&lt;/span>, &lt;span style="color:#ae81ff">168&lt;/span>, &lt;span style="color:#ae81ff">255&lt;/span>, &lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#ae81ff">0xa2&lt;/span>, &lt;span style="color:#ae81ff">0x9a&lt;/span>, &lt;span style="color:#ae81ff">0x27&lt;/span>, &lt;span style="color:#ae81ff">0x11&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x80&lt;/span>, &lt;span style="color:#ae81ff">0x0b&lt;/span>, &lt;span style="color:#ae81ff">0x63&lt;/span>, &lt;span style="color:#ae81ff">0x79&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0xa0&lt;/span>, &lt;span style="color:#ae81ff">0x02&lt;/span>, &lt;span style="color:#ae81ff">0xfa&lt;/span>, &lt;span style="color:#ae81ff">0xf0&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x78&lt;/span>, &lt;span style="color:#ae81ff">0xc3&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x02&lt;/span>, &lt;span style="color:#ae81ff">0x04&lt;/span>, &lt;span style="color:#ae81ff">0x05&lt;/span>, &lt;span style="color:#ae81ff">0xb4&lt;/span>, &lt;span style="color:#ae81ff">0x04&lt;/span>, &lt;span style="color:#ae81ff">0x02&lt;/span>, &lt;span style="color:#ae81ff">0x08&lt;/span>, &lt;span style="color:#ae81ff">0x0a&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x5b&lt;/span>, &lt;span style="color:#ae81ff">0x76&lt;/span>, &lt;span style="color:#ae81ff">0x5f&lt;/span>, &lt;span style="color:#ae81ff">0xd4&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x01&lt;/span>, &lt;span style="color:#ae81ff">0x03&lt;/span>, &lt;span style="color:#ae81ff">0x03&lt;/span>, &lt;span style="color:#ae81ff">0x07&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> };
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">write&lt;/span>(tap_fd, packet, &lt;span style="color:#66d9ef">sizeof&lt;/span>(packet));
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we repeat our invocation of &lt;code>pwru&lt;/code> and run a test with the updated code, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code>2023/02/15 04:17:29 Per cpu buffer size: 4096 bytes
+2023/02/15 04:17:29 Attaching kprobes (via kprobe-multi)...
+1469 / 1469 [-----------------------------------------------------------------------------] 100.00% ? p/s
+2023/02/15 04:17:29 Attached (ignored 0)
+2023/02/15 04:17:29 Listening for events..
+SKB CPU PROCESS FUNC
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] netif_receive_skb
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_defer_rx_timestamp
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] __netif_receive_skb
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] __netif_receive_skb_one_core
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_rcv
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_rcv_core
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] sock_wfree
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] nf_hook_slow
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] nf_checksum
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] nf_ip_checksum
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] __skb_checksum_complete
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] tcp_v4_early_demux
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_route_input_noref
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_route_input_slow
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] fib_validate_source
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] __fib_validate_source
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_handle_martian_source
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] kfree_skb_reason(SKB_DROP_REASON_NOT_SPECIFIED)
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_release_head_state
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_release_data
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_free_head
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] kfree_skbmem
+&lt;/code>&lt;/pre>&lt;h2 id="dealing-with-martians">Dealing with martians&lt;/h2>
+&lt;p>Looking at the above output, we&amp;rsquo;re no longer seeing the &lt;code>SKB_DROP_REASON_IP_CSUM&lt;/code> error; instead, we&amp;rsquo;re getting dropped by the routing logic:&lt;/p>
+&lt;pre tabindex="0">&lt;code>0xffff8cd8a6c5ef00 9 [sendpacket-chec] fib_validate_source
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] __fib_validate_source
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_handle_martian_source
+0xffff8cd8a6c5ef00 9 [sendpacket-chec] kfree_skb_reason(SKB_DROP_REASON_NOT_SPECIFIED)
+&lt;/code>&lt;/pre>&lt;p>Specifically, the packet is being dropped as a &amp;ldquo;martian source&amp;rdquo;, which means a packet that has a source address that is invalid for the interface on which it is being received. Unlike the previous error, we can actually get kernel log messages about this problem. If we had the &lt;code>log_martians&lt;/code> sysctl enabled for all interfaces:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>sysctl -w net.ipv4.conf.all.log_martians&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or if we enabled it specifically for &lt;code>tun0&lt;/code> after the interface is created:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>sysctl -w net.ipv4.conf.tun0.log_martians&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We would see the following message logged by the kernel:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Feb 14 12:14:03 madhatter kernel: IPv4: martian source 192.168.255.8 from 172.30.0.1, on dev tun0
+&lt;/code>&lt;/pre>&lt;p>We&amp;rsquo;re seeing this particular error because &lt;code>tun0&lt;/code> is configured with address &lt;code>172.30.0.1&lt;/code>, but it claims to be receiving a packet with the same source address from &amp;ldquo;somewhere else&amp;rdquo; on the network. This is a problem because we would never be able to reply to that packet (our replies would get routed to the local host). To deal with this problem, we can either change the source address of the packet, or we can change the IP address assigned to the &lt;code>tun0&lt;/code> interface. Since changing the source address would mean mucking about with checksums again, let&amp;rsquo;s change the address of &lt;code>tun0&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">static&lt;/span> &lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">bringInterfaceUp&lt;/span>(&lt;span style="color:#66d9ef">void&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">int&lt;/span> sock;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">struct&lt;/span> sockaddr_in addr &lt;span style="color:#f92672">=&lt;/span> {.sin_family &lt;span style="color:#f92672">=&lt;/span> AF_INET};
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">struct&lt;/span> ifreq ifr &lt;span style="color:#f92672">=&lt;/span> {.ifr_name &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;tun0&amp;#34;&lt;/span>};
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">inet_aton&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;172.30.0.10&amp;#34;&lt;/span>, &lt;span style="color:#f92672">&amp;amp;&lt;/span>addr.sin_addr);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">memcpy&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr.ifr_addr, &lt;span style="color:#f92672">&amp;amp;&lt;/span>addr, &lt;span style="color:#66d9ef">sizeof&lt;/span>(&lt;span style="color:#66d9ef">struct&lt;/span> sockaddr));
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> sock &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">socket&lt;/span>(AF_INET, SOCK_DGRAM, &lt;span style="color:#ae81ff">0&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">ioctl&lt;/span>(sock, SIOCSIFADDR, &lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr));
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">ioctl&lt;/span>(sock, SIOCGIFFLAGS, &lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr));
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> ifr.ifr_flags &lt;span style="color:#f92672">|=&lt;/span> IFF_UP &lt;span style="color:#f92672">|&lt;/span> IFF_RUNNING;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">ioctl&lt;/span>(sock, SIOCSIFFLAGS, &lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr));
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">close&lt;/span>(sock);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With this change, &lt;code>tun0&lt;/code> now looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>3452: tun0: &amp;lt;POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP&amp;gt; mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 500
+link/none
+inet 172.30.0.10/32 scope global tun0
+valid_lft forever preferred_lft forever
+inet6 fe80::bda3:ddc8:e60e:106b/64 scope link stable-privacy
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>&lt;p>And if we repeat our earlier test in which we use &lt;code>tcpdump&lt;/code> to watch for our synthesized packet on any interface, we now see the desired behavior:&lt;/p>
+&lt;pre tabindex="0">&lt;code># tcpdump -nn -i any port 10001
+23:37:55.897786 tun0 In IP 172.30.0.1.41626 &amp;gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
+23:37:55.897816 eth0 Out IP 172.30.0.1.41626 &amp;gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
+&lt;/code>&lt;/pre>&lt;p>The packet is correctly handled by the kernel and sent out to our default gateway.&lt;/p>
+&lt;h2 id="finishing-up">Finishing up&lt;/h2>
+&lt;p>The final version of the code looks like this:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="465239781" type="checkbox" />
+&lt;label for="465239781">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#include &amp;lt;arpa/inet.h&amp;gt;
+#include &amp;lt;fcntl.h&amp;gt;
+#include &amp;lt;linux/if.h&amp;gt;
+#include &amp;lt;linux/if_tun.h&amp;gt;
+#include &amp;lt;netinet/in.h&amp;gt;
+#include &amp;lt;poll.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;stdlib.h&amp;gt;
+#include &amp;lt;string.h&amp;gt;
+#include &amp;lt;sys/ioctl.h&amp;gt;
+#include &amp;lt;sys/socket.h&amp;gt;
+#include &amp;lt;sys/stat.h&amp;gt;
+#include &amp;lt;sys/types.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+#define must(x) _must(#x, __FILE__, __LINE__, __func__, (x))
+void _must(const char *call, const char *filename, int line,
+const char *funcname, int err) {
+char buf[1024];
+snprintf(buf, 1023, &amp;#34;%s (@ %s:%d)&amp;#34;, call, filename, line);
+if (err &amp;lt; 0) {
+perror(buf);
+exit(1);
+}
+}
+static int tunAlloc(void) {
+int fd;
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
+must(ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr));
+must(ioctl(fd, TUNSETOWNER, geteuid()));
+return fd;
+}
+static void bringInterfaceUp(void) {
+int sock;
+struct sockaddr_in addr = {.sin_family = AF_INET};
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
+inet_aton(&amp;#34;172.30.0.10&amp;#34;, &amp;amp;addr.sin_addr);
+memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
+sock = socket(AF_INET, SOCK_DGRAM, 0);
+must(ioctl(sock, SIOCSIFADDR, &amp;amp;ifr));
+must(ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr));
+ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+must(ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr));
+close(sock);
+}
+static void emitPacket(int tap_fd) {
+uint16_t cs;
+uint8_t packet[] = {
+0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0xf7, 0x7b,
+172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
+0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+0x78, 0xc3, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07,
+};
+write(tap_fd, packet, sizeof(packet));
+}
+void prompt(char *promptString) {
+printf(&amp;#34;%s\n&amp;#34;, promptString);
+getchar();
+}
+int main() {
+int tap_fd;
+tap_fd = tunAlloc();
+bringInterfaceUp();
+prompt(&amp;#34;interface is up&amp;#34;);
+emitPacket(tap_fd);
+prompt(&amp;#34;sent packet&amp;#34;);
+close(tap_fd);
+printf(&amp;#34;all done&amp;#34;);
+return 0;
+}
+&lt;/code>&lt;/pre>
+&lt;/div></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</guid><description>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
+$ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
+Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3.</description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
+containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
+singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>
+&lt;pre>&lt;code>$ docker run -ti fedora /bin/bash
+bash-4.2# su -c 'uptime'
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>Hooking up something (like, say, &lt;code>socat unix-listen:/dev/log -&lt;/code>) to
+&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p>
+&lt;pre>&lt;code>Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted
+&lt;/code>&lt;/pre>
+&lt;p>Downgrading the kernel to 3.14 immediately resolved the problem,
+suggesting that this was at least partly a kernel issue. This seemed
+like a great opportunity to play with the &lt;a href="http://git-scm.com/docs/git-bisect">git bisect&lt;/a> command,
+which uses a binary search to find which commit introduced a
+particular problem.&lt;/p>
+&lt;p>Unfortunately, between the version I knew to work correctly (3.14) and
+the version I knew to have a problem (3.15) there were close to 15,000
+commits, which seemed like a large space to search by hand.&lt;/p>
+&lt;p>Fortunately, &lt;code>git bisect&lt;/code> can be easily automated via &lt;code>git bisect run&lt;/code>
+subcommand, which after checking out a commit will run a script to
+determine if the current commit is &amp;ldquo;good&amp;rdquo; or &amp;ldquo;bad&amp;rdquo;. So all I have to
+do is write a script&amp;hellip;that&amp;rsquo;s not so bad!&lt;/p>
+&lt;figure class="left" >
+&lt;img src="ha-ha.jpg" />
+&lt;/figure>
+&lt;p>It actually ended up being somewhat tricky.&lt;/p>
+&lt;h2 id="testing-kernels-is-hard">Testing kernels is hard&lt;/h2>
+&lt;p>In order to test for this problem, I would need to use arbitrary
+kernels generated during the &lt;code>git bisect&lt;/code> operation to boot a system
+functional enough to run docker, and then run docker and somehow
+communicate the result of that test back to the build environment.&lt;/p>
+&lt;p>I started with the &lt;a href="http://fedoraproject.org/get-fedora#clouds">Fedora 20 cloud image&lt;/a>, which is nice and
+small but still the same platform as my laptop on which I was
+experiencing the problem. I would need to correct a few things before
+moving forward:&lt;/p>
+&lt;p>The Fedora cloud images (a) do not support password authentication and
+(b) expect a datasource to be available to &lt;a href="http://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> (without
+which you get errors on the console and potentially a delay waiting
+for the &lt;code>login:&lt;/code> prompt), so prior to using the image in this test I
+made some changes by mounting it locally:&lt;/p>
+&lt;pre>&lt;code># modprobe nbd max_part=8
+# qemu-nbd -c /dev/nbd0 Fedora-x86_64-20-20140407-sda.qcow2
+# mount /dev/nbd0p1 /mnt
+# systemd-nspawn -D /mnt
+&lt;/code>&lt;/pre>
+&lt;p>And then:&lt;/p>
+&lt;ul>
+&lt;li>I set a password for the &lt;code>root&lt;/code> account and&lt;/li>
+&lt;li>I removed the &lt;code>cloud-init&lt;/code> package.&lt;/li>
+&lt;/ul>
+&lt;p>For this test I would be using the &lt;code>qemu-system-x86_64&lt;/code> command
+directly, rather than working through &lt;code>libvirt&lt;/code> (&lt;code>qemu&lt;/code> has options
+for convenient debugging with &lt;code>gdb&lt;/code>, and is also able to access the
+filesystem as the calling &lt;code>uid&lt;/code> whereas &lt;code>libvirt&lt;/code> is typically running
+as another user).&lt;/p>
+&lt;p>I would need to perform an initial &lt;code>docker pull&lt;/code> in the image, which
+meant I was going to need a functioning network, so first I had to set
+up a network environment for qemu.&lt;/p>
+&lt;h3 id="network-configuration">Network configuration&lt;/h3>
+&lt;p>I created a bridge interface named &lt;code>qemu0&lt;/code> to be used by &lt;code>qemu&lt;/code>. I added
+to &lt;code>/etc/sysconfig/network-scripts/ifcfg-qemu0&lt;/code> the following:&lt;/p>
+&lt;pre>&lt;code>DEVICE=qemu0
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+STP=no
+NAME=&amp;quot;Bridge qemu0&amp;quot;
+IPADDR=192.168.210.1
+NETMASK=255.255.255.0
+&lt;/code>&lt;/pre>
+&lt;p>This is largely equivalent to the following, but persists after reboot:&lt;/p>
+&lt;pre>&lt;code>brctl addbr qemu0
+ip addr add 192.168.210.1/24 dev qemu0
+ip link set qemu0 up
+&lt;/code>&lt;/pre>
+&lt;p>I created a &lt;a href="https://www.kernel.org/doc/Documentation/networking/tuntap.txt">tap&lt;/a> interface named &lt;code>linux0&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>ip tuntap add dev linux0 mode tap user lars
+&lt;/code>&lt;/pre>
+&lt;p>And added it to the bridge:&lt;/p>
+&lt;pre>&lt;code>brctl addif qemu0 linux0
+&lt;/code>&lt;/pre>
+&lt;p>I also started up &lt;code>dnsmasq&lt;/code> process listening on &lt;code>qemu0&lt;/code> to provide
+DNS lookup and DHCP service to qemu instances attached to this bridge.
+The &lt;code>dnsmasq&lt;/code> configuration looked like this:&lt;/p>
+&lt;pre>&lt;code>listen-address=192.168.210.1
+bind-interfaces
+dhcp-range=192.168.210.10,192.168.210.254
+&lt;/code>&lt;/pre>
+&lt;h3 id="running-qemu">Running qemu&lt;/h3>
+&lt;p>With the network environment set up, I needed to figure out an
+appropriate qemu command line. This is what I finally ended up with,
+in a script called &lt;code>boot-kernel&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+qemu-system-x86_64 -m 1024M \
+-drive file=fedora.img,if=virtio \
+-append &amp;quot;console=hvc0 root=/dev/vda1 selinux=0 $BOOT_ARGS&amp;quot; \
+-initrd initrd.img \
+-kernel arch/x86_64/boot/bzImage \
+-machine accel=kvm \
+-netdev tap,id=net0,ifname=linux0,script=no,downscript=no \
+-device virtio-net,netdev=net0,mac=52:54:00:c0:ff:ee \
+-chardev stdio,id=stdio,mux=on \
+-device virtio-serial-pci \
+-device virtconsole,chardev=stdio \
+-mon chardev=stdio \
+-fsdev local,id=fs0,path=$PWD,security_model=none \
+-device virtio-9p-pci,fsdev=fs0,mount_tag=kernel_src \
+-display none \
+$QEMU_ARGS
+&lt;/code>&lt;/pre>
+&lt;p>These lines set up the networking:&lt;/p>
+&lt;pre>&lt;code> -netdev tap,id=net0,ifname=linux0,script=no,downscript=no \
+-device virtio-net,netdev=net0,mac=52:54:00:c0:ff:ee \
+&lt;/code>&lt;/pre>
+&lt;p>These lines set up console on &lt;code>stdin&lt;/code>/&lt;code>stdout&lt;/code> and multiplex the
+console with the qemu monitor:&lt;/p>
+&lt;pre>&lt;code> -chardev stdio,id=stdio,mux=on \
+-device virtio-serial-pci \
+-device virtconsole,chardev=stdio \
+-mon chardev=stdio \
+&lt;/code>&lt;/pre>
+&lt;p>These lines set up access to the current working directory as a &lt;code>9p&lt;/code>
+filesystem:&lt;/p>
+&lt;pre>&lt;code> -fsdev local,id=fs0,path=$PWD,security_model=none \
+-device virtio-9p-pci,fsdev=fs0,mount_tag=kernel_src \
+&lt;/code>&lt;/pre>
+&lt;p>Within the qemu instance, this lets me access my working directory with:&lt;/p>
+&lt;pre>&lt;code>mount -t 9p kernel_src /mnt
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>$BOOT_ARGS&lt;/code> and &lt;code>$QEMU_ARGS&lt;/code> in the script allow me to modify the
+behavior of the script by setting environment variables when calling
+it, like this:&lt;/p>
+&lt;pre>&lt;code>QEMU_ARGS=&amp;quot;-s&amp;quot; sh boot-kernel
+&lt;/code>&lt;/pre>
+&lt;h3 id="first-boot">First boot&lt;/h3>
+&lt;p>I tried to boot the image using my existing kernel and initrd from
+&lt;code>/boot&lt;/code>, and ran into a problem:&lt;/p>
+&lt;pre>&lt;code>[ 184.060756] dracut-initqueue[218]: Warning: Could not boot.
+[ 184.062855] dracut-initqueue[218]: Warning: /dev/ssd/root does not exist
+Starting Dracut Emergency Shell...
+Warning: /dev/ssd/root does not exist
+Generating &amp;quot;/run/initramfs/rdsosreport.txt&amp;quot;
+Entering emergency mode. Exit the shell to continue.
+&lt;/code>&lt;/pre>
+&lt;p>The what now? &lt;code>/dev/ssd/root&lt;/code> is the root device for my host system,
+but wasn&amp;rsquo;t anywhere in the kernel command line I used when booting
+qemu. It turns out that this was embedded in the initrd image in
+&lt;code>/etc/cmdline.d/90lvm.conf&lt;/code>. After removing that file from the
+image&amp;hellip;&lt;/p>
+&lt;pre>&lt;code># mkdir initrd
+# cd initrd
+# zcat /boot/initramfs-3.15.6-200.fc20.x86_64.img | cpio -id
+# rm -rf etc/cmdline.d
+# find . -print | cpio -o -Hcrc | gzip &amp;gt; ../initrd.img
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;I was able to boot successfully and log in.&lt;/p>
+&lt;h3 id="i-bet-you-thought-we-were-done">I bet you thought we were done!&lt;/h3>
+&lt;p>Modern systems are heavily modular. Without access to a module tree
+matching the kernel, I would be unable to successfully boot the
+system, let alone use Docker. Looking at which modules were loaded
+when I ran &lt;code>docker&lt;/code> with the above image, I set up a custom kernel
+configuration that would permit me to boot and run docker without
+requiring any loadable modules. This would allow me to use the same
+image for each kernel without needing to re-populate it with modules
+each time I built a kernel.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;h3 id="testing-docker">Testing docker&lt;/h3>
+&lt;p>The last step in this process is putting together something that tests
+&lt;code>docker&lt;/code> and exposes the result of that test to the build environment.
+I added the following script to the image as &lt;code>/root/docker-test&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+grep NO_DOCKER_TEST /proc/cmdline &amp;amp;&amp;amp; exit 0
+if [ -d /mnt/test_result ]; then
+docker run --rm -i fedora sh -c 'su -c true &amp;amp;&amp;amp; echo OKAY || echo FAILED' \
+&amp;gt; /mnt/test_result/stdout \
+2&amp;gt; /mnt/test_result/stderr
+poweroff
+fi
+&lt;/code>&lt;/pre>
+&lt;p>This relies on the following entry in &lt;code>/etc/fstab&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>kernel_src /mnt 9p defaults 0 0
+&lt;/code>&lt;/pre>
+&lt;p>That mounts the build directory as a &lt;code>9p&lt;/code> filesystem on &lt;code>/mnt&lt;/code>. This
+allows us to write out test results to, e.g.,
+&lt;code>/mnt/test_result/stdout&lt;/code> and have that appear in the &lt;code>test_result&lt;/code>
+directory inside the kernel source.&lt;/p>
+&lt;p>This script is run at the end of the boot process via an entry in
+&lt;code>/etc/rc.d/rc.local&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+sh /root/docker-test
+&lt;/code>&lt;/pre>
+&lt;p>Running the &lt;code>boot-kernel&lt;/code> script without additional configuration will
+cause the image to boot up, run the docker test, and then exit.&lt;/p>
+&lt;h2 id="running-git-bisect">Running git-bisect&lt;/h2>
+&lt;p>At this point we have just about everything we need to start running
+&lt;code>git bisect&lt;/code>. For the initial run, I&amp;rsquo;m going to use git tag &lt;code>v3.14&lt;/code>
+as the &amp;ldquo;known good&amp;rdquo; commit and &lt;code>v3.15&lt;/code> as the &amp;ldquo;known bad&amp;rdquo; commit, so
+we start &lt;code>git bisect&lt;/code> like this:&lt;/p>
+&lt;pre>&lt;code>$ git bisect start v3.15 v3.14
+&lt;/code>&lt;/pre>
+&lt;p>Then we run &lt;code>git bisect run sh bisect-test&lt;/code>, where &lt;code>bisect-test&lt;/code> is
+the following shell script:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+# Rebuild the kernel
+make olddefconfig
+make -j8
+# Clear out old test results and run the test
+rm -f test_result/{stdout,stderr}
+sh boot-kernel
+# Report results to git-bisect
+if grep OKAY test_result/stdout; then
+exit 0
+else
+exit 1
+fi
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and then we go out for a cup of coffee or something, because that&amp;rsquo;s
+going to take a while.&lt;/p>
+&lt;h2 id="keep-digging-watson">Keep digging, Watson&lt;/h2>
+&lt;p>The initial run of &lt;code>git bisect&lt;/code> narrowed the change down to the
+&lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=b7d3622">following commit&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>commit b7d3622a39fde7658170b7f3cf6c6889bb8db30d
+Merge: f3411cb d8ec26d
+Author: Eric Paris &amp;lt;eparis@redhat.com&amp;gt;
+Date: Fri Mar 7 11:41:32 2014 -0500
+Merge tag 'v3.13' into for-3.15
+Linux 3.13
+Conflicts:
+include/net/xfrm.h
+Simple merge where v3.13 removed 'extern' from definitions and the audit
+tree did s/u32/unsigned int/ to the same definitions.
+&lt;/code>&lt;/pre>
+&lt;p>As you can see (from the &lt;code>Merge:&lt;/code> header), this is a merge commit, in
+which an entire set of changes was joined into the &lt;code>master&lt;/code> branch.
+So while this commit is technically the first commit in which this
+problem appears in the &lt;code>master&lt;/code> branch&amp;hellip;it is not actually the commit
+that introduced the problem.&lt;/p>
+&lt;p>I was in luck, though, because looking at the history for the left
+side of this branch (starting with &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb&lt;/a>) showed a series of
+patches to the audit subsystem:&lt;/p>
+&lt;pre>&lt;code>$ git log --oneline f3411cb
+f3411cb audit: whitespace fix in kernel-parameters.txt
+8626877 audit: fix location of __net_initdata for audit_net_ops
+4f06632 audit: remove pr_info for every network namespace
+262fd3a audit: Modify a set of system calls in audit class definitions
+3e1d0bb audit: Convert int limit uses to u32
+d957f7b audit: Use more current logging style
+b8dbc32 audit: Use hex_byte_pack_upper
+06bdadd audit: correct a type mismatch in audit_syscall_exit()
+1ce319f audit: reorder AUDIT_TTY_SET arguments
+0e23bac audit: rework AUDIT_TTY_SET to only grab spin_lock once
+3f0c5fa audit: remove needless switch in AUDIT_SET
+70249a9 audit: use define's for audit version
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;etc.&lt;/p>
+&lt;p>I picked as a starting point the merge commit previous to &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>$ git log --merges -1
+commit fc582aef7dcc27a7120cf232c1e76c569c7b6eab
+Merge: 9175c9d 5e01dc7
+Author: Eric Paris &amp;lt;eparis@redhat.com&amp;gt;
+Date: Fri Nov 22 18:57:08 2013 -0500
+Merge tag 'v3.12'
+Linux 3.12
+Conflicts:
+fs/exec.c
+&lt;/code>&lt;/pre>
+&lt;p>And ran &lt;code>git bisect&lt;/code> again from &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=fc582ae">that commit&lt;/a> through to &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>$ git bisect start f3411cb fc582ae
+$ git bisect run sh bisect-test
+&lt;/code>&lt;/pre>
+&lt;p>Which ultimately ended up with &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">this commit&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb is the first bad commit
+commit 33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb
+Author: Richard Guy Briggs &amp;lt;rgb@redhat.com&amp;gt;
+Date: Tue Jul 16 13:18:45 2013 -0400
+audit: listen in all network namespaces
+Convert audit from only listening in init_net to use register_pernet_subsys()
+to dynamically manage the netlink socket list.
+Signed-off-by: Richard Guy Briggs &amp;lt;rgb@redhat.com&amp;gt;
+Signed-off-by: Eric Paris &amp;lt;eparis@redhat.com&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>Running &lt;code>git bisect log&lt;/code> shows us what revisions were checked as part
+of this process:&lt;/p>
+&lt;pre>&lt;code># bad: [f3411cb2b2e396a41ed3a439863f028db7140a34] audit: whitespace fix in kernel-parameters.txt
+# good: [fc582aef7dcc27a7120cf232c1e76c569c7b6eab] Merge tag 'v3.12'
+git bisect start 'f3411cb' 'fc582ae'
+# bad: [ff235f51a138fc61e1a22dcb8b072d9c78c2a8cc] audit: Added exe field to audit core dump signal log
+git bisect bad ff235f51a138fc61e1a22dcb8b072d9c78c2a8cc
+# bad: [51cc83f024ee51de9da70c17e01ec6de524f5906] audit: add audit_backlog_wait_time configuration option
+git bisect bad 51cc83f024ee51de9da70c17e01ec6de524f5906
+# bad: [ae887e0bdcddb9d7acd8f1eb7b7795b438aa4950] audit: make use of remaining sleep time from wait_for_auditd
+git bisect bad ae887e0bdcddb9d7acd8f1eb7b7795b438aa4950
+# good: [2f2ad1013322c8f6c40fc6dafdbd32442fa730ad] audit: restore order of tty and ses fields in log output
+git bisect good 2f2ad1013322c8f6c40fc6dafdbd32442fa730ad
+# bad: [e789e561a50de0aaa8c695662d97aaa5eac9d55f] audit: reset audit backlog wait time after error recovery
+git bisect bad e789e561a50de0aaa8c695662d97aaa5eac9d55f
+# bad: [33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb] audit: listen in all network namespaces
+git bisect bad 33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb
+# first bad commit: [33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb] audit: listen in all network namespaces
+&lt;/code>&lt;/pre>
+&lt;p>The commit found by &lt;code>git bisect&lt;/code> seems like a reasonable candidate;
+it&amp;rsquo;s a patch against the audit subsystem and has something to do with
+namespaces, which are central to Docker&amp;rsquo;s proper operation.&lt;/p>
+&lt;h2 id="debugging-the-problem">Debugging the problem&lt;/h2>
+&lt;p>We can boot the kernel built from 33faba7 with the &lt;code>boot-kernel&lt;/code>
+script, adding the &lt;code>-s&lt;/code> argument to qemu to start a &lt;code>gdbserver&lt;/code> on
+port &lt;code>1234&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>sh BOOT_ARGS=NO_DOCKER_TEST QEMU_ARGS=&amp;quot;-s&amp;quot; boot-kernel
+&lt;/code>&lt;/pre>
+&lt;blockquote>
+&lt;p>A caveat about attaching to qemu with gdb: qemu has a &lt;code>-S&lt;/code> option
+that will cause the virtual machine to halt at startup, such that
+you can attach before it starts booting and &amp;ndash; in theory &amp;ndash; set
+breakpoints in the early boot process. In practice this doesn&amp;rsquo;t
+work well at all (possibly because the vm switches from 32- to
+64-bit operation during the boot process, which makes gdb unhappy).
+You&amp;rsquo;re better off attaching after the kernel has booted.&lt;/p>
+&lt;/blockquote>
+&lt;p>In another window, we attach &lt;code>gdb&lt;/code> to the running &lt;code>qemu&lt;/code> process:&lt;/p>
+&lt;pre>&lt;code>$ gdb vmlinux
+Reading symbols from vmlinux...done.
+(gdb) target remote :1234
+Remote debugging using :1234
+native_safe_halt () at /home/lars/src/linux/arch/x86/include/asm/irqflags.h:50
+50 }
+(gdb)
+&lt;/code>&lt;/pre>
+&lt;p>I know we&amp;rsquo;re getting the &lt;code>EPERM&lt;/code> in response to sending audit
+messages. Looking through the code in &lt;code>kernel/audit.c&lt;/code>, the
+&lt;code>audit_receive_msg&lt;/code> seems like a reasonable place to start poking
+about. At the beginning of &lt;code>audit_receive_msg&lt;/code>, I see the following
+code:&lt;/p>
+&lt;pre>&lt;code>err = audit_netlink_ok(skb, msg_type);
+if (err)
+return err;
+&lt;/code>&lt;/pre>
+&lt;p>So let&amp;rsquo;s set a breakpoint there if &lt;code>audit_netlink_ok()&lt;/code> returns an
+error:&lt;/p>
+&lt;pre>&lt;code>(gdb) br kernel/audit.c:752 if (err != 0)
+&lt;/code>&lt;/pre>
+&lt;p>And let our qemu process continue running:&lt;/p>
+&lt;pre>&lt;code>(gdb) continue
+Continuing.
+&lt;/code>&lt;/pre>
+&lt;p>Inside the qemu instance I start docker:&lt;/p>
+&lt;pre>&lt;code>-bash-4.2# docker run -it fedora /bin/su -c uptime
+&lt;/code>&lt;/pre>
+&lt;p>And eventually &lt;code>gdb&lt;/code> hits the breakpoint:&lt;/p>
+&lt;pre>&lt;code>Breakpoint 1, audit_receive_msg (nlh=0xffff88003819a400,
+skb=0xffff880038044300) at kernel/audit.c:752
+752 if (err)
+&lt;/code>&lt;/pre>
+&lt;p>If I look at the value of &lt;code>err&lt;/code> at this point:&lt;/p>
+&lt;pre>&lt;code>(gdb) print err
+$1 = -1
+&lt;/code>&lt;/pre>
+&lt;p>That it is, in fact, &lt;code>-EPERM&lt;/code>, which suggests we&amp;rsquo;re on the right
+track. Taking a closer look at &lt;code>audit_netlink_ok()&lt;/code>, it&amp;rsquo;s obvious
+that there are only three places where it can return &lt;code>-EPERM&lt;/code>. I
+tried setting some breakpoint in this function but they weren&amp;rsquo;t
+working correctly, probably due to to optimizations performed when
+compiling the kernel. So instead of &lt;code>gdb&lt;/code>, in this step we just add a
+bunch of &lt;code>pr_err()&lt;/code> statements to print out debugging information on
+the console:&lt;/p>
+&lt;pre>&lt;code>if ((current_user_ns() != &amp;amp;init_user_ns) ||
+(task_active_pid_ns(current) != &amp;amp;init_pid_ns)) {
+pr_err(&amp;quot;currnet_user_ns() check failed\n&amp;quot;);
+return -EPERM;
+}
+.
+.
+.
+case AUDIT_MAKE_EQUIV:
+if (!capable(CAP_AUDIT_CONTROL)) {
+pr_err(&amp;quot;CAP_AUDIT_CONTROL check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+case AUDIT_USER:
+.
+.
+.
+case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+if (!capable(CAP_AUDIT_WRITE)) {
+pr_err(&amp;quot;CAP_AUDIT_WRITE check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+&lt;/code>&lt;/pre>
+&lt;p>With these in place, if I run the &lt;code>docker&lt;/code> command again I see:&lt;/p>
+&lt;pre>&lt;code>[ 12.239860] currnet_user_ns() check failed
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>It looks like we&amp;rsquo;ve found out where it&amp;rsquo;s failing! Of course, we&amp;rsquo;re
+checking code right now that is several commits behind v3.15, so let&amp;rsquo;s
+take a look the same function in the 3.15 release:&lt;/p>
+&lt;pre>&lt;code>$ git checkout v3.15
+&lt;/code>&lt;/pre>
+&lt;p>Looking at &lt;code>audit_netlink_ok&lt;/code> in &lt;code>kernel/audit.c&lt;/code>, it looks as if that
+initial check has changed:&lt;/p>
+&lt;pre>&lt;code> /* Only support initial user namespace for now. */
+/*
+* We return ECONNREFUSED because it tricks userspace into thinking
+* that audit was not configured into the kernel. Lots of users
+* configure their PAM stack (because that's what the distro does)
+* to reject login if unable to send messages to audit. If we return
+* ECONNREFUSED the PAM stack thinks the kernel does not have audit
+* configured in and will let login proceed. If we return EPERM
+* userspace will reject all logins. This should be removed when we
+* support non init namespaces!!
+*/
+if (current_user_ns() != &amp;amp;init_user_ns)
+return -ECONNREFUSED;
+&lt;/code>&lt;/pre>
+&lt;p>So let&amp;rsquo;s insert our print statements into this version of the code and
+see if we get the same behavior:&lt;/p>
+&lt;pre>&lt;code>if (current_user_ns() != &amp;amp;init_user_ns) {
+pr_err(&amp;quot;current_user-ns() check failed\n&amp;quot;);
+return -ECONNREFUSED;
+}
+.
+.
+.
+case AUDIT_MAKE_EQUIV:
+/* Only support auditd and auditctl in initial pid namespace
+* for now. */
+if ((task_active_pid_ns(current) != &amp;amp;init_pid_ns)) {
+pr_err(&amp;quot;init_pid_ns check failed\n&amp;quot;);
+return -EPERM;
+}
+if (!netlink_capable(skb, CAP_AUDIT_CONTROL)) {
+pr_err(&amp;quot;CAP_AUDIT_CONTROL check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+.
+.
+.
+case AUDIT_USER:
+case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+if (!netlink_capable(skb, CAP_AUDIT_WRITE)) {
+pr_err(&amp;quot;CAP_AUDIT_WRITE check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+&lt;/code>&lt;/pre>
+&lt;p>Running the v3.15 kernel, I see:&lt;/p>
+&lt;pre>&lt;code>[ 26.273992] audit: CAP_AUDIT_WRITE check failed
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>So it looks like the intial failure in &lt;code>audit_netlink_ok()&lt;/code> was fixed,
+but we&amp;rsquo;re stilling failing the &lt;code>CAP_AUDIT_WRITE&lt;/code> check.&lt;/p>
+&lt;h3 id="summary">Summary&lt;/h3>
+&lt;p>What&amp;rsquo;s going on here?&lt;/p>
+&lt;p>Prior to &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7&lt;/a>, audit messages were only accepted in the main
+network namespace. Inside other network namespaces, processes sending
+audit messages would simply receive &lt;code>ECONNREFUSED&lt;/code>. For example, this
+is the result of using &lt;code>strace&lt;/code> on that &lt;code>docker run&lt;/code> command in a
+pre-&lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7&lt;/a> kernel:&lt;/p>
+&lt;pre>&lt;code>539 sendto(3, &amp;quot;...authentication acct=\&amp;quot;root\&amp;quot; exe=\&amp;quot;/usr/bin/su\&amp;quot; hostname=? a&amp;quot;...,
+112, 0, {sa_family=AF_NETLINK, pid=0, groups=00000000}, 12) = -1 ECONNREFUSED (Connection refused)
+&lt;/code>&lt;/pre>
+&lt;p>With &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7&lt;/a>, audit messages are now accepted inside network
+namespaces. This means that instead of simply getting &lt;code>ECONNREFUSED&lt;/code>,
+messages must pass the kernel capability check. I spoke with some of
+the audit subsystem maintainers (including Richard Guy Briggs, the
+author of this patch series), and the general consensus is that &amp;ldquo;if
+you want to write audit messages you need &lt;code>CAP_AUDIT_WRITE&lt;/code>&amp;rdquo;.&lt;/p>
+&lt;p>So while this patch did change the behavior of the kernel from the
+perspective of container tools such as Docker, the fix needs to be in
+the tool creating the namespaces.&lt;/p>
+&lt;h2 id="results">Results&lt;/h2>
+&lt;p>This issue was reported against Fedora in &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a> and &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1119849">BZ
+1119849&lt;/a>. This issue was also reported against Docker in &lt;a href="https://github.com/dotcloud/docker/issues/6345">GHI 6345&lt;/a>
+and &lt;a href="https://github.com/dotcloud/docker/issues/7123">GHI 7123&lt;/a>.&lt;/p>
+&lt;p>This problem has been corrected upstream in
+&lt;a href="https://github.com/dotcloud/docker/pull/7179" class="pull-request">#7179&lt;/a>
+.&lt;/p>
+&lt;p>Package &lt;a href="https://admin.fedoraproject.org/updates/FEDORA-2014-8877/docker-io-1.0.0-9.fc20">docker-io-1.0.0-9.fc20&lt;/a>, which includes
+the above fix, is now available for Fedora 20 (and Fedora 19).&lt;/p></content></item></channel></rss>

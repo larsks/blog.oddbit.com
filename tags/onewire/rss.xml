@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>onewire on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/onewire/</link><description>Recent content in onewire on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 27 Mar 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/onewire/rss.xml" rel="self" type="application/rss+xml"/><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+protocol for communication. Recent versions of the Linux kernel
+include a kernel driver for this protocol, making it relatively
+convenient to connect one or more of these devices to a Raspberry Pi
+or similar device. 1-Wire devices can be daisy chained, so it is
+possible to connect several devices to your Pi using only a single
+GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to
+do so.&lt;/p>
+&lt;p>Occasionally, it may be necessary to have more than a single chain of
+connected devices. For example, you may have reached the limits on
+the size of your 1-Wire network, or you may simply need to route your
+cables in a way that makes a single chain difficult. You can enable
+&lt;em>multiple&lt;/em> 1-Wire buses on your Raspberry Pi to handle these
+situations.&lt;/p>
+&lt;p>For a single 1-Wire bus, you add the following to &lt;code>/boot/config.txt&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>dtoverlay=w1-gpio
+&lt;/code>&lt;/pre>
+&lt;p>This will enable the 1-Wire bus on GPIO 4. To enable &lt;em>multiple&lt;/em>
+1-Wire buses, you will use multiple &lt;code>dtoverlay&lt;/code> statements and the
+&lt;code>gpiopin&lt;/code> parameter to the &lt;code>w1-gpio&lt;/code> overlay. For example, to enable
+1-Wire buses on GPIO 4 and GPIO 17, you would use:&lt;/p>
+&lt;pre>&lt;code>dtoverlay=w1-gpio,gpiopin=4
+dtoverlay=w1-gpio,gpiopin=17
+&lt;/code>&lt;/pre>
+&lt;p>In the picture at the top of this post, there are four DS18B20
+sensors. Three are connected to the 1-Wire bus on GPIO 4, and one is
+connected to the 1-Wire bus on GPIO 17. Looking in
+&lt;code>/sys/bus/w1/devices&lt;/code>, I see two w1_bus_master devices (and the four
+temperature sensors):&lt;/p>
+&lt;pre>&lt;code>$ ls /sys/bus/w1/devices/
+28-041722cbacff 28-0417231547ff w1_bus_master1
+28-041722ce24ff 28-04172318c0ff w1_bus_master2
+&lt;/code>&lt;/pre>
+&lt;p>I can check the temperature on all four devices like this:&lt;/p>
+&lt;pre>&lt;code>$ cat /sys/bus/w1/devices/28-*/w1_slave
+50 01 4b 46 7f ff 0c 10 e8 : crc=e8 YES
+50 01 4b 46 7f ff 0c 10 e8 t=21000
+50 01 4b 46 7f ff 0c 10 e8 : crc=e8 YES
+50 01 4b 46 7f ff 0c 10 e8 t=21000
+57 01 4b 46 7f ff 0c 10 38 : crc=38 YES
+57 01 4b 46 7f ff 0c 10 38 t=21437
+57 01 4b 46 7f ff 0c 10 38 : crc=38 YES
+57 01 4b 46 7f ff 0c 10 38 t=21437
+&lt;/code>&lt;/pre>
+&lt;p>You may have noted that there is also a DHT22 sensor in the picture.
+Much like the 1-Wire overlay, the kernel driver for the DHT22 can be
+associated with an arbitrary GPIO pin like this:&lt;/p>
+&lt;pre>&lt;code>dtoverlay=dht11,gpiopin=27
+&lt;/code>&lt;/pre></content></item></channel></rss>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>gruf on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gruf/</link><description>Recent content in gruf on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 19 Feb 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gruf/rss.xml" rel="self" type="application/rss+xml"/><item><title>Gruf gets superpowers</title><link>https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/</guid><description>In my last article article I introduced Gruf, a command line tool for interacting with Gerrit. Since then, Gruf has gained a few important new features.
+Caching Gruf will now by default cache results for five minutes. This avoids repeatedly querying the server for the same information when you&amp;rsquo;re just displaying it with different templates (for example, if you run a gruf query open here followed by a gruf -t patches query open here).</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/">last article&lt;/a> article I introduced &lt;a href="http://github.com/larsks/gruf">Gruf&lt;/a>, a command line
+tool for interacting with &lt;a href="https://www.gerritcodereview.com/">Gerrit&lt;/a>. Since then, Gruf has gained a
+few important new features.&lt;/p>
+&lt;h2 id="caching">Caching&lt;/h2>
+&lt;p>Gruf will now by default cache results for five minutes. This avoids
+repeatedly querying the server for the same information when you&amp;rsquo;re
+just displaying it with different templates (for example, if you run a
+&lt;code>gruf query open here&lt;/code> followed by a &lt;code>gruf -t patches query open here&lt;/code>).&lt;/p>
+&lt;p>The cache lifetime can be tuned on the command line (with the
+&lt;code>--cache-lifetime&lt;/code> option) or in the &lt;code>gruf.yml&lt;/code> configuration file (as
+the &lt;code>cache_lifetime&lt;/code> parameter). Gruf has also learned the
+&lt;code>invalidate-cache&lt;/code> command if you want to clear out the cache.&lt;/p>
+&lt;h2 id="better-streaming">Better streaming&lt;/h2>
+&lt;p>I have substantially enhanced the support for the Gerrit
+&lt;a href="https://gerrit.googlecode.com/svn/documentation/2.1.2/cmd-stream-events.html">stream-events&lt;/a> command.&lt;/p>
+&lt;h3 id="automatic-reconnection">Automatic reconnection&lt;/h3>
+&lt;p>Gruf will now automatically reconnect to the Gerrit server if the
+connection is lost while streaming events.&lt;/p>
+&lt;h3 id="better-default-templates">Better default templates&lt;/h3>
+&lt;p>The default &lt;code>stream-events&lt;/code> template now produces colorized output,
+and there is also a &lt;code>short&lt;/code> template that produces one or two line
+output for each event that can be useful if you just want to see
+what&amp;rsquo;s going on.&lt;/p>
+&lt;p>The default output looks like this:&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;!-- raw HTML omitted -->
+&lt;p>The short output looks something like this:&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;!-- raw HTML omitted --></content></item><item><title>Gruf, a Gerrit command line utility</title><link>https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/</link><pubDate>Tue, 16 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/</guid><description>(See also the followup to this article.)
+I&amp;rsquo;ve recently started spending more time interacting with Gerrit, the code review tool used both by OpenStack, at review.openstack.org, and by a variety of other open source projects at GerritForge&amp;rsquo;s GitHub-linked review.gerrithub.io. I went looking for command line tools and was largely disappointed with what I found. Many of the solutions out there assume that you&amp;rsquo;re regularly interacting with a single Gerrit instance, and that&amp;rsquo;s seldom the case: more often, the Gerrit server in use varies from project to project.</description><content>&lt;p>(See also &lt;a href="https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/">the followup&lt;/a> to this article.)&lt;/p>
+&lt;p>I&amp;rsquo;ve recently started spending more time interacting with &lt;a href="https://www.gerritcodereview.com/">Gerrit&lt;/a>,
+the code review tool used both by &lt;a href="http://openstack.org/">OpenStack&lt;/a>, at
+&lt;a href="http://review.openstack.org/">review.openstack.org&lt;/a>, and by a variety of other open source projects
+at GerritForge&amp;rsquo;s GitHub-linked &lt;a href="http://review.gerrithub.io/">review.gerrithub.io&lt;/a>. I went
+looking for command line tools and was largely disappointed with what
+I found. Many of the solutions out there assume that you&amp;rsquo;re regularly
+interacting with a single Gerrit instance, and that&amp;rsquo;s seldom the case:
+more often, the Gerrit server in use varies from project to project.&lt;br>
+I also found that many of the tools were opinionated in what sort of
+output they would produce.&lt;/p>
+&lt;p>For these reasons, I ended up rolling my own tool called &lt;a href="https://github.com/larsks/gruf">Gruf&lt;/a>.
+This is a wrapper for the Gerrit &lt;a href="https://review.openstack.org/Documentation/cmd-index.html">command line API&lt;/a> that will let
+you query and review Gerrit change requests from the comfort of your
+command line. It is meant to supplement, not replace, the
+&lt;a href="https://github.com/openstack-infra/git-review">git-review&lt;/a> tool that can be used to submit code for review and
+download patchsets for reviewing changes locally.&lt;/p>
+&lt;p>Gruf produces output by passing the result of Gerrit commands through
+&lt;a href="http://jinja.pocoo.org/">Jinja&lt;/a> templates, which means you can produce just about any sort
+of output you want without needing to modify the code.&lt;/p>
+&lt;h2 id="basic-usage">Basic usage&lt;/h2>
+&lt;p>You can use pretty much any of the Gerrit &lt;a href="https://review.openstack.org/Documentation/cmd-index.html#user_commands">user
+commands&lt;/a> as they are presented in the documentation. For example,
+to get a list of review requests that are owned by you:&lt;/p>
+&lt;pre>&lt;code>$ gruf query status:open owner:self
+262882 7 larsks introduce global &amp;quot;nodes&amp;quot; configuration role
+&lt;/code>&lt;/pre>
+&lt;p>Or to review an existing review request:&lt;/p>
+&lt;pre>&lt;code>$ gruf review --code-review +2 262882
+&lt;/code>&lt;/pre>
+&lt;h2 id="configuration">Configuration&lt;/h2>
+&lt;p>Gruf will attempt to read configuration information from
+&lt;code>$HOME/.config/gruf/gruf.yml&lt;/code> (unless &lt;code>$XDG_CONFIG_DIR&lt;/code> in your
+environment points somewhere other than &lt;code>$HOME/.config&lt;/code>). This is a
+&lt;a href="http://yaml.org/">YAML&lt;/a> format file that can contain two keys:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>querymap&lt;/code> &amp;ndash; contains query term aliases&lt;/li>
+&lt;li>&lt;code>cmdalias&lt;/code> &amp;ndash; contains command aliases&lt;/li>
+&lt;/ul>
+&lt;p>These are both discussed in more detail below.&lt;/p>
+&lt;h2 id="templates">Templates&lt;/h2>
+&lt;p>Gruf produces output by passing the response from Gerrit through a
+template. You can provide an explicit template name on the command
+line using the &lt;code>-t&lt;/code> flag. The previous &lt;code>gruf query&lt;/code> example is
+exactly equivalent to:&lt;/p>
+&lt;pre>&lt;code>$ gruf -t default query status:open owner:self
+&lt;/code>&lt;/pre>
+&lt;p>But you can instead ask to see all of the comments for the results:&lt;/p>
+&lt;pre>&lt;code>$ gruf -t comments query status:open owner:self
+&lt;/code>&lt;/pre>
+&lt;p>Gruf looks for templates in two places:&lt;/p>
+&lt;ul>
+&lt;li>In the gruf module directory.&lt;/li>
+&lt;li>In a &lt;code>templates&lt;/code> directory co-located with your &lt;code>gruf.yml&lt;/code>
+configuration file.&lt;/li>
+&lt;/ul>
+&lt;p>Within each directory, Gruf first looks for templates in a
+subdirectory named after the Python class used to process the response
+from Gerrit. For the &lt;code>query&lt;/code> command, this is &lt;code>QueryResponse&lt;/code>; which
+means that to override the default template for the &lt;code>query&lt;/code> command,
+you would create &lt;code>$HOME/.config/gruf/templates/QueryResponse/default&lt;/code>.&lt;/p>
+&lt;p>You can also provide Gruf with inline templates using the
+&lt;code>--inline-template&lt;/code> (aka &lt;code>-T&lt;/code>) command line option:&lt;/p>
+&lt;pre>&lt;code>$ gruf -T '{{url}}' query here limit:5
+https://review.gerrithub.io/263378
+https://review.gerrithub.io/263342
+https://review.gerrithub.io/263341
+https://review.gerrithub.io/263340
+https://review.gerrithub.io/263268
+&lt;/code>&lt;/pre>
+&lt;p>If you want to see what attributes are available in the response from
+Gerrit, use the &lt;code>yaml&lt;/code> template:&lt;/p>
+&lt;pre>&lt;code>$ gruf -t yaml query here limit:1
+&lt;/code>&lt;/pre>
+&lt;p>This will dump the results from Gerrit as a YAML document.&lt;/p>
+&lt;h2 id="referring-to-changes">Referring to changes&lt;/h2>
+&lt;p>Gerrit itself allows you to refer to reviews using change numbers
+(&amp;ldquo;262882&amp;rdquo;), change IDs (&amp;ldquo;Id55e1baa0adf10f704dec2516e98a112be381d14&amp;rdquo;),
+and git commit IDs (&amp;ldquo;80ce4ea09ab7c16aeb5b356ad17e8fb740f3d22b&amp;rdquo;).&lt;/p>
+&lt;p>Gruf adds the option of using git reference names (e.g., branches and
+tags) by prefixing a term with &lt;code>git:&lt;/code>. So if you want to get an
+overview of a review associated with your current commit, you can ask
+for &lt;code>git:HEAD&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ gruf -t patches query git:HEAD
+262882 larsks introduce global &amp;quot;nodes&amp;quot; configuration role
+https://review.gerrithub.io/262882
+[007] refs/changes/82/262882/7
+rdo-ci-centos Verified -1
+[006] refs/changes/82/262882/6
+rdo-ci-centos Verified -1
+[005] refs/changes/82/262882/5
+rdo-ci-centos Verified -1
+[004] refs/changes/82/262882/4
+rdo-ci-centos Verified -1
+[003] refs/changes/82/262882/3
+rdo-ci-centos Verified -1
+[002] refs/changes/82/262882/2
+larsks Code-Review -1
+[001] refs/changes/82/262882/1
+&lt;/code>&lt;/pre>
+&lt;p>This works for any other valid &lt;code>git&lt;/code> reference (a relative reference
+like &lt;code>git:HEAD^&lt;/code>, a branch or tag name like &lt;code>stable/liberty&lt;/code>, or whatever).&lt;/p>
+&lt;h2 id="query-aliases">Query aliases&lt;/h2>
+&lt;p>The Gerrit query language supports a variety of query operators. For
+example, you can search for reviews that you own with &lt;code>owner:self&lt;/code> and
+you can limit results to a particular project with something like
+&lt;code>project:redhat-openstack/triple-quickstart&lt;/code>. While that&amp;rsquo;s very
+useful, it can be annoying if you find yourself typing the same
+operators over and over.&lt;/p>
+&lt;p>Gruf supports a simple form of query aliasing. There are three
+built-in aliases:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>mine&lt;/code> expands to &lt;code>owner:self&lt;/code>&lt;/li>
+&lt;li>&lt;code>open&lt;/code> expands to &lt;code>status:open&lt;/code>&lt;/li>
+&lt;li>&lt;code>here&lt;/code> expands to &lt;code>project:{project}&lt;/code>, where &lt;code>{project}&lt;/code> is replaced
+by the name of the current project.&lt;/li>
+&lt;/ul>
+&lt;p>This allows you to simplify this:&lt;/p>
+&lt;pre>&lt;code>gruf query status:open project:redhat-openstack/tripleo-quickstart
+&lt;/code>&lt;/pre>
+&lt;p>Into:&lt;/p>
+&lt;pre>&lt;code>gruf query open here
+&lt;/code>&lt;/pre>
+&lt;p>You can define additional aliases in the &lt;code>querymap&lt;/code> section of your
+&lt;code>gruf.yml&lt;/code> file. For example, given the following:&lt;/p>
+&lt;pre>&lt;code>querymap:
+needsreview: status:open -is:reviewed
+&lt;/code>&lt;/pre>
+&lt;p>You can now find changes in the project that need review by running:&lt;/p>
+&lt;pre>&lt;code>gruf query needsreview here
+&lt;/code>&lt;/pre>
+&lt;h2 id="command-aliases">Command aliases&lt;/h2>
+&lt;p>You may get tired of typing:&lt;/p>
+&lt;pre>&lt;code>gruf -t patches query ...
+&lt;/code>&lt;/pre>
+&lt;p>If you create the following entry in your &lt;code>gruf.yml&lt;/code> configuration
+file:&lt;/p>
+&lt;pre>&lt;code>cmdalias:
+patches:
+cmd: query
+template: patches
+&lt;/code>&lt;/pre>
+&lt;p>You can now type something like:&lt;/p>
+&lt;pre>&lt;code>gruf patches git:HEAD
+&lt;/code>&lt;/pre>
+&lt;p>And gruf will behave as if you typed:&lt;/p>
+&lt;pre>&lt;code>gruf -t patches query git:HEAD
+&lt;/code>&lt;/pre>
+&lt;p>This is especially useful for simple inline templates. For example,
+given the following entry:&lt;/p>
+&lt;pre>&lt;code>refs:
+cmd: query
+inline_template: &amp;gt;-
+{{number}}
+{{currentPatchSet.ref}}
+{{currentPatchSet.revision}}
+&lt;/code>&lt;/pre>
+&lt;p>You can type:&lt;/p>
+&lt;pre>&lt;code>gruf refs open here
+&lt;/code>&lt;/pre>
+&lt;p>And get output like:&lt;/p>
+&lt;pre>&lt;code>262882 refs/changes/82/262882/7 80ce4ea09ab7c16aeb5b356ad17e8fb740f3d22b
+263336 refs/changes/36/263336/2 5600951b5ce6e18b3d3fff75599518a00ea25384
+263241 refs/changes/41/263241/1 27dbb595d58372b396cafe6dfacf97e58f43bc26
+260561 refs/changes/61/260561/4 ee7f35d0528894990b736b8cece338d1c57ab0ac
+262397 refs/changes/97/262397/1 6181c9b7361e4a804ab7069491a0780d119144f6
+261934 refs/changes/34/261934/1 cf84db84bb67f201df5b59bbdf831dcf3d83056d
+261218 refs/changes/18/261218/1 0d383494c579932e1edddfed23755da7fb2c9aae
+&lt;/code>&lt;/pre>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>The following example session assumes the following configuration:&lt;/p>
+&lt;pre>&lt;code>cmdalias:
+comments:
+cmd: query
+template: comments
+patches:
+cmd: query
+template: patches
+&lt;/code>&lt;/pre>
+&lt;ul>
+&lt;li>
+&lt;p>Get a list of open reviews:&lt;/p>
+&lt;pre>&lt;code> $ gruf query open here
+262882 7 larsks introduce global &amp;quot;nodes&amp;quot; configuration role
+263336 2 trown WIP refactor and simplify image build
+263241 1 trown Move mention of pre-downloaded image to lower section of README
+260561 4 trown Make release rpm location configurable
+262397 1 sshnaidm Split mitaka installation playbook
+261934 1 trown WIP Use IPA ramdisk for liberty deploy
+261218 1 trown WIP self writing docs
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>See an overview of patch sets for a particular change:&lt;/p>
+&lt;pre>&lt;code> $ gruf patches 262882
+262882 larsks introduce global &amp;quot;nodes&amp;quot; configuration role
+https://review.gerrithub.io/262882
+[007] refs/changes/82/262882/7
+rdo-ci-centos Verified -1
+[006] refs/changes/82/262882/6
+rdo-ci-centos Verified -1
+[005] refs/changes/82/262882/5
+rdo-ci-centos Verified -1
+...
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>See comments for a particular change:&lt;/p>
+&lt;pre>&lt;code> $ gruf comments 262882
+...
+From: Lars Kellogg-Stedman (larsks) &amp;lt;lars@redhat.com&amp;gt;
+Uploaded patch set 7.
+From: (rdo-ci-centos) &amp;lt;whayutin+ci_centos@redhat.com&amp;gt;
+Patch Set 7: Verified-1
+Build Failed
+https://ci.centos.org/job/tripleo-quickstart-gate-liberty-delorean-ha/86/ : Test failed
+https://ci.centos.org/job/tripleo-quickstart-gate-mitaka-delorean-ha/94/ : Test failed
+https://ci.centos.org/job/tripleo-quickstart-gate-mitaka-delorean-minimal/97/ : Test failed
+https://ci.centos.org/job/tripleo-quickstart-gate-liberty-delorean-minimal/99/ : Test failed
+https://ci.centos.org/job/trown-poc-tripleo-quickstart-gate-quickstart/22/ : Test ran successfully
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Abandon a change (with a comment):&lt;/p>
+&lt;pre>&lt;code> $ gruf review -m 'this was a terrible idea' --abandon 262882,7
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="future-plans">Future plans&lt;/h2>
+&lt;p>I&amp;rsquo;ve already started using this regularly myself, but I&amp;rsquo;m sure that as
+I work with Gerrit I will develop a better understanding of what I
+want in a command-line tool. At the very least I need to implement
+some form of caching to avoid hammering the Gerrit servers with
+repeated requests for the same information.&lt;/p>
+&lt;p>Beyond that, I&amp;rsquo;m curious if anyone else finds this useful and if there
+are features you would like to see.&lt;/p>
+&lt;p>Happy hacking!&lt;/p></content></item></channel></rss>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>analytics on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/analytics/</link><description>Recent content in analytics on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 08 Nov 2012 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/analytics/rss.xml" rel="self" type="application/rss+xml"/><item><title>Document classification with POPFile</title><link>https://blog.oddbit.com/post/2012-11-08-popfile-document-classificatio/</link><pubDate>Thu, 08 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-08-popfile-document-classificatio/</guid><description>I recently embarked upon a quest to categorize a year&amp;rsquo;s worth of trouble tickets (around 15000 documents total). We wanted to see what sort of things are generating the most work for our helpdesk staff so that we can identify areas in which improvements would have the biggest impact. One of my colleagues took a first pass at the data by manually categorizing the tickets based on their subject. This resulted in some useful data, but in the end just over 40% of the tickets are still uncategorized.</description><content>&lt;p>I recently embarked upon a quest to categorize a year&amp;rsquo;s worth of
+trouble tickets (around 15000 documents total). We wanted to see what
+sort of things are generating the most work for our helpdesk staff so
+that we can identify areas in which improvements would have the
+biggest impact. One of my colleagues took a first pass at the data by
+manually categorizing the tickets based on their subject. This
+resulted in some useful data, but in the end just over 40% of the
+tickets are still uncategorized.&lt;/p>
+&lt;p>I was convinced that we could do better than that by taking into
+account the actual content of the trouble tickets. This seemed like a
+good task for a &lt;a href="https://en.wikipedia.org/wiki/Bayesian_spam_filtering">Bayesian filter&lt;/a> &amp;ndash; a tool that uses the
+statistical probability of words to categorize documents, and is most
+commonly used to differentiate &amp;ldquo;spam&amp;rdquo; from &amp;ldquo;non-spam&amp;rdquo; messages in
+email. Because of this common use case, many of the tools out there
+are built explicitly to make binary (spam/not-spam) determinations,
+while for my purposes I needed something that was capable for sorting
+documents into multiple categories.&lt;/p>
+&lt;p>I finally stumbled across &lt;a href="http://getpopfile.org/">POPFile&lt;/a>, a tool that does almost exactly
+what I want. Out of the box, POPFile is designed to act as a proxy
+between you and a POP mailbox, categorizing messages as your mail
+client retrieves them from a server. While this is tremendously
+convenient for use categorizing email, it would be a sub-optimal
+interface for categorizing a collection of existing documents.&lt;/p>
+&lt;p>Fortunately, POPFile offers an &lt;a href="http://getpopfile.org/docs/popfilemodules:xmlrpc#popfile_xml-rpc_api">XML-RPC API&lt;/a> that allows programmatic
+interaction with the classification engine. Usage is relatively
+simple; first you acquire a connection to the XML-RPC API and
+establish a session key:&lt;/p>
+&lt;pre>&lt;code>popfile = ServerProxy(&amp;quot;http://localhost:8081&amp;quot;)
+api = popfile.POPFile.API
+session = api.get_session_key('admin', '')
+&lt;/code>&lt;/pre>
+&lt;p>And then for each document, perform whatever transformations you wish
+to make (I&amp;rsquo;m building a minimal mail header) and then pass it to the
+&lt;code>handle_message()&lt;/code> method:&lt;/p>
+&lt;pre>&lt;code>with tempfile.NamedTemporaryFile() as fd:
+fd.write('Subject: %s [%s]\n' % (subject, id))
+fd.write('Message-ID: &amp;lt;%s@localhost&amp;gt;\n' % id)
+fd.write('\n')
+fd.write('\n'.join(text))
+fd.flush()
+# Pass file to POPFile service.
+bucket = api.handle_message(session, fd.name, '/dev/null')
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>handle_message()&lt;/code> call takes three parameters:&lt;/p>
+&lt;ul>
+&lt;li>The session key,&lt;/li>
+&lt;li>A path to the input file,&lt;/li>
+&lt;li>A path to the output file (POPFile returns the message with header
+modifications)&lt;/li>
+&lt;/ul>
+&lt;p>In this example, I&amp;rsquo;m passing &lt;code>/dev/null&lt;/code> as the third parameter
+because I don&amp;rsquo;t care about the data returned from POPFile.&lt;/p>
+&lt;p>Initially, POPFile will not perform any categorization of documents.
+After manually categorizing just a few documents, two things happen:&lt;/p>
+&lt;ul>
+&lt;li>POPFile will start using any &lt;a href="http://getpopfile.org/docs/glossary:amagnet">magnets&lt;/a> you have defined, which are
+keyword rules that automatically assign documents to a given
+category.&lt;/li>
+&lt;li>For documents that do not match any magnet rules, POPFile will
+attempt to categorize them using the Bayesian inference engine.&lt;/li>
+&lt;/ul>
+&lt;p>POPFile provides a web interface for interacting with the
+classification engine. In particular, this is where you go to
+manually classify documents, which further enhances the accuracy of
+the Bayesian filters. I got bored after manually categorizing on the
+order of 300 or 400 tickets and just fed the rest of the collection
+into the filter. I suspect the accuracy of the system is somewhere
+between 70% and 80% (based on POPFiles&amp;rsquo;s estimates of accuracy while I
+was manually categorizing documents).&lt;/p>
+&lt;p>For more information:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://getpopfile.org/">POPFile&lt;/a> website&lt;/li>
+&lt;/ul></content></item></channel></rss>

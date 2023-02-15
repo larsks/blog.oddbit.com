@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>windows on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/windows/</link><description>Recent content in windows on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 15 Nov 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/windows/rss.xml" rel="self" type="application/rss+xml"/><item><title>Creating a Windows image for OpenStack</title><link>https://blog.oddbit.com/post/2014-11-15-creating-a-windows-image-for-o/</link><pubDate>Sat, 15 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-15-creating-a-windows-image-for-o/</guid><description>If you want to build a Windows image for use in your OpenStack environment, you can follow the example in the official documentation, or you can grab a Windows 2012r2 evaluation pre-built image from the nice folks at CloudBase.
+The CloudBase-provided image is built using a set of scripts and configuration files that CloudBase has made available on GitHub.
+The CloudBase repository is an excellent source of information, but I wanted to understand the process myself.</description><content>&lt;p>If you want to build a Windows image for use in your OpenStack
+environment, you can follow &lt;a href="http://docs.openstack.org/image-guide/content/windows-image.html">the example in the official
+documentation&lt;/a>, or you can grab a Windows 2012r2
+evaluation &lt;a href="http://www.cloudbase.it/ws2012r2/">pre-built image&lt;/a> from the nice folks at &lt;a href="http://www.cloudbase.it/">CloudBase&lt;/a>.&lt;/p>
+&lt;p>The CloudBase-provided image is built using a set of scripts and
+configuration files that CloudBase has &lt;a href="https://github.com/cloudbase/windows-openstack-imaging-tools/">made available on
+GitHub&lt;/a>.&lt;/p>
+&lt;p>The CloudBase repository is an excellent source of information, but I
+wanted to understand the process myself. This post describes the
+process I went through to establish an automated process for
+generating a Windows image suitable for use with OpenStack.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="unattended-windows-installs">Unattended windows installs&lt;/h2>
+&lt;p>The Windows installer supports &lt;a href="http://technet.microsoft.com/en-us/library/ff699026.aspx">fully automated installations&lt;/a> through
+the use of an answer file, or &amp;ldquo;unattend&amp;rdquo; file, that provides
+information to the installer that would otherwise be provided
+manually. The installer will look in &lt;a href="http://technet.microsoft.com/en-us/library/cc749415%28v=ws.10%29.aspx">a number of places&lt;/a> to find
+this file. For our purposes, the important fact is that the installer
+will look for a file named &lt;code>autounattend.xml&lt;/code> in the root of all
+available read/write or read-only media. We&amp;rsquo;ll take advantage of this
+by creating a file &lt;code>config/autounattend.xml&lt;/code>, and then generating an
+ISO image like this:&lt;/p>
+&lt;pre>&lt;code>mkisofs -J -r -o config.iso config
+&lt;/code>&lt;/pre>
+&lt;p>And we&amp;rsquo;ll attach this ISO to a vm later on in order to provide the
+answer file to the installer.&lt;/p>
+&lt;p>So, what goes into this answer file?&lt;/p>
+&lt;p>The answer file is an XML document enclosed in an
+&lt;code>&amp;lt;unattend&amp;gt;..&amp;lt;/unattend&amp;gt;&lt;/code> element. In order to provide all the
+expected XML namespaces that may be used in the document, you would
+typically start with something like this:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;?xml version=&amp;quot;1.0&amp;quot; ?&amp;gt;
+&amp;lt;unattend
+xmlns=&amp;quot;urn:schemas-microsoft-com:unattend&amp;quot;
+xmlns:ms=&amp;quot;urn:schemas-microsoft-com:asm.v3&amp;quot;
+xmlns:wcm=&amp;quot;http://schemas.microsoft.com/WMIConfig/2002/State&amp;quot;&amp;gt;
+&amp;lt;!-- your content goes here --&amp;gt;
+&amp;lt;/unattend&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>Inside this &lt;code>&amp;lt;unattend&amp;gt;&lt;/code> element you will put one or more &lt;code>&amp;lt;settings&amp;gt;&lt;/code>
+elements, corresponding to the different &lt;a href="http://technet.microsoft.com/en-us/library/cc766245%28v=ws.10%29.aspx">configuration passes&lt;/a> of the
+installer:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;settings pass=&amp;quot;specialize&amp;quot;&amp;gt;
+&amp;lt;/settings&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>The available configuration passes are:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc749062%28v=ws.10%29.aspx">auditSystem&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc722343%28v=ws.10%29.aspx">auditUser&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc766229%28v=ws.10%29.aspx">generalize&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc749001%28v=ws.10%29.aspx">offlineServicing&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc748990%28v=ws.10%29.aspx">oobeSystem&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc722130%28v=ws.10%29.aspx">specialize&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://technet.microsoft.com/en-us/library/cc766028%28v=ws.10%29.aspx">windowsPE&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Of these, the most interesting for our use will be:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>windowsPE&lt;/code> &amp;ndash; used to install device drivers for use within the
+installer environment. We will use this to install the VirtIO
+drivers necessary to make VirtIO devices visible to the Windows
+installer.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>specialize&lt;/code> &amp;ndash; In this pass, the installer applies machine-specific
+configuration. This is typically used to configure networking,
+locale settings, and most other things.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>oobeSystem&lt;/code> &amp;ndash; In this pass, the installer configures things that
+happen at first boot. We use this to step to install some
+additional software and run &lt;a href="http://technet.microsoft.com/en-us/library/cc721940%28v=ws.10%29.aspx">sysprep&lt;/a> in order to prepare the
+image for use in OpenStack.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>Inside each &lt;code>&amp;lt;settings&amp;gt;&lt;/code> element we will place one or more
+&lt;code>&amp;lt;component&amp;gt;&lt;/code> elements that will apply specific pieces of
+configuration. For example, the following &lt;code>&amp;lt;component&amp;gt;&lt;/code> configures
+language and keyboard settings in the installer:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;settings pass=&amp;quot;windowsPE&amp;quot;&amp;gt;
+&amp;lt;component name=&amp;quot;Microsoft-Windows-International-Core-WinPE&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot;&amp;gt;
+&amp;lt;SetupUILanguage&amp;gt;
+&amp;lt;UILanguage&amp;gt;en-US&amp;lt;/UILanguage&amp;gt;
+&amp;lt;/SetupUILanguage&amp;gt;
+&amp;lt;InputLocale&amp;gt;en-US&amp;lt;/InputLocale&amp;gt;
+&amp;lt;UILanguage&amp;gt;en-US&amp;lt;/UILanguage&amp;gt;
+&amp;lt;SystemLocale&amp;gt;en-US&amp;lt;/SystemLocale&amp;gt;
+&amp;lt;UserLocale&amp;gt;en-US&amp;lt;/UserLocale&amp;gt;
+&amp;lt;/component&amp;gt;
+&amp;lt;/settings&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>&lt;a href="http://technet.microsoft.com/">Technet&lt;/a> provides documentation on the &lt;a href="http://technet.microsoft.com/en-us/library/ff699038.aspx">available components&lt;/a>.&lt;/p>
+&lt;h2 id="cloud-init-for-windows">Cloud-init for Windows&lt;/h2>
+&lt;p>&lt;a href="http://cloudinit.readthedocs.org/en/latest/">Cloud-init&lt;/a> is a tool that will configure a virtual instance when
+it first boots, using metadata provided by the cloud service provider.
+For example, when booting a Linux instance under OpenStack,
+&lt;code>cloud-init&lt;/code> will contact the OpenStack metadata service at
+http://169.254.169.254/ in order to retrieve things like the system
+hostname, SSH keys, and so forth.&lt;/p>
+&lt;p>While &lt;code>cloud-init&lt;/code> has support for Linux and BSD, it does not support
+Windows. The folks at &lt;a href="http://www.cloudbase.it/">Cloudbase&lt;/a> have produced &lt;a href="http://www.cloudbase.it/cloud-init-for-windows-instances/">cloudbase-init&lt;/a>
+in order to fill this gap. Once installed, the &lt;code>cloudbase-init&lt;/code> tool
+will, upon first booting a system:&lt;/p>
+&lt;ul>
+&lt;li>Configure the network using information provided in the cloud
+metadata&lt;/li>
+&lt;li>Set the system hostname&lt;/li>
+&lt;li>Create an initial user account (by default &amp;ldquo;Admin&amp;rdquo;) with a randomly
+generated password (see below for details)&lt;/li>
+&lt;li>Install your public key, if provided&lt;/li>
+&lt;li>Execute a script provided via cloud &lt;code>user-data&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;h3 id="passwords-and-ssh-keys">Passwords and ssh keys&lt;/h3>
+&lt;p>While &lt;code>cloudbase-init&lt;/code> will install your SSH public key (by default
+into &lt;code>/Users/admin/.ssh/authorized_keys&lt;/code>), Windows does not ship with
+an SSH server and cloudbase-init does not install one. So what is it
+doing with the public key?&lt;/p>
+&lt;p>While you could arrange to install an ssh server that would make use
+of the key, &lt;code>cloudbase-init&lt;/code> uses it for a completely unrelated
+purpose: encrypting the randomly generated password. This encrypted
+password is then passed back to OpenStack, where you can retrieve it
+using the &lt;code>nova get-password&lt;/code> command, and decrypt it using the
+corresponding SSH private key.&lt;/p>
+&lt;p>Running &lt;code>nova get-password myinstance&lt;/code> will return something like:&lt;/p>
+&lt;pre>&lt;code>w+In/P6+FeE8nv45oCjc5/Bohq4adqzoycwb9hOy9dlmuYbz0hiV923WW0fL
+7hvQcZnWqGY7xLNnbJAeRFiSwv/MWvF3Sq8T0/IWhi6wBhAiVOxM95yjwIit
+/L1Fm0TBARjoBuo+xq44YHpep1qzh4frsOo7TxvMHCOtibKTaLyCsioHjRaQ
+dHk+uVFM1E0VIXyiqCdj421JoJzg32DqqeQTJJMqT9JiOL3FT26Y4XkVyJvI
+vtUCQteIbd4jFtv3wEErJZKHgxHTLEYK+h67nTA4rXpvYVyKw9F8Qwj7JBTj
+UJqp1syEqTR5/DUHYS+NoSdONUa+K7hhtSSs0bS1ghQuAdx2ifIA7XQ5eMRS
+sXC4JH3d+wwtq4OmYYSOQkjmpKD8s5d4TgtG2dK8/l9B/1HTXa6qqcOw9va7
+oUGGws3XuFEVq9DYmQ5NF54N7FU7NVl9UuRW3WTf4Q3q8VwJ4tDrmFSct6oG
+2liJ8s7ybbW5PQU/lJe0gGBGGFzo8c+Rur17nsZ01+309JPEUKqUQT/uEg55
+ziOo8uAwPvInvPkbxjH5doH79t47Erb3cK44kuqZy7J0RdDPtPr2Jel4NaSt
+oCs+P26QF2NVOugsY9O/ugYfZWoEMUZuiwNWCWBqrIohB8JHcItIBQKBdCeY
+7ORjotJU+4qAhADgfbkTqwo=
+&lt;/code>&lt;/pre>
+&lt;p>Providing your secret key as an additional parameter will decrypt the
+password:&lt;/p>
+&lt;pre>&lt;code>$ nova get-password myinstance ~/.ssh/id_rsa
+fjgJmUB7fXF6wo
+&lt;/code>&lt;/pre>
+&lt;p>With an appropriately configured image, you could connect using an RDP
+client and log in as the &amp;ldquo;Admin&amp;rdquo; user using that password.&lt;/p>
+&lt;h3 id="passwords-without-ssh-keys">Passwords without ssh keys&lt;/h3>
+&lt;p>If you do not provide your instance with an SSH key you will not be
+able to retrieve the randomly generated password. However, if you can
+get console access to your instance (e.g., via the Horizon dashboard),
+you can log in as the &amp;ldquo;Administrator&amp;rdquo; user, at which point you will be
+prompted to set an initial password for that account.&lt;/p>
+&lt;h3 id="logging">Logging&lt;/h3>
+&lt;p>You can find logs for &lt;code>cloudbase-init&lt;/code> in &lt;code>c:\program files (x86)\cloudbase solutions\cloudbase-init\log\cloudbase-init.log&lt;/code>.&lt;/p>
+&lt;p>If appropriately configured, &lt;code>cloudbase-init&lt;/code> will also log to the
+virtual serial port. This log is available in OpenStack by running
+&lt;code>nova console-log &amp;lt;instance&amp;gt;&lt;/code>. For example:&lt;/p>
+&lt;pre>&lt;code>$ nova console-log my-windows-server
+2014-11-19 04:10:45.887 1272 INFO cloudbaseinit.init [-] Metadata service loaded: 'HttpService'
+2014-11-19 04:10:46.339 1272 INFO cloudbaseinit.init [-] Executing plugin 'MTUPlugin'
+2014-11-19 04:10:46.371 1272 INFO cloudbaseinit.init [-] Executing plugin 'NTPClientPlugin'
+2014-11-19 04:10:46.387 1272 INFO cloudbaseinit.init [-] Executing plugin 'SetHostNamePlugin'
+.
+.
+.
+&lt;/code>&lt;/pre>
+&lt;h2 id="putting-it-all-together">Putting it all together&lt;/h2>
+&lt;p>I have an &lt;a href="https://github.com/larsks/windows-openstack-image/blob/master/install">install script&lt;/a> that drives the process, but it&amp;rsquo;s
+ultimately just a wrapper for &lt;code>virt-install&lt;/code> and results in the
+following invocation:&lt;/p>
+&lt;pre>&lt;code>exec virt-install -n ws2012 -r 2048 \
+-w network=default,model=virtio \
+--disk path=$TARGET_IMAGE,bus=virtio \
+--cdrom $WINDOWS_IMAGE \
+--disk path=$VIRTIO_IMAGE,device=cdrom \
+--disk path=$CONFIG_IMAGE,device=cdrom \
+--os-type windows \
+--os-variant win2k8 \
+--vnc \
+--console pty
+&lt;/code>&lt;/pre>
+&lt;p>Where &lt;code>TARGET_IMAGE&lt;/code> is the name of a pre-existing &lt;code>qcow2&lt;/code> image onto
+which we will install Windows, &lt;code>WINDOWS_IMAGE&lt;/code> is the path to an ISO
+containing Windows Server 2012r2, &lt;code>VIRTIO_IMAGE&lt;/code> is the path to an ISO
+containing VirtIO drivers for Windows (available from the &lt;a href="https://alt.fedoraproject.org/pub/alt/virtio-win/latest/images/bin/">Fedora
+project&lt;/a>), and &lt;code>CONFIG_IMAGE&lt;/code> is a path to the ISO containing our
+&lt;code>autounattend.xml&lt;/code> file.&lt;/p>
+&lt;p>The fully commented &lt;a href="https://github.com/larsks/windows-openstack-image/blob/master/config/autounattend.xml">autounattend.xml&lt;/a> file, along with the script
+mentioned above, are available in my &lt;a href="https://github.com/larsks/windows-openstack-image/">windows-openstack-image&lt;/a>
+repository on GitHub.&lt;/p>
+&lt;h2 id="the-answer-file-in-detail">The answer file in detail&lt;/h2>
+&lt;h3 id="windowspe">windowsPE&lt;/h3>
+&lt;p>In the &lt;a href="http://technet.microsoft.com/en-us/library/cc766028%28v=ws.10%29.aspx">windowsPE&lt;/a> phase, we start by configuring the installer locale
+settings:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-International-Core-WinPE&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot;&amp;gt;
+&amp;lt;SetupUILanguage&amp;gt;
+&amp;lt;UILanguage&amp;gt;en-US&amp;lt;/UILanguage&amp;gt;
+&amp;lt;/SetupUILanguage&amp;gt;
+&amp;lt;InputLocale&amp;gt;en-US&amp;lt;/InputLocale&amp;gt;
+&amp;lt;UILanguage&amp;gt;en-US&amp;lt;/UILanguage&amp;gt;
+&amp;lt;SystemLocale&amp;gt;en-US&amp;lt;/SystemLocale&amp;gt;
+&amp;lt;UserLocale&amp;gt;en-US&amp;lt;/UserLocale&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And installing the VirtIO drviers using the &lt;a href="http://technet.microsoft.com/en-us/library/ff715623.aspx">Microsoft-Windows-PnpCustomizationsWinPE&lt;/a> component:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-PnpCustomizationsWinPE&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot; language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot; processorArchitecture=&amp;quot;amd64&amp;quot;&amp;gt;
+&amp;lt;DriverPaths&amp;gt;
+&amp;lt;PathAndCredentials wcm:action=&amp;quot;add&amp;quot; wcm:keyValue=&amp;quot;1&amp;quot;&amp;gt;
+&amp;lt;Path&amp;gt;d:\win8\amd64&amp;lt;/Path&amp;gt;
+&amp;lt;/PathAndCredentials&amp;gt;
+&amp;lt;/DriverPaths&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>This assumes that the VirtIO image is mounted as drive &lt;code>d:&lt;/code>.&lt;/p>
+&lt;p>With the drivers installed, we can then call the
+&lt;a href="http://technet.microsoft.com/en-us/library/ff715827.aspx">Microsoft-Windows-Setup&lt;/a> component to configure the disks and
+install Windows. We start by configuring the product key:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-Setup&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;&amp;gt;
+&amp;lt;UserData&amp;gt;
+&amp;lt;AcceptEula&amp;gt;true&amp;lt;/AcceptEula&amp;gt;
+&amp;lt;ProductKey&amp;gt;
+&amp;lt;WillShowUI&amp;gt;OnError&amp;lt;/WillShowUI&amp;gt;
+&amp;lt;Key&amp;gt;INSERT-PRODUCT-KEY-HERE&amp;lt;/Key&amp;gt;
+&amp;lt;/ProductKey&amp;gt;
+&amp;lt;/UserData&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And then configure the disk with a single partition (that will grow to
+fill all the available space) which we then format with NTFS:&lt;/p>
+&lt;pre>&lt;code> &amp;lt;DiskConfiguration&amp;gt;
+&amp;lt;WillShowUI&amp;gt;OnError&amp;lt;/WillShowUI&amp;gt;
+&amp;lt;Disk wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;DiskID&amp;gt;0&amp;lt;/DiskID&amp;gt;
+&amp;lt;WillWipeDisk&amp;gt;true&amp;lt;/WillWipeDisk&amp;gt;
+&amp;lt;CreatePartitions&amp;gt;
+&amp;lt;CreatePartition wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;Order&amp;gt;1&amp;lt;/Order&amp;gt;
+&amp;lt;Extend&amp;gt;true&amp;lt;/Extend&amp;gt;
+&amp;lt;Type&amp;gt;Primary&amp;lt;/Type&amp;gt;
+&amp;lt;/CreatePartition&amp;gt;
+&amp;lt;/CreatePartitions&amp;gt;
+&amp;lt;ModifyPartitions&amp;gt;
+&amp;lt;ModifyPartition wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;Format&amp;gt;NTFS&amp;lt;/Format&amp;gt;
+&amp;lt;Order&amp;gt;1&amp;lt;/Order&amp;gt;
+&amp;lt;PartitionID&amp;gt;1&amp;lt;/PartitionID&amp;gt;
+&amp;lt;Label&amp;gt;System&amp;lt;/Label&amp;gt;
+&amp;lt;/ModifyPartition&amp;gt;
+&amp;lt;/ModifyPartitions&amp;gt;
+&amp;lt;/Disk&amp;gt;
+&amp;lt;/DiskConfiguration&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>We provide information about what to install:&lt;/p>
+&lt;pre>&lt;code> &amp;lt;ImageInstall&amp;gt;
+&amp;lt;OSImage&amp;gt;
+&amp;lt;WillShowUI&amp;gt;Never&amp;lt;/WillShowUI&amp;gt;
+&amp;lt;InstallFrom&amp;gt;
+&amp;lt;MetaData&amp;gt;
+&amp;lt;Key&amp;gt;/IMAGE/Name&amp;lt;/Key&amp;gt;
+&amp;lt;Value&amp;gt;Windows Server 2012 R2 SERVERSTANDARDCORE&amp;lt;/Value&amp;gt;
+&amp;lt;/MetaData&amp;gt;
+&amp;lt;/InstallFrom&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And where we would like it installed:&lt;/p>
+&lt;pre>&lt;code> &amp;lt;InstallTo&amp;gt;
+&amp;lt;DiskID&amp;gt;0&amp;lt;/DiskID&amp;gt;
+&amp;lt;PartitionID&amp;gt;1&amp;lt;/PartitionID&amp;gt;
+&amp;lt;/InstallTo&amp;gt;
+&amp;lt;/OSImage&amp;gt;
+&amp;lt;/ImageInstall&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;h3 id="specialize">specialize&lt;/h3>
+&lt;p>In the &lt;a href="http://technet.microsoft.com/en-us/library/cc722130%28v=ws.10%29.aspx">specialize&lt;/a> phase, we start by setting the system name to a
+randomly generated value using the &lt;a href="http://technet.microsoft.com/en-us/library/ff715801.aspx">Microsoft-Windows-Shell-Setup&lt;/a>
+component:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-Shell-Setup&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot; language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot; processorArchitecture=&amp;quot;amd64&amp;quot;&amp;gt;
+&amp;lt;ComputerName&amp;gt;*&amp;lt;/ComputerName&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>We enable remote desktop because in an OpenStack environment this will
+probably be the preferred mechanism with which to connect to the host
+(but see &lt;a href="http://www.cloudbase.it/windows-without-passwords-in-openstack/">this document&lt;/a> for an alternative mechanism).&lt;/p>
+&lt;p>First, we need to permit terminal server connections:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-TerminalServices-LocalSessionManager&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot;&amp;gt;
+&amp;lt;fDenyTSConnections&amp;gt;false&amp;lt;/fDenyTSConnections&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And we do not want to require network-level authentication prior to
+connecting:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-TerminalServices-RDP-WinStationExtensions&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot;&amp;gt;
+&amp;lt;UserAuthentication&amp;gt;0&amp;lt;/UserAuthentication&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>We will also need to open the necessary firewall group:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Networking-MPSSVC-Svc&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot;
+versionScope=&amp;quot;nonSxS&amp;quot;&amp;gt;
+&amp;lt;FirewallGroups&amp;gt;
+&amp;lt;FirewallGroup wcm:action=&amp;quot;add&amp;quot; wcm:keyValue=&amp;quot;RemoteDesktop&amp;quot;&amp;gt;
+&amp;lt;Active&amp;gt;true&amp;lt;/Active&amp;gt;
+&amp;lt;Profile&amp;gt;all&amp;lt;/Profile&amp;gt;
+&amp;lt;Group&amp;gt;@FirewallAPI.dll,-28752&amp;lt;/Group&amp;gt;
+&amp;lt;/FirewallGroup&amp;gt;
+&amp;lt;/FirewallGroups&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>Finally, we use the &lt;a href="http://technet.microsoft.com/en-us/library/ff716283.aspx">Microsoft-Windows-Deployment&lt;/a> component to configure the Windows firewall to permit ICMP traffic:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;component name=&amp;quot;Microsoft-Windows-Deployment&amp;quot;
+processorArchitecture=&amp;quot;amd64&amp;quot;
+publicKeyToken=&amp;quot;31bf3856ad364e35&amp;quot;
+language=&amp;quot;neutral&amp;quot; versionScope=&amp;quot;nonSxS&amp;quot;&amp;gt;
+&amp;lt;RunSynchronous&amp;gt;
+&amp;lt;RunSynchronousCommand wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;Order&amp;gt;3&amp;lt;/Order&amp;gt;
+&amp;lt;Path&amp;gt;netsh advfirewall firewall add rule name=ICMP protocol=icmpv4 dir=in action=allow&amp;lt;/Path&amp;gt;
+&amp;lt;/RunSynchronousCommand&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And to download the &lt;code>cloudbase-init&lt;/code> installer and make it available
+for later steps:&lt;/p>
+&lt;pre>&lt;code> &amp;lt;RunSynchronousCommand wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;Order&amp;gt;5&amp;lt;/Order&amp;gt;
+&amp;lt;Path&amp;gt;powershell -NoLogo -Command &amp;quot;(new-object System.Net.WebClient).DownloadFile('https://www.cloudbase.it/downloads/CloudbaseInitSetup_Beta_x64.msi', 'c:\Windows\Temp\cloudbase.msi')&amp;quot;&amp;lt;/Path&amp;gt;
+&amp;lt;/RunSynchronousCommand&amp;gt;
+&amp;lt;/RunSynchronous&amp;gt;
+&amp;lt;/component&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;re using &lt;a href="http://technet.microsoft.com/en-us/scriptcenter/powershell.aspx">Powershell&lt;/a> here because it has convenient methods
+available for downloading URLs to local files. This is roughly
+equivalent to using &lt;code>curl&lt;/code> on a Linux system.&lt;/p>
+&lt;h3 id="oobesystem">oobeSystem&lt;/h3>
+&lt;p>In the &lt;a href="http://technet.microsoft.com/en-us/library/cc748990%28v=ws.10%29.aspx">oobeSystem&lt;/a> phase, we configure an automatic login for the
+Administrator user:&lt;/p>
+&lt;pre>&lt;code> &amp;lt;UserAccounts&amp;gt;
+&amp;lt;AdministratorPassword&amp;gt;
+&amp;lt;Value&amp;gt;Passw0rd&amp;lt;/Value&amp;gt;
+&amp;lt;PlainText&amp;gt;true&amp;lt;/PlainText&amp;gt;
+&amp;lt;/AdministratorPassword&amp;gt;
+&amp;lt;/UserAccounts&amp;gt;
+&amp;lt;AutoLogon&amp;gt;
+&amp;lt;Password&amp;gt;
+&amp;lt;Value&amp;gt;Passw0rd&amp;lt;/Value&amp;gt;
+&amp;lt;PlainText&amp;gt;true&amp;lt;/PlainText&amp;gt;
+&amp;lt;/Password&amp;gt;
+&amp;lt;Enabled&amp;gt;true&amp;lt;/Enabled&amp;gt;
+&amp;lt;LogonCount&amp;gt;50&amp;lt;/LogonCount&amp;gt;
+&amp;lt;Username&amp;gt;Administrator&amp;lt;/Username&amp;gt;
+&amp;lt;/AutoLogon&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>This automatic login only happens once, because we configure
+&lt;code>FirstLogonCommands&lt;/code> that will first install &lt;code>cloudbase-init&lt;/code>:&lt;/p>
+&lt;pre>&lt;code> &amp;lt;FirstLogonCommands&amp;gt;
+&amp;lt;SynchronousCommand wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;CommandLine&amp;gt;msiexec /i c:\windows\temp\cloudbase.msi /qb /l*v c:\windows\temp\cloudbase.log LOGGINGSERIALPORTNAME=COM1&amp;lt;/CommandLine&amp;gt;
+&amp;lt;Order&amp;gt;1&amp;lt;/Order&amp;gt;
+&amp;lt;/SynchronousCommand&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And will then run &lt;code>sysprep&lt;/code> to generalize the system (which will,
+among other things, lose the administrator password):&lt;/p>
+&lt;pre>&lt;code> &amp;lt;SynchronousCommand wcm:action=&amp;quot;add&amp;quot;&amp;gt;
+&amp;lt;CommandLine&amp;gt;c:\windows\system32\sysprep\sysprep /generalize /oobe /shutdown&amp;lt;/CommandLine&amp;gt;
+&amp;lt;Order&amp;gt;2&amp;lt;/Order&amp;gt;
+&amp;lt;/SynchronousCommand&amp;gt;
+&amp;lt;/FirstLogonCommands&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>The system will shut down when &lt;code>sysprep&lt;/code> is complete, leaving you with a
+Windows image suitable for uploading into OpenStack:&lt;/p>
+&lt;pre>&lt;code>glance image-create --name ws2012 \
+--disk-format qcow2 \
+--container-format bare \
+--file ws2012.qcow2
+&lt;/code>&lt;/pre>
+&lt;h2 id="troubleshooting">Troubleshooting&lt;/h2>
+&lt;p>If you run into problems with an unattended Windows installation:&lt;/p>
+&lt;p>During the first stage of the installer, you can look in the
+&lt;code>x:\windows\panther&lt;/code> directory for &lt;code>setupact.log&lt;/code> and &lt;code>setuperr.log&lt;/code>,
+which will have information about the early install process. The &lt;code>x:&lt;/code>
+drive is temporary, and files here will be discarded when the system
+reboots.&lt;/p>
+&lt;p>Subsequent installer stages will log to
+&lt;code>c:\windows\panther\&lt;/code>.&lt;/p>
+&lt;p>If you are unfamiliar with Windows, the &lt;code>type&lt;/code> command can be used
+very much like the &lt;code>cat&lt;/code> command on Linux, and the &lt;code>more&lt;/code> command
+provides paging as you would expect. The &lt;code>notepad&lt;/code> command will open
+a GUI text editor/viewer.&lt;/p>
+&lt;p>You can emulate the &lt;code>tail&lt;/code> command using &lt;code>powershell&lt;/code>; to see the last
+10 lines of a file:&lt;/p>
+&lt;pre>&lt;code>C:\&amp;gt; powershell -command &amp;quot;Get-Content setupact.log -Tail 10&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Technet has a &lt;a href="http://technet.microsoft.com/en-us/library/hh825073.aspx">Deployment Troubleshooting and Log Files&lt;/a>
+document that discusses in more detail what is logged and where to
+find it.&lt;/p></content></item><item><title>Automatic configuration of Windows instances in OpenStack, part 1</title><link>https://blog.oddbit.com/post/2012-11-04-openstack-windows-config-part1/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-openstack-windows-config-part1/</guid><description>This is the first of two articles in which I discuss my work in getting some Windows instances up and running in our OpenStack environment. This article is primarily about problems I encountered along the way.
+Motivations Like many organizations, we have a mix of Linux and Windows in our environment. Some folks in my group felt that it would be nice to let our Windows admins take advantage of OpenStack for prototyping and sandboxing in the same ways our Linux admins can use it.</description><content>&lt;p>This is the first of two articles in which I discuss my work in
+getting some Windows instances up and running in our &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>
+environment. This article is primarily about problems I encountered
+along the way.&lt;/p>
+&lt;h2 id="motivations">Motivations&lt;/h2>
+&lt;p>Like many organizations, we have a mix of Linux and Windows in our
+environment. Some folks in my group felt that it would be nice to let
+our Windows admins take advantage of OpenStack for prototyping and
+sandboxing in the same ways our Linux admins can use it.&lt;/p>
+&lt;p>While it is trivial to get Linux instances running in
+OpenStack (there are downloadable images from several distributions that
+will magically configure themselves on first boot), getting Windows
+systems set up is a little trickier. There are no pre-configured
+images to download, and it looks as if there aren&amp;rsquo;t that many people
+trying to run Windows under OpenStack right now so there is a lot less
+common experience to reference.&lt;/p>
+&lt;h2 id="like-the-cool-kids-do-it">Like the cool kids do it&lt;/h2>
+&lt;p>My first approach to this situation was to set up our Windows
+instances to act just like our Linux instances:&lt;/p>
+&lt;ul>
+&lt;li>Install &lt;a href="http://cygwin.com/">Cygwin&lt;/a>.&lt;/li>
+&lt;li>Run an SSH server.&lt;/li>
+&lt;li>Have the system pull down an SSH public key on first boot and use
+this for administrative access.&lt;/li>
+&lt;/ul>
+&lt;p>This worked reasonably well, but many people felt that this wasn&amp;rsquo;t a
+great solution because it wouldn&amp;rsquo;t feel natural to a typical Windows
+administrator. It also required a full Cygwin install to drive
+things, which isn&amp;rsquo;t terrible but still feels like a pretty big hammer.&lt;/p>
+&lt;p>As an alternative, we decided we needed some way to either (a) allow
+the user to pass a password into the instance environment, or (b)
+provide some way for the instance to communicate a generated password
+back to the user.&lt;/p>
+&lt;h2 id="how-about-user-data">How about user-data?&lt;/h2>
+&lt;p>One of my colleagues suggested that we could allow people to pass an
+administrative password into the environment via the &lt;code>user-data&lt;/code>
+attribute available from the &lt;a href="http://docs.openstack.org/trunk/openstack-compute/admin/content/metadata-service.html">metadata service&lt;/a>. While this sounds
+like a reasonable idea at first, it has one major flaw: data from the
+metadata service is available to anyone on the system who is able to
+retrieve a URL. This would make it trivial for anyone on the instance
+to retrieve the administrator password.&lt;/p>
+&lt;h2 id="how-about-adminpass">How about adminPass?&lt;/h2>
+&lt;p>When you boot an instance using the nova command line tools&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>nova boot ...
+&lt;/code>&lt;/pre>
+&lt;p>You get back a chunk of metadata, including an &lt;code>adminPass&lt;/code> key, which
+is a password randomly generated by OpenStack and availble during the
+instance provisioning process:&lt;/p>
+&lt;pre>&lt;code>+------------------------+--------------------------------------+
+| Property | Value |
++------------------------+--------------------------------------+
+...
+| adminPass | RBiWrSNYqK5R |
+...
++------------------------+--------------------------------------+
+&lt;/code>&lt;/pre>
+&lt;p>This would be an ideal solution, if only I were able to figure out how
+OpenStack made this value available to the instance. After asking
+around on &lt;a href="http://wiki.openstack.org/UsingIRC">#openstack&lt;/a> it turns
+out that not many people were even aware this feature exists, so
+information was hard to come by. I ran across some &lt;a href="http://docs.openstack.org/trunk/openstack-compute/admin/content/hypervisor-configuration-basics.html">documentation&lt;/a>
+that mentioned the &lt;code>libvirt_inject_password&lt;/code> option in &lt;code>nova.conf&lt;/code>
+with the following description:&lt;/p>
+&lt;blockquote>
+&lt;p>(BoolOpt) Inject the admin password at boot time, without an agent.&lt;/p>
+&lt;/blockquote>
+&lt;p>&amp;hellip;but that still didn&amp;rsquo;t actually explain how it worked, so I went
+diving through the code. The &lt;code>libvirt_inject_password&lt;/code> option appears
+in only a single file, &lt;code>nova/virt/libvirt/connection.py&lt;/code>, so I knew
+where to start. This led me to the &lt;code>_create_image&lt;/code> method, which
+grabs the &lt;code>admin_pass&lt;/code> generated by OpenStack:&lt;/p>
+&lt;pre>&lt;code>if FLAGS.libvirt_inject_password:
+admin_pass = instance.get('admin_pass')
+else:
+admin_pass = None
+&lt;/code>&lt;/pre>
+&lt;p>And then passes it to the &lt;code>inject_data&lt;/code> method:&lt;/p>
+&lt;pre>&lt;code>disk.inject_data(injection_path,
+key, net, metadata, admin_pass, files,
+partition=target_partition,
+use_cow=FLAGS.use_cow_images,
+config_drive=config_drive)
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>inject_data&lt;/code> method comes from &lt;code>nova/virt/disk/api.py&lt;/code>, which is
+where things get interesting: it turns out that the injection
+mechanism works by:&lt;/p>
+&lt;ul>
+&lt;li>Mounting the root filesystem,&lt;/li>
+&lt;li>Copying out &lt;code>/etc/passwd&lt;/code> and &lt;code>/etc/shadow&lt;/code>,&lt;/li>
+&lt;li>Modifying them, and&lt;/li>
+&lt;li>Copying them back.&lt;/li>
+&lt;/ul>
+&lt;p>Like this:&lt;/p>
+&lt;pre>&lt;code>passwd_path = _join_and_check_path_within_fs(fs, 'etc', 'passwd')
+shadow_path = _join_and_check_path_within_fs(fs, 'etc', 'shadow')
+utils.execute('cp', passwd_path, tmp_passwd, run_as_root=True)
+utils.execute('cp', shadow_path, tmp_shadow, run_as_root=True)
+_set_passwd(admin_user, admin_passwd, tmp_passwd, tmp_shadow)
+utils.execute('cp', tmp_passwd, passwd_path, run_as_root=True)
+os.unlink(tmp_passwd)
+utils.execute('cp', tmp_shadow, shadow_path, run_as_root=True)
+os.unlink(tmp_shadow)
+&lt;/code>&lt;/pre>
+&lt;p>Do you see a problem here, given that I&amp;rsquo;m working with a Windows
+instance? First, it&amp;rsquo;s possible that the host will be unable to mount
+the NTFS filesystem, and secondly, there are no &lt;code>passwd&lt;/code> or &lt;code>shadow&lt;/code>
+files of any use on the target.&lt;/p>
+&lt;p>You can pass &lt;code>--config-drive=True&lt;/code> to &lt;code>nova boot&lt;/code> and it will use a
+configuration drive (a whole-disk FAT filesystem) for configuration
+data (and make this available as a block device when the system
+boots), but this fails, hard: most of the code treats this as being
+identical to the original root filesystem, so it still tries to
+perform the modifications to &lt;code>/etc/passwd&lt;/code> and &lt;code>/etc/shadow&lt;/code> which, of
+course, don&amp;rsquo;t exist.&lt;/p>
+&lt;p>I whipped some quick
+&lt;a href="https://github.com/seas-computing/nova/commits/lars/admin_pass">patches&lt;/a>
+that would write the configuration data (such as &lt;code>admin_pass&lt;/code>) to
+simple files at the root of the configuration drive&amp;hellip;but then I ran
+into a new problem:&lt;/p>
+&lt;p>Windows doesn&amp;rsquo;t know how to deal with whole-disk filesystems (nor,
+apparently, do many &lt;a href="http://serverfault.com/questions/444446/mounting-whole-disk-filesystems-in-windows-2008/444448#comment481758_444448">windows
+admins&lt;/a>).
+In the absence of a partition map, Windows assumes that the device is
+empty.&lt;/p>
+&lt;p>Oops. At this point it was obvious I was treading on ground best left
+undisturbed.&lt;/p></content></item><item><title>Generating random passwords in PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</guid><description>I was looking for PowerShell solutions for generating a random password (in order to set the Administrator password on a Windows instance provisioned in OpenStack), and found several solutions using the GeneratePassword method of System.Web.Security.Membership (documentation here), along the lines of this:
+Function New-RandomComplexPassword ($length=8) { $Assembly = Add-Type -AssemblyName System.Web $password = [System.Web.Security.Membership]::GeneratePassword($length,2) return $password } While this works, I was unhappy with the generated passwords: they were difficult to type or transcribe because they make heavy use of punctuation.</description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
+order to set the Administrator password on a Windows instance provisioned in
+&lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
+of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),
+along the lines of &lt;a href="https://gist.github.com/4011878">this&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>Function New-RandomComplexPassword ($length=8)
+{
+$Assembly = Add-Type -AssemblyName System.Web
+$password = [System.Web.Security.Membership]::GeneratePassword($length,2)
+return $password
+}
+&lt;/code>&lt;/pre>
+&lt;p>While this works, I was unhappy with the generated passwords: they
+were difficult to type or transcribe because they make heavy use of
+punctuation. For example:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>(O;RK_wx(IcD;&amp;lt;V&lt;/code>&lt;/li>
+&lt;li>&lt;code>+3N)lkU5r)nHiL#&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>These looks more like line noise (remember that? No? Get off my
+lawn&amp;hellip;) than anything else and feel very unnatural to type.&lt;/p>
+&lt;p>I was looking for longer strings consisting primarily of letters and
+digits. Thanks to Hey, Scripting Guy I learned about the Get-Random
+and ForEach-Object methods (and the % alias for the latter), and ended
+up with &lt;a href="https://gist.github.com/4011916">the following&lt;/a>:&lt;/p>
+&lt;pre>&lt;code># Generate a random password
+# Usage: random-password &amp;lt;length&amp;gt;
+Function random-password ($length = 15)
+{
+$punc = 46..46
+$digits = 48..57
+$letters = 65..90 + 97..122
+# Thanks to
+# https://blogs.technet.com/b/heyscriptingguy/archive/2012/01/07/use-pow
+$password = get-random -count $length `
+-input ($punc + $digits + $letters) |
+% -begin { $aa = $null } `
+-process {$aa += [char]$_} `
+-end {$aa}
+return $password
+}
+&lt;/code>&lt;/pre>
+&lt;p>This generates strings of letters and digits (and &amp;ldquo;.&amp;rdquo;) that look something like:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>2JQ0bW7VMqcm4UB&lt;/code>&lt;/li>
+&lt;li>&lt;code>V4DObnQl0vJX1wC&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>I&amp;rsquo;m a lot happier with this.&lt;/p></content></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran into a small problem: I was running a script at system startup, and the script was running before the network interface (which was using DHCP) was configured.
+There are a number of common solutions proposed to this problem:
+Just wait for some period of time.
+This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually verify the network state it can result in things breaking if some problem prevents Windows from pulling a valid DHCP lease.</description><content>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
+into a small problem: I was running a script at system startup, and
+the script was running before the network interface (which was using
+DHCP) was configured.&lt;/p>
+&lt;p>There are a number of common solutions proposed to this problem:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Just wait for some period of time.&lt;/p>
+&lt;p>This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually
+verify the network state it can result in things breaking if some
+problem prevents Windows from pulling a valid DHCP lease.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Use ping to verify the availability of some remote host.&lt;/p>
+&lt;p>This works reasonably well if you have a known endpoint you can
+test, but it&amp;rsquo;s hard to make a generic solution using this method.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>What I really wanted to do was to have my script wait until a default
+gateway appeared on the system (which would indicate that Windows had
+successfully acquired a DHCP lease and had configured the interface).&lt;/p>
+&lt;p>My first attempts involved traditional batch scripts (&lt;code>.bat&lt;/code>) running
+some variant of &lt;code>route print&lt;/code> and searching the output. This can
+work, but it&amp;rsquo;s ugly, and I was certain there must be a better way. I
+spent some time learning about accessing network configuration
+information using PowerShell, and I came up with &lt;a href="https://gist.github.com/4011808">the following
+code&lt;/a>:&lt;/p>
+&lt;pre>&lt;code># Wait for a DHCP-enabled interface to develop
+# a default gateway.
+#
+# usage: wait-for-network [ &amp;lt;tries&amp;gt; ]
+function wait-for-network ($tries) {
+while (1) {
+# Get a list of DHCP-enabled interfaces that have a
+# non-$null DefaultIPGateway property.
+$x = gwmi -class Win32_NetworkAdapterConfiguration `
+-filter DHCPEnabled=TRUE |
+where { $_.DefaultIPGateway -ne $null }
+# If there is (at least) one available, exit the loop.
+if ( ($x | measure).count -gt 0 ) {
+break
+}
+# If $tries &amp;gt; 0 and we have tried $tries times without
+# success, throw an exception.
+if ( $tries -gt 0 -and $try++ -ge $tries ) {
+throw &amp;quot;Network unavaiable after $try tries.&amp;quot;
+}
+# Wait one second.
+start-sleep -s 1
+}
+}
+&lt;/code>&lt;/pre>
+&lt;p>This uses various sort of filtering to get a list of DHCP-enabled
+interfaces that have a default gateway (the &lt;code>DefaultIPGateway&lt;/code>
+attribute). It will poll the state of things once/second up to &lt;code>$tries&lt;/code>
+times, and if nothing is available it will ultimately throw an
+exception.&lt;/p></content></item></channel></rss>

@@ -1,0 +1,3267 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>python on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/python/</link><description>Recent content in python on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/python/rss.xml" rel="self" type="application/rss+xml"/><item><title>Remediating poor PyPi performance with DevPi</title><link>https://blog.oddbit.com/post/2021-02-08-remediating-poor-pypi-performa/</link><pubDate>Mon, 08 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-08-remediating-poor-pypi-performa/</guid><description>Performance of the primary PyPi service has been so bad lately that it&amp;rsquo;s become very disruptive. Tasks that used to take a few seconds will now churn along for 15-20 minutes or longer before completing, which is incredibly frustrating.
+I first went looking to see if there was a PyPi mirror infrastructure, like we see with CPAN for Perl or CTAN for Tex (and similarly for most Linux distributions). There is apparently no such beast,</description><content>&lt;p>Performance of the primary PyPi service has been so bad lately that
+it&amp;rsquo;s become very disruptive. Tasks that used to take a few seconds
+will now churn along for 15-20 minutes or longer before completing,
+which is incredibly frustrating.&lt;/p>
+&lt;p>I first went looking to see if there was a PyPi mirror infrastructure,
+like we see with &lt;a href="https://www.cpan.org/">CPAN&lt;/a> for Perl or &lt;a href="https://ctan.org/">CTAN&lt;/a> for Tex (and similarly
+for most Linux distributions). There is apparently no such beast,&lt;/p>
+&lt;p>I didn&amp;rsquo;t really want to set up a PyPi mirror locally, since the number
+of packages I actually use is small vs. the number of packages
+available. I figured there must be some sort of caching proxy
+available that would act as a shim between me and PyPi, fetching
+packages from PyPi and caching them if they weren&amp;rsquo;t already available
+locally.&lt;/p>
+&lt;p>I was previously aware of &lt;a href="https://www.jfrog.com/confluence/display/JFROG/PyPI+Repositories">Artifactory&lt;/a>, which I suspected (and
+confirmed) was capable of this, but while looking around I came across
+&lt;a href="https://www.devpi.net/">DevPi&lt;/a>, which unlike Artifactory is written exclusively for
+managing Python packages. DevPi itself is hosted on PyPi, and the
+documentation made things look easy to configure.&lt;/p>
+&lt;p>After reading through their &lt;a href="https://devpi.net/docs/devpi/devpi/stable/+doc/quickstart-pypimirror.html">Quickstart: running a pypi mirror on your
+laptop&lt;/a> documentation, I built a containerized service that would
+be easy for me to run on my desktop, laptop, work computer, etc. You
+can find the complete configuration at
+&lt;a href="https://github.com/oddbit-dot-com/docker-devpi-server">https://github.com/oddbit-dot-com/docker-devpi-server&lt;/a>.&lt;/p>
+&lt;p>I started with the following &lt;code>Dockerfile&lt;/code> (note I&amp;rsquo;m using
+&lt;a href="https://podman.io/">podman&lt;/a> rather than Docker as my container runtime, but the
+resulting image will work fine for either environment):&lt;/p>
+&lt;pre tabindex="0">&lt;code>FROM python:3.9
+RUN pip install devpi-server devpi-web
+WORKDIR /root
+VOLUME /root/.devpi
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+ENTRYPOINT [&amp;#34;sh&amp;#34;, &amp;#34;/docker-entrypoint.sh&amp;#34;]
+CMD [&amp;#34;devpi-server&amp;#34;, &amp;#34;--host&amp;#34;, &amp;#34;0.0.0.0&amp;#34;]
+&lt;/code>&lt;/pre>&lt;p>This installs both &lt;code>devpi-server&lt;/code>, which provides the basic caching
+for &lt;code>pip install&lt;/code>, as well as &lt;code>devpi-web&lt;/code>, which provides support for
+&lt;code>pip search&lt;/code>.&lt;/p>
+&lt;p>To ensure that things are initialized correctly when the container
+start up, I&amp;rsquo;ve set the &lt;code>ENYTRYPOINT&lt;/code> to the following script:&lt;/p>
+&lt;pre tabindex="0">&lt;code>#!/bin/sh
+if ! [ -f /root/.devpi/server ]; then
+devpi-init
+fi
+exec &amp;#34;$@&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>This will run &lt;code>devpi-init&lt;/code> if the target directory hasn&amp;rsquo;t already been
+initialized.&lt;/p>
+&lt;p>The repository includes a &lt;a href="https://github.com/oddbit-dot-com/docker-devpi-server/blob/master/.github/workflows/build_docker_image.yml">GitHub workflow&lt;/a> that builds a new image on each commit
+and pushes the result to the &lt;code>oddbit/devpi-server&lt;/code> repository on
+Docker Hub.&lt;/p>
+&lt;p>Once the image was available on Docker Hub, I created the following
+systemd unit to run the service locally:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[Service]
+Restart=on-failure
+ExecStartPre=/usr/bin/rm -f %t/%n-pid
+ExecStart=/usr/bin/podman run --replace \
+--conmon-pidfile %t/%n-pid --cgroups=no-conmon \
+--name %n -d -p 127.0.0.1:3141:3141 \
+-v devpi:/root/.devpi oddbit/devpi-server
+ExecStopPost=/usr/bin/rm -f %t/%n-pid
+PIDFile=%t/%n-pid
+Type=forking
+[Install]
+WantedBy=multi-user.target default.target
+&lt;/code>&lt;/pre>&lt;p>There are a couple items of note in this unitfile:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>The service is exposed only on &lt;code>localhost&lt;/code> using &lt;code>-p 127.0.0.1:3141:3141&lt;/code>. I don&amp;rsquo;t want this service exposed on
+externally visible addresses since I haven&amp;rsquo;t bothered setting up any
+sort of authentication.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The service mounts a named volume for use by &lt;code>devpi-server&lt;/code> via the
+&lt;code>-v devpi:/root/.devpi&lt;/code> command line option.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>This unit file gets installed into
+&lt;code>~/.config/systemd/user/devpi.service&lt;/code>. Running &lt;code>systemctl --user enable --now devpi.service&lt;/code> both enables the service to start at boot
+and actually starts it up immediately.&lt;/p>
+&lt;p>With the service running, the last thing to do is configure &lt;code>pip&lt;/code> to
+utilize it. The following configuration, placed in
+&lt;code>~/.config/pip/pip.conf&lt;/code>, does the trick:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[install]
+index-url = http://localhost:3141/root/pypi/+simple/
+[search]
+index = http://localhost:3141/root/pypi/
+&lt;/code>&lt;/pre>&lt;p>Now both &lt;code>pip install&lt;/code> and &lt;code>pip search&lt;/code> hit the local cache instead of
+the upstream PyPi server, and things are generally much, much faster.&lt;/p>
+&lt;h2 id="for-poetry-users">For Poetry Users&lt;/h2>
+&lt;p>&lt;a href="https://python-poetry.org/">Poetry&lt;/a> respects the &lt;code>pip&lt;/code> configuration and will Just Work.&lt;/p>
+&lt;h2 id="for-pipenv-users">For Pipenv Users&lt;/h2>
+&lt;p>&lt;a href="https://github.com/pypa/pipenv">Pipenv&lt;/a> does not respect the pip configuration [&lt;a href="https://github.com/pypa/pipenv/issues/1451">1&lt;/a>,
+&lt;a href="https://github.com/pypa/pipenv/issues/2075">2&lt;/a>], so you will
+need to set the &lt;code>PIPENV_PYPI_MIRROR&lt;/code> environment variable. E.g:&lt;/p>
+&lt;pre tabindex="0">&lt;code>export PIPENV_PYPI_MIRROR=http://localhost:3141/root/pypi/+simple/
+&lt;/code>&lt;/pre></content></item><item><title>symtool: a tool for interacting with your SYM-1</title><link>https://blog.oddbit.com/post/2021-02-06-symtool-a-tool-for-interacting/</link><pubDate>Sat, 06 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-06-symtool-a-tool-for-interacting/</guid><description>The SYM-1 is a 6502-based single-board computer produced by Synertek Systems Corp in the mid 1970&amp;rsquo;s. I&amp;rsquo;ve had one floating around in a box for many, many years, and after a recent foray into the world of 6502 assembly language programming I decided to pull it out, dust it off, and see if it still works.
+The board I have has a whopping 8KB of memory, and in addition to the standard SUPERMON monitor it has the expansion ROMs for the Synertek BASIC interpreter (yet another Microsoft BASIC) and RAE (the &amp;ldquo;Resident Assembler Editor&amp;rdquo;).</description><content>&lt;p>The &lt;a href="https://en.wikipedia.org/wiki/SYM-1">SYM-1&lt;/a> is a &lt;a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502&lt;/a>-based single-board computer produced by
+&lt;a href="https://en.wikipedia.org/wiki/Synertek">Synertek Systems Corp&lt;/a> in the mid 1970&amp;rsquo;s. I&amp;rsquo;ve had one
+floating around in a box for many, many years, and after a recent
+foray into the world of 6502 assembly language programming I decided
+to pull it out, dust it off, and see if it still works.&lt;/p>
+&lt;p>The board I have has a whopping 8KB of memory, and in addition to the
+standard SUPERMON monitor it has the expansion ROMs for the Synertek
+BASIC interpreter (yet another Microsoft BASIC) and RAE (the &amp;ldquo;Resident
+Assembler Editor&amp;rdquo;). One interacts with the board either through the
+onboard hex keypad and six-digit display, or via a serial connection
+at 4800bps (or lower).&lt;/p>
+&lt;p>[If you&amp;rsquo;re interested in Microsoft BASIC, the &lt;a href="https://github.com/mist64/msbasic">mist64/msbasic&lt;/a>
+repository on GitHub is a trove of information, containing the source
+for multiple versions of Microsoft BASIC including the Synertek
+version.]&lt;/p>
+&lt;p>Fiddling around with the BASIC interpreter and the onboard assembler
+was fun, but I wanted to use a &lt;a href="https://www.vim.org/">real editor&lt;/a> for writing source
+files, assemble them on my Linux system, and then transfer the
+compiled binary to the SYM-1. The first two tasks are easy; there are
+lots of editors and there are a variety of 6502 assemblers that will
+run under Linux. I&amp;rsquo;m partial to &lt;a href="https://cc65.github.io/doc/ca65.html">ca65&lt;/a>, part of the &lt;a href="https://cc65.github.io/">cc65&lt;/a>
+project (which is an incredible project that implements a C compiler
+that cross-compiles C for 6502 processors). But what&amp;rsquo;s the best way to
+get compiled code over to the SYM-1?&lt;/p>
+&lt;h2 id="symtool">Symtool&lt;/h2>
+&lt;p>That&amp;rsquo;s where &lt;a href="https://github.com/larsks/symtool">symtool&lt;/a> comes in. Symtool runs on your host and
+talks to the SUPERMON monitor on the SYM-1 over a serial connection.
+It allows you to view registers, dump and load memory, fill memory,
+and execute code.&lt;/p>
+&lt;h3 id="configuration">Configuration&lt;/h3>
+&lt;p>Symtool needs to know to what serial device your SYM-1 is attached.
+You can specify this using the &lt;code>-d &amp;lt;device&amp;gt;&lt;/code> command line option, but
+this quickly gets old. To save typing, you can instead set the
+&lt;code>SYMTOOL_DEVICE&lt;/code> environment variable:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ export SYMTOOL_DEVICE=/dev/ttyUSB0
+$ symtool load ...
+$ symtool dump ...
+&lt;/code>&lt;/pre>&lt;p>The baud rate defaults to 4800bps. If for some reason you want to use
+a slower speed (maybe you&amp;rsquo;d like to relive the good old days of 300bps
+modems), you can use the &lt;code>-s&lt;/code> command line option or the
+&lt;code>SYMTOOL_SPEED&lt;/code> environment variable.&lt;/p>
+&lt;h3 id="loading-code-into-memory">Loading code into memory&lt;/h3>
+&lt;p>After compiling your code (I&amp;rsquo;ve included the examples from the SYM-1
+Technical Notes &lt;a href="https://github.com/larsks/symtool/tree/master/asm">in the repository&lt;/a>), use the &lt;code>load&lt;/code> command to
+load the code into the memory of the SYM-1:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ make -C asm
+[...]
+$ symtool -v load 0x200 asm/countdown.bin
+INFO:symtool.symtool:using port /dev/ttyUSB0, speed 4800
+INFO:symtool.symtool:connecting to sym1...
+INFO:symtool.symtool:connected
+INFO:symtool.symtool:loading 214 bytes of data at $200
+&lt;/code>&lt;/pre>&lt;p>(Note the &lt;code>-v&lt;/code> on the command line there; without that, &lt;code>symtool&lt;/code>
+won&amp;rsquo;t produce any output unless there&amp;rsquo;s an error.)&lt;/p>
+&lt;p>[A note on compiling code: the build logic in the &lt;a href="https://github.com/larsks/symtool/tree/master/asm">&lt;code>asm/&lt;/code>&lt;/a>
+directory is configured to load code at address &lt;code>0x200&lt;/code>. If you want
+to load code at a different address, you will need to add the
+appropriate &lt;code>--start-addr&lt;/code> option to &lt;code>LD65FLAGS&lt;/code> when building, or
+modify the linker configuration in &lt;code>sym1.cfg&lt;/code>.]&lt;/p>
+&lt;h3 id="examining-memory">Examining memory&lt;/h3>
+&lt;p>The above command loads the code into memory but doesn&amp;rsquo;t execute it.
+We can use the &lt;code>dump&lt;/code> command to examine memory. By default, &lt;code>dump&lt;/code>
+produces binary output. We can use that to extract code from the SYM-1
+ROM or to verify that the code we just loaded was transferred
+correctly:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool dump 0x200 $(wc -c &amp;lt; asm/countdown.bin) -o check.bin
+$ sha1sum check.bin asm/countdown.bin
+5851c40bed8cc8b2a132163234b68a7fc0e434c0 check.bin
+5851c40bed8cc8b2a132163234b68a7fc0e434c0 asm/countdown.bin
+&lt;/code>&lt;/pre>&lt;p>We can also produce a hexdump:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool dump 0x200 $(wc -c &amp;lt; asm/countdown.bin) -h
+00000000: 20 86 8B A9 20 85 03 A9 55 8D 7E A6 A9 02 8D 7F ... ...U.~.....
+00000010: A6 A9 40 8D 0B AC A9 4E 8D 06 AC A9 C0 8D 0E AC ..@....N........
+00000020: A9 00 85 02 A9 20 8D 05 AC 18 58 A9 00 8D 40 A6 ..... ....X...@.
+00000030: 8D 41 A6 8D 44 A6 8D 45 A6 A5 04 29 0F 20 73 02 .A..D..E...). s.
+00000040: 8D 43 A6 A5 04 4A 4A 4A 4A 20 73 02 8D 42 A6 20 .C...JJJJ s..B.
+00000050: 06 89 4C 2B 02 48 8A 48 98 48 AD 0D AC 8D 0D AC ..L+.H.H.H......
+00000060: E6 02 A5 02 C9 05 F0 02 50 66 A9 00 85 02 20 78 ........Pf.... x
+00000070: 02 50 5D AA BD 29 8C 60 18 A5 04 69 01 18 B8 85 .P]..).`...i....
+00000080: 04 C9 FF F0 01 60 A9 7C 8D 41 A6 A9 79 8D 42 A6 .....`.|.A..y.B.
+00000090: 8D 43 A6 A9 73 8D 44 A6 A9 00 85 04 20 72 89 20 .C..s.D..... r.
+000000A0: 06 89 20 06 89 20 06 89 20 06 89 20 06 89 20 06 .. .. .. .. .. .
+000000B0: 89 C6 03 20 06 89 20 06 89 20 06 89 20 06 89 20 ... .. .. .. ..
+000000C0: 06 89 20 06 89 A5 03 C9 00 D0 D1 A9 20 85 03 60 .. ......... ..`
+000000D0: 68 A8 68 AA 68 40 h.h.h@
+&lt;/code>&lt;/pre>&lt;p>Or a disassembly:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool dump 0x200 $(wc -c &amp;lt; asm/countdown.bin) -d
+$0200 20 86 8b JSR $8B86
+$0203 a9 20 LDA #$20
+$0205 85 03 STA $03
+$0207 a9 55 LDA #$55
+$0209 8d 7e a6 STA $A67E
+$020c a9 02 LDA #$02
+$020e 8d 7f a6 STA $A67F
+$0211 a9 40 LDA #$40
+$0213 8d 0b ac STA $AC0B
+$0216 a9 4e LDA #$4E
+$0218 8d 06 ac STA $AC06
+$021b a9 c0 LDA #$C0
+$021d 8d 0e ac STA $AC0E
+$0220 a9 00 LDA #$00
+$0222 85 02 STA $02
+$0224 a9 20 LDA #$20
+$0226 8d 05 ac STA $AC05
+$0229 18 CLC
+$022a 58 CLI
+$022b a9 00 LDA #$00
+$022d 8d 40 a6 STA $A640
+$0230 8d 41 a6 STA $A641
+$0233 8d 44 a6 STA $A644
+$0236 8d 45 a6 STA $A645
+$0239 a5 04 LDA $04
+$023b 29 0f AND #$0F
+$023d 20 73 02 JSR $0273
+$0240 8d 43 a6 STA $A643
+$0243 a5 04 LDA $04
+$0245 4a LSR
+$0246 4a LSR
+$0247 4a LSR
+$0248 4a LSR
+$0249 20 73 02 JSR $0273
+$024c 8d 42 a6 STA $A642
+$024f 20 06 89 JSR $8906
+$0252 4c 2b 02 JMP $022B
+$0255 48 PHA
+$0256 8a TXA
+$0257 48 PHA
+$0258 98 TYA
+$0259 48 PHA
+$025a ad 0d ac LDA $AC0D
+$025d 8d 0d ac STA $AC0D
+$0260 e6 02 INC $02
+$0262 a5 02 LDA $02
+$0264 c9 05 CMP #$05
+$0266 f0 02 BEQ $02
+$0268 50 66 BVC $66
+$026a a9 00 LDA #$00
+$026c 85 02 STA $02
+$026e 20 78 02 JSR $0278
+$0271 50 5d BVC $5D
+$0273 aa TAX
+$0274 bd 29 8c LDA $8C29,X
+$0277 60 RTS
+$0278 18 CLC
+$0279 a5 04 LDA $04
+$027b 69 01 ADC #$01
+$027d 18 CLC
+$027e b8 CLV
+$027f 85 04 STA $04
+$0281 c9 ff CMP #$FF
+$0283 f0 01 BEQ $01
+$0285 60 RTS
+$0286 a9 7c LDA #$7C
+$0288 8d 41 a6 STA $A641
+$028b a9 79 LDA #$79
+$028d 8d 42 a6 STA $A642
+$0290 8d 43 a6 STA $A643
+$0293 a9 73 LDA #$73
+$0295 8d 44 a6 STA $A644
+$0298 a9 00 LDA #$00
+$029a 85 04 STA $04
+$029c 20 72 89 JSR $8972
+$029f 20 06 89 JSR $8906
+$02a2 20 06 89 JSR $8906
+$02a5 20 06 89 JSR $8906
+$02a8 20 06 89 JSR $8906
+$02ab 20 06 89 JSR $8906
+$02ae 20 06 89 JSR $8906
+$02b1 c6 03 DEC $03
+$02b3 20 06 89 JSR $8906
+$02b6 20 06 89 JSR $8906
+$02b9 20 06 89 JSR $8906
+$02bc 20 06 89 JSR $8906
+$02bf 20 06 89 JSR $8906
+$02c2 20 06 89 JSR $8906
+$02c5 a5 03 LDA $03
+$02c7 c9 00 CMP #$00
+$02c9 d0 d1 bNE $D1
+$02cb a9 20 LDA #$20
+$02cd 85 03 STA $03
+$02cf 60 RTS
+$02d0 68 PLA
+$02d1 a8 TAY
+$02d2 68 PLA
+$02d3 aa TAX
+$02d4 68 PLA
+$02d5 40 RTI
+&lt;/code>&lt;/pre>&lt;h3 id="executing-code">Executing code&lt;/h3>
+&lt;p>There are two ways to run your code using &lt;code>symtool&lt;/code>. If you provide
+the &lt;code>-g&lt;/code> option to the &lt;code>load&lt;/code> command, &lt;code>symtool&lt;/code> will execute your
+code as soon as the load has finished:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool load -g 0x200 asm/countdown.bin
+&lt;/code>&lt;/pre>&lt;p>Alternatively, you can use the &lt;code>go&lt;/code> command to run code that has
+already been loaded onto the SYM-1:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool go 0x200
+&lt;/code>&lt;/pre>&lt;h3 id="examining-registers">Examining registers&lt;/h3>
+&lt;p>The &lt;code>registers&lt;/code> command allows you to examine the contents of the 6502
+registers:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool registers
+s ff (11111111)
+f b1 (10110001) +carry -zero -intr -dec -oflow +neg
+a 80 (10000000)
+x 00 (00000000)
+y 50 (01010000)
+p b0ac (1011000010101100)
+&lt;/code>&lt;/pre>&lt;h3 id="filling-memory">Filling memory&lt;/h3>
+&lt;p>If you want to clear a block of memory, you can use the &lt;code>fill&lt;/code>
+command. For example, to wipe out the code we loaded in the earlier
+example:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ symtool fill 0x200 0 $(wc -c &amp;lt; asm/countdown.bin)
+$ symtool dump -h 0x200 $(wc -c &amp;lt; asm/countdown.bin)
+00000000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+00000010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[...]
+&lt;/code>&lt;/pre>&lt;h3 id="notes-on-the-code">Notes on the code&lt;/h3>
+&lt;p>The &lt;code>symtool&lt;/code> repository includes both &lt;a href="https://github.com/larsks/symtool/tree/master/tests/unit">unit&lt;/a> and &lt;a href="https://github.com/larsks/symtool/tree/master/tests/functional">functional&lt;/a> tests. The
+functional tests require an actual SYM-1 to be attached to your system
+(with the device name in the &lt;code>SYMTOOL_DEVICE&lt;/code> environment variable).
+The unit tests will run anywhere.&lt;/p>
+&lt;h2 id="wrapping-up">Wrapping up&lt;/h2>
+&lt;p>No lie, this is a pretty niche project. I&amp;rsquo;m not sure how many people
+out there own a SYM-1 these days, but this has been fun to work with
+and if maybe one other person finds it useful, I would consider that
+a success :).&lt;/p>
+&lt;h2 id="see-also">See Also&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>The symtool repository includes an &lt;a href="https://github.com/larsks/symtool/blob/master/reference/synmon11.asm">assembly listing for the
+monitor&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="http://www.6502.org/">6502.org&lt;/a> hosts just about &lt;a href="http://www.6502.org/trainers/synertek/">all the SYM-1 documentation&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;/ul></content></item><item><title>To sleep or not to sleep?</title><link>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</link><pubDate>Fri, 18 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</guid><description>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running MicroPython. You&amp;rsquo;d like to sample them at different frequencies (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like to do it as efficiently as possible in terms of power consumption. What are your options?
+If we don&amp;rsquo;t care about power efficiency, the simplest solution is probably a loop like this:
+import machine lastrun_1 = 0 lastrun_2 = 0 while True: now = time.</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
+(say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
+to do it as efficiently as possible in terms of power consumption.
+What are your options?&lt;/p>
+&lt;p>If we don&amp;rsquo;t care about power efficiency, the simplest solution is
+probably a loop like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+lastrun_1 = 0
+lastrun_2 = 0
+while True:
+now = time.time()
+if (lastrun_1 == 0) or (now - lastrun_1 &amp;gt;= 60):
+read_sensor_1()
+lastrun_1 = now
+if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
+read_sensor_2()
+lastrun_2 = now
+machine.idle()
+&lt;/code>&lt;/pre>&lt;p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266&amp;rsquo;s deep
+sleep mode (assuming we have &lt;a href="http://docs.micropython.org/en/latest/esp8266/tutorial/powerctrl.html#deep-sleep-mode">wired things properly&lt;/a>):&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+def deepsleep(duration):
+rtc = machine.RTC()
+rtc.irq(trigger=rtc.ALARM0, wake=machine.DEEPSLEEP)
+rtc.alarm(rtc.ALARM0, duration)
+read_sensor_1()
+deepsleep(60000)
+&lt;/code>&lt;/pre>&lt;p>This will wake up, read the sensor, then sleep for 60 seconds, at
+which point the device will reboot and repeat the process.&lt;/p>
+&lt;p>If we want both use deep sleep &lt;em>and&lt;/em> run tasks at different intervals,
+we can effectively combine the above two methods. This requires a
+little help from the RTC, which in addition to keeping time also
+provides us with a small amount of memory (492 bytes when using
+MicroPython) that will persist across a deepsleep/reset cycle.&lt;/p>
+&lt;p>The &lt;code>machine.RTC&lt;/code> class includes a &lt;code>memory&lt;/code> method that provides
+access to the RTC memory. We can read the memory like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+rtc = machine.RTC()
+bytes = rtc.memory()
+&lt;/code>&lt;/pre>&lt;p>Note that &lt;code>rtc.memory()&lt;/code> will always return a byte string.&lt;/p>
+&lt;p>We write to it like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>rtc.memory(&amp;#39;somevalue&amp;#39;)
+&lt;/code>&lt;/pre>&lt;p>Lastly, note that the time maintained by the RTC also persists across
+a deepsleep/reset cycle, so that if we call &lt;code>time.time()&lt;/code> and then
+deepsleep for 10 seconds, when the module boots back up &lt;code>time.time()&lt;/code>
+will show that 10 seconds have elapsed.&lt;/p>
+&lt;p>We&amp;rsquo;re going to implement a solution similar to the loop presented at
+the beginning of this article in that we will store the time at which
+at task was last run. Because we need to maintain two different
+values, and because the RTC memory operates on bytes, we need a way to
+serialize and deserialize a pair of integers. We could use functions
+like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import json
+def store_time(t1, t2):
+rtc.memory(json.dumps([t1, t2]))
+def load_time():
+data = rtc.memory()
+if not data:
+return [0, 0]
+try:
+return json.loads(data)
+except ValueError:
+return [0, 0]
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>load_time&lt;/code> method returns &lt;code>[0, 0]&lt;/code> if either (a) the RTC memory
+was unset or (b) we were unable to decode the value stored in memory
+(which might happen if you had previously stored something else
+there).&lt;/p>
+&lt;p>You don&amp;rsquo;t have to use &lt;code>json&lt;/code> for serializing the data we&amp;rsquo;re storing in
+the RTC; you could just as easily use the &lt;code>struct&lt;/code> module:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import struct
+def store_time(t1, t2):
+rtc.memory(struct.pack(&amp;#39;ll&amp;#39;, t1, t2))
+def load_time():
+data = rtc.memory()
+if not data:
+return [0, 0]
+try:
+return struct.unpack(&amp;#39;ll&amp;#39;, data)
+except ValueError:
+return [0, 0]
+&lt;/code>&lt;/pre>&lt;p>Once we&amp;rsquo;re able to store and retrieve data from the RTC, the main part
+of our code ends up looking something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>lastrun_1, lastrun_2 = load_time()
+now = time.time()
+something_happened = False
+if lastrun_1 == 0 or (now - lastrun_1 &amp;gt; 60):
+read_sensor_1()
+lastrun_1 = now
+something_happened = True
+if lastrun_2 == 0 or (now - lastrun_2 &amp;gt; 300):
+read_sensor_2()
+lastrun_2 = now
+something_happened = True
+if something_happened:
+store_time(lastrun_1, lastrun_2)
+deepsleep(60000)
+&lt;/code>&lt;/pre>&lt;p>This code will wake up every 60 seconds. That means it will always run
+the &lt;code>read_sensor_1&lt;/code> task, and it will run the &lt;code>read_sensor_2&lt;/code> task
+every five minutes. In between, the ESP8266 will be in deep sleep
+mode, consuming around 20µA. In order to avoid too many unnecessary
+writes to RTC memory, we only store values when &lt;code>lastrun_1&lt;/code> or
+&lt;code>lastrun_2&lt;/code> has changed.&lt;/p>
+&lt;p>While developing your code, it can be inconvenient to have the device
+enter deep sleep mode (because you can&amp;rsquo;t just &lt;code>^C&lt;/code> to return to the
+REPL). You can make the deep sleep behavior optional by wrapping
+everything in a loop, and optionally calling &lt;code>deepsleep&lt;/code> at the end of
+the loop, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>lastrun_1, lastrun_2 = load_time()
+while True:
+now = time.time()
+something_happened = False
+if lastrun_1 == 0 or (now - lastrun_1 &amp;gt; 60):
+read_sensor_1()
+lastrun_1 = now
+something_happened = True
+if lastrun_2 == 0 or (now - lastrun_2 &amp;gt; 300):
+read_sensor_2()
+lastrun_2 = now
+something_happened = True
+if something_happened:
+store_time(lastrun_1, lastrun_2)
+if use_deep_sleep:
+deepsleep(60000)
+else:
+machine.idle()
+&lt;/code>&lt;/pre>&lt;p>If the variable &lt;code>use_deepsleep&lt;/code> is &lt;code>True&lt;/code>, this code will perform as
+described in the previous section, waking once every 60 seconds. If
+&lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</guid><description>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and for me that means leaping at the chance to turn a small problem into a slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go into here I wanted to generate an alert when a certain WiFi BSSID becomes visible. A simple solution to this problem would have been a few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t about simple solutions!</description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+for me that means leaping at the chance to turn a small problem into a
+slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
+into here I wanted to generate an alert when a certain WiFi BSSID
+becomes visible. A simple solution to this problem would have been a
+few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t
+about simple solutions!&lt;/p>
+&lt;p>I thought it would be fun to put together a physical device of some
+sort that would sound an alarm when the network in question was
+visible. There weren&amp;rsquo;t too many options floating around the house &amp;ndash; I
+found a &lt;a href="https://www.amazon.com/RuiLing-Decibels-Continuous-Sounder-Electronic/dp/B07NK8MGL9">small buzzer&lt;/a>, but it wasn&amp;rsquo;t very loud so wasn&amp;rsquo;t much use
+unless I was right next to it. I needed something a little more
+dramatic, and found it in the old chime doorbell I had floating
+around the basement. This means the problem statement became:&lt;/p>
+&lt;blockquote>
+&lt;p>Design a device that will ring the doorbell chime when a given BSSID
+becomes visible.&lt;/p>
+&lt;/blockquote>
+&lt;p>(Why a BSSID? The BSSID is the hardware address of the access point.
+In most cases, it&amp;rsquo;s easy to change the name of a WiFi network &amp;ndash; the
+SSID &amp;ndash; but somewhat more difficult to change the BSSID.)&lt;/p>
+&lt;h1 id="tldr">TL;DR&lt;/h1>
+&lt;p>Before looking at the implementation in more detail, let&amp;rsquo;s take a look
+at the finished project. When the device detects a target BSSID, it
+rings the bell twice and lights the &lt;code>ALARM&lt;/code> LED:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/cT2JB-aDhTQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>After the initial alarm, the bell will ring once every five minutes
+while the alarm persists. Once the BSSID goes offline, the device
+cancels the alarm and extinguishes the &lt;code>ALARM&lt;/code> LED:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/XY6YKFK2qv4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>If the doorbell proves annoying, there&amp;rsquo;s a switch that activates
+silent mode:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/bgM7Asc4FD4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>When silent mode is active, the device will illuminate the &lt;code>ALARM&lt;/code> LED
+without sounding the bell:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/xRxxqKiiYVc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;h2 id="but-wait-theres-more">But wait, there&amp;rsquo;s more!&lt;/h2>
+&lt;p>There&amp;rsquo;s also a web interface that allows one to monitor and configure
+the device. The web interface allows one to:&lt;/p>
+&lt;ul>
+&lt;li>See a list of visible networks&lt;/li>
+&lt;li>Add a network to the list of targets&lt;/li>
+&lt;li>Remove a network from the list of targets&lt;/li>
+&lt;li>See whether or not the scanning &amp;ldquo;thread&amp;rdquo; is active&lt;/li>
+&lt;li>See whether or not there is currently an active alarm&lt;/li>
+&lt;/ul>
+&lt;p>Here&amp;rsquo;s a video of it in action:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/TtDwYMXy-b8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;h2 id="and-thats-not-all">And that&amp;rsquo;s not all!&lt;/h2>
+&lt;p>In order to support the UI, there&amp;rsquo;s a simple HTTP API that permits
+programmatic interaction with the device. The API supports the
+following endpoints:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>GET /api/target&lt;/code> &amp;ndash; get a list of targets&lt;/li>
+&lt;li>`POST /api/target&amp;rsquo; &amp;ndash; add a BSSID to the list of targets&lt;/li>
+&lt;li>&lt;code>DELETE /api/target/&amp;lt;bssid&amp;gt;&lt;/code> &amp;ndash; remove a BSSID from the list of
+targets&lt;/li>
+&lt;li>&lt;code>GET /api/status&lt;/code> &amp;ndash; get the current alarm status and whether or not
+the scan is running&lt;/li>
+&lt;li>&lt;code>GET /api/scan/result&lt;/code> &amp;ndash; get list of visible networks&lt;/li>
+&lt;li>&lt;code>GET /api/scan/start&lt;/code> &amp;ndash; start the scan&lt;/li>
+&lt;li>&lt;code>GET /api/scan/stop&lt;/code> &amp;ndash; stop the scan&lt;/li>
+&lt;/ul>
+&lt;p>There are a couple of other methods, too, but they&amp;rsquo;re more for
+debugging than anything else.&lt;/p>
+&lt;h2 id="show-me-the-code">Show me the code!&lt;/h2>
+&lt;p>The code for this project is all online at
+&lt;a href="https://github.com/larsks/maxdetector">https://github.com/larsks/maxdetector&lt;/a>.&lt;/p>
+&lt;h1 id="implementation-details">Implementation details&lt;/h1>
+&lt;h2 id="software-notes">Software notes&lt;/h2>
+&lt;p>My initial inclination was to implement the entire solution in
+&lt;a href="https://micropython.org/">MicroPython&lt;/a> on an &lt;a href="https://docs.wemos.cc/en/latest/d1/d1_mini.html">Wemos D1 mini&lt;/a> (an &lt;a href="https://en.wikipedia.org/wiki/ESP8266">esp8266&lt;/a> development
+board), but this proved problematic: MicroPython&amp;rsquo;s &lt;code>network.WLAN.scan&lt;/code>
+method is a blocking operation, by which I mean it blocks
+&lt;em>everything&lt;/em>, including interrupt handling, timer tasks, etc. This
+made it difficult to handle some physical UI aspects, such as button
+debouncing, in a reliable fashion.&lt;/p>
+&lt;p>I ended up moving the physical UI aspects to an &lt;a href="https://store.arduino.cc/usa/arduino-uno-rev3">Arduino Uno&lt;/a>. The
+ESP8266 handles scanning for WiFi networks, and raises a signal to the
+Uno when an alarm is active. The Uno handles the silent mode button,
+the LEDs, and the relay attached to the doorbell.&lt;/p>
+&lt;p>After the initial implementation, I realized that it really need a web
+interface (because of course it does), so in addition to the WiFi
+scanning the ESP8266 now hosts a simple web server. Because of the
+blocking nature of the WiFi scan, this means the web server may
+occasionally pause for a few seconds, but this hasn&amp;rsquo;t proven to be a
+problem.&lt;/p>
+&lt;p>In the end, I have four major blocks of code in three different languages:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/maxdetector.py">maxdetector.py&lt;/a> implements the WiFi scanning&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/server.py">server.py&lt;/a> implements the server side of the web interface&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/static/md.js">md.js&lt;/a> implements the dynamic portion of the web interface&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/src/maxdetector.cpp">maxdetector.cpp&lt;/a> implements the physical UI and operates the doorbell&lt;/li>
+&lt;/ul>
+&lt;h3 id="wifi-scanning">Wifi scanning&lt;/h3>
+&lt;p>The WiFi scanning operation is implemented as a &amp;ldquo;background task&amp;rdquo;
+driven by a MicroPython &lt;a href="https://docs.micropython.org/en/latest/esp8266/quickref.html#timers">virtual timer&lt;/a>. The scanning task triggers
+once every 10 seconds (and takes a little over 2 seconds to complete).&lt;/p>
+&lt;h3 id="web-server">Web server&lt;/h3>
+&lt;p>The web server is a simple &lt;code>select.poll()&lt;/code> based server capable of
+servicing multiple clients (very, very slowly). I was interested in an
+&lt;code>asyncio&lt;/code> implementation, but at the time the only &lt;code>asyncio&lt;/code>
+module for MicroPython was the one in &lt;a href="https://github.com/micropython/micropython-lib">micropython-lib&lt;/a>, which
+hadn&amp;rsquo;t been touched in several years. A new &lt;code>asyncio&lt;/code> module has
+recently been &lt;a href="https://github.com/micropython/micropython/commit/1d4d688b3b251120f5827a3605ec232d977eaa0f">added to micropython&lt;/a>, but that post-dates the
+implementation of this project.&lt;/p>
+&lt;p>The server uses a very simple route-registration mechanism that should
+be familiar if you&amp;rsquo;ve worked with various other Python web frameworks.
+It would be relatively easy to repurpose it for something other than
+this project.&lt;/p>
+&lt;h2 id="the-hardware">The hardware&lt;/h2>
+&lt;p>Everything is bundled &amp;ldquo;neatly&amp;rdquo; (whereby &amp;ldquo;neatly&amp;rdquo; I mean &amp;ldquo;haphazardly&amp;rdquo;)
+into an old shoe box. On the outside, you can see the three LEDs (for
+the ACTIVE, SILENT, and ALARM signals), the SILENT switch, and the
+doorbell itself:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="detector-outside-labelled.png" />
+&lt;/figure>
+&lt;p>On the inside, you&amp;rsquo;ll find the Arduino Uno, the Wemos D1 mini, the
+relay, and a step-down converter:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="detector-inside-labelled.png" />
+&lt;/figure>
+&lt;p>The step-down converter isn&amp;rsquo;t actually necessary: when I put things
+together, I didn&amp;rsquo;t realize that the Uno would accept up to 12V into
+its regulator. Since I already had the step-down converter in place,
+I&amp;rsquo;m feeding about 7.5v to the Uno. The doorbell gets 12V.&lt;/p>
+&lt;p>I initially prototyped the circuit in &lt;a href="https://www.tinkercad.com/things/cpRuevAoV5L-max-detector">Tinkercad Circuits&lt;/a>, where
+everything worked just fine. But after wiring things up and testing out
+the device, it would start ringing endlessly. Upon inspection, this
+was because the Uno was resetting every time the doorbell chimed. This
+was due to flyback voltage from the relay, which is simple to fix if
+you happen to have an appropriate diode handy&amp;hellip;but if you don&amp;rsquo;t, it
+means calling around to all your aquaintenances to find someone who
+happens to have some lying around. With a diode in place, everything
+worked swimmingly.&lt;/p></content></item><item><title>How long is a cold spell in Boston?</title><link>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</link><pubDate>Thu, 23 Jan 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</guid><description>We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about Pandas, the Python data analysis framework.</description><content>&lt;p>We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about &lt;a href="https://pandas.pydata.org">Pandas&lt;/a>, the Python data analysis framework.&lt;/p>
+&lt;p>The first step was finding an appropriate dataset. &lt;a href="https://www.noaa.gov/">NOAA&lt;/a> provides a &lt;a href="https://www.ncdc.noaa.gov/cdo-web/search?datasetid=GHCND">daily summaries&lt;/a> dataset that includes daily high and low temperature; for Boston, this data extends back to about 1936.&lt;/p>
+&lt;p>The next step was figuring how to solve the problem. To be explicit, the question I&amp;rsquo;m trying to answer is:&lt;/p>
+&lt;blockquote>
+&lt;p>For any given winter, what was the longest consecutive string of days in which the temperature stayed below freezing?&lt;/p>
+&lt;/blockquote>
+&lt;p>There are several parts to this problem.&lt;/p>
+&lt;h2 id="reading-the-data">Reading the data&lt;/h2>
+&lt;p>We can read the data using Pandas&amp;rsquo; &lt;code>read_csv&lt;/code> method:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df = pandas.read_csv(&amp;#39;boston.csv&amp;#39;)
+&lt;/code>&lt;/pre>&lt;p>This assumes of course that we have previously &lt;code>import&lt;/code>ed the Pandas library:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import pandas
+&lt;/code>&lt;/pre>&lt;p>Now we have a dataframe in &lt;code>df&lt;/code>, but it&amp;rsquo;s using a positional index (i.e., the first item is at index &lt;code>0&lt;/code>, the second at &lt;code>1&lt;/code>, etc), whereas we want it to use a date-based index. The data has a &lt;code>DATE&lt;/code> column that we can turn into an appropriate index like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;DATE&amp;#39;] = pandas.to_datetime(df[&amp;#39;DATE&amp;#39;])
+df.set_index(df[&amp;#39;DATE&amp;#39;], inplace=True)
+&lt;/code>&lt;/pre>&lt;h2 id="which-winter">Which winter?&lt;/h2>
+&lt;p>I need to be able to group the data by &amp;ldquo;winter&amp;rdquo;. For example, dates from December 21, 2018 through March 20, 2019 would all be associated with &amp;ldquo;winter 2018&amp;rdquo;. It would be easy to group the data by &lt;em>year&lt;/em> using Pandas&amp;rsquo; &lt;code>groupby&lt;/code> method:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df.groupby(df[&amp;#39;DATE&amp;#39;].dt.year)...
+&lt;/code>&lt;/pre>&lt;p>But what&amp;rsquo;s the equivalent for grouping by winter? My first attempt was a naive iterative solution:&lt;/p>
+&lt;pre tabindex="0">&lt;code>def get_winter_start(val):
+if (val.month == 10 and val.day &amp;gt;= 20) or val.month &amp;gt; 10:
+winter = val.year
+elif (val.month == 3 and val.day &amp;lt;= 20) or val.month &amp;lt; 3:
+winter = val.year-1
+else:
+winter = 0
+return winter
+df[&amp;#39;winter_start&amp;#39;] = df[&amp;#39;DATE&amp;#39;].apply(get_winter_start)
+&lt;/code>&lt;/pre>&lt;p>This works, but it&amp;rsquo;s not particular graceful and doesn&amp;rsquo;t take advantage of any of the vector operations supported by Pandas. I eventually came up with a different solution. First, create a boolean series that indicates whether a given date is in winter or not:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;winter&amp;#39;] = (
+((df[&amp;#39;DATE&amp;#39;].dt.month == 12) &amp;amp; (df[&amp;#39;DATE&amp;#39;].dt.day &amp;gt;= 20)) |
+(df[&amp;#39;DATE&amp;#39;].dt.month &amp;lt; 3) |
+((df[&amp;#39;DATE&amp;#39;].dt.month == 3) &amp;amp; (df[&amp;#39;DATE&amp;#39;].dt.day &amp;lt;= 20))
+)
+&lt;/code>&lt;/pre>&lt;p>Next, use this boolean series to create a new dataframe that contains &lt;em>only&lt;/em> dates in winter. Given this new data, the winter year is the current year for the month of December, or (the current year - 1) for months in Janurary, February, and March:&lt;/p>
+&lt;pre tabindex="0">&lt;code>winter = df[df[&amp;#39;winter&amp;#39;]].copy()
+winter[&amp;#39;winter_start&amp;#39;] = (
+winter[&amp;#39;DATE&amp;#39;].dt.year - (winter[&amp;#39;DATE&amp;#39;].dt.month &amp;lt;= 3))
+&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="#bool">later on&lt;/a> in this article.&lt;/p>
+&lt;h2 id="finding-a-sequence-of-consecutive-days-an-iterative-solution">Finding a sequence of consecutive days: an iterative solution&lt;/h2>
+&lt;p>To find the longest sequence of days below freezing, I again started with an iterative solution:&lt;/p>
+&lt;pre tabindex="0">&lt;code>def max_dbf(val):
+acc = []
+cur = 0
+for i, row in val.iterrows():
+if row[&amp;#39;TMAX&amp;#39;] &amp;lt;= 32:
+cur += 1
+else:
+if cur:
+acc.append(cur)
+cur = 0
+if cur:
+acc.append(cur)
+return max(acc)
+&lt;/code>&lt;/pre>&lt;p>Which I applied using Pandas&amp;rsquo; &lt;code>apply&lt;/code> method:&lt;/p>
+&lt;pre tabindex="0">&lt;code>res = winter.groupby(&amp;#39;winter_start&amp;#39;).apply(max_dbf)
+&lt;/code>&lt;/pre>&lt;p>This time it&amp;rsquo;s not just ugly, but it&amp;rsquo;s also noticeably slow. I started doing some research to figure out how to make it faster.&lt;/p>
+&lt;h2 id="finding-a-sequence-of-consecutive-days-a-pandas-solution">Finding a sequence of consecutive days: a Pandas solution&lt;/h2>
+&lt;p>In an answer to &lt;a href="https://stackoverflow.com/questions/27626542/counting-consecutive-positive-value-in-python-array">this question&lt;/a> on Stack Overflow, user &lt;a href="https://stackoverflow.com/users/487339/dsm">DSM&lt;/a> suggests that given a series, you can find the longest sequence of consecutive items matching a condition by first creating a boolean series &lt;code>y&lt;/code> that is &lt;code>True&lt;/code> (or &lt;code>1&lt;/code>) for items that match the condition (and &lt;code>False&lt;/code> or &lt;code>0&lt;/code> otherwise), and then running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>result = y * (y.groupby((y != y.shift()).cumsum()).cumcount() + 1)
+&lt;/code>&lt;/pre>&lt;p>Using that suggestion, I rewrote the &lt;code>max_dbf&lt;/code> method to look like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>def max_dbf(val):
+y = val[&amp;#39;TMAX&amp;#39;] &amp;lt;= 32
+res = y * (y.groupby((y != y.shift()).cumsum()).cumcount() + 1)
+return max(res)
+&lt;/code>&lt;/pre>&lt;p>&amp;hellip;and you know what, it works! But what exactly is going on there? There&amp;rsquo;s a reasonable explanation in &lt;a href="https://stackoverflow.com/a/27626699/147356">the answer&lt;/a>, but I&amp;rsquo;m new enough to Pandas that I wanted to work it out for myself.&lt;/p>
+&lt;h2 id="setting-the-stage">Setting the stage&lt;/h2>
+&lt;p>In order to explore the operation of this expression, let&amp;rsquo;s start with some sample data. This is the value of &lt;code>TMAX&lt;/code> for the month of Janurary, 2018:&lt;/p>
+&lt;pre tabindex="0">&lt;code>data = [
+[&amp;#39;2018-01-01&amp;#39;, 13],
+[&amp;#39;2018-01-02&amp;#39;, 19],
+[&amp;#39;2018-01-03&amp;#39;, 29],
+[&amp;#39;2018-01-04&amp;#39;, 30],
+[&amp;#39;2018-01-05&amp;#39;, 24],
+[&amp;#39;2018-01-06&amp;#39;, 12],
+[&amp;#39;2018-01-07&amp;#39;, 17],
+[&amp;#39;2018-01-08&amp;#39;, 35],
+[&amp;#39;2018-01-09&amp;#39;, 43],
+[&amp;#39;2018-01-10&amp;#39;, 36],
+[&amp;#39;2018-01-11&amp;#39;, 51],
+[&amp;#39;2018-01-12&amp;#39;, 60],
+[&amp;#39;2018-01-13&amp;#39;, 61],
+[&amp;#39;2018-01-14&amp;#39;, 23],
+[&amp;#39;2018-01-15&amp;#39;, 21],
+[&amp;#39;2018-01-16&amp;#39;, 33],
+[&amp;#39;2018-01-17&amp;#39;, 34],
+[&amp;#39;2018-01-18&amp;#39;, 32],
+[&amp;#39;2018-01-19&amp;#39;, 34],
+[&amp;#39;2018-01-20&amp;#39;, 47],
+[&amp;#39;2018-01-21&amp;#39;, 49],
+[&amp;#39;2018-01-22&amp;#39;, 39],
+[&amp;#39;2018-01-23&amp;#39;, 55],
+[&amp;#39;2018-01-24&amp;#39;, 42],
+[&amp;#39;2018-01-25&amp;#39;, 30],
+[&amp;#39;2018-01-26&amp;#39;, 34],
+[&amp;#39;2018-01-27&amp;#39;, 53],
+[&amp;#39;2018-01-28&amp;#39;, 52],
+[&amp;#39;2018-01-29&amp;#39;, 43],
+[&amp;#39;2018-01-30&amp;#39;, 31],
+[&amp;#39;2018-01-31&amp;#39;, 30],
+]
+data_unzipped = list(zip(*data))
+df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&amp;#39;: data_unzipped[1]})
+&lt;/code>&lt;/pre>&lt;p>Our initial dataframe looks like this:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>DATE&lt;/th>
+&lt;th>TMAX&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>0&lt;/td>
+&lt;td>2018-01-01&lt;/td>
+&lt;td>13&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>1&lt;/td>
+&lt;td>2018-01-02&lt;/td>
+&lt;td>19&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>2&lt;/td>
+&lt;td>2018-01-03&lt;/td>
+&lt;td>29&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3&lt;/td>
+&lt;td>2018-01-04&lt;/td>
+&lt;td>30&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>2018-01-05&lt;/td>
+&lt;td>24&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>5&lt;/td>
+&lt;td>2018-01-06&lt;/td>
+&lt;td>12&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>6&lt;/td>
+&lt;td>2018-01-07&lt;/td>
+&lt;td>17&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>7&lt;/td>
+&lt;td>2018-01-08&lt;/td>
+&lt;td>35&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>8&lt;/td>
+&lt;td>2018-01-09&lt;/td>
+&lt;td>43&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>9&lt;/td>
+&lt;td>2018-01-10&lt;/td>
+&lt;td>36&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>10&lt;/td>
+&lt;td>2018-01-11&lt;/td>
+&lt;td>51&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>11&lt;/td>
+&lt;td>2018-01-12&lt;/td>
+&lt;td>60&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>12&lt;/td>
+&lt;td>2018-01-13&lt;/td>
+&lt;td>61&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>13&lt;/td>
+&lt;td>2018-01-14&lt;/td>
+&lt;td>23&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>14&lt;/td>
+&lt;td>2018-01-15&lt;/td>
+&lt;td>21&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>15&lt;/td>
+&lt;td>2018-01-16&lt;/td>
+&lt;td>33&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>16&lt;/td>
+&lt;td>2018-01-17&lt;/td>
+&lt;td>34&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>17&lt;/td>
+&lt;td>2018-01-18&lt;/td>
+&lt;td>32&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>18&lt;/td>
+&lt;td>2018-01-19&lt;/td>
+&lt;td>34&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>19&lt;/td>
+&lt;td>2018-01-20&lt;/td>
+&lt;td>47&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>20&lt;/td>
+&lt;td>2018-01-21&lt;/td>
+&lt;td>49&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>21&lt;/td>
+&lt;td>2018-01-22&lt;/td>
+&lt;td>39&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>22&lt;/td>
+&lt;td>2018-01-23&lt;/td>
+&lt;td>55&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>23&lt;/td>
+&lt;td>2018-01-24&lt;/td>
+&lt;td>42&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>24&lt;/td>
+&lt;td>2018-01-25&lt;/td>
+&lt;td>30&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>25&lt;/td>
+&lt;td>2018-01-26&lt;/td>
+&lt;td>34&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>26&lt;/td>
+&lt;td>2018-01-27&lt;/td>
+&lt;td>53&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>27&lt;/td>
+&lt;td>2018-01-28&lt;/td>
+&lt;td>52&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>28&lt;/td>
+&lt;td>2018-01-29&lt;/td>
+&lt;td>43&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>29&lt;/td>
+&lt;td>2018-01-30&lt;/td>
+&lt;td>31&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>30&lt;/td>
+&lt;td>2018-01-31&lt;/td>
+&lt;td>30&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="step-1">Step 1&lt;/h3>
+&lt;p>We first need to create a boolean series indicating whether or not the temperature is below freezing. We&amp;rsquo;ll put this into the dataframe as series &lt;code>freezing&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;freezing&amp;#39;] = df[&amp;#39;TMAX&amp;#39;] &amp;lt;= 32
+&lt;/code>&lt;/pre>&lt;p>Our dataframe now looks like this:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>DATE&lt;/th>
+&lt;th>TMAX&lt;/th>
+&lt;th>freezing&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>0&lt;/td>
+&lt;td>2018-01-01&lt;/td>
+&lt;td>13&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>1&lt;/td>
+&lt;td>2018-01-02&lt;/td>
+&lt;td>19&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>2&lt;/td>
+&lt;td>2018-01-03&lt;/td>
+&lt;td>29&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3&lt;/td>
+&lt;td>2018-01-04&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>2018-01-05&lt;/td>
+&lt;td>24&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>5&lt;/td>
+&lt;td>2018-01-06&lt;/td>
+&lt;td>12&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>6&lt;/td>
+&lt;td>2018-01-07&lt;/td>
+&lt;td>17&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>7&lt;/td>
+&lt;td>2018-01-08&lt;/td>
+&lt;td>35&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>8&lt;/td>
+&lt;td>2018-01-09&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>9&lt;/td>
+&lt;td>2018-01-10&lt;/td>
+&lt;td>36&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>10&lt;/td>
+&lt;td>2018-01-11&lt;/td>
+&lt;td>51&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>11&lt;/td>
+&lt;td>2018-01-12&lt;/td>
+&lt;td>60&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>12&lt;/td>
+&lt;td>2018-01-13&lt;/td>
+&lt;td>61&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>13&lt;/td>
+&lt;td>2018-01-14&lt;/td>
+&lt;td>23&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>14&lt;/td>
+&lt;td>2018-01-15&lt;/td>
+&lt;td>21&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>15&lt;/td>
+&lt;td>2018-01-16&lt;/td>
+&lt;td>33&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>16&lt;/td>
+&lt;td>2018-01-17&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>17&lt;/td>
+&lt;td>2018-01-18&lt;/td>
+&lt;td>32&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>18&lt;/td>
+&lt;td>2018-01-19&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>19&lt;/td>
+&lt;td>2018-01-20&lt;/td>
+&lt;td>47&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>20&lt;/td>
+&lt;td>2018-01-21&lt;/td>
+&lt;td>49&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>21&lt;/td>
+&lt;td>2018-01-22&lt;/td>
+&lt;td>39&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>22&lt;/td>
+&lt;td>2018-01-23&lt;/td>
+&lt;td>55&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>23&lt;/td>
+&lt;td>2018-01-24&lt;/td>
+&lt;td>42&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>24&lt;/td>
+&lt;td>2018-01-25&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>25&lt;/td>
+&lt;td>2018-01-26&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>26&lt;/td>
+&lt;td>2018-01-27&lt;/td>
+&lt;td>53&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>27&lt;/td>
+&lt;td>2018-01-28&lt;/td>
+&lt;td>52&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>28&lt;/td>
+&lt;td>2018-01-29&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>29&lt;/td>
+&lt;td>2018-01-30&lt;/td>
+&lt;td>31&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>30&lt;/td>
+&lt;td>2018-01-31&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="step-2">Step 2&lt;/h3>
+&lt;p>Now we start looking at the various components in our expression of interest. In this step, we are looking at the highlighted part below:&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>Instead of &lt;code>y&lt;/code>, we&amp;rsquo;re operating on the result of the previous step, &lt;code>df['freezing']&lt;/code>. We&amp;rsquo;ll place the result of this step into a new series named &lt;code>step2&lt;/code> in the dataframe:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;step2&amp;#39;] = df[&amp;#39;freezing&amp;#39;] != df[&amp;#39;freezing&amp;#39;].shift()
+&lt;/code>&lt;/pre>&lt;p>This gives us the following:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>DATE&lt;/th>
+&lt;th>TMAX&lt;/th>
+&lt;th>freezing&lt;/th>
+&lt;th>step2&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>0&lt;/td>
+&lt;td>2018-01-01&lt;/td>
+&lt;td>13&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>1&lt;/td>
+&lt;td>2018-01-02&lt;/td>
+&lt;td>19&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>2&lt;/td>
+&lt;td>2018-01-03&lt;/td>
+&lt;td>29&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3&lt;/td>
+&lt;td>2018-01-04&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>2018-01-05&lt;/td>
+&lt;td>24&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>5&lt;/td>
+&lt;td>2018-01-06&lt;/td>
+&lt;td>12&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>6&lt;/td>
+&lt;td>2018-01-07&lt;/td>
+&lt;td>17&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>7&lt;/td>
+&lt;td>2018-01-08&lt;/td>
+&lt;td>35&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>8&lt;/td>
+&lt;td>2018-01-09&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>9&lt;/td>
+&lt;td>2018-01-10&lt;/td>
+&lt;td>36&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>10&lt;/td>
+&lt;td>2018-01-11&lt;/td>
+&lt;td>51&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>11&lt;/td>
+&lt;td>2018-01-12&lt;/td>
+&lt;td>60&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>12&lt;/td>
+&lt;td>2018-01-13&lt;/td>
+&lt;td>61&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>13&lt;/td>
+&lt;td>2018-01-14&lt;/td>
+&lt;td>23&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>14&lt;/td>
+&lt;td>2018-01-15&lt;/td>
+&lt;td>21&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>15&lt;/td>
+&lt;td>2018-01-16&lt;/td>
+&lt;td>33&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>16&lt;/td>
+&lt;td>2018-01-17&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>17&lt;/td>
+&lt;td>2018-01-18&lt;/td>
+&lt;td>32&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>18&lt;/td>
+&lt;td>2018-01-19&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>19&lt;/td>
+&lt;td>2018-01-20&lt;/td>
+&lt;td>47&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>20&lt;/td>
+&lt;td>2018-01-21&lt;/td>
+&lt;td>49&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>21&lt;/td>
+&lt;td>2018-01-22&lt;/td>
+&lt;td>39&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>22&lt;/td>
+&lt;td>2018-01-23&lt;/td>
+&lt;td>55&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>23&lt;/td>
+&lt;td>2018-01-24&lt;/td>
+&lt;td>42&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>24&lt;/td>
+&lt;td>2018-01-25&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>25&lt;/td>
+&lt;td>2018-01-26&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>26&lt;/td>
+&lt;td>2018-01-27&lt;/td>
+&lt;td>53&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>27&lt;/td>
+&lt;td>2018-01-28&lt;/td>
+&lt;td>52&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>28&lt;/td>
+&lt;td>2018-01-29&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>29&lt;/td>
+&lt;td>2018-01-30&lt;/td>
+&lt;td>31&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>30&lt;/td>
+&lt;td>2018-01-31&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>Looking at the values of &lt;code>step2&lt;/code> in this table, we can see an interesting property: &lt;code>step2&lt;/code> is &lt;code>True&lt;/code> only in cases where the value of &lt;code>df['freezing']&lt;/code> changes.&lt;/p>
+&lt;h3 id="step-3">Step 3&lt;/h3>
+&lt;!-- raw HTML omitted -->
+&lt;p>In this step, we apply the &lt;a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.cumsum.html">cumsum&lt;/a> method (&amp;ldquo;cumulative sum&amp;rdquo;) to the result of step 2. We store the result in a new series &lt;code>step3&lt;/code> in the dataframe:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;step3&amp;#39;] = df[&amp;#39;step2&amp;#39;].cumsum()
+&lt;/code>&lt;/pre>&lt;p>The result looks like this:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>DATE&lt;/th>
+&lt;th>TMAX&lt;/th>
+&lt;th>freezing&lt;/th>
+&lt;th>step2&lt;/th>
+&lt;th>step3&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>0&lt;/td>
+&lt;td>2018-01-01&lt;/td>
+&lt;td>13&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>1&lt;/td>
+&lt;td>2018-01-02&lt;/td>
+&lt;td>19&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>2&lt;/td>
+&lt;td>2018-01-03&lt;/td>
+&lt;td>29&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3&lt;/td>
+&lt;td>2018-01-04&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>2018-01-05&lt;/td>
+&lt;td>24&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>5&lt;/td>
+&lt;td>2018-01-06&lt;/td>
+&lt;td>12&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>6&lt;/td>
+&lt;td>2018-01-07&lt;/td>
+&lt;td>17&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>7&lt;/td>
+&lt;td>2018-01-08&lt;/td>
+&lt;td>35&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>8&lt;/td>
+&lt;td>2018-01-09&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>9&lt;/td>
+&lt;td>2018-01-10&lt;/td>
+&lt;td>36&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>10&lt;/td>
+&lt;td>2018-01-11&lt;/td>
+&lt;td>51&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>11&lt;/td>
+&lt;td>2018-01-12&lt;/td>
+&lt;td>60&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>12&lt;/td>
+&lt;td>2018-01-13&lt;/td>
+&lt;td>61&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>13&lt;/td>
+&lt;td>2018-01-14&lt;/td>
+&lt;td>23&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>14&lt;/td>
+&lt;td>2018-01-15&lt;/td>
+&lt;td>21&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>15&lt;/td>
+&lt;td>2018-01-16&lt;/td>
+&lt;td>33&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>16&lt;/td>
+&lt;td>2018-01-17&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>17&lt;/td>
+&lt;td>2018-01-18&lt;/td>
+&lt;td>32&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>5&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>18&lt;/td>
+&lt;td>2018-01-19&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>19&lt;/td>
+&lt;td>2018-01-20&lt;/td>
+&lt;td>47&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>20&lt;/td>
+&lt;td>2018-01-21&lt;/td>
+&lt;td>49&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>21&lt;/td>
+&lt;td>2018-01-22&lt;/td>
+&lt;td>39&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>22&lt;/td>
+&lt;td>2018-01-23&lt;/td>
+&lt;td>55&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>23&lt;/td>
+&lt;td>2018-01-24&lt;/td>
+&lt;td>42&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>24&lt;/td>
+&lt;td>2018-01-25&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>7&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>25&lt;/td>
+&lt;td>2018-01-26&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>8&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>26&lt;/td>
+&lt;td>2018-01-27&lt;/td>
+&lt;td>53&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>27&lt;/td>
+&lt;td>2018-01-28&lt;/td>
+&lt;td>52&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>28&lt;/td>
+&lt;td>2018-01-29&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>29&lt;/td>
+&lt;td>2018-01-30&lt;/td>
+&lt;td>31&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>9&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>30&lt;/td>
+&lt;td>2018-01-31&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>9&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>&lt;!-- raw HTML omitted -->&lt;!-- raw HTML omitted -->&lt;/p>
+&lt;p>We&amp;rsquo;re applying the &lt;code>cumsum&lt;/code> method to a boolean series. By doing so, we&amp;rsquo;re taking advantage of the fact that in Python &lt;a href="https://docs.python.org/release/3.0.1/reference/datamodel.html#the-standard-type-hierarchy">we can treat boolean values as integers&lt;/a>: a &lt;code>True&lt;/code> value evaluates to &lt;code>1&lt;/code>, and a &lt;code>False&lt;/code> value to &lt;code>0&lt;/code>. What we get with this operation is effectively a &amp;ldquo;sequence id&amp;rdquo;: because &lt;code>step2&lt;/code> is only &lt;code>True&lt;/code> when the value of &lt;code>freezing&lt;/code> changes, the value calculated in this step only increments when we start a new sequence of values for which &lt;code>freezing&lt;/code> has the same value.&lt;/p>
+&lt;h3 id="step-4">Step 4&lt;/h3>
+&lt;!-- raw HTML omitted -->
+&lt;p>In the previous step, we calculated what I called a &amp;ldquo;sequence id&amp;rdquo;. We can take advantage of this to group the data into consecutive stretches for which the temperature was either below freezing or not by using the value as an argument to Pandas&amp;rsquo; &lt;code>groupby&lt;/code> method, and then applying the &lt;a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.core.groupby.GroupBy.cumcount.html">cumcount&lt;/a> method:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;step4&amp;#39;] = df[&amp;#39;freezing&amp;#39;].groupby(df[&amp;#39;step3&amp;#39;]).cumcount() + 1
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>cumcount&lt;/code> method simply numbers the items in each group, starting at 0. This gives us:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>DATE&lt;/th>
+&lt;th>TMAX&lt;/th>
+&lt;th>freezing&lt;/th>
+&lt;th>step2&lt;/th>
+&lt;th>step3&lt;/th>
+&lt;th>step4&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>0&lt;/td>
+&lt;td>2018-01-01&lt;/td>
+&lt;td>13&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>1&lt;/td>
+&lt;td>2018-01-02&lt;/td>
+&lt;td>19&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>2&lt;/td>
+&lt;td>2018-01-03&lt;/td>
+&lt;td>29&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3&lt;/td>
+&lt;td>2018-01-04&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>2018-01-05&lt;/td>
+&lt;td>24&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>5&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>5&lt;/td>
+&lt;td>2018-01-06&lt;/td>
+&lt;td>12&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>6&lt;/td>
+&lt;td>2018-01-07&lt;/td>
+&lt;td>17&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>7&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>7&lt;/td>
+&lt;td>2018-01-08&lt;/td>
+&lt;td>35&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>8&lt;/td>
+&lt;td>2018-01-09&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>9&lt;/td>
+&lt;td>2018-01-10&lt;/td>
+&lt;td>36&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>10&lt;/td>
+&lt;td>2018-01-11&lt;/td>
+&lt;td>51&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>11&lt;/td>
+&lt;td>2018-01-12&lt;/td>
+&lt;td>60&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>5&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>12&lt;/td>
+&lt;td>2018-01-13&lt;/td>
+&lt;td>61&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>13&lt;/td>
+&lt;td>2018-01-14&lt;/td>
+&lt;td>23&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>14&lt;/td>
+&lt;td>2018-01-15&lt;/td>
+&lt;td>21&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>15&lt;/td>
+&lt;td>2018-01-16&lt;/td>
+&lt;td>33&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>16&lt;/td>
+&lt;td>2018-01-17&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>17&lt;/td>
+&lt;td>2018-01-18&lt;/td>
+&lt;td>32&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>5&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>18&lt;/td>
+&lt;td>2018-01-19&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>19&lt;/td>
+&lt;td>2018-01-20&lt;/td>
+&lt;td>47&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>20&lt;/td>
+&lt;td>2018-01-21&lt;/td>
+&lt;td>49&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>21&lt;/td>
+&lt;td>2018-01-22&lt;/td>
+&lt;td>39&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>22&lt;/td>
+&lt;td>2018-01-23&lt;/td>
+&lt;td>55&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>5&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>23&lt;/td>
+&lt;td>2018-01-24&lt;/td>
+&lt;td>42&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>24&lt;/td>
+&lt;td>2018-01-25&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>7&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>25&lt;/td>
+&lt;td>2018-01-26&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>26&lt;/td>
+&lt;td>2018-01-27&lt;/td>
+&lt;td>53&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>27&lt;/td>
+&lt;td>2018-01-28&lt;/td>
+&lt;td>52&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>28&lt;/td>
+&lt;td>2018-01-29&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>29&lt;/td>
+&lt;td>2018-01-30&lt;/td>
+&lt;td>31&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>9&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>30&lt;/td>
+&lt;td>2018-01-31&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>9&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="step-5">Step 5&lt;/h3>
+&lt;!-- raw HTML omitted -->
+&lt;p>Looking at the results of the previous step, we can see the simply asking for &lt;code>df['step5'].max()&lt;/code> would give us the longest sequence of days for which the value of &lt;code>freezing&lt;/code> remained constant. How do we limit that to only consider sequences in which &lt;code>freezing&lt;/code> is &lt;code>True&lt;/code>? We again take advantage of the fact that a boolean is just an integer, and we multiply the result of the previous step by the value of the &lt;code>freezing&lt;/code> series:&lt;/p>
+&lt;pre tabindex="0">&lt;code>df[&amp;#39;step5&amp;#39;] = df[&amp;#39;freezing&amp;#39;] * df[&amp;#39;step4&amp;#39;]
+&lt;/code>&lt;/pre>&lt;p>This will zero out all the values from the previous step in which &lt;code>freezing&lt;/code> is &lt;code>False&lt;/code>, because &lt;code>False * x&lt;/code> is the same as &lt;code>0 * x&lt;/code>. This gives us our final result:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>DATE&lt;/th>
+&lt;th>TMAX&lt;/th>
+&lt;th>freezing&lt;/th>
+&lt;th>step2&lt;/th>
+&lt;th>step3&lt;/th>
+&lt;th>step4&lt;/th>
+&lt;th>step5&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>0&lt;/td>
+&lt;td>2018-01-01&lt;/td>
+&lt;td>13&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>1&lt;/td>
+&lt;td>2018-01-02&lt;/td>
+&lt;td>19&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>2&lt;/td>
+&lt;td>2018-01-03&lt;/td>
+&lt;td>29&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>3&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3&lt;/td>
+&lt;td>2018-01-04&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>2018-01-05&lt;/td>
+&lt;td>24&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>5&lt;/td>
+&lt;td>5&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>5&lt;/td>
+&lt;td>2018-01-06&lt;/td>
+&lt;td>12&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>6&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>6&lt;/td>
+&lt;td>2018-01-07&lt;/td>
+&lt;td>17&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>7&lt;/td>
+&lt;td>7&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>7&lt;/td>
+&lt;td>2018-01-08&lt;/td>
+&lt;td>35&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>8&lt;/td>
+&lt;td>2018-01-09&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>9&lt;/td>
+&lt;td>2018-01-10&lt;/td>
+&lt;td>36&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>10&lt;/td>
+&lt;td>2018-01-11&lt;/td>
+&lt;td>51&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>11&lt;/td>
+&lt;td>2018-01-12&lt;/td>
+&lt;td>60&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>5&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>12&lt;/td>
+&lt;td>2018-01-13&lt;/td>
+&lt;td>61&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>13&lt;/td>
+&lt;td>2018-01-14&lt;/td>
+&lt;td>23&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>14&lt;/td>
+&lt;td>2018-01-15&lt;/td>
+&lt;td>21&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>15&lt;/td>
+&lt;td>2018-01-16&lt;/td>
+&lt;td>33&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>16&lt;/td>
+&lt;td>2018-01-17&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>17&lt;/td>
+&lt;td>2018-01-18&lt;/td>
+&lt;td>32&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>5&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>18&lt;/td>
+&lt;td>2018-01-19&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>19&lt;/td>
+&lt;td>2018-01-20&lt;/td>
+&lt;td>47&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>20&lt;/td>
+&lt;td>2018-01-21&lt;/td>
+&lt;td>49&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>21&lt;/td>
+&lt;td>2018-01-22&lt;/td>
+&lt;td>39&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>22&lt;/td>
+&lt;td>2018-01-23&lt;/td>
+&lt;td>55&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>5&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>23&lt;/td>
+&lt;td>2018-01-24&lt;/td>
+&lt;td>42&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>6&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>24&lt;/td>
+&lt;td>2018-01-25&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>7&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>25&lt;/td>
+&lt;td>2018-01-26&lt;/td>
+&lt;td>34&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>26&lt;/td>
+&lt;td>2018-01-27&lt;/td>
+&lt;td>53&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>27&lt;/td>
+&lt;td>2018-01-28&lt;/td>
+&lt;td>52&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>3&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>28&lt;/td>
+&lt;td>2018-01-29&lt;/td>
+&lt;td>43&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>4&lt;/td>
+&lt;td>0&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>29&lt;/td>
+&lt;td>2018-01-30&lt;/td>
+&lt;td>31&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>9&lt;/td>
+&lt;td>1&lt;/td>
+&lt;td>1&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>30&lt;/td>
+&lt;td>2018-01-31&lt;/td>
+&lt;td>30&lt;/td>
+&lt;td>True&lt;/td>
+&lt;td>False&lt;/td>
+&lt;td>9&lt;/td>
+&lt;td>2&lt;/td>
+&lt;td>2&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="step-6">Step 6&lt;/h3>
+&lt;p>Now the answer to our question is as simple as asking for the maximum value from the previous step:&lt;/p>
+&lt;pre tabindex="0">&lt;code>max_consecutive_dbf = df[&amp;#39;step5&amp;#39;].max()
+&lt;/code>&lt;/pre>&lt;p>And if everything worked as expected, we should find that the longest consecutive sequence of days on which the temperature stayed below freezing was 7 days, from 2018-01-01 through 2018-01-07:&lt;/p>
+&lt;pre tabindex="0">&lt;code>assert max_consecutive_dbf == 7
+&lt;/code>&lt;/pre>&lt;h2 id="results">Results&lt;/h2>
+&lt;p>If we look at the results for the past 20 years, we see the following:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="sample-results.png" />
+&lt;/figure>
+&lt;p>For data used in the above chart, the average stretch in which the temperature stays below freezing is 6.45 days (the average for the entire dataset is 6.33 days).&lt;/p></content></item><item><title>Unpacking a Python regular expression</title><link>https://blog.oddbit.com/post/2019-05-07-unpacking-a-python-regular-exp/</link><pubDate>Tue, 07 May 2019 10:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-07-unpacking-a-python-regular-exp/</guid><description>I recently answered a question from Harsha Nalore on StackOverflow that involved using Ansible to extract the output of a command sent to a BigIP device of some sort. My solution &amp;ndash; which I claim to be functional, but probably not optimal &amp;ndash; involved writing an Ansible filter module to parse the output. That filter made use of a complex-looking regular expression. Harsha asked for some details on that regular expression works, and the existing StackOverflow answer didn&amp;rsquo;t really seem the write place for that: so, here we are.</description><content>&lt;p>I recently answered &lt;a href="https://stackoverflow.com/q/55965819/147356">a question&lt;/a> from &lt;a href="https://stackoverflow.com/users/7738974/harsha-nalore">Harsha Nalore&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> that involved using Ansible to extract the output of a command sent to a BigIP device of some sort. My solution &amp;ndash; which I claim to be functional, but probably not optimal &amp;ndash; involved writing an &lt;a href="https://ansible.com/">Ansible&lt;/a> filter module to parse the output. That filter made use of a complex-looking regular expression. Harsha asked for some details on that regular expression works, and the existing StackOverflow answer didn&amp;rsquo;t really seem the write place for that: so, here we are.&lt;/p>
+&lt;p>The output in question looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gtm wideip a wideip {
+description wideip
+pool-lb-mode topology
+pools {
+test1-pool {
+order 1
+}
+test2-pool {
+order 0
+}
+}
+}
+&lt;/code>&lt;/pre>&lt;p>The goal is to return a list of pool names. You can see the complete solution in &lt;a href="https://stackoverflow.com/a/55970019/147356">my answer&lt;/a>; for the purposes of this post we&amp;rsquo;re interesting in the following two regular expressions:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>re_pools &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">gtm \s+ wideip \s+ a \s+ (\S+) \s+ { \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(?P&amp;lt;parameters&amp;gt;(\S+ \s+ \S+ \s+)*)
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">pools \s+ { \s+ (?P&amp;lt;pools&amp;gt;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(?:
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">\S+ \s+ { \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">[^}]* \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">} \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">)+ \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">)
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">}
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>re_pool &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(\S+) \s+ { \s+ [^}]* \s+ } \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h1 id="verbose-mode">VERBOSE mode&lt;/h1>
+&lt;p>The first thing to note is that I&amp;rsquo;m using &lt;code>VERBOSE&lt;/code> syntax for both of these expressions. That means that whitespace must be included explicitly in the expression. That&amp;rsquo;s what all of those &lt;code>\s+&lt;/code> markers are &amp;ndash; that means &amp;ldquo;any white space character, one or more times&amp;rdquo;. For example, consider the following simple expression:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The pattern matches the string just fine. But if we were to enable the &lt;code>VERBOSE&lt;/code> flag, the pattern would no longer match:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We would instead need to write it like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this \s is \s a \s test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The advantage to &lt;code>VERBOSE&lt;/code> mode is that you can split your regular expression across multiple lines for legibility:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... this \s
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... is \s
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... a \s
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... test&amp;#39;&amp;#39;&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="capture-groups">Capture groups&lt;/h2>
+&lt;p>In order to make it easier to extract information from the results of a match, I&amp;rsquo;m using named capture groups. A &amp;ldquo;capture group&amp;rdquo; is a part of the expression inside parentheses that can be extracted from the resulting match object. Unnamed groups can be extracted using their index. If we wanted to match the phrase &lt;code>this is a &amp;lt;noun&amp;gt;&lt;/code>, rather than &lt;code>this is a test&lt;/code>, and we wanted to extract the noun, we might write something like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_example &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;this is a (\S+)&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a frog&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>groups()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>(&lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>,)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#ae81ff">1&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The expression &lt;code>(\S+)&lt;/code> is a capture group that will match any string of non-whitespace characters. This works fine for a simple expression, but keeping the index straight in a complex expression can be difficult. This is where named capture groups become useful. We could rewrite the above like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_example &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;this is a (?P&amp;lt;noun&amp;gt;\S+)&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a frog&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>groupdict()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>{&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="non-capture-groups">Non-capture groups&lt;/h2>
+&lt;p>Sometimes, you want to group part of a regular expression in a way that does not result in another capture group. This is what the &lt;code>(?: ...)&lt;/code> expression is for. For example, we we were to write:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_example &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;this (?:is|was) a (?P&amp;lt;noun&amp;gt;\S+)&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then we could match the phrase &lt;code>this is a test&lt;/code> or &lt;code>this was a test&lt;/code>, but we would still only have a single capture group:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>groupdict()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>{&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;test&amp;#39;&lt;/span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="putting-it-all-together">Putting it all together&lt;/h2>
+&lt;p>With all that in mind, let&amp;rsquo;s take a look at the regular expression in my answer:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>re_pools &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">gtm \s+ wideip \s+ a \s+ (\S+) \s+ { \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(?P&amp;lt;parameters&amp;gt;(\S+ \s+ \S+ \s+)*)
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">pools \s+ { \s+ (?P&amp;lt;pools&amp;gt;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(?:
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">\S+ \s+ { \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">[^}]* \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">} \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">)+ \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">)
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">}
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The first line matches &lt;code>gtm wideip a &amp;lt;something&amp;gt; {&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>gtm \s+ wideip \s+ a \s+ (\S+) \s+ { \s+
+&lt;/code>&lt;/pre>
+&lt;p>Next, we match the &lt;code>&amp;lt;key&amp;gt; &amp;lt;value&amp;gt;&lt;/code> part of the output, which looks like this:&lt;/p>
+&lt;pre>&lt;code>description wideip
+pool-lb-mode topology
+&lt;/code>&lt;/pre>
+&lt;p>With this expression:&lt;/p>
+&lt;pre>&lt;code> (?P&amp;lt;parameters&amp;gt;(\S+ \s+ \S+ \s+)*)
+&lt;/code>&lt;/pre>
+&lt;p>That is a named capture group (&amp;ldquo;parameters&amp;rdquo;) that matches the expression &lt;code>(\S+ \s+ \S+ \s+)&lt;/code> zero or more times (&lt;code>*&lt;/code>). Since &lt;code>\S+&lt;/code> means &amp;ldquo;a string of non-whitespace characters&amp;rdquo; and &lt;code>\s+&lt;/code> means &amp;ldquo;a string of whitespace characters&amp;rdquo;, this correctly matches that part of the output.&lt;/p>
+&lt;p>Next, we match the entire &lt;code>pools {...}&lt;/code> part of the output with this expression:&lt;/p>
+&lt;pre>&lt;code>pools \s+ { \s+ (?P&amp;lt;pools&amp;gt;
+(?:
+\S+ \s+ { \s+
+[^}]* \s+
+} \s+
+)+ \s+
+)
+&lt;/code>&lt;/pre>
+&lt;p>That creates a named capture group (&amp;ldquo;pools&amp;rdquo;) that looks for one or more occurrences of the pattern:&lt;/p>
+&lt;pre>&lt;code>\S+ \s+ { \s+
+[^}]* \s+
+} \s+
+&lt;/code>&lt;/pre>
+&lt;p>The first line will match a string like &lt;code>test1-pool1 {&lt;/code>. The next line matches any sequence of characters that are not &lt;code>}&lt;/code>, so that gathers up everthing between &lt;code>test1-pool {&lt;/code> and the closing &lt;code>}&lt;/code>. Because we have the entire thing wrapped in &lt;code>(?: ...)+&lt;/code>, we are looking for one or more matches of that sub-expression, which gathers up all of the pool definitions.&lt;/p>
+&lt;p>Finally we match the closing brace:&lt;/p>
+&lt;pre>&lt;code>}
+&lt;/code>&lt;/pre>
+&lt;p>When that expression matches, we end up with a match object that has a &lt;code>pools&lt;/code> match group that will look like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;pools&amp;#39;&lt;/span>))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>test1&lt;span style="color:#f92672">-&lt;/span>pool {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> order &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> test2&lt;span style="color:#f92672">-&lt;/span>pool {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> order &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We now use a much simpler regular expression to extract the pool names from that content:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>re_pool &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(\S+) \s+ { \s+ [^}]* \s+ } \s+
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>That has a single capture group (&lt;code>(\S+)&lt;/code>) that will match the pool name; the remainder of the expression takes care of matching the &lt;code>{ &amp;lt;anythingthing not '}'&amp;gt; }&lt;/code> part. We use &lt;code>re.findall&lt;/code> to get &lt;em>all&lt;/em> of the matches in one go:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_pool&lt;span style="color:#f92672">.&lt;/span>findall(match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;pools&amp;#39;&lt;/span>))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>[&lt;span style="color:#e6db74">&amp;#39;test1-pool&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;test2-pool&amp;#39;&lt;/span>]
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And that&amp;rsquo;s it!&lt;/p>
+&lt;h2 id="for-more-information">For more information&lt;/h2>
+&lt;p>For more information on Python regular expressions:&lt;/p>
+&lt;ul>
+&lt;li>The documentation for the &lt;a href="https://docs.python.org/3/library/re.html">re&lt;/a> module.&lt;/li>
+&lt;li>The &lt;a href="https://docs.python.org/3/howto/regex.html">Regular expression HOWTO&lt;/a>&lt;/li>
+&lt;/ul></content></item><item><title>Writing Ansible filter plugins</title><link>https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/</link><pubDate>Thu, 25 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/</guid><description>I often see questions from people who are attemping to perform complex text transformations in their Ansible playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone asked a question on Stack Overflow in which they were attempting to convert the output of the keytool command into a list of dictionaries. The output of the keytool -list -v command looks something like this:</description><content>&lt;p>I often see questions from people who are attemping to perform complex text transformations in their &lt;a href="https://www.ansible.com/">Ansible&lt;/a> playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone &lt;a href="https://stackoverflow.com/questions/55853384/ansible-build-list-dictionary-with-from-list-of-strings/55854394">asked a question&lt;/a> on Stack Overflow in which they were attempting to convert the output of the &lt;a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html">keytool&lt;/a> command into a list of dictionaries. The output of the &lt;code>keytool -list -v&lt;/code> command looks something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Keystore type: PKCS12
+Keystore provider: SUN
+Your keystore contains 2 entries
+Alias name: alias2
+Creation date: Apr 25, 2019
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Alice McHacker, OU=Unknown, O=Example Corp, L=Boston, ST=MA, C=US
+Issuer: CN=Alice McHacker, OU=Unknown, O=Example Corp, L=Boston, ST=MA, C=US
+Serial number: 5c017636
+Valid from: Thu Apr 25 23:22:37 EDT 2019 until: Wed Jul 24 23:22:37 EDT 2019
+Certificate fingerprints:
+SHA1: FB:AC:36:08:F6:3C:C0:CF:E1:D7:E6:7D:2F:31:BF:BE:5A:C8:7A:C6
+SHA256: 73:F1:EC:61:6B:63:93:F5:BE:78:23:A1:79:14:7D:F0:A3:9A:D8:22:99:6B:38:0F:D6:38:AA:93:B5:58:8E:E0
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+Extensions:
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 17 D4 A3 54 E4 0C DB CC 00 3E 1C 4D 74 B4 DE 55 ...T.....&amp;gt;.Mt..U
+0010: D6 C9 CB 21 ...!
+]
+]
+*******************************************
+*******************************************
+Alias name: alias1
+Creation date: Apr 25, 2019
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Mallory Root, OU=Unknown, O=Example Corp, L=New York, ST=NY, C=US
+Issuer: CN=Mallory Root, OU=Unknown, O=Example Corp, L=New York, ST=NY, C=US
+Serial number: 2617e8fb
+Valid from: Thu Apr 25 23:22:59 EDT 2019 until: Wed Jul 24 23:22:59 EDT 2019
+Certificate fingerprints:
+SHA1: DD:83:42:F3:AD:EB:DC:66:50:DA:7D:D7:59:32:9B:31:0C:E0:90:B9
+SHA256: D9:3E:42:47:A1:DB:2F:00:46:F7:58:54:30:D1:83:F5:DD:C6:5D:8B:8B:6B:94:4A:34:B0:0D:D8:6F:7A:6E:B6
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+Extensions:
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 98 53 CF EF 77 36 02 4D 63 83 D7 4F 06 EF 09 CA .S..w6.Mc..O....
+0010: 41 92 6D 92 A.m.
+]
+]
+*******************************************
+*******************************************
+&lt;/code>&lt;/pre>&lt;p>That&amp;rsquo;s a mess. We&amp;rsquo;d like to extract specific information about the keys in the keystore; specifically:&lt;/p>
+&lt;ul>
+&lt;li>The owner&lt;/li>
+&lt;li>The issuer&lt;/li>
+&lt;li>The creation date&lt;/li>
+&lt;li>The valid from/valid until dates&lt;/li>
+&lt;/ul>
+&lt;p>There are a few ways of approaching this problem (for example, one could have your playbook call out to &lt;code>awk&lt;/code> to parse the &lt;code>keytool&lt;/code> output and generate JSON data for Ansible to consume), but a more robust, flexible, and often simpler way of dealing with something like this is to write a custom filter plugin in Python.&lt;/p>
+&lt;h2 id="what-is-a-filter-plugin">What is a filter plugin?&lt;/h2>
+&lt;p>A filter plugin defines one or more Python functions that can be used in Jinja2 templating expressions (using the &lt;code>|&lt;/code> filter operator). A filter function receives one mandatory argument (the value to the left of the &lt;code>|&lt;/code>) and zero or more additional positional and/or keyword arguments, performs some transformation on the input data, and returns the result.&lt;/p>
+&lt;p>For example, there is a &lt;code>unique&lt;/code> filter, which takes a list and returns a new list consisting of only unique values. If we had a list of names and wanted to eliminiate duplicates, we might use something like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">set_fact&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">unique_names&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;{{ [&amp;#39;alice&amp;#39;, &amp;#39;bob&amp;#39;, &amp;#39;alice&amp;#39;, &amp;#39;mallory&amp;#39;, &amp;#39;bob&amp;#39;, &amp;#39;mallory&amp;#39;]|unique }}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>That would set &lt;code>unique_names&lt;/code> to the list &lt;code>['alice', 'bob', 'mallory']&lt;/code>.&lt;/p>
+&lt;h2 id="how-do-you-write-a-filter-plugin">How do you write a filter plugin?&lt;/h2>
+&lt;p>A filter plugin doesn&amp;rsquo;t require much. You&amp;rsquo;ll need to create a Python module that defines a &lt;code>FilterModule&lt;/code> class, and that class must have a method named &lt;code>filters&lt;/code> that will return a dictionary that maps filter names to callables implementing the filter. For example, if we want a filter named &lt;code>upper&lt;/code> that would transform a string to upper-case, we could write:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">FilterModule&lt;/span>(object):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filters&lt;/span>(self):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> {&lt;span style="color:#e6db74">&amp;#39;upper&amp;#39;&lt;/span>: &lt;span style="color:#66d9ef">lambda&lt;/span> x: x&lt;span style="color:#f92672">.&lt;/span>upper()}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we wanted implement a version of the &lt;code>unique&lt;/code> filter, it might look like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filter_unique&lt;/span>(things):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> seen &lt;span style="color:#f92672">=&lt;/span> set()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> unique_things &lt;span style="color:#f92672">=&lt;/span> []
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">for&lt;/span> thing &lt;span style="color:#f92672">in&lt;/span> things:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> thing &lt;span style="color:#f92672">not&lt;/span> &lt;span style="color:#f92672">in&lt;/span> seen:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> seen&lt;span style="color:#f92672">.&lt;/span>add(thing)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> unique_things&lt;span style="color:#f92672">.&lt;/span>append(thing)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> unique_things
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">FilterModule&lt;/span>(object):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filters&lt;/span>(self):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> {&lt;span style="color:#e6db74">&amp;#39;unique&amp;#39;&lt;/span>: filter_unique}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We need to put the new module in a directory named &lt;code>filter_plugins&lt;/code> that is adjacent to our playbook. If we were to place the &lt;code>upper&lt;/code> filter module in, say, &lt;code>filter_plugins/upper.py&lt;/code>, we could then add a task like this to our playbook:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">debug&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;{{ &amp;#39;this is a test&amp;#39;|upper }}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And get this output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>TASK [debug] **********************************************************************************
+ok: [localhost] =&amp;gt; {
+&amp;#34;msg&amp;#34;: &amp;#34;THIS IS A TEST&amp;#34;
+}
+&lt;/code>&lt;/pre>&lt;h2 id="parsing-keytool-output">Parsing keytool output&lt;/h2>
+&lt;p>Our &lt;code>keytool&lt;/code> filter is only a little bit more complicated:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#!/usr/bin/python&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filter_keys_to_list&lt;/span>(v):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key_list &lt;span style="color:#f92672">=&lt;/span> []
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key &lt;span style="color:#f92672">=&lt;/span> {}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> found_start &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">False&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># iterate over lines of output from keytool&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">for&lt;/span> line &lt;span style="color:#f92672">in&lt;/span> v&lt;span style="color:#f92672">.&lt;/span>splitlines():
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Discard any lines that don&amp;#39;t look like &amp;#34;key: value&amp;#34; lines&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#e6db74">&amp;#39;: &amp;#39;&lt;/span> &lt;span style="color:#f92672">not&lt;/span> &lt;span style="color:#f92672">in&lt;/span> line:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">continue&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Look for &amp;#34;Alias name&amp;#34; at the beginning of a line to identify&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># the start of a new key.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> line&lt;span style="color:#f92672">.&lt;/span>startswith(&lt;span style="color:#e6db74">&amp;#39;Alias name&amp;#39;&lt;/span>):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> found_start &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">True&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># If we have already collected data on a key, append that to&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># the list of keys.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> key:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key_list&lt;span style="color:#f92672">.&lt;/span>append(key)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key &lt;span style="color:#f92672">=&lt;/span> {}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Read the next line if we haven&amp;#39;t found the start of a key&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># yet.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#f92672">not&lt;/span> found_start:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">continue&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Split fields and values into dictionary items.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> field, value &lt;span style="color:#f92672">=&lt;/span> line&lt;span style="color:#f92672">.&lt;/span>split(&lt;span style="color:#e6db74">&amp;#39;: &amp;#39;&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> field &lt;span style="color:#f92672">in&lt;/span> [&lt;span style="color:#e6db74">&amp;#39;Alias name&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;Owner&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;Issuer&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;Creation date&amp;#39;&lt;/span>]:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key[field] &lt;span style="color:#f92672">=&lt;/span> value
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">elif&lt;/span> field &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#e6db74">&amp;#39;Valid from&amp;#39;&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key[&lt;span style="color:#e6db74">&amp;#39;Valid from&amp;#39;&lt;/span>], key[&lt;span style="color:#e6db74">&amp;#39;Valid until&amp;#39;&lt;/span>] &lt;span style="color:#f92672">=&lt;/span> value&lt;span style="color:#f92672">.&lt;/span>split(&lt;span style="color:#e6db74">&amp;#39; until: &amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Append the final key.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> key:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key_list&lt;span style="color:#f92672">.&lt;/span>append(key)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> key_list
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">FilterModule&lt;/span>(object):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> filter_map &lt;span style="color:#f92672">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#39;keys_to_list&amp;#39;&lt;/span>: filter_keys_to_list,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filters&lt;/span>(self):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>filter_map
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The logic here is fairly simple:&lt;/p>
+&lt;ul>
+&lt;li>Iterate over the lines in the output from &lt;code>keytool&lt;/code>.&lt;/li>
+&lt;li>Look for &amp;ldquo;Alias name&amp;rdquo; at the beginning of a line to identify
+the start of key data.&lt;/li>
+&lt;li>Split lines on &lt;code>: &lt;/code> into field names and values.&lt;/li>
+&lt;li>Assemble a dictionary from selected fields.&lt;/li>
+&lt;li>Append the dictionary to a list and repeat.&lt;/li>
+&lt;/ul>
+&lt;p>Using it makes for a clear and simple playbook:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">set_fact&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">key_list&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;{{ keytool.stdout|keys_to_list }}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="more-information">More information&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/blog-2019-04-25-filter-plugins">Playbook and filter plugin referenced in this article&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html">Ansible &amp;ldquo;Filters&amp;rdquo; documentation&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://github.com/ansible/ansible/tree/devel/lib/ansible/plugins/filter">Existing filter plugins in Ansible&lt;/a>&lt;/li>
+&lt;/ul></content></item><item><title>Using a TM1637 LED module with CircuitPython</title><link>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</link><pubDate>Thu, 03 May 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</guid><description>CircuitPython is &amp;ldquo;an education friendly open source derivative of MicroPython&amp;rdquo;. MicroPython is a port of Python to microcontroller environments; it can run on boards with very few resources such as the ESP8266. I&amp;rsquo;ve recently started experimenting with CircuitPython on a Wemos D1 mini, which is a small form-factor ESP8266 board.
+I had previously been using Mike Causer&amp;rsquo;s micropython-tm1637 for MicroPython to drive a 4 digit LED display. I was hoping to get the same code working under CircuitPython, but when I tried to build an image that included the tm1637 module I ran into:</description><content>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>&amp;rdquo;. MicroPython is a port of Python to microcontroller
+environments; it can run on boards with very few resources such as the
+&lt;a href="https://en.wikipedia.org/wiki/ESP8266">ESP8266&lt;/a>. I&amp;rsquo;ve recently started experimenting with CircuitPython
+on a &lt;a href="https://wiki.wemos.cc/products:d1:d1_mini">Wemos D1 mini&lt;/a>, which is a small form-factor ESP8266 board.&lt;/p>
+&lt;p>I had previously been using Mike Causer&amp;rsquo;s &lt;a href="https://github.com/mcauser/micropython-tm1637/">micropython-tm1637&lt;/a> for
+MicroPython to drive a &lt;a href="http://a.co/gQVPtPr">4 digit LED display&lt;/a>. I was hoping to
+get the same code working under CircuitPython, but when I tried to
+build an image that included the &lt;code>tm1637&lt;/code> module I ran into:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> tm1637
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Traceback (most recent call last):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;&amp;lt;stdin&amp;gt;&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;tm1637.py&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">6&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ImportError&lt;/span>: cannot &lt;span style="color:#f92672">import&lt;/span> name sleep_us
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>One of CircuitPython&amp;rsquo;s goals is to be as close to CPython as possible.
+This means that in many cases that the CircuitPython folks have
+re-implemented MicroPython modules to have syntax that is more a
+strict subset of the CPython equivalent, and the MicroPython &lt;code>time&lt;/code>
+module as impacted by this change. With stock MicroPython, the &lt;code>time&lt;/code>
+module has:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#ae81ff">\n&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(dir(time)))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__class__
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__name__
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>localtime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mktime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep_ms
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep_us
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_add
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_cpu
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_diff
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_ms
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_us
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>time
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>But the corresponding CircuitPython module has:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#ae81ff">\n&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(dir(time)))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__name__
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>monotonic
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>struct_time
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>localtime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mktime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>time
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>It turns out that the necessary functions are defined in the &lt;code>utime&lt;/code>
+module, which is implemented by &lt;code>ports/esp8266/modutime.c&lt;/code>, but this
+module is not included in the CircuitPython build. How do we fix that?&lt;/p>
+&lt;p>The most obvious change is to add &lt;code>modutime.c&lt;/code> to the &lt;code>SRC_C&lt;/code> variable
+in &lt;code>ports/esp8266/Makefile&lt;/code>, which gets us:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SRC_C = \
+[...]
+modesp.c \
+modnetwork.c \
+modutime.c \
+[...]
+&lt;/code>&lt;/pre>&lt;p>After making this change and trying to build CircuitPython, I
+hit 70 or so lines like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Generating build/genhdr/mpversion.h
+In file included from ../../py/mpstate.h:35:0,
+from ../../py/runtime.h:29,
+from modutime.c:32:
+modutime.c:109:50: error: &amp;#39;MP_QSTR_utime&amp;#39; undeclared here (not in a function)
+{ MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_utime) },
+^
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>MP_QSTR_&lt;/code> macros are sort of magical: they are generated during
+the build process by scanning for references of the form
+&lt;code>MP_QSTR_utime&lt;/code> and creating definitions that look like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">QDEF&lt;/span>(MP_QSTR_utime, (&lt;span style="color:#66d9ef">const&lt;/span> byte&lt;span style="color:#f92672">*&lt;/span>)&lt;span style="color:#e6db74">&amp;#34;&lt;/span>&lt;span style="color:#ae81ff">\xe5\x9d\x05&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span> &lt;span style="color:#e6db74">&amp;#34;utime&amp;#34;&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>But&amp;hellip;and this is the immediate problem&amp;hellip;this generation only happens
+with a clean build. Running &lt;code>make clean&lt;/code> and then re-running the
+build yields:&lt;/p>
+&lt;pre tabindex="0">&lt;code>build/shared-bindings/time/__init__.o:(.rodata.time_localtime_obj+0x0): multiple definition of `time_localtime_obj&amp;#39;
+build/modutime.o:(.rodata.time_localtime_obj+0x0): first defined here
+build/shared-bindings/time/__init__.o:(.rodata.time_mktime_obj+0x0): multiple definition of `time_mktime_obj&amp;#39;
+build/modutime.o:(.rodata.time_mktime_obj+0x0): first defined here
+build/shared-bindings/time/__init__.o:(.rodata.time_time_obj+0x0): multiple definition of `time_time_obj&amp;#39;
+build/modutime.o:(.rodata.time_time_obj+0x0): first defined here
+&lt;/code>&lt;/pre>&lt;p>The above errors show a conflict between the structures defined in
+&lt;code>utime&lt;/code>, which have just activated, and the existing &lt;code>time&lt;/code>
+module. A simple rename will take care of that problem; instead of:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN&lt;/span>(time_localtime_obj, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, time_localtime);
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We want:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN&lt;/span>(utime_localtime_obj, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, time_localtime);
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And so forth. At this point, everything builds correctly, but if we
+deploy the image to our board and try to import the &lt;code>utime&lt;/code> module, we
+see:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> utime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Traceback (most recent call last):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;&amp;lt;stdin&amp;gt;&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ImportError&lt;/span>: no module named &lt;span style="color:#e6db74">&amp;#39;utime&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The final piece of this puzzle is that there is a list of built-in
+modules defined in &lt;code>mpconfigport.h&lt;/code>. We need to add our &lt;code>utime&lt;/code>
+module to that list:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#define MICROPY_PORT_BUILTIN_MODULES \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"> [...]
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> { &lt;span style="color:#a6e22e">MP_ROM_QSTR&lt;/span>(MP_QSTR_utime), &lt;span style="color:#a6e22e">MP_ROM_PTR&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>utime_module) }, \
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> [...]
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we build and deploy our image, we&amp;rsquo;re now able to use the methods
+from the &lt;code>utime&lt;/code> module:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>Adafruit CircuitPython &lt;span style="color:#ae81ff">3.0.0&lt;/span>&lt;span style="color:#f92672">-&lt;/span>alpha&lt;span style="color:#ae81ff">.6&lt;/span>&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">42&lt;/span>&lt;span style="color:#f92672">-&lt;/span>gb46567004 on &lt;span style="color:#ae81ff">2018&lt;/span>&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">05&lt;/span>&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">06&lt;/span>; ESP module &lt;span style="color:#66d9ef">with&lt;/span> ESP8266
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> utime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> utime&lt;span style="color:#f92672">.&lt;/span>sleep_ms(&lt;span style="color:#ae81ff">1000&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We need to make one final change to the &lt;code>tm1637&lt;/code> module, since as
+written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">from&lt;/span> time &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We have to modify it to read:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">try&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> time &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">except&lt;/span> &lt;span style="color:#a6e22e">ImportError&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> utime &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
+are now able to drive our display:&lt;/p>
+&lt;!-- raw HTML omitted --></content></item><item><title>A Python interface to signalfd() using FFI</title><link>https://blog.oddbit.com/post/2013-11-28-a-python-interface-to-signalfd/</link><pubDate>Thu, 28 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-28-a-python-interface-to-signalfd/</guid><description>I just recently learned about the signalfd(2) system call, which was introduced to the Linux kernel back in 2007:
+signalfd() creates a file descriptor that can be used to accept signals targeted at the caller. This provides an alternative to the use of a signal handler or sigwaitinfo(2), and has the advantage that the file descriptor may be monitored by select(2), poll(2), and epoll(7).
+The traditional asynchronous delivery mechanism can be tricky to get right, whereas this provides a convenient fd interface that integrates nicely with your existing event-based code.</description><content>&lt;p>I just recently learned about the &lt;code>signalfd(2)&lt;/code> system call, which was
+introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/">back in 2007&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>signalfd() creates a file descriptor that can be used to accept
+signals targeted at the caller. This provides an alternative to
+the use of a signal handler or sigwaitinfo(2), and has the
+advantage that the file descriptor may be monitored by select(2),
+poll(2), and epoll(7).&lt;/p>
+&lt;/blockquote>
+&lt;p>The traditional asynchronous delivery mechanism can be tricky to get
+right, whereas this provides a convenient fd interface that integrates
+nicely with your existing event-based code.&lt;/p>
+&lt;p>I was interested in using &lt;code>signalfd()&lt;/code> in some Python code, but Python
+does not expose this system call through any of the standard
+libraries. There are a variety of ways one could add support,
+including:&lt;/p>
+&lt;ul>
+&lt;li>Writing a Python module in C&lt;/li>
+&lt;li>Using the &lt;code>ctypes&lt;/code> module (which I played with &lt;a href="https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/">a few years ago&lt;/a>)&lt;/li>
+&lt;/ul>
+&lt;p>However, I decided to use this as an excuse to learn about the
+&lt;a href="https://pypi.python.org/pypi/cffi">cffi&lt;/a> module. You can find the complete code in my
+&lt;a href="https://github.com/larsks/python-signalfd">python-signalfd&lt;/a> repository and an explanation of the process
+below.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>The &lt;a href="http://cffi.readthedocs.org/">cffi documentation&lt;/a> lists a number of principles the project
+tries to follow; the first two read as follows:&lt;/p>
+&lt;blockquote>
+&lt;ul>
+&lt;li>The goal is to call C code from Python. You should be able to do so without learning a 3rd language: every alternative requires you to learn their own language (Cython, SWIG) or API (ctypes)&amp;hellip;&lt;/li>
+&lt;li>Keep all the Python-related logic in Python so that you don&amp;rsquo;t need to write much C code (unlike CPython native C extensions).&lt;/li>
+&lt;/ul>
+&lt;/blockquote>
+&lt;p>In practice, what this means is that if the C API documentation for a
+function looks like this:&lt;/p>
+&lt;pre>&lt;code>unsigned int sleep(unsigned int seconds);
+&lt;/code>&lt;/pre>
+&lt;p>Then you can make this function available in Python like this:&lt;/p>
+&lt;pre>&lt;code>from cffi import FFI
+ffi = FFI()
+crt = ffi.dlopen(None)
+ffi.cdef('unsigned int sleep(unsigned int seconds);')
+&lt;/code>&lt;/pre>
+&lt;p>And to use it:&lt;/p>
+&lt;pre>&lt;code>crt.sleep(10)
+&lt;/code>&lt;/pre>
+&lt;p>While this works great for a simple function like &lt;code>sleep&lt;/code>, it gets
+slightly more complicated when you function prototype looks like this:&lt;/p>
+&lt;pre>&lt;code> #include &amp;lt;sys/signalfd.h&amp;gt;
+int signalfd(int fd, const sigset_t *mask, int flags);
+&lt;/code>&lt;/pre>
+&lt;p>If you try what seems obvious given the above example:&lt;/p>
+&lt;pre>&lt;code>ffi.cdef('''
+#include &amp;lt;sys/signalfd.h&amp;gt;
+int signalfd(int fd, const sigset_t *mask, int flags);
+''')
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll run into an error:&lt;/p>
+&lt;pre>&lt;code>cffi.api.CDefError: cannot parse &amp;quot;#include &amp;lt;sys/signalfd.h&amp;gt;&amp;quot;
+:3: Directives not supported yet
+&lt;/code>&lt;/pre>
+&lt;p>You can try that without the &lt;code>#include&lt;/code> statement, but you&amp;rsquo;ll just get
+a new error:&lt;/p>
+&lt;pre>&lt;code>cffi.api.CDefError: cannot parse &amp;quot;int signalfd(int fd, const sigset_t *mask, int flags);&amp;quot;
+:3:37: before: *
+&lt;/code>&lt;/pre>
+&lt;p>What all this means is that you need to translate &lt;code>sigset_t&lt;/code> into
+standard C types. You could go digging through include files in
+&lt;code>/usr/include&lt;/code>, but an easier method is to create a small C source
+file like this:&lt;/p>
+&lt;pre>&lt;code>#include &amp;lt;sys/signalfd.h&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And then run it through the preprocessor:&lt;/p>
+&lt;pre>&lt;code>$ gcc -E sourcefile.c
+&lt;/code>&lt;/pre>
+&lt;p>Inspecting the output of this command reveals that &lt;code>sigset_t&lt;/code> is a
+typedef for &lt;code>__sigset_t&lt;/code>, and that &lt;code>__sigset_t&lt;/code> looks like this:&lt;/p>
+&lt;pre>&lt;code>typedef struct
+{
+unsigned long int __val[(1024 / (8 * sizeof (unsigned long int)))];
+} __sigset_t;
+typedef __sigset_t sigset_t;
+&lt;/code>&lt;/pre>
+&lt;p>If you plug this into your &lt;code>cdef&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>ffi.cdef('''
+typedef struct
+{
+unsigned long int __val[(1024 / (8 * sizeof (unsigned long int)))];
+} __sigset_t;
+typedef __sigset_t sigset_t;
+int signalfd(int fd, const sigset_t *mask, int flags);
+''')
+&lt;/code>&lt;/pre>
+&lt;p>You end up with the following:&lt;/p>
+&lt;pre>&lt;code>cffi.api.FFIError: unsupported non-constant or not immediately constant expression
+&lt;/code>&lt;/pre>
+&lt;p>This happens because of the &lt;code>sizeof()&lt;/code> expression in the &lt;code>struct&lt;/code>. We
+need to replace that with an actual size. We can use the
+&lt;code>ffi.sizeof()&lt;/code> method to accomplish the same thing, like this:&lt;/p>
+&lt;pre>&lt;code>ffi.cdef('''
+typedef struct
+{
+unsigned long int __val[%d];
+} __sigset_t;
+typedef __sigset_t sigset_t;
+int signalfd (int fd, const sigset_t * mask, int flags);
+''' % ( 1024 / (8 * ffi.sizeof('''unsigned long int''') )))
+&lt;/code>&lt;/pre>
+&lt;p>This will load without error. You can create a variable suitable for
+passing as the &lt;code>mask&lt;/code> parameter to &lt;code>signalfd&lt;/code> like this:&lt;/p>
+&lt;pre>&lt;code>&amp;gt;&amp;gt;&amp;gt; mask = ffi.new('sigset_t *')
+&amp;gt;&amp;gt;&amp;gt; mask
+&amp;lt;cdata 'struct $__sigset_t *' owning 128 bytes&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>The trick, of course, is populating that variable correctly. I ended
+up just implementing all of the &lt;code>sigsetops&lt;/code> functions, which, having
+already set up the &lt;code>sigset_t&lt;/code> structure, meant just adding this:&lt;/p>
+&lt;pre>&lt;code>ffi.cdef('''
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signum);
+int sigdelset(sigset_t *set, int signum);
+int sigismember(const sigset_t *set, int signum);
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+''')
+&lt;/code>&lt;/pre>
+&lt;p>Now we&amp;rsquo;re all set to call these functions through the &lt;code>crt&lt;/code> variable
+we created ealier (by calling &lt;code>ffi.dlopen(None)&lt;/code>):&lt;/p>
+&lt;pre>&lt;code>&amp;gt;&amp;gt;&amp;gt; import signal
+&amp;gt;&amp;gt;&amp;gt; mask = ffi.new('sigset_t *')
+&amp;gt;&amp;gt;&amp;gt; crt.sigemptyset(mask)
+0
+&amp;gt;&amp;gt;&amp;gt; crt.sigismember(mask, signal.SIGINT)
+0
+&amp;gt;&amp;gt;&amp;gt; crt.sigaddset(mask, signal.SIGINT)
+0
+&amp;gt;&amp;gt;&amp;gt; crt.sigismember(mask, signal.SIGINT)
+1
+&lt;/code>&lt;/pre>
+&lt;p>And finally, we can all &lt;code>signalfd()&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>&amp;gt;&amp;gt;&amp;gt; crt.sigprocmask(0, mask, ffi.NULL)
+0
+&amp;gt;&amp;gt;&amp;gt; fd = crt.signalfd(-1, mask, 0)
+&amp;gt;&amp;gt;&amp;gt; from select import poll
+&amp;gt;&amp;gt;&amp;gt; p = poll()
+&amp;gt;&amp;gt;&amp;gt; p.register(fd)
+&amp;gt;&amp;gt;&amp;gt; p.poll()
+^C[(3, 1)]
+&amp;gt;&amp;gt;&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>In case it&amp;rsquo;s not obvious from the above example, when I typed
+&lt;code>CONTROL-C&lt;/code> on my keyboard, sending a &lt;code>SIGINT&lt;/code> to the Python shell, it
+caused the &lt;code>p.poll()&lt;/code> method to exit, reporting activity on fd 3
+(which is the fd we were given by &lt;code>signalfd()&lt;/code>). We call
+&lt;code>sigprocmask(2)&lt;/code> to prevent the normal asynchronous delivery of
+signals, which would otherwise result in Python handling the &lt;code>SIGINT&lt;/code>
+and generating a &lt;code>KeyboardInterrupt&lt;/code> exception.&lt;/p>
+&lt;p>You can find this all packaged up nicely with a slightly more pythonic
+interface in my &lt;a href="https://github.com/larsks/python-signalfd">python-signalfd&lt;/a> repository on GitHub.&lt;/p>
+&lt;hr>
+&lt;p>&lt;a href="http://gabrbedd.wordpress.com/">Gabe&amp;rsquo;s Geek Log&lt;/a> has an &lt;a href="http://gabrbedd.wordpress.com/2013/07/29/handling-signals-with-signalfd/">article about signalfd&lt;/a> that is also
+worth reading.&lt;/p></content></item><item><title>Long polling with Javascript and Python</title><link>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</guid><description>In this post I&amp;rsquo;m going to step through an example web chat system implemented in Python (with Bottle and gevent) that uses long polling to implement a simple publish/subscribe mechanism for efficiently updating connected clients.
+My pubsub_example repository on GitHub has a complete project that implements the ideas discussed in this article. This project can be deployed directly on OpenShift if you want to try things out on your own. You can also try it out online at http://pubsub.</description><content>&lt;p>In this post I&amp;rsquo;m going to step through an example web chat system
+implemented in Python (with &lt;a href="http://bottlepy.org/docs/">Bottle&lt;/a> and &lt;a href="http://www.gevent.org/">gevent&lt;/a>) that uses long
+polling to implement a simple publish/subscribe mechanism for
+efficiently updating connected clients.&lt;/p>
+&lt;p>My &lt;a href="http://github.com/larsks/pusub_example/">pubsub_example&lt;/a> repository on &lt;a href="http://github.com/">GitHub&lt;/a> has a complete
+project that implements the ideas discussed in this article. This
+project can be deployed directly on &lt;a href="http://openshift.com/">OpenShift&lt;/a> if you want to try
+things out on your own. You can also try it out online at
+&lt;a href="http://pubsub.example.oddbit.com/">http://pubsub.example.oddbit.com/&lt;/a>.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="what-is-long-polling">What is long polling?&lt;/h2>
+&lt;p>Long polling is a technique used in web applications to enable a
+low-latency response to server messages without the CPU or traffic
+overhead of high frequency polling.&lt;/p>
+&lt;p>A client makes a request to the web server, but rather than responding
+immediately the server holds the connection (for a potentially lengthy
+time), and only response when data is available. The client will
+react to this data and then restart the poll and wait for more data.&lt;/p>
+&lt;h2 id="long-polling-with-jquery">Long polling with Jquery&lt;/h2>
+&lt;p>I&amp;rsquo;ve opted to use &lt;a href="http://jquery.com/">jquery&lt;/a> as part of my client-side implementation,
+because I&amp;rsquo;ve used it a little in the past and it simplifies things a
+great deal.&lt;/p>
+&lt;p>There are a number of articles out there that describe the client-side
+implementation of long polling using jquery. &lt;a href="http://techoctave.com/c7/posts/60-simple-long-polling-example-with-javascript-and-jquery">This&lt;/a>
+article from Seventh Octave gives what is a typical example:&lt;/p>
+&lt;pre>&lt;code>(function poll(){
+$.ajax({
+url: &amp;quot;/poll&amp;quot;,
+success: function (data) {
+do_something_with(data);
+},
+dataType: &amp;quot;json&amp;quot;,
+complete: poll,
+timeout: 30000
+});
+})();
+&lt;/code>&lt;/pre>
+&lt;p>This defines a function &lt;code>poll()&lt;/code> that gets called automatically.
+Because I&amp;rsquo;m not a JavaScript person it took me a moment to figure out
+exactly how that worked. So that you are less mysified than I: The
+basic structure of this function is:&lt;/p>
+&lt;pre>&lt;code>(function poll() {...})();
+&lt;/code>&lt;/pre>
+&lt;p>Since the &lt;code>function&lt;/code> keyword returns a value (a reference to the
+defined function), we can call that reference immediately. This
+construct is entirely equivalent to:&lt;/p>
+&lt;pre>&lt;code>function poll() {...}
+poll();
+&lt;/code>&lt;/pre>
+&lt;p>When called, it fires off an asynchronous AJAX request to &lt;code>/poll&lt;/code> on
+our server. If the server sends a response, the browser will call the
+function in the &lt;code>success&lt;/code> attribute, which will presumably do
+something useful with the response data.&lt;/p>
+&lt;p>It&amp;rsquo;s important not to gloss over the fact that the &lt;a href="http://api.jquery.com/jQuery.ajax/">ajax&lt;/a> method is
+called asynchronously. The &lt;code>poll()&lt;/code> function returns immediately when
+it is called, allowing your client to continue processing your
+script(s).&lt;/p>
+&lt;p>The callable in the &lt;code>complete&lt;/code> attribute will be called at the end of
+the AJAX request, regardless of whether or not the request was
+successful. The use of the &lt;code>timeout&lt;/code> attribute ensures that this code
+will not poll more frequently than once every 30 seconds (this helps
+prevent the code from monopolizing the CPU by polling too frequently
+if an error is causing the AJAX request to return immediately).&lt;/p>
+&lt;h2 id="a-simple-web-page">A simple web page&lt;/h2>
+&lt;p>Our chat application is going be built around a very simple web page
+with two fields (one for a &amp;ldquo;nickname&amp;rdquo;, and one for entering messages
+to send) and a container for printing messages received from the
+server. Stripped of headers and extraneous content, it looks like
+this:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;form id=&amp;quot;chatform&amp;quot;&amp;gt;
+&amp;lt;table&amp;gt;
+&amp;lt;tr&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;label for=&amp;quot;nick&amp;quot;&amp;gt;Nickname:&amp;lt;/label&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;input id=&amp;quot;nick&amp;quot; size=&amp;quot;10&amp;quot; /&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;/tr&amp;gt;
+&amp;lt;tr&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;label for=&amp;quot;message&amp;quot;&amp;gt;message:&amp;lt;/label&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;input id=&amp;quot;message&amp;quot; size=&amp;quot;40&amp;quot; /&amp;gt;
+&amp;lt;button id=&amp;quot;send&amp;quot;&amp;gt;Send&amp;lt;/button&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;/tr&amp;gt;
+&amp;lt;/table&amp;gt;
+&amp;lt;/form&amp;gt;
+&amp;lt;hr /&amp;gt;
+&amp;lt;div id=&amp;quot;conversation&amp;quot;&amp;gt;&amp;lt;/div&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>It doesn&amp;rsquo;t get much simpler than that.&lt;/p>
+&lt;p>We&amp;rsquo;ll use &lt;a href="http://jquery.com/">jquery&lt;/a> to attach JavaScript functions to various actions
+using constructs such as the following, which attaches the
+&lt;code>send_message&lt;/code> to the &lt;code>click&lt;/code> event on an element with id &lt;code>send&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$(&amp;quot;#send&amp;quot;).click(send_message);
+&lt;/code>&lt;/pre>
+&lt;p>Attaching functions this way, rather than using &lt;code>onclick=&lt;/code> attributes
+in our HTML, helps keep the HTML simple.&lt;/p>
+&lt;h2 id="making-things-go">Making things go&lt;/h2>
+&lt;p>For this simple application, our client is going to need to implement
+two basic operations:&lt;/p>
+&lt;ul>
+&lt;li>Sending messages from the user to the server, and&lt;/li>
+&lt;li>Receiving messages from the server and displaying them to the user.&lt;/li>
+&lt;/ul>
+&lt;p>Polling for new messages is implemented using a function that looks
+very much like the sample shown above. The final code looks like
+this:&lt;/p>
+&lt;pre>&lt;code>function poll() {
+var poll_interval=0;
+$.ajax({
+url: poll_url,
+type: 'GET',
+dataType: 'json',
+success: function(data) {
+display_message(data);
+poll_interval=0;
+},
+error: function () {
+poll_interval=1000;
+},
+complete: function () {
+setTimeout(poll, poll_interval);
+},
+});
+}
+&lt;/code>&lt;/pre>
+&lt;p>Upon successfully receiving a message from the server this starts
+&lt;code>poll()&lt;/code> again immediately, but in the event of an error this code
+waits one second (1000 ms) before initiating a new poll.&lt;/p>
+&lt;p>The &lt;code>display_message&lt;/code> function simply updates a &lt;code>&amp;lt;div&amp;gt;&lt;/code> element using
+the data supplied by the server:&lt;/p>
+&lt;pre>&lt;code>function display_message(data) {
+$(&amp;quot;#conversation&amp;quot;).append(&amp;quot;&amp;lt;p&amp;gt;&amp;lt;span class='nick'&amp;gt;&amp;quot;
++ (data['nick'] ? data['nick'] : &amp;quot;&amp;amp;lt;unknown&amp;amp;gt;&amp;quot;)
++ &amp;quot;&amp;lt;/span&amp;gt;: &amp;quot; + data['message'] + &amp;quot;&amp;lt;/p&amp;gt;&amp;quot;);
+$(&amp;quot;#conversation&amp;quot;).each(function () {
+this.scrollTop = this.scrollHeight;
+});
+}
+&lt;/code>&lt;/pre>
+&lt;p>Sending messages is even simpler; we just make a one-off AJAX request
+to send the message to the server:&lt;/p>
+&lt;pre>&lt;code>function send_message() {
+$.ajax({
+url: '/pub',
+type: 'POST',
+dataType: 'json',
+data: {
+nick: $(&amp;quot;#nick&amp;quot;).val(),
+message: $(&amp;quot;#message&amp;quot;).val(),
+},
+complete: function () {
+$(&amp;quot;#message&amp;quot;).val(&amp;quot;&amp;quot;);
+},
+});
+}
+&lt;/code>&lt;/pre>
+&lt;p>This reads the value of the &lt;code>nick&lt;/code> and &lt;code>message&lt;/code> fields in our HTML
+document and then posts the message to the server.&lt;/p>
+&lt;p>The complete JavaScript code can be found online as &lt;a href="https://github.com/larsks/pubsub_example/blob/master/static/pubsub.js">pubsub.js&lt;/a>.&lt;/p>
+&lt;h2 id="making-bottle-asynchronous">Making Bottle asynchronous&lt;/h2>
+&lt;p>I generally lean on &lt;a href="http://bottlepy.org/docs/">Bottle&lt;/a> when writing simple Python web
+applications. It&amp;rsquo;s simple to work with, but Bottle&amp;rsquo;s native server is
+single-threaded, which makes it ill suited to a long-poll scenario:
+when one request is active, all other connections will block until the
+first request has been serviced. You can test this out yourself with
+the following &lt;a href="https://github.com/larsks/pubsub_example/blob/master/example_blocking.py">simple webapp&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>import time
+import bottle
+@bottle.route('/')
+def default():
+data = [ 'one', 'two', 'three', 'four' ]
+for d in data:
+yield d
+time.sleep(5)
+def main():
+bottle.run(port=9090)
+if __name__ == '__main__':
+main()
+&lt;/code>&lt;/pre>
+&lt;p>Open two simultaneous connections to this application. In two
+dfferent windows, run the following command at approximately the same
+time:&lt;/p>
+&lt;pre>&lt;code>curl --trace-ascii /dev/stderr http://localhost:9090
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll see that one will block with no activity until the first
+completes.&lt;/p>
+&lt;p>Fortunately, there are a number of solutions to this issue. I opted
+to use Bottle&amp;rsquo;s support for &lt;a href="http://www.gevent.org/">gevent&lt;/a>, an asynchronous networking
+library that includes a WSGI server. Using Bottle&amp;rsquo;s &lt;code>gevent&lt;/code> support
+is easy; the above code, using the &lt;code>gevent&lt;/code> server, would look
+&lt;a href="https://github.com/larsks/pubsub_example/blob/master/example_nonblocking.py">like this&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>import time
+from gevent import monkey; monkey.patch_all()
+import bottle
+@bottle.route('/')
+def default():
+data = [ 'one', 'two', 'three', 'four' ]
+for d in data:
+yield d
+time.sleep(5)
+def main():
+bottle.run(port=9090, server=&amp;quot;gevent&amp;quot;)
+if __name__ == '__main__':
+main()
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;a href="http://www.gevent.org/gevent.monkey.html">monkey.patch_all&lt;/a> routine in the above code is necessary to
+patch a number of core Python libraries to work correctly with gevent.&lt;/p>
+&lt;p>If you re-run the &lt;code>curl --trace-ascii ...&lt;/code> test from earlier, you&amp;rsquo;ll
+see that this webapp will now service multiple requests
+simultaneously.&lt;/p>
+&lt;h2 id="writing-the-server-receiving-messages">Writing the server: receiving messages&lt;/h2>
+&lt;p>The server needs to perform two basic operations:&lt;/p>
+&lt;ul>
+&lt;li>Receive a message from one client, and&lt;/li>
+&lt;li>Broadcast that message to all connected clients.&lt;/li>
+&lt;/ul>
+&lt;p>Receiving a message is easy (we&amp;rsquo;re just grabbing some data from a
+&lt;code>POST&lt;/code> request), but how do we handle the broadcast aspect of things?
+In this application, I opted to use &lt;a href="http://zeromq.org/">0MQ&lt;/a>, a communication library
+that has been described as &amp;ldquo;&lt;a href="https://speakerdeck.com/methodmissing/zeromq-sockets-on-steroids">sockets on steroids&lt;/a>&amp;rdquo;. In this case,
+two features of 0MQ are particularly attractive:&lt;/p>
+&lt;ul>
+&lt;li>support for publish/subscribe communication patterns, and&lt;/li>
+&lt;li>an easy to use &lt;a href="http://api.zeromq.org/2-1:zmq-inproc">in-process message transport&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>Note that while you would normally import the Python 0MQ module like
+this:&lt;/p>
+&lt;pre>&lt;code>import zmq
+&lt;/code>&lt;/pre>
+&lt;p>When working with &lt;a href="http://www.gevent.org/">gevent&lt;/a> you must do this instead:&lt;/p>
+&lt;pre>&lt;code>from zmq import green as zmq
+&lt;/code>&lt;/pre>
+&lt;p>This imports the &amp;ldquo;green&amp;rdquo; version of 0MQ, which uses non-blocking
+operations compatible with &lt;code>gevent&lt;/code>.&lt;/p>
+&lt;/blockquote>
+&lt;p>We&amp;rsquo;ll start by creating a global 0MQ &lt;code>PUB&lt;/code> socket (called &lt;code>pubsock&lt;/code>)
+that will be used as one end of our in-process message bus:&lt;/p>
+&lt;pre>&lt;code>ctx = zmq.Context()
+pubsock = ctx.socket(zmq.PUB)
+pubsock.bind('inproc://pub')
+&lt;/code>&lt;/pre>
+&lt;p>With this in place, the code for receiving messages is trivial:&lt;/p>
+&lt;pre>&lt;code>@app.route('/pub', method='POST')
+def pub():
+global pubsock
+pubsock.send_json({
+'message': bottle.request.params.get('message'),
+'nick': bottle.request.params.get('nick'),
+})
+return {'status': 'sent'}
+&lt;/code>&lt;/pre>
+&lt;p>We grab the &lt;code>message&lt;/code> and &lt;code>nick&lt;/code> parameters from a &lt;code>POST&lt;/code> request and
+publish a JSON message onto the message bus.&lt;/p>
+&lt;h2 id="writing-the-server-sending-messages">Writing the server: sending messages&lt;/h2>
+&lt;p>Having received a message from a client, our task is to send that
+message out to all connected clients. Each client connected to our
+server will be polling the &lt;code>/sub&lt;/code> endpoint for messages. A simple
+implementation of &lt;code>/sub&lt;/code> might look like this:&lt;/p>
+&lt;pre>&lt;code>@app.route('/sub')
+def sub():
+subsock = ctx.socket(zmq.SUB)
+subsock.setsockopt(zmq.SUBSCRIBE, '')
+subsock.connect('inproc://pub')
+msg = subsock.recv_json()
+return msg
+&lt;/code>&lt;/pre>
+&lt;p>This sets up a 0MQ &lt;code>SUB&lt;/code> socket and connects it to the message bus
+that we established when we created &lt;code>pubsocket&lt;/code>, earlier. Because
+we&amp;rsquo;re using 0MQ&amp;rsquo;s publish-and-subscribe support, any message sent on
+&lt;code>pubsocket&lt;/code> will automatically be propagated to any connected
+subscribers.&lt;/p>
+&lt;p>When each client requests &lt;code>/sub&lt;/code>, Bottle runs this function, which blocks
+waiting for messages on the message bus. When a message arrives, the
+function returns it to the client and exits. Note there&amp;rsquo;s a little
+bit of magic here: when a request handler returns a dictionary to
+Bottle, Bottle automatically serializes that as JSON before sending
+the response to the client.&lt;/p>
+&lt;h2 id="fixing-things-up">Fixing things up&lt;/h2>
+&lt;p>While the above code seems to work, there is a potential problem with
+the implementation: If a client that has been waiting on &lt;code>/sub&lt;/code>
+disconnects, the &lt;code>sub&lt;/code> function will continue to remain blocked on the
+call to &lt;code>subsock.recv_json&lt;/code>. This means that the server will hold
+open the file descriptor associated with the connection. Once a
+message is received, the server will attempt to send a response,
+notice that the client has disconnected, and close the file
+descriptor. Given a large enough population of clients, the number of
+open file descriptors could run into system resource limits. In order
+to prevent this situation, we need to react to client
+disconnects&amp;hellip;which means that now, instead of just blocking waiting
+for messages, we &lt;em>also&lt;/em> need to wait for some notification that a
+client has disconnected.&lt;/p>
+&lt;p>In a traditional socket program, you might do this with something like
+the &lt;code>poll()&lt;/code> or &lt;code>select()&lt;/code> function. Since we&amp;rsquo;re using 0MQ&amp;hellip;we&amp;rsquo;ll
+do exactly the same thing, which is one of the reasons 0MQ is fun to
+work with. We first need to figure out how to detect client
+disconnects. The &lt;a href="http://www.python.org/dev/peps/pep-0333/">WSGI specification&lt;/a> doesn&amp;rsquo;t provide a standard way
+to expose the client socket to our application. However, inspection
+of the WSGI environment (in &lt;code>bottle.request.environ&lt;/code> reveals that the
+&lt;code>wsgi.input&lt;/code> member contains an &lt;code>rfile&lt;/code> attribute, which is exactly
+what we need. With that in hand, we set up a polling object to listen
+for activity on either the message bus or on the client socket:&lt;/p>
+&lt;pre>&lt;code>rfile = bottle.request.environ['wsgi.input'].rfile
+poll = zmq.Poller()
+poll.register(subsock, zmq.POLLIN)
+poll.register(rfile, zmq.POLLIN)
+&lt;/code>&lt;/pre>
+&lt;p>And now we can block waiting for either event:&lt;/p>
+&lt;pre>&lt;code>events = dict(poll.poll())
+# This means the client has disconnected.
+if rfile.fileno() in events:
+return
+# If we get this far it's because there's a message
+# available.
+msg = subsock.recv_json()
+return msg
+&lt;/code>&lt;/pre>
+&lt;h2 id="finishing-up">Finishing up&lt;/h2>
+&lt;p>Those are pretty much all the parts necessary to implement a simple
+publish/subscribe web application in Python. You can see all the
+parts put together into a functioning project in the
+&lt;a href="http://github.com/larsks/pusub_example/">pubsub_example&lt;/a> repository, and you can try out the running code at
+&lt;a href="http://pubsub.example.oddbit.com">http://pubsub.example.oddbit.com&lt;/a>. The code in the repository is
+slightly more complete than the snippets presented in this article.&lt;/p>
+&lt;p>If you encounter any problems with the code (or this article), or if
+I&amp;rsquo;ve gotten something terribly wrong, please open a new issue
+&lt;a href="https://github.com/larsks/pubsub_example/issues">here&lt;/a>.&lt;/p></content></item><item><title>Interrupts on the PiFace</title><link>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</link><pubDate>Mon, 05 Aug 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</guid><description>I recently acquired both a Raspberry Pi and a PiFace IO board. I had a rough time finding examples of how to read the input ports via interrupts (rather than periodically polling for values), especially for the newer versions of the PiFace python libraries.
+After a little research, here&amp;rsquo;s some simple code that will print out pin names as you press the input buttons. Button 3 will cause the code to exit:</description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+I had a rough time finding examples of how to read the input ports via
+interrupts (rather than periodically polling for values), especially
+for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
+&lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
+will print out pin names as you press the input buttons. Button 3
+will cause the code to exit:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/python
+import pifacecommon.core
+import pifacecommon.interrupts
+import os
+import time
+quit = False
+def print_flag(event):
+print 'You pressed button', event.pin_num, '.'
+def stop_listening(event):
+global quit
+quit = True
+pifacecommon.core.init()
+# GPIOB is the input ports, including the four buttons.
+port = pifacecommon.core.GPIOB
+listener = pifacecommon.interrupts.PortEventListener(port)
+# set up listeners for all buttons
+listener.register(0, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(1, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(2, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(3, pifacecommon.interrupts.IODIR_ON, stop_listening)
+# Start listening for events. This spawns a new thread.
+listener.activate()
+# Hang around until someone presses button 3.
+while not quit:
+time.sleep(1)
+print 'you pressed button 3 (quitting)'
+listener.deactivate()
+&lt;/code>&lt;/pre></content></item><item><title>Python ctypes module</title><link>https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/</link><pubDate>Tue, 10 Aug 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/</guid><description>I just learned about the Python ctypes module, which is a Python module for interfacing with C code. Among other things, ctypes lets you call arbitrary functions in shared libraries. This is, from my perspective, some very cool magic. I thought I would provide a short example here, since it took me a little time to get everything working smoothly.
+For this example, we&amp;rsquo;ll write a wrapper for the standard statvfs(2) function:</description><content>&lt;p>I just learned about the Python &lt;code>ctypes&lt;/code> module, which is a Python module for interfacing with C code. Among other things, &lt;code>ctypes&lt;/code> lets you call arbitrary functions in shared libraries. This is, from my perspective, some very cool magic. I thought I would provide a short example here, since it took me a little time to get everything working smoothly.&lt;/p>
+&lt;p>For this example, we&amp;rsquo;ll write a wrapper for the standard &lt;code>statvfs(2)&lt;/code> function:&lt;/p>
+&lt;pre>&lt;code>SYNOPSIS
+#include &amp;lt;sys/statvfs.h&amp;gt;
+int statvfs(const char *path, struct statvfs *buf);
+int fstatvfs(int fd, struct statvfs *buf);
+DESCRIPTION
+The function statvfs() returns information about a mounted file
+system. path is the pathname of any file within the mounted file
+system. buf is a pointer to a statvfs structure defined
+approximately as follows:
+&lt;/code>&lt;/pre>
+&lt;p>Note the wording there: &amp;ldquo;&amp;hellip;defined &lt;em>approximately&lt;/em> as follows.&amp;rdquo; Our first job is finding out exactly what the &lt;code>statvfs&lt;/code> structure looks like. We can use gcc to show us the contents of the appropriate #include file:&lt;/p>
+&lt;pre>&lt;code>echo '#include &amp;lt;sys/statvfs.h&amp;gt;' | gcc -E | less
+&lt;/code>&lt;/pre>
+&lt;p>Browsing through the results, we find the the following definition:&lt;/p>
+&lt;pre>&lt;code>struct statvfs
+{
+unsigned long int f_bsize;
+unsigned long int f_frsize;
+__fsblkcnt_t f_blocks;
+__fsblkcnt_t f_bfree;
+__fsblkcnt_t f_bavail;
+__fsfilcnt_t f_files;
+__fsfilcnt_t f_ffree;
+__fsfilcnt_t f_favail;
+unsigned long int f_fsid;
+unsigned long int f_flag;
+unsigned long int f_namemax;
+int __f_spare[6];
+};
+&lt;/code>&lt;/pre>
+&lt;p>We need to investigate further to determine what &lt;code>__fsblkcnt_t&lt;/code> and &lt;code>__fsfilcnt_t&lt;/code> really mean. There are a number of ways to do this. Here&amp;rsquo;s what I did:&lt;/p>
+&lt;pre>&lt;code>$ cd /usr/include
+$ ctags -R
+$ ex
+Entering Ex mode. Type &amp;quot;visual&amp;quot; to go to Normal mode.
+:tag __fsblkcnt_t
+&amp;quot;bits/types.h&amp;quot; [readonly] 197L, 7601C
+:p
+__STD_TYPE __FSBLKCNT_T_TYPE __fsblkcnt_t;
+:tag __FSBLKCNT_T_TYPE
+&amp;quot;bits/typesizes.h&amp;quot; [readonly] 66L, 2538C
+:p
+#define __FSBLKCNT_T_TYPE __ULONGWORD_TYPE
+:tag __ULONGWORD_TYPE
+&amp;quot;bits/types.h&amp;quot; [readonly] 197L, 7601C
+:p
+#define __ULONGWORD_TYPE unsigned long int
+&lt;/code>&lt;/pre>
+&lt;p>Repeat this for &lt;code>__fsfilcnt_t&lt;/code> and we find that they are both unsigned long int.&lt;/p>
+&lt;p>This means that we need to create a &lt;code>ctypes.Structure&lt;/code> object like the following:&lt;/p>
+&lt;pre>&lt;code>from ctypes import *
+class struct_statvfs (Structure):
+_fields_ = [
+('f_bsize', c_ulong),
+('f_frsize', c_ulong),
+('f_blocks', c_ulong),
+('f_bfree', c_ulong),
+('f_bavail', c_ulong),
+('f_files', c_ulong),
+('f_ffree', c_ulong),
+('f_favail', c_ulong),
+('f_fsid', c_ulong),
+('f_flag', c_ulong),
+('f_namemax', c_ulong),
+('__f_spare', c_int * 6),
+]
+&lt;/code>&lt;/pre>
+&lt;p>Failure to create the correct structure (e.g., if you&amp;rsquo;re missing fields) can result in a number of weird errors, including segfaults and warnings from gcc about memory corruption.&lt;/p>
+&lt;p>Now that we have the appropriate structure defined, we need to load up the appropriate shared library:&lt;/p>
+&lt;pre>&lt;code>libc = CDLL('libc.so.6')
+&lt;/code>&lt;/pre>
+&lt;p>And then tell ctypes about the function arguments expected by statvfs():&lt;/p>
+&lt;pre>&lt;code>libc.statvfs.argtypes = [c_char_p, POINTER(struct_statvfs)]
+&lt;/code>&lt;/pre>
+&lt;p>With all this in place, we can now call the function:&lt;/p>
+&lt;pre>&lt;code>s = struct_statvfs()
+res = libc.statvfs('/etc', byref(s))
+for k in s._fields_:
+print '%20s: %s' % (k[0], getattr(s, k[0]))
+&lt;/code>&lt;/pre>
+&lt;p>We use &lt;code>byref(s)&lt;/code> because &lt;code>statvfs()&lt;/code> expects a pointer to a structure. This outputs the following on my local system:&lt;/p>
+&lt;pre>&lt;code> f_bsize: 4096
+f_frsize: 4096
+f_blocks: 10079070
+f_bfree: 5043632
+f_bavail: 4941270
+f_files: 2564096
+f_ffree: 2419876
+f_favail: 2419876
+f_fsid: 18446744071962486827
+f_flag: 4096
+f_namemax: 255
+__f_spare: &amp;lt;__main__.c_int_Array_6 object at 0x7f718fb6b3b0&amp;gt;
+&lt;/code>&lt;/pre></content></item><item><title>Retrieving Blogger posts by post id</title><link>https://blog.oddbit.com/post/2010-01-29-retrieving-blogger-posts-by-po/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-retrieving-blogger-posts-by-po/</guid><description>I spent some time recently trying to figure out, using Google&amp;rsquo;s gdata API, how to retrieve a post from a Blogger blog if I know corresponding post id. As far as I can tell there is no obvious way of doing this, at least not using the gdata.blogger.client api, but after much nashing of teeth I came up with the following solution.
+Given client, a gdata.blogger.client instance, and blog, a gdata.</description><content>&lt;p>I spent some time recently trying to figure out, using Google&amp;rsquo;s &lt;a href="http://code.google.com/apis/gdata/docs/2.0/basics.html">gdata&lt;/a> API, how to retrieve a post from a &lt;a href="http://www.blogger.com/">Blogger&lt;/a> blog if I know corresponding post id. As far as I can tell there is no obvious way of doing this, at least not using the gdata.blogger.client api, but after much nashing of teeth I came up with the following solution.&lt;/p>
+&lt;p>Given client, a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.client.html">gdata.blogger.client&lt;/a> instance, and blog, a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.data.html">gdata.blogger.data.Blog&lt;/a> instance, the following code will return a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.data.html">gdata.blogger.data.BlogPost&lt;/a> instance:&lt;/p>
+&lt;pre>&lt;code>post = client.get_feed(blog.get_post_link().href
++ '/%s' % post_id,
+auth_token=client.auth_token,
+desired_class=gdata.blogger.data.BlogPost)
+&lt;/code>&lt;/pre>
+&lt;p>I&amp;rsquo;m not sure if this is the canonical solution or not, but it appears to work for me.&lt;/p></content></item></channel></rss>

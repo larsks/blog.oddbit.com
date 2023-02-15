@@ -1,0 +1,1491 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>git on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/git/</link><description>Recent content in git on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 22 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/git/rss.xml" rel="self" type="application/rss+xml"/><item><title>Delete GitHub workflow runs using the gh cli</title><link>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</link><pubDate>Thu, 22 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</guid><description>Hello, future me. This is for you next time you want to do this.
+When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:
+gh run list --json databaseId -q &amp;#39;.</description><content>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
+&lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gh run list --json databaseId -q &amp;#39;.[].databaseId&amp;#39; |
+xargs -IID gh api \
+&amp;#34;repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID&amp;#34; \
+-X DELETE
+&lt;/code>&lt;/pre>&lt;p>This will delete &lt;em>all&lt;/em> (well, up to 20, or whatever you set in &lt;code>--limit&lt;/code>) your workflow runs. You can add flags to &lt;code>gh run list&lt;/code> to filter runs by workflow or by triggering user.&lt;/p></content></item><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-index.in/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-index.in/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
+git synth The git synth command reads a YAML description of a repository and executes the necessary commands to reproduce that history. It allows you set the name and email address of the author and committer as well as static date, so you every time you generate the repository you can identical commit ids.</description><content>&lt;p>I sometimes find myself writing articles or documentation about
+&lt;a href="https://git-scm.org">git&lt;/a>, so I put together a couple of terrible hacks for generating
+reproducible histories and pretty graphs of those histories.&lt;/p>
+&lt;h2 id="git-synth">git synth&lt;/h2>
+&lt;p>The &lt;a href="https://github.com/larsks/git-snippets/blob/master/git-synth">&lt;code>git synth&lt;/code>&lt;/a> command reads a &lt;a href="https://yaml.org/">YAML&lt;/a> description of a
+repository and executes the necessary commands to reproduce that
+history. It allows you set the name and email address of the author
+and committer as well as static date, so you every time you generate
+the repository you can identical commit ids.&lt;/p>
+&lt;h2 id="git-dot">git dot&lt;/h2>
+&lt;p>The &lt;a href="https://github.com/larsks/git-snippets/blob/master/git-dot">&lt;code>git dot&lt;/code>&lt;/a> command generates a representation of a repository
+history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
+into diagrams.&lt;/p>
+&lt;h2 id="putting-it-together">Putting it together&lt;/h2>
+&lt;p>For example, the following history specification:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.yml --&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>When applied with &lt;code>git synth&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ git synth -r examplerepo examplerepo.yml
+&lt;/code>&lt;/pre>&lt;p>Will generate the following repository:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ git -C examplerepo log --graph --all --decorate --oneline
+* 28f7b38 (HEAD -&amp;gt; master) H
+| * 93e1d18 (topic2) G
+| * 3ef811d F
+| * 973437c (topic1) E
+| * 2c0bd1c D
+|/
+* cabdedf C
+* a5cbd99 B
+* d98f949 A
+&lt;/code>&lt;/pre>&lt;p>We can run this &lt;code>git dot&lt;/code> command line:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ git -C examplerepo dot -m -g branch --rankdir=RL
+&lt;/code>&lt;/pre>&lt;p>To produce the following &lt;code>dot&lt;/code> description of the history:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.dot --&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>Running that through the &lt;code>dot&lt;/code> utility (&lt;code>dot -Tsvg -o repo.svg repo.dot&lt;/code>) results in the following diagram:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-graphviz" data-lang="graphviz">&amp;lt;!-- include examplerepo.dot --&amp;gt;
+&lt;/code>&lt;/pre>&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
+&lt;p>Both tools live in my &lt;a href="https://github.com/larsks/git-snippets">git-snippets&lt;/a> repository, which is a motley
+collection of shells scripts, python programs, and other utilities for
+interacting with &lt;code>git&lt;/code>.&lt;/p>
+&lt;p>It&amp;rsquo;s all undocumented and uninstallable, but if there&amp;rsquo;s interest in
+either of these tools I can probably find the time to polish them up a
+bit.&lt;/p></content></item><item><title>Editing a commit message without git rebase</title><link>https://blog.oddbit.com/post/2021-02-18-editing-a-commit-message-witho/</link><pubDate>Thu, 18 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-18-editing-a-commit-message-witho/</guid><description>While working on a pull request I will make liberal use of git rebase to clean up a series of commits: squashing typos, re-ordering changes for logical clarity, and so forth. But there are some times when all I want to do is change a commit message somewhere down the stack, and I was wondering if I had any options for doing that without reaching for git rebase.
+It turns out the answer is &amp;ldquo;yes&amp;rdquo;, as long as you have a linear history.</description><content>&lt;p>While working on a pull request I will make liberal use of &lt;a href="https://git-scm.com/docs/git-rebase">git
+rebase&lt;/a> to clean up a series of commits: squashing typos,
+re-ordering changes for logical clarity, and so forth. But there are
+some times when all I want to do is change a commit message somewhere
+down the stack, and I was wondering if I had any options for doing
+that without reaching for &lt;code>git rebase&lt;/code>.&lt;/p>
+&lt;p>It turns out the answer is &amp;ldquo;yes&amp;rdquo;, as long as you have a linear
+history.&lt;/p>
+&lt;p>Let&amp;rsquo;s assume we have a git history that looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+│ 4be811 │ ◀── │ 519636 │ ◀── │ 38f6fe │ ◀── │ 2951ec │ ◀╴╴ │ master │
+└────────┘ └────────┘ └────────┘ └────────┘ └────────┘
+&lt;/code>&lt;/pre>&lt;p>The corresponding &lt;code>git log&lt;/code> looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commit 2951ec3f54205580979d63614ef2751b61102c5d
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+Add detailed, high quality documentation
+commit 38f6fe61ffd444f601ac01ecafcd524487c83394
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+Fixed bug that would erroneously call rm -rf
+commit 51963667037ceb79aff8c772a009a5fbe4b8d7d9
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+A very interesting change
+commit 4be8115640821df1565c421d8ed848bad34666e5
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+The beginning of time
+&lt;/code>&lt;/pre>&lt;h2 id="mucking-about-with-objects">Mucking about with objects&lt;/h2>
+&lt;p>We would like to modify the message on commit &lt;code>519636&lt;/code>.&lt;/p>
+&lt;p>We start by extracting the &lt;code>commit&lt;/code> object for that commit using &lt;code>git cat-file&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ git cat-file -p 519636
+tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+parent 4be8115640821df1565c421d8ed848bad34666e5
+author Alice User &amp;lt;alice@example.com&amp;gt; 978325200 -0500
+committer Alice User &amp;lt;alice@example.com&amp;gt; 978325200 -0500
+A very interesting change
+&lt;/code>&lt;/pre>&lt;p>We want to produce a commit object that is identical except for an
+updated commit message. That sounds like a job for &lt;code>sed&lt;/code>! We can strip
+the existing message out like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git cat-file -p 519636 | sed &amp;#39;/^$/q&amp;#39;
+&lt;/code>&lt;/pre>&lt;p>And we can append a new commit message with the power of &lt;code>cat&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git cat-file -p 519636 | sed &amp;#39;/^$/q&amp;#39;; cat &amp;lt;&amp;lt;EOF
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+&lt;/code>&lt;/pre>&lt;p>This will give us:&lt;/p>
+&lt;pre tabindex="0">&lt;code>tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+parent 4be8115640821df1565c421d8ed848bad34666e5
+author Alice User &amp;lt;alice@example.com&amp;gt; 978325200 -0500
+committer Alice User &amp;lt;alice@example.com&amp;gt; 978325200 -0500
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+&lt;/code>&lt;/pre>&lt;p>We need to take this modified commit and store it back into the git
+object database. We do that using the &lt;code>git hash-object&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>(git cat-file -p 519636 | sed &amp;#39;/^$/q&amp;#39;; cat &amp;lt;&amp;lt;EOF) | git hash-object -t commit --stdin -w
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>-t commit&lt;/code> argument instructs &lt;code>hash-object&lt;/code> to create a new
+commit object. The &lt;code>--stdin&lt;/code> argument instructs &lt;code>hash-object&lt;/code> to read
+input from &lt;code>stdin&lt;/code>, while the &lt;code>-w&lt;/code> argument instructs &lt;code>hash-object&lt;/code> to
+write a new object to the object database, rather than just
+calculating the hash and printing it for us.&lt;/p>
+&lt;p>This will print the hash of the new object on stdout. We can wrap
+everything in a &lt;code>$(...)&lt;/code> expression to capture the output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>newref=$(
+(git cat-file -p 519636 | sed &amp;#39;/^$/q&amp;#39;; cat &amp;lt;&amp;lt;EOF) | git hash-object -t commit --stdin -w
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+)
+&lt;/code>&lt;/pre>&lt;p>At this point we have successfully created a new commit, but it isn&amp;rsquo;t
+reachable from anywhere. If we were to run &lt;code>git log&lt;/code> at this point,
+everything would look the same as when we started. We need to walk
+back up the tree, starting with the immediate descendant of our target
+commit, replacing parent pointers as we go along.&lt;/p>
+&lt;p>The first thing we need is a list of revisions from our target commit
+up to the current &lt;code>HEAD&lt;/code>. We can get that with &lt;code>git rev-list&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ git rev-list 519636..HEAD
+2951ec3f54205580979d63614ef2751b61102c5d
+38f6fe61ffd444f601ac01ecafcd524487c83394
+&lt;/code>&lt;/pre>&lt;p>We&amp;rsquo;ll process these in reverse order, so first we modify &lt;code>38f6fe&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>oldref=51963667037ceb79aff8c772a009a5fbe4b8d7d9
+newref=$(git cat-file -p 38f6fe61ffd444f601ac01ecafcd524487c83394 |
+sed &amp;#34;s/parent $oldref/parent $newref/&amp;#34; |
+git hash-object -t commit --stdin -w)
+&lt;/code>&lt;/pre>&lt;p>And then repeat that for the next commit up the tree:&lt;/p>
+&lt;pre tabindex="0">&lt;code>oldref=38f6fe61ffd444f601ac01ecafcd524487c83394
+newref=$(git cat-file -p 2951ec3f54205580979d63614ef2751b61102c5d |
+sed &amp;#34;s/parent $oldref/parent $newref/&amp;#34; |
+git hash-object -t commit --stdin -w)
+&lt;/code>&lt;/pre>&lt;p>We&amp;rsquo;ve now replaced all the descendants of the modified commit&amp;hellip;but
+&lt;code>git log&lt;/code> would &lt;em>still&lt;/em> show us the old history. The last thing we
+need to do is update the branch point to point at the top of the
+modified tree. We do that using the &lt;code>git update-ref&lt;/code> command. Assuming
+we&amp;rsquo;re on the &lt;code>master&lt;/code> branch, the command would look like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git update-ref refs/heads/master $newref
+&lt;/code>&lt;/pre>&lt;p>And at this point, running &lt;code>git log&lt;/code> show us our modified commit in
+all its glory:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commit 365bc25ee1fe365d5d63d2248b77196d95d9573a
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+Add detailed, high quality documentation
+commit 09d6203a2b64c201dde12af7ef5a349e1ae790d7
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+Fixed bug that would erroneously call rm -rf
+commit fb01f35c38691eafbf44e9ee86824b594d036ba4
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+commit 4be8115640821df1565c421d8ed848bad34666e5
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+The beginning of time
+&lt;/code>&lt;/pre>&lt;p>Giving us a modified history that looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+│ 4be811 │ ◀── │ fb01f3 │ ◀── │ 09d620 │ ◀── │ 365bc2 │ ◀╴╴ │ master │
+└────────┘ └────────┘ └────────┘ └────────┘ └────────┘
+&lt;/code>&lt;/pre>&lt;h2 id="automating-the-process">Automating the process&lt;/h2>
+&lt;p>Now, that was a lot of manual work. Let&amp;rsquo;s try to automate the process.&lt;/p>
+&lt;pre tabindex="0">&lt;code>#!/bin/sh
+# get the current branch name
+branch=$(git rev-parse --symbolic-full-name HEAD)
+# git the full commit id of our target commit (this allows us to
+# specify the target as a short commit id, or as something like
+# `HEAD~3` or `:/interesting`.
+oldref=$(git rev-parse &amp;#34;$1&amp;#34;)
+# generate a replacement commit object, reading the new commit message
+# from stdin.
+newref=$(
+(git cat-file -p $oldref | sed &amp;#39;/^$/q&amp;#39;; cat) | tee newref.txt | git hash-object -t commit --stdin -w
+)
+# iterate over commits between our target commit and HEAD in
+# reverse order, replacing parent points with updated commit objects
+for rev in $(git rev-list --reverse ${oldref}..HEAD); do
+newref=$(git cat-file -p $rev |
+sed &amp;#34;s/parent $oldref/parent $newref/&amp;#34; |
+git hash-object -t commit --stdin -w)
+oldref=$rev
+done
+# update the branch pointer to the head of the modified tree
+git update-ref $branch $newref
+&lt;/code>&lt;/pre>&lt;p>If we place the above script in &lt;code>editmsg.sh&lt;/code> and restore our original
+revision history, we can run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sh editmsg.sh :/interesting &amp;lt;&amp;lt;EOF
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+&lt;/code>&lt;/pre>&lt;p>And end up with a new history identical to the one we created
+manually:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commit 365bc25ee1fe365d5d63d2248b77196d95d9573a
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+Add detailed, high quality documentation
+commit 09d6203a2b64c201dde12af7ef5a349e1ae790d7
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+Fixed bug that would erroneously call rm -rf
+commit fb01f35c38691eafbf44e9ee86824b594d036ba4
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+A very interesting change
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+commit 4be8115640821df1565c421d8ed848bad34666e5
+Author: Alice User &amp;lt;alice@example.com&amp;gt;
+Date: Mon Jan 1 00:00:00 2001 -0500
+The beginning of time
+&lt;/code>&lt;/pre>&lt;h2 id="caveats">Caveats&lt;/h2>
+&lt;p>The above script is intentionally simple. If you&amp;rsquo;re interesting in
+doing something like this in practice, you should be aware of the
+following:&lt;/p>
+&lt;ul>
+&lt;li>The above process works great with a linear history, but will break
+things if the rewriting process crosses a merge commit.&lt;/li>
+&lt;li>We&amp;rsquo;re assuming that the given target commit is actually reachable
+from the current branch.&lt;/li>
+&lt;li>We&amp;rsquo;re assuming that the given target actually exists.&lt;/li>
+&lt;/ul>
+&lt;p>It&amp;rsquo;s possible to check for all of these conditions in our script, but
+I&amp;rsquo;m leaving that as an exercise for the reader.&lt;/p></content></item><item><title>Avoid rebase hell: squashing without rebasing</title><link>https://blog.oddbit.com/post/2019-06-17-avoid-rebase-hell-squashing-wi/</link><pubDate>Mon, 17 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-17-avoid-rebase-hell-squashing-wi/</guid><description>You&amp;rsquo;re working on a pull request. You&amp;rsquo;ve been working on a pull request for a while, and due to lack of sleep or inebriation you&amp;rsquo;ve been merging changes into your feature branch rather than rebasing. You now have a pull request that looks like this (I&amp;rsquo;ve marked merge commits with the text [merge]):
+7e181479 Adds methods for widget sales 0487162 [merge] Merge remote-tracking branch &amp;#39;origin/master&amp;#39; into my_feature 76ee81c [merge] Merge branch &amp;#39;my_feature&amp;#39; of https://github.</description><content>&lt;p>You&amp;rsquo;re working on a pull request. You&amp;rsquo;ve been working on a pull request for a while, and due to lack of sleep or inebriation you&amp;rsquo;ve been merging changes into your feature branch rather than rebasing. You now have a pull request that looks like this (I&amp;rsquo;ve marked merge commits with the text &lt;code>[merge]&lt;/code>):&lt;/p>
+&lt;pre tabindex="0">&lt;code>7e181479 Adds methods for widget sales
+0487162 [merge] Merge remote-tracking branch &amp;#39;origin/master&amp;#39; into my_feature
+76ee81c [merge] Merge branch &amp;#39;my_feature&amp;#39; of https://github.com/my_user_name/widgets into my_feature
+981aab4 Adds api for the widget service.
+b048836 Includes fixes suggested by reviewer.
+3dd0c22 adds changes requested by reviewer
+5891db2 [merge] fixing merge conflicts
+2e226e4 fixes suggestions given by the reviewer
+da1e85c Adds gadget related API spec
+c555cc1 Adds doodad related API spec
+e5beb3e Adds api for update and delete of widgets
+c43bade Adds api for creating widgets
+deaa962 Adds all get methods for listing widgets
+9de79ab Adds api for showing a widget and simple data model
+8288ab1 Adds api framework for widget service
+&lt;/code>&lt;/pre>&lt;p>You know that&amp;rsquo;s a mess, so you try to fix it by running &lt;code>git rebase -i master&lt;/code> and squashing everything together&amp;hellip;and you find yourself stuck in an endless maze of merge conflicts. There has to be a better way!&lt;/p>
+&lt;p>&lt;em>(voiceover: there is a better way&amp;hellip;)&lt;/em>&lt;/p>
+&lt;h2 id="option-1-merge---squash">Option 1: merge &amp;ndash;squash&lt;/h2>
+&lt;p>In this method, you will create a temporary branch and use &lt;code>git merge --squash&lt;/code> to squash together the changes in your pull request.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Check out a new branch based on &lt;code>master&lt;/code> (or the appropriate base branch if your feature branch isn&amp;rsquo;t based on &lt;code>master&lt;/code>):&lt;/p>
+&lt;pre tabindex="0">&lt;code>git checkout -b work master
+&lt;/code>&lt;/pre>&lt;p>(This creates a new branch called &lt;code>work&lt;/code> and makes that your current branch.)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Bring in the changes from your messy pull request using &lt;code>git merge --squash&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git merge --squash my_feature
+&lt;/code>&lt;/pre>&lt;p>This brings in all the changes from your &lt;code>my_feature&lt;/code> branch and stages them, but does not create &lt;em>any&lt;/em> commits.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Commit the changes with an appropriate commit message:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git commit
+&lt;/code>&lt;/pre>&lt;p>At this point, your &lt;code>work&lt;/code> branch should be identical to the original &lt;code>my_feature&lt;/code> branch (running &lt;code>git diff my_feature_branch&lt;/code> should not show any changes), but it will have only a single commit after &lt;code>master&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Return to your feature branch and &lt;code>reset&lt;/code> it to the squashed version:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git checkout my_feature
+git reset --hard work
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Update your pull request:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git push -f
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Optionally clean up your work branch:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git branch -D work
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol>
+&lt;h2 id="option-2-using-git-commit-tree">Option 2: Using &lt;code>git commit-tree&lt;/code>&lt;/h2>
+&lt;p>In this method, you will use &lt;code>git commit-tree&lt;/code> to create a new commit without requiring a temporary branch.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Use &lt;code>git commit-tree&lt;/code> to create new commit that reproduces the current state of your &lt;code>my_feature&lt;/code> branch but&lt;/p>
+&lt;pre tabindex="0">&lt;code>git commit-tree -p master -m &amp;#39;this implements my_feature&amp;#39; my_feature^{tree}
+&lt;/code>&lt;/pre>&lt;p>This uses the current state of the &lt;code>my_feature&lt;/code> branch as the source of a new commit whose parent is &lt;code>master&lt;/code>. This will print out a commit hash:&lt;/p>
+&lt;pre tabindex="0">&lt;code>1d3917a3b7c43f4585084e626303c9eeee59c6d6
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Reset your &lt;code>my_feature&lt;/code> branch to this new commit hash:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git reset --hard 1d3917a3b7c43f4585084e626303c9eeee59c6d6
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Consider editing your commit message to meet &lt;a href="https://blog.oddbit.com/post/2019-06-14-git-etiquette-commit-messages/">best practices&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Update your pull request:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git push -f
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol></content></item><item><title>Git Etiquette: Commit messages and pull requests</title><link>https://blog.oddbit.com/post/2019-06-14-git-etiquette-commit-messages/</link><pubDate>Fri, 14 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-14-git-etiquette-commit-messages/</guid><description>Always work on a branch (never commit on master) When working with an upstream codebase, always make your changes on a feature branch rather than your local master branch. This will make it easier to keep your local master branch current with respect to upstream, and can help avoid situations in which you accidentally overwrite your local changes or introduce unnecessary merge commits into your history.
+Rebase instead of merge If you need to incorporate changes from the upstream master branch in the feature branch on which you are currently doing, bring in those changes using git rebase rather than git merge.</description><content>&lt;h2 id="always-work-on-a-branch-never-commit-on-master">Always work on a branch (never commit on master)&lt;/h2>
+&lt;p>When working with an upstream codebase, always make your changes on a feature branch rather than your local &lt;code>master&lt;/code> branch. This will make it easier to keep your local &lt;code>master&lt;/code> branch current with respect to upstream, and can help avoid situations in which you accidentally overwrite your local changes or introduce unnecessary merge commits into your history.&lt;/p>
+&lt;h2 id="rebase-instead-of-merge">Rebase instead of merge&lt;/h2>
+&lt;p>If you need to incorporate changes from the upstream &lt;code>master&lt;/code> branch in the feature branch on which you are currently doing, bring in those changes using &lt;code>git rebase&lt;/code> rather than &lt;code>git merge&lt;/code>. This process will generally start by ensuring that your local copy of the upstream &lt;code>master&lt;/code> is current:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git remote update
+&lt;/code>&lt;/pre>&lt;p>Followed by rebasing your changes on top of that branch:&lt;/p>
+&lt;pre tabindex="0">&lt;code>git rebase origin/master
+&lt;/code>&lt;/pre>&lt;h2 id="make-your-commit-messages-meaningful">Make your commit messages meaningful&lt;/h2>
+&lt;p>Your commit messages should follow common best practices, such as &lt;a href="https://wiki.openstack.org/wiki/GitCommitMessages">those documented for OpenStack&lt;/a>. In general, this means:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Your commit message should have the subject on the first line, then a blank line, then the message body.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The message body should be wrapped at around 75 characters.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Your commit message should succinctly describe &lt;em>what&lt;/em> was changed and &lt;em>why&lt;/em> it was changed.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>If your commit is associated with a bug, user story, task, or other tracking mechanism, include a reference to the appropriate item in your commit message.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="example-of-bad-commit-messages">Example of bad commit messages&lt;/h3>
+&lt;ol>
+&lt;li>
+&lt;p>This should probably have been squashed with the commit that introduced the typo:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Fixed a typo.
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>This doesn&amp;rsquo;t provide sufficient details:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Trying that thing again
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Changes necessary to resolve merge conflicts should generally be squashed into the commits that introduce the conflict:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Fixing merge conflicts
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol>
+&lt;h3 id="example-of-good-commit-messages">Example of good commit messages&lt;/h3>
+&lt;ol>
+&lt;li>
+&lt;p>A constructed example:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Support new &amp;#34;description&amp;#34; field on all widgets (TG-100)
+Update both the database model and the web UI to support an extended
+&amp;#34;description&amp;#34; field on all objects. This allows us to generate more useful
+product listings.
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>from &lt;a href="https://github.com/openstack/ironic/commit/6ca99d67302d7e1b639ad9b745631e65a4b2f25c">https://github.com/openstack/ironic/commit/6ca99d67302d7e1b639ad9b745631e65a4b2f25c&lt;/a>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Add release note updating status of smartnics
+Smartnic support merged into Neutron a few weeks ago,
+and as we downplayed the functionality during the Stein
+cycle, we should highlight it during Train since it should
+now be available.
+Change-Id: I19372a0ede703f62940bbb2cc3a80618560ebc93
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>from &lt;a href="https://github.com/ansible/ansible/commit/88a1fc28d894575d48edc3817cc1a8ef4dca3cae">https://github.com/ansible/ansible/commit/88a1fc28d894575d48edc3817cc1a8ef4dca3cae&lt;/a>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Clean up iosxr get_config_diff function (#57589)
+This fixes an index error issue when running tests on zuul.ansible.com
+for iosxr. We can fix this by getting the last element in the list.
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol>
+&lt;h2 id="fix-typos-by-amending-or-rebasing">Fix typos by amending or rebasing&lt;/h2>
+&lt;p>If before your pull request has merged you realize you need to fix a typo or other error, do not create a new commit with the correction.&lt;/p>
+&lt;p>If the typo is in the most recent commit, simply fix it, &lt;code>git add&lt;/code> the change, and then use &lt;code>git commit --amend&lt;/code> to update the latest commit.&lt;/p>
+&lt;p>If the typo is &lt;strong>not&lt;/strong> in the latest commit, then use &lt;code>git rebase&lt;/code> to edit the commit. The procedure will look something like this:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Assuming that your branch is based on &lt;code>origin/master&lt;/code>, run &lt;code>git rebase -i origin/master&lt;/code>. This will bring up the &amp;ldquo;pick list&amp;rdquo;, which allows you to select among various actions for each commit between &lt;code>origin/master&lt;/code> and your current branch. For example:&lt;/p>
+&lt;pre tabindex="0">&lt;code>pick 6ca99d673 Add release note updating status of smartnics
+pick c2ab34a8c Do not log an exception if Allocation is deleted during handling.
+pick 87464fbbc Change constraints opendev.org to release.openstack.org
+pick 43f7bf9f0 Fix :param: in docstring
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Change &lt;code>pick&lt;/code> to &lt;code>edit&lt;/code> for the commit you wish to edit, then exit your editor.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Make the necessary change, then &lt;code>git add&lt;/code> your modified files and then &lt;code>git rebase --continue&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>In either of the above situations, when you have committed the changes locally, run &lt;code>git push -f&lt;/code> to update the remote branch on GitHub (which will in turn update your pull request).&lt;/p>
+&lt;h2 id="have-one-commit-per-logical-change-and-one-major-feature-per-pull-request">Have one commit per logical change and one major feature per pull request&lt;/h2>
+&lt;p>When you submit a pull request, all the commits associated with that pull request should be related to the same major feature. For example, if you made the follow changes:&lt;/p>
+&lt;ul>
+&lt;li>Fixed bug #1234&lt;/li>
+&lt;li>Wrote new feature discussed at last planning session&lt;/li>
+&lt;/ul>
+&lt;p>Those should be two separate pull requests. On the other hand, if you have instead made these changes:&lt;/p>
+&lt;ul>
+&lt;li>Wrote new feature discussed at last planning session&lt;/li>
+&lt;li>Wrote documentation for new feature&lt;/li>
+&lt;li>Wrote tests for new feature&lt;/li>
+&lt;/ul>
+&lt;p>Those could all be made part of the same pull request.&lt;/p>
+&lt;p>Within your pull request, there should be a single commit for each logical change. For example rather than:&lt;/p>
+&lt;ul>
+&lt;li>Started documentation for new feature&lt;/li>
+&lt;li>Made changes to documentation based on review&lt;/li>
+&lt;li>Reformatted documentation to fix syntax error&lt;/li>
+&lt;/ul>
+&lt;p>You should have a single commit:&lt;/p>
+&lt;ul>
+&lt;li>Write documentation for new feature&lt;/li>
+&lt;/ul>
+&lt;p>You should use &lt;code>git commit --amend&lt;/code> or &lt;code>git rebase&lt;/code>, as discussed earlier, to keep your commits topical and organized.&lt;/p></content></item><item><title>Making sure your Gerrit changes aren't broken</title><link>https://blog.oddbit.com/post/2017-01-22-making-sure-your-gerrit-change/</link><pubDate>Sun, 22 Jan 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-01-22-making-sure-your-gerrit-change/</guid><description>It&amp;rsquo;s a bit of an embarrassment when you submit a review to Gerrit only to have it fail CI checks immediately because of something as simple as a syntax error or pep8 failure that you should have caught yourself before submitting&amp;hellip;but you forgot to run your validations before submitting the change.
+In many cases you can alleviate this through the use of the git pre-commit hook, which will run every time you commit changes locally.</description><content>&lt;p>It&amp;rsquo;s a bit of an embarrassment when you submit a review to Gerrit only
+to have it fail CI checks immediately because of something as simple
+as a syntax error or pep8 failure that you should have caught yourself
+before submitting&amp;hellip;but you forgot to run your validations before
+submitting the change.&lt;/p>
+&lt;p>In many cases you can alleviate this through the use of the git
+&lt;code>pre-commit&lt;/code> hook, which will run every time you commit changes
+locally. You can have the hook run &lt;code>tox&lt;/code> or whatever tool your
+project uses for validation on every commit. This works okay for
+simple cases, but if the validation takes more than a couple of
+seconds the delay can be disruptive to the flow of your work.&lt;/p>
+&lt;p>What you want is something that stays out of the way while you are
+working locally, but that will prevent you from submitting something
+for review that&amp;rsquo;s going to fail CI immediately. If you are using the
+&lt;a href="http://docs.openstack.org/infra/git-review/">git-review&lt;/a> tool to interact with Gerrit (and if you&amp;rsquo;re not, you
+should be), you&amp;rsquo;re in luck! The &lt;code>git-review&lt;/code> tool supports a
+&lt;code>pre-review&lt;/code> hook that does exactly what we want. &lt;code>git-review&lt;/code> looks
+for hooks in a global location (&lt;code>~/.config/git-review/hooks&lt;/code>) and in a
+per-project location (in &lt;code>.git/hooks/&lt;/code>). As with standard Git hooks,
+the &lt;code>pre-review&lt;/code> hook must be executable (i.e., &lt;code>chmod u+x .git/hooks/pre-review&lt;/code>).&lt;/p>
+&lt;p>The &lt;code>pre-review&lt;/code> script will be run before attempting to submit your
+changes to Gerrit. If the script exits successfully, the output is
+hidden and your changes will be submitted normally. If the hook
+fails, you will see output along the lines of&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>Custom script execution failed.
+The following command failed with exit code 1
+&amp;quot;.git/hooks/pre-review&amp;quot;
+-----------------------
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;followed by the output of the &lt;code>pre-review&lt;/code> script.&lt;/p>
+&lt;p>For my work on the &lt;a href="https://github.com/openstack/tripleo-quickstart">tripleo-quickstart&lt;/a> project, the contents of my
+&lt;code>.git/hooks/pre-review&lt;/code> script is as simple as:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+tox
+&lt;/code>&lt;/pre></content></item><item><title>A collection of git tips</title><link>https://blog.oddbit.com/post/2016-02-19-a-collection-of-git-tips/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-a-collection-of-git-tips/</guid><description>This is a small collection of simple git tips and tricks I use to make my life easier.
+Quickly amend an existing commit with new files I have this alias in place that will amend the current commit while automatically re-using the existing commit message:
+alias.fix=commit --amend -C HEAD With this in place, fixing a review becomes:
+$ vim some/file/somewhere $ git add -u $ git fix Which I find much more convenient than git commit --amend, following by saving the commit message.</description><content>&lt;p>This is a small collection of simple &lt;code>git&lt;/code> tips and tricks I use to
+make my life easier.&lt;/p>
+&lt;h2 id="quickly-amend-an-existing-commit-with-new-files">Quickly amend an existing commit with new files&lt;/h2>
+&lt;p>I have this alias in place that will amend the current commit while
+automatically re-using the existing commit message:&lt;/p>
+&lt;pre>&lt;code>alias.fix=commit --amend -C HEAD
+&lt;/code>&lt;/pre>
+&lt;p>With this in place, fixing a review becomes:&lt;/p>
+&lt;pre>&lt;code>$ vim some/file/somewhere
+$ git add -u
+$ git fix
+&lt;/code>&lt;/pre>
+&lt;p>Which I find much more convenient than &lt;code>git commit --amend&lt;/code>, following
+by saving the commit message.&lt;/p>
+&lt;h2 id="what-files-have-changed">What files have changed?&lt;/h2>
+&lt;p>Sometimes, I just want to know what files were changed in a commit. I
+have the following alias, because I have a hard time remembering
+whether I want &lt;code>--name-only&lt;/code> or &lt;code>--names-only&lt;/code> or &lt;code>--only-names&lt;/code>&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>alias.changed=show --name-only
+&lt;/code>&lt;/pre>
+&lt;p>Which gets me the commit message and a list of changed files:&lt;/p>
+&lt;pre>&lt;code>$ git changed
+commit 8c2a00809817a047bf312b72f390b5cb50ef9819
+Author: Lars Kellogg-Stedman &amp;lt;lars@redhat.com&amp;gt;
+Date: Wed Feb 17 11:11:02 2016 -0500
+yet another attempt at fixing image fetching
+this uses curl rather than wget, because wget chokes on file:// urls
+which makes it difficult to cache images locally. curl supports
+resuming downloads, but explicitly rather than implicitly like wget,
+so we need a do/until loop.
+Change-Id: Ibd3c524ea6ddfd423aec439f9eb7fffa62dfe818
+:100644 100644 342a002... 2b9f9cb... M playbooks/roles/libvirt/setup/undercloud/tasks/main.yml
+:100644 000000 d22cb99... 0000000... D playbooks/roles/libvirt/setup/undercloud/templates/get-undercloud.sh.j2
+&lt;/code>&lt;/pre>
+&lt;h2 id="getting-the-name-of-the-current-branch">Getting the name of the current branch&lt;/h2>
+&lt;p>For scripting purposes I often want the name of the current branch.
+Rather than reading &lt;code>git rev-parse --help&lt;/code> every time, I have this
+alias:&lt;/p>
+&lt;pre>&lt;code>alias.branch-name=rev-parse --abbrev-ref --symbolic-full-name HEAD
+&lt;/code>&lt;/pre>
+&lt;p>Which gets me:&lt;/p>
+&lt;pre>&lt;code>$ git branch-name
+master
+$ git checkout bug/missing-become
+$ git branch-name
+bug/missing-become
+&lt;/code>&lt;/pre>
+&lt;h2 id="prevent-accidental-commits-on-master">Prevent accidental commits on master&lt;/h2>
+&lt;p>When working on upstream projects I always want to be working on a
+feature branch. To prevent accidental commits on master I drop the
+following script into &lt;code>.git/hooks/pre-commit&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+current_branch=$(git branch-name)
+if [ &amp;quot;$current_branch&amp;quot; = &amp;quot;master&amp;quot; ]; then
+echo &amp;quot;*** DO NOT COMMIT ON MASTER&amp;quot;
+exit 1
+fi
+exit 0
+&lt;/code>&lt;/pre>
+&lt;p>If I try to commit to my local &lt;code>master&lt;/code> branch, I get:&lt;/p>
+&lt;pre>&lt;code>$ git ci -m 'made a nifty change'
+*** DO NOT COMMIT ON MASTER
+&lt;/code>&lt;/pre></content></item><item><title>Automatic git cache</title><link>https://blog.oddbit.com/post/2015-10-19-automatic-git-cache/</link><pubDate>Mon, 19 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-19-automatic-git-cache/</guid><description>This post is in response to a comment someone made on irc earlier today:
+[I] would really like a git lookaside cache which operated on an upstream repo, but pulled objects locally when they&amp;rsquo;re available
+In this post I present a proof-of-concept solution to this request. Please note that thisand isn&amp;rsquo;t something that has actually been used or tested anywhere!
+If you access a git repository via ssh, it&amp;rsquo;s easy to provide a wrapper for git operations via the command= option in an authorized_keys file.</description><content>&lt;p>This post is in response to a comment someone made on irc earlier
+today:&lt;/p>
+&lt;blockquote>
+&lt;p>[I] would really like a git lookaside cache which operated on an upstream
+repo, but pulled objects locally when they&amp;rsquo;re available&lt;/p>
+&lt;/blockquote>
+&lt;p>In this post I present a proof-of-concept solution to this request.
+Please note that thisand isn&amp;rsquo;t something that has actually been used
+or tested anywhere!&lt;/p>
+&lt;p>If you access a git repository via &lt;code>ssh&lt;/code>, it&amp;rsquo;s easy to provide a
+wrapper for git operations via the &lt;code>command=&lt;/code> option in an
+&lt;code>authorized_keys&lt;/code> file. We can take advantage of this to update a a
+local &amp;ldquo;cache&amp;rdquo; repository prior to responding to a &lt;code>clone&lt;/code>/&lt;code>pull&lt;/code>/etc.
+operation.&lt;/p>
+&lt;p>A simple wrapper might look like this:&lt;/p>
+&lt;pre>&lt;code>#!/bin/bash
+[ &amp;quot;$SSH_ORIGINAL_COMMAND&amp;quot; ] || exit 1
+eval set -- $SSH_ORIGINAL_COMMAND
+cd repos
+case $1 in
+(git-receive-pack|git-upload-pack)
+:;;
+(*) echo &amp;quot;*** Unrecognized command.&amp;quot; &amp;gt;&amp;amp;2
+exit 1
+;;
+esac
+if [ &amp;quot;$1&amp;quot; = &amp;quot;git-upload-pack&amp;quot; ]; then
+(
+# Update the local repository cache if the file
+# 'git-auto-update' exists.
+cd &amp;quot;$2&amp;quot;
+[ -f git-auto-update ] &amp;amp;&amp;amp;
+git remote update &amp;gt;&amp;amp;2
+)
+fi
+exec &amp;quot;$@&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>If we have a &lt;code>git&lt;/code> user locally, we can place the above script into
+&lt;code>/home/git/bin/gitwrapper&lt;/code>, and then set up a &lt;code>.ssh/authorized_keys&lt;/code>
+file that looks something like this:&lt;/p>
+&lt;pre>&lt;code>command=&amp;quot;/home/git/bin/gitwrapper&amp;quot; ssh-rsa AAAAB3NzaC...
+&lt;/code>&lt;/pre>
+&lt;p>Let&amp;rsquo;s set up a local repository mirror:&lt;/p>
+&lt;pre>&lt;code># su - git
+git$ mkdir repos
+git$ cd repos
+git$ git clone --mirror http://github.com/openstack-dev/devstack.git
+&lt;/code>&lt;/pre>
+&lt;p>In order to tell the wrapper script that it should perform the
+automatic update logic on this repository, we need to touch the
+appropriate flag file:&lt;/p>
+&lt;pre>&lt;code>git$ touch devstack.git/git-auto-update
+&lt;/code>&lt;/pre>
+&lt;p>If we then attempt to clone that repository:&lt;/p>
+&lt;pre>&lt;code>lars$ git clone git@localhost:devstack.git
+&lt;/code>&lt;/pre>
+&lt;p>The wrapper script will check for the presence of that flag file, and
+if it exists it will first perform a &lt;code>git remote update&lt;/code> before
+responding to the &lt;code>clone&lt;/code> operation. This ensures that any new
+objects are fetched, while ensuring fast transfer of objects that are
+already available locally. The output we see after running the above
+&lt;code>git clone&lt;/code> looks something like:&lt;/p>
+&lt;pre>&lt;code>Fetching origin
+From http://github.com/openstack-dev/devstack
+8ce00ac..0ba1848 master -&amp;gt; master
+First, rewinding head to replay your work on top of it...
+Fast-forwarded master to 0ba18481672964808bbbc4160643387dc931c654.
+&lt;/code>&lt;/pre>
+&lt;p>The first three lines are the result &lt;code>git remote update&lt;/code> operation in
+our cache repository.&lt;/p></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>Someone named hithard on StackOverflow was trying to clone a git repository via https, and was running into an odd error: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (openhatch.org) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either OpenSSL or NSS, depending on how git was built).</description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
+&lt;p>Many applications allow the user to configure an explicit list of ciphers to consider when negotiating a secure connection. For example, &lt;a href="https://curl.haxx.se/">curl&lt;/a> has the &lt;a href="https://curl.haxx.se/libcurl/c/CURLOPT_SSL_CIPHER_LIST.html">CURLOPT_SSL_CIPHER_LIST&lt;/a> option. This turns out to be especially relevant because git relies on &lt;a href="https://curl.haxx.se/libcurl/">libcurl&lt;/a> for all of its http operations, which means all we need to do is (a) create a new configuration option for git, and then (b) pass that value through to libcurl.&lt;/p>
+&lt;p>I took a look at the code and it turned out to be surprisingly easy. The functional part of the patch ends up being less than 10 lines total:&lt;/p>
+&lt;pre tabindex="0">&lt;code>diff --git a/http.c b/http.c
+index 679862006..c5e947965 100644
+--- a/http.c
++++ b/http.c
+@@ -35,6 +35,7 @@ char curl_errorstr[CURL_ERROR_SIZE];
+static int curl_ssl_verify = -1;
+static int curl_ssl_try;
+static const char *ssl_cert;
++static const char *ssl_cipherlist;
+#if LIBCURL_VERSION_NUM &amp;gt;= 0x070903
+static const char *ssl_key;
+#endif
+@@ -153,6 +154,8 @@ static int http_options(const char *var, const char *value, void *cb)
+curl_ssl_verify = git_config_bool(var, value);
+return 0;
+}
++ if (!strcmp(&amp;#34;http.sslcipherlist&amp;#34;, var))
++ return git_config_string(&amp;amp;ssl_cipherlist, var, value);
+if (!strcmp(&amp;#34;http.sslcert&amp;#34;, var))
+return git_config_string(&amp;amp;ssl_cert, var, value);
+#if LIBCURL_VERSION_NUM &amp;gt;= 0x070903
+@@ -327,6 +330,13 @@ static CURL *get_curl_handle(void)
+if (http_proactive_auth)
+init_curl_http_auth(result);
++ if (getenv(&amp;#34;GIT_SSL_CIPHER_LIST&amp;#34;))
++ ssl_cipherlist = getenv(&amp;#34;GIT_SSL_CIPHER_LIST&amp;#34;);
++
++ if (ssl_cipherlist != NULL &amp;amp;&amp;amp; *ssl_cipherlist)
++ curl_easy_setopt(result, CURLOPT_SSL_CIPHER_LIST,
++ ssl_cipherlist);
++
+if (ssl_cert != NULL)
+curl_easy_setopt(result, CURLOPT_SSLCERT, ssl_cert);
+if (has_cert_password())
+&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;amp;m=143100824118409&amp;amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>This is a terrible hack. If you are easily offended by bad ideas implemented poorly, move along!
+You are working on a wonderful open source project&amp;hellip;but you are not supposed to be working on that project! You&amp;rsquo;re supposed to be doing your real work! Unfortunately, your extra-curricular activity is well documented in the git history of your project for all to see:
+And now your boss knows why the TPS reports are late.</description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+implemented poorly, move along!&lt;/p>
+&lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
+&lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
+your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
+well documented in the git history of your project for all to see:&lt;/p>
+&lt;p>&lt;img src="repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>And now your boss knows why the TPS reports are late. You need
+&lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
+repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
+your git commits so that they appear to have happened within specified
+time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p>
+&lt;p>Running &lt;code>workinghours&lt;/code> on your repository makes things better:&lt;/p>
+&lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
+&lt;/code>&lt;/pre>
+&lt;p>And now you have:&lt;/p>
+&lt;p>&lt;img src="repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>But that looks suspicious. What are you, some kind of machine?
+Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
+some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
+probability &lt;em>P&lt;/em> extend the beginning of the time interval by a random
+amount between 0 and &lt;em>before&lt;/em>
+hours, and the end of the time interval by a random amount between 0
+and &lt;em>after&lt;/em> hours.&lt;/p>
+&lt;p>Introducing a low probability drift to the beginning of the interval:&lt;/p>
+&lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
+&lt;/code>&lt;/pre>
+&lt;p>Gives us:&lt;/p>
+&lt;p>&lt;img src="repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</guid><description>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
+$ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
+Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3.</description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
+containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
+singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>
+&lt;pre>&lt;code>$ docker run -ti fedora /bin/bash
+bash-4.2# su -c 'uptime'
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>Hooking up something (like, say, &lt;code>socat unix-listen:/dev/log -&lt;/code>) to
+&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p>
+&lt;pre>&lt;code>Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted
+&lt;/code>&lt;/pre>
+&lt;p>Downgrading the kernel to 3.14 immediately resolved the problem,
+suggesting that this was at least partly a kernel issue. This seemed
+like a great opportunity to play with the &lt;a href="http://git-scm.com/docs/git-bisect">git bisect&lt;/a> command,
+which uses a binary search to find which commit introduced a
+particular problem.&lt;/p>
+&lt;p>Unfortunately, between the version I knew to work correctly (3.14) and
+the version I knew to have a problem (3.15) there were close to 15,000
+commits, which seemed like a large space to search by hand.&lt;/p>
+&lt;p>Fortunately, &lt;code>git bisect&lt;/code> can be easily automated via &lt;code>git bisect run&lt;/code>
+subcommand, which after checking out a commit will run a script to
+determine if the current commit is &amp;ldquo;good&amp;rdquo; or &amp;ldquo;bad&amp;rdquo;. So all I have to
+do is write a script&amp;hellip;that&amp;rsquo;s not so bad!&lt;/p>
+&lt;figure class="left" >
+&lt;img src="ha-ha.jpg" />
+&lt;/figure>
+&lt;p>It actually ended up being somewhat tricky.&lt;/p>
+&lt;h2 id="testing-kernels-is-hard">Testing kernels is hard&lt;/h2>
+&lt;p>In order to test for this problem, I would need to use arbitrary
+kernels generated during the &lt;code>git bisect&lt;/code> operation to boot a system
+functional enough to run docker, and then run docker and somehow
+communicate the result of that test back to the build environment.&lt;/p>
+&lt;p>I started with the &lt;a href="http://fedoraproject.org/get-fedora#clouds">Fedora 20 cloud image&lt;/a>, which is nice and
+small but still the same platform as my laptop on which I was
+experiencing the problem. I would need to correct a few things before
+moving forward:&lt;/p>
+&lt;p>The Fedora cloud images (a) do not support password authentication and
+(b) expect a datasource to be available to &lt;a href="http://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> (without
+which you get errors on the console and potentially a delay waiting
+for the &lt;code>login:&lt;/code> prompt), so prior to using the image in this test I
+made some changes by mounting it locally:&lt;/p>
+&lt;pre>&lt;code># modprobe nbd max_part=8
+# qemu-nbd -c /dev/nbd0 Fedora-x86_64-20-20140407-sda.qcow2
+# mount /dev/nbd0p1 /mnt
+# systemd-nspawn -D /mnt
+&lt;/code>&lt;/pre>
+&lt;p>And then:&lt;/p>
+&lt;ul>
+&lt;li>I set a password for the &lt;code>root&lt;/code> account and&lt;/li>
+&lt;li>I removed the &lt;code>cloud-init&lt;/code> package.&lt;/li>
+&lt;/ul>
+&lt;p>For this test I would be using the &lt;code>qemu-system-x86_64&lt;/code> command
+directly, rather than working through &lt;code>libvirt&lt;/code> (&lt;code>qemu&lt;/code> has options
+for convenient debugging with &lt;code>gdb&lt;/code>, and is also able to access the
+filesystem as the calling &lt;code>uid&lt;/code> whereas &lt;code>libvirt&lt;/code> is typically running
+as another user).&lt;/p>
+&lt;p>I would need to perform an initial &lt;code>docker pull&lt;/code> in the image, which
+meant I was going to need a functioning network, so first I had to set
+up a network environment for qemu.&lt;/p>
+&lt;h3 id="network-configuration">Network configuration&lt;/h3>
+&lt;p>I created a bridge interface named &lt;code>qemu0&lt;/code> to be used by &lt;code>qemu&lt;/code>. I added
+to &lt;code>/etc/sysconfig/network-scripts/ifcfg-qemu0&lt;/code> the following:&lt;/p>
+&lt;pre>&lt;code>DEVICE=qemu0
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+STP=no
+NAME=&amp;quot;Bridge qemu0&amp;quot;
+IPADDR=192.168.210.1
+NETMASK=255.255.255.0
+&lt;/code>&lt;/pre>
+&lt;p>This is largely equivalent to the following, but persists after reboot:&lt;/p>
+&lt;pre>&lt;code>brctl addbr qemu0
+ip addr add 192.168.210.1/24 dev qemu0
+ip link set qemu0 up
+&lt;/code>&lt;/pre>
+&lt;p>I created a &lt;a href="https://www.kernel.org/doc/Documentation/networking/tuntap.txt">tap&lt;/a> interface named &lt;code>linux0&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>ip tuntap add dev linux0 mode tap user lars
+&lt;/code>&lt;/pre>
+&lt;p>And added it to the bridge:&lt;/p>
+&lt;pre>&lt;code>brctl addif qemu0 linux0
+&lt;/code>&lt;/pre>
+&lt;p>I also started up &lt;code>dnsmasq&lt;/code> process listening on &lt;code>qemu0&lt;/code> to provide
+DNS lookup and DHCP service to qemu instances attached to this bridge.
+The &lt;code>dnsmasq&lt;/code> configuration looked like this:&lt;/p>
+&lt;pre>&lt;code>listen-address=192.168.210.1
+bind-interfaces
+dhcp-range=192.168.210.10,192.168.210.254
+&lt;/code>&lt;/pre>
+&lt;h3 id="running-qemu">Running qemu&lt;/h3>
+&lt;p>With the network environment set up, I needed to figure out an
+appropriate qemu command line. This is what I finally ended up with,
+in a script called &lt;code>boot-kernel&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+qemu-system-x86_64 -m 1024M \
+-drive file=fedora.img,if=virtio \
+-append &amp;quot;console=hvc0 root=/dev/vda1 selinux=0 $BOOT_ARGS&amp;quot; \
+-initrd initrd.img \
+-kernel arch/x86_64/boot/bzImage \
+-machine accel=kvm \
+-netdev tap,id=net0,ifname=linux0,script=no,downscript=no \
+-device virtio-net,netdev=net0,mac=52:54:00:c0:ff:ee \
+-chardev stdio,id=stdio,mux=on \
+-device virtio-serial-pci \
+-device virtconsole,chardev=stdio \
+-mon chardev=stdio \
+-fsdev local,id=fs0,path=$PWD,security_model=none \
+-device virtio-9p-pci,fsdev=fs0,mount_tag=kernel_src \
+-display none \
+$QEMU_ARGS
+&lt;/code>&lt;/pre>
+&lt;p>These lines set up the networking:&lt;/p>
+&lt;pre>&lt;code> -netdev tap,id=net0,ifname=linux0,script=no,downscript=no \
+-device virtio-net,netdev=net0,mac=52:54:00:c0:ff:ee \
+&lt;/code>&lt;/pre>
+&lt;p>These lines set up console on &lt;code>stdin&lt;/code>/&lt;code>stdout&lt;/code> and multiplex the
+console with the qemu monitor:&lt;/p>
+&lt;pre>&lt;code> -chardev stdio,id=stdio,mux=on \
+-device virtio-serial-pci \
+-device virtconsole,chardev=stdio \
+-mon chardev=stdio \
+&lt;/code>&lt;/pre>
+&lt;p>These lines set up access to the current working directory as a &lt;code>9p&lt;/code>
+filesystem:&lt;/p>
+&lt;pre>&lt;code> -fsdev local,id=fs0,path=$PWD,security_model=none \
+-device virtio-9p-pci,fsdev=fs0,mount_tag=kernel_src \
+&lt;/code>&lt;/pre>
+&lt;p>Within the qemu instance, this lets me access my working directory with:&lt;/p>
+&lt;pre>&lt;code>mount -t 9p kernel_src /mnt
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>$BOOT_ARGS&lt;/code> and &lt;code>$QEMU_ARGS&lt;/code> in the script allow me to modify the
+behavior of the script by setting environment variables when calling
+it, like this:&lt;/p>
+&lt;pre>&lt;code>QEMU_ARGS=&amp;quot;-s&amp;quot; sh boot-kernel
+&lt;/code>&lt;/pre>
+&lt;h3 id="first-boot">First boot&lt;/h3>
+&lt;p>I tried to boot the image using my existing kernel and initrd from
+&lt;code>/boot&lt;/code>, and ran into a problem:&lt;/p>
+&lt;pre>&lt;code>[ 184.060756] dracut-initqueue[218]: Warning: Could not boot.
+[ 184.062855] dracut-initqueue[218]: Warning: /dev/ssd/root does not exist
+Starting Dracut Emergency Shell...
+Warning: /dev/ssd/root does not exist
+Generating &amp;quot;/run/initramfs/rdsosreport.txt&amp;quot;
+Entering emergency mode. Exit the shell to continue.
+&lt;/code>&lt;/pre>
+&lt;p>The what now? &lt;code>/dev/ssd/root&lt;/code> is the root device for my host system,
+but wasn&amp;rsquo;t anywhere in the kernel command line I used when booting
+qemu. It turns out that this was embedded in the initrd image in
+&lt;code>/etc/cmdline.d/90lvm.conf&lt;/code>. After removing that file from the
+image&amp;hellip;&lt;/p>
+&lt;pre>&lt;code># mkdir initrd
+# cd initrd
+# zcat /boot/initramfs-3.15.6-200.fc20.x86_64.img | cpio -id
+# rm -rf etc/cmdline.d
+# find . -print | cpio -o -Hcrc | gzip &amp;gt; ../initrd.img
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;I was able to boot successfully and log in.&lt;/p>
+&lt;h3 id="i-bet-you-thought-we-were-done">I bet you thought we were done!&lt;/h3>
+&lt;p>Modern systems are heavily modular. Without access to a module tree
+matching the kernel, I would be unable to successfully boot the
+system, let alone use Docker. Looking at which modules were loaded
+when I ran &lt;code>docker&lt;/code> with the above image, I set up a custom kernel
+configuration that would permit me to boot and run docker without
+requiring any loadable modules. This would allow me to use the same
+image for each kernel without needing to re-populate it with modules
+each time I built a kernel.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;h3 id="testing-docker">Testing docker&lt;/h3>
+&lt;p>The last step in this process is putting together something that tests
+&lt;code>docker&lt;/code> and exposes the result of that test to the build environment.
+I added the following script to the image as &lt;code>/root/docker-test&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+grep NO_DOCKER_TEST /proc/cmdline &amp;amp;&amp;amp; exit 0
+if [ -d /mnt/test_result ]; then
+docker run --rm -i fedora sh -c 'su -c true &amp;amp;&amp;amp; echo OKAY || echo FAILED' \
+&amp;gt; /mnt/test_result/stdout \
+2&amp;gt; /mnt/test_result/stderr
+poweroff
+fi
+&lt;/code>&lt;/pre>
+&lt;p>This relies on the following entry in &lt;code>/etc/fstab&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>kernel_src /mnt 9p defaults 0 0
+&lt;/code>&lt;/pre>
+&lt;p>That mounts the build directory as a &lt;code>9p&lt;/code> filesystem on &lt;code>/mnt&lt;/code>. This
+allows us to write out test results to, e.g.,
+&lt;code>/mnt/test_result/stdout&lt;/code> and have that appear in the &lt;code>test_result&lt;/code>
+directory inside the kernel source.&lt;/p>
+&lt;p>This script is run at the end of the boot process via an entry in
+&lt;code>/etc/rc.d/rc.local&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+sh /root/docker-test
+&lt;/code>&lt;/pre>
+&lt;p>Running the &lt;code>boot-kernel&lt;/code> script without additional configuration will
+cause the image to boot up, run the docker test, and then exit.&lt;/p>
+&lt;h2 id="running-git-bisect">Running git-bisect&lt;/h2>
+&lt;p>At this point we have just about everything we need to start running
+&lt;code>git bisect&lt;/code>. For the initial run, I&amp;rsquo;m going to use git tag &lt;code>v3.14&lt;/code>
+as the &amp;ldquo;known good&amp;rdquo; commit and &lt;code>v3.15&lt;/code> as the &amp;ldquo;known bad&amp;rdquo; commit, so
+we start &lt;code>git bisect&lt;/code> like this:&lt;/p>
+&lt;pre>&lt;code>$ git bisect start v3.15 v3.14
+&lt;/code>&lt;/pre>
+&lt;p>Then we run &lt;code>git bisect run sh bisect-test&lt;/code>, where &lt;code>bisect-test&lt;/code> is
+the following shell script:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+# Rebuild the kernel
+make olddefconfig
+make -j8
+# Clear out old test results and run the test
+rm -f test_result/{stdout,stderr}
+sh boot-kernel
+# Report results to git-bisect
+if grep OKAY test_result/stdout; then
+exit 0
+else
+exit 1
+fi
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and then we go out for a cup of coffee or something, because that&amp;rsquo;s
+going to take a while.&lt;/p>
+&lt;h2 id="keep-digging-watson">Keep digging, Watson&lt;/h2>
+&lt;p>The initial run of &lt;code>git bisect&lt;/code> narrowed the change down to the
+&lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=b7d3622">following commit&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>commit b7d3622a39fde7658170b7f3cf6c6889bb8db30d
+Merge: f3411cb d8ec26d
+Author: Eric Paris &amp;lt;eparis@redhat.com&amp;gt;
+Date: Fri Mar 7 11:41:32 2014 -0500
+Merge tag 'v3.13' into for-3.15
+Linux 3.13
+Conflicts:
+include/net/xfrm.h
+Simple merge where v3.13 removed 'extern' from definitions and the audit
+tree did s/u32/unsigned int/ to the same definitions.
+&lt;/code>&lt;/pre>
+&lt;p>As you can see (from the &lt;code>Merge:&lt;/code> header), this is a merge commit, in
+which an entire set of changes was joined into the &lt;code>master&lt;/code> branch.
+So while this commit is technically the first commit in which this
+problem appears in the &lt;code>master&lt;/code> branch&amp;hellip;it is not actually the commit
+that introduced the problem.&lt;/p>
+&lt;p>I was in luck, though, because looking at the history for the left
+side of this branch (starting with &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb&lt;/a>) showed a series of
+patches to the audit subsystem:&lt;/p>
+&lt;pre>&lt;code>$ git log --oneline f3411cb
+f3411cb audit: whitespace fix in kernel-parameters.txt
+8626877 audit: fix location of __net_initdata for audit_net_ops
+4f06632 audit: remove pr_info for every network namespace
+262fd3a audit: Modify a set of system calls in audit class definitions
+3e1d0bb audit: Convert int limit uses to u32
+d957f7b audit: Use more current logging style
+b8dbc32 audit: Use hex_byte_pack_upper
+06bdadd audit: correct a type mismatch in audit_syscall_exit()
+1ce319f audit: reorder AUDIT_TTY_SET arguments
+0e23bac audit: rework AUDIT_TTY_SET to only grab spin_lock once
+3f0c5fa audit: remove needless switch in AUDIT_SET
+70249a9 audit: use define's for audit version
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;etc.&lt;/p>
+&lt;p>I picked as a starting point the merge commit previous to &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>$ git log --merges -1
+commit fc582aef7dcc27a7120cf232c1e76c569c7b6eab
+Merge: 9175c9d 5e01dc7
+Author: Eric Paris &amp;lt;eparis@redhat.com&amp;gt;
+Date: Fri Nov 22 18:57:08 2013 -0500
+Merge tag 'v3.12'
+Linux 3.12
+Conflicts:
+fs/exec.c
+&lt;/code>&lt;/pre>
+&lt;p>And ran &lt;code>git bisect&lt;/code> again from &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=fc582ae">that commit&lt;/a> through to &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>$ git bisect start f3411cb fc582ae
+$ git bisect run sh bisect-test
+&lt;/code>&lt;/pre>
+&lt;p>Which ultimately ended up with &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">this commit&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb is the first bad commit
+commit 33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb
+Author: Richard Guy Briggs &amp;lt;rgb@redhat.com&amp;gt;
+Date: Tue Jul 16 13:18:45 2013 -0400
+audit: listen in all network namespaces
+Convert audit from only listening in init_net to use register_pernet_subsys()
+to dynamically manage the netlink socket list.
+Signed-off-by: Richard Guy Briggs &amp;lt;rgb@redhat.com&amp;gt;
+Signed-off-by: Eric Paris &amp;lt;eparis@redhat.com&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>Running &lt;code>git bisect log&lt;/code> shows us what revisions were checked as part
+of this process:&lt;/p>
+&lt;pre>&lt;code># bad: [f3411cb2b2e396a41ed3a439863f028db7140a34] audit: whitespace fix in kernel-parameters.txt
+# good: [fc582aef7dcc27a7120cf232c1e76c569c7b6eab] Merge tag 'v3.12'
+git bisect start 'f3411cb' 'fc582ae'
+# bad: [ff235f51a138fc61e1a22dcb8b072d9c78c2a8cc] audit: Added exe field to audit core dump signal log
+git bisect bad ff235f51a138fc61e1a22dcb8b072d9c78c2a8cc
+# bad: [51cc83f024ee51de9da70c17e01ec6de524f5906] audit: add audit_backlog_wait_time configuration option
+git bisect bad 51cc83f024ee51de9da70c17e01ec6de524f5906
+# bad: [ae887e0bdcddb9d7acd8f1eb7b7795b438aa4950] audit: make use of remaining sleep time from wait_for_auditd
+git bisect bad ae887e0bdcddb9d7acd8f1eb7b7795b438aa4950
+# good: [2f2ad1013322c8f6c40fc6dafdbd32442fa730ad] audit: restore order of tty and ses fields in log output
+git bisect good 2f2ad1013322c8f6c40fc6dafdbd32442fa730ad
+# bad: [e789e561a50de0aaa8c695662d97aaa5eac9d55f] audit: reset audit backlog wait time after error recovery
+git bisect bad e789e561a50de0aaa8c695662d97aaa5eac9d55f
+# bad: [33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb] audit: listen in all network namespaces
+git bisect bad 33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb
+# first bad commit: [33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb] audit: listen in all network namespaces
+&lt;/code>&lt;/pre>
+&lt;p>The commit found by &lt;code>git bisect&lt;/code> seems like a reasonable candidate;
+it&amp;rsquo;s a patch against the audit subsystem and has something to do with
+namespaces, which are central to Docker&amp;rsquo;s proper operation.&lt;/p>
+&lt;h2 id="debugging-the-problem">Debugging the problem&lt;/h2>
+&lt;p>We can boot the kernel built from 33faba7 with the &lt;code>boot-kernel&lt;/code>
+script, adding the &lt;code>-s&lt;/code> argument to qemu to start a &lt;code>gdbserver&lt;/code> on
+port &lt;code>1234&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>sh BOOT_ARGS=NO_DOCKER_TEST QEMU_ARGS=&amp;quot;-s&amp;quot; boot-kernel
+&lt;/code>&lt;/pre>
+&lt;blockquote>
+&lt;p>A caveat about attaching to qemu with gdb: qemu has a &lt;code>-S&lt;/code> option
+that will cause the virtual machine to halt at startup, such that
+you can attach before it starts booting and &amp;ndash; in theory &amp;ndash; set
+breakpoints in the early boot process. In practice this doesn&amp;rsquo;t
+work well at all (possibly because the vm switches from 32- to
+64-bit operation during the boot process, which makes gdb unhappy).
+You&amp;rsquo;re better off attaching after the kernel has booted.&lt;/p>
+&lt;/blockquote>
+&lt;p>In another window, we attach &lt;code>gdb&lt;/code> to the running &lt;code>qemu&lt;/code> process:&lt;/p>
+&lt;pre>&lt;code>$ gdb vmlinux
+Reading symbols from vmlinux...done.
+(gdb) target remote :1234
+Remote debugging using :1234
+native_safe_halt () at /home/lars/src/linux/arch/x86/include/asm/irqflags.h:50
+50 }
+(gdb)
+&lt;/code>&lt;/pre>
+&lt;p>I know we&amp;rsquo;re getting the &lt;code>EPERM&lt;/code> in response to sending audit
+messages. Looking through the code in &lt;code>kernel/audit.c&lt;/code>, the
+&lt;code>audit_receive_msg&lt;/code> seems like a reasonable place to start poking
+about. At the beginning of &lt;code>audit_receive_msg&lt;/code>, I see the following
+code:&lt;/p>
+&lt;pre>&lt;code>err = audit_netlink_ok(skb, msg_type);
+if (err)
+return err;
+&lt;/code>&lt;/pre>
+&lt;p>So let&amp;rsquo;s set a breakpoint there if &lt;code>audit_netlink_ok()&lt;/code> returns an
+error:&lt;/p>
+&lt;pre>&lt;code>(gdb) br kernel/audit.c:752 if (err != 0)
+&lt;/code>&lt;/pre>
+&lt;p>And let our qemu process continue running:&lt;/p>
+&lt;pre>&lt;code>(gdb) continue
+Continuing.
+&lt;/code>&lt;/pre>
+&lt;p>Inside the qemu instance I start docker:&lt;/p>
+&lt;pre>&lt;code>-bash-4.2# docker run -it fedora /bin/su -c uptime
+&lt;/code>&lt;/pre>
+&lt;p>And eventually &lt;code>gdb&lt;/code> hits the breakpoint:&lt;/p>
+&lt;pre>&lt;code>Breakpoint 1, audit_receive_msg (nlh=0xffff88003819a400,
+skb=0xffff880038044300) at kernel/audit.c:752
+752 if (err)
+&lt;/code>&lt;/pre>
+&lt;p>If I look at the value of &lt;code>err&lt;/code> at this point:&lt;/p>
+&lt;pre>&lt;code>(gdb) print err
+$1 = -1
+&lt;/code>&lt;/pre>
+&lt;p>That it is, in fact, &lt;code>-EPERM&lt;/code>, which suggests we&amp;rsquo;re on the right
+track. Taking a closer look at &lt;code>audit_netlink_ok()&lt;/code>, it&amp;rsquo;s obvious
+that there are only three places where it can return &lt;code>-EPERM&lt;/code>. I
+tried setting some breakpoint in this function but they weren&amp;rsquo;t
+working correctly, probably due to to optimizations performed when
+compiling the kernel. So instead of &lt;code>gdb&lt;/code>, in this step we just add a
+bunch of &lt;code>pr_err()&lt;/code> statements to print out debugging information on
+the console:&lt;/p>
+&lt;pre>&lt;code>if ((current_user_ns() != &amp;amp;init_user_ns) ||
+(task_active_pid_ns(current) != &amp;amp;init_pid_ns)) {
+pr_err(&amp;quot;currnet_user_ns() check failed\n&amp;quot;);
+return -EPERM;
+}
+.
+.
+.
+case AUDIT_MAKE_EQUIV:
+if (!capable(CAP_AUDIT_CONTROL)) {
+pr_err(&amp;quot;CAP_AUDIT_CONTROL check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+case AUDIT_USER:
+.
+.
+.
+case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+if (!capable(CAP_AUDIT_WRITE)) {
+pr_err(&amp;quot;CAP_AUDIT_WRITE check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+&lt;/code>&lt;/pre>
+&lt;p>With these in place, if I run the &lt;code>docker&lt;/code> command again I see:&lt;/p>
+&lt;pre>&lt;code>[ 12.239860] currnet_user_ns() check failed
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>It looks like we&amp;rsquo;ve found out where it&amp;rsquo;s failing! Of course, we&amp;rsquo;re
+checking code right now that is several commits behind v3.15, so let&amp;rsquo;s
+take a look the same function in the 3.15 release:&lt;/p>
+&lt;pre>&lt;code>$ git checkout v3.15
+&lt;/code>&lt;/pre>
+&lt;p>Looking at &lt;code>audit_netlink_ok&lt;/code> in &lt;code>kernel/audit.c&lt;/code>, it looks as if that
+initial check has changed:&lt;/p>
+&lt;pre>&lt;code> /* Only support initial user namespace for now. */
+/*
+* We return ECONNREFUSED because it tricks userspace into thinking
+* that audit was not configured into the kernel. Lots of users
+* configure their PAM stack (because that's what the distro does)
+* to reject login if unable to send messages to audit. If we return
+* ECONNREFUSED the PAM stack thinks the kernel does not have audit
+* configured in and will let login proceed. If we return EPERM
+* userspace will reject all logins. This should be removed when we
+* support non init namespaces!!
+*/
+if (current_user_ns() != &amp;amp;init_user_ns)
+return -ECONNREFUSED;
+&lt;/code>&lt;/pre>
+&lt;p>So let&amp;rsquo;s insert our print statements into this version of the code and
+see if we get the same behavior:&lt;/p>
+&lt;pre>&lt;code>if (current_user_ns() != &amp;amp;init_user_ns) {
+pr_err(&amp;quot;current_user-ns() check failed\n&amp;quot;);
+return -ECONNREFUSED;
+}
+.
+.
+.
+case AUDIT_MAKE_EQUIV:
+/* Only support auditd and auditctl in initial pid namespace
+* for now. */
+if ((task_active_pid_ns(current) != &amp;amp;init_pid_ns)) {
+pr_err(&amp;quot;init_pid_ns check failed\n&amp;quot;);
+return -EPERM;
+}
+if (!netlink_capable(skb, CAP_AUDIT_CONTROL)) {
+pr_err(&amp;quot;CAP_AUDIT_CONTROL check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+.
+.
+.
+case AUDIT_USER:
+case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+if (!netlink_capable(skb, CAP_AUDIT_WRITE)) {
+pr_err(&amp;quot;CAP_AUDIT_WRITE check failed\n&amp;quot;);
+err = -EPERM;
+}
+break;
+&lt;/code>&lt;/pre>
+&lt;p>Running the v3.15 kernel, I see:&lt;/p>
+&lt;pre>&lt;code>[ 26.273992] audit: CAP_AUDIT_WRITE check failed
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>So it looks like the intial failure in &lt;code>audit_netlink_ok()&lt;/code> was fixed,
+but we&amp;rsquo;re stilling failing the &lt;code>CAP_AUDIT_WRITE&lt;/code> check.&lt;/p>
+&lt;h3 id="summary">Summary&lt;/h3>
+&lt;p>What&amp;rsquo;s going on here?&lt;/p>
+&lt;p>Prior to &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7&lt;/a>, audit messages were only accepted in the main
+network namespace. Inside other network namespaces, processes sending
+audit messages would simply receive &lt;code>ECONNREFUSED&lt;/code>. For example, this
+is the result of using &lt;code>strace&lt;/code> on that &lt;code>docker run&lt;/code> command in a
+pre-&lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7&lt;/a> kernel:&lt;/p>
+&lt;pre>&lt;code>539 sendto(3, &amp;quot;...authentication acct=\&amp;quot;root\&amp;quot; exe=\&amp;quot;/usr/bin/su\&amp;quot; hostname=? a&amp;quot;...,
+112, 0, {sa_family=AF_NETLINK, pid=0, groups=00000000}, 12) = -1 ECONNREFUSED (Connection refused)
+&lt;/code>&lt;/pre>
+&lt;p>With &lt;a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7&lt;/a>, audit messages are now accepted inside network
+namespaces. This means that instead of simply getting &lt;code>ECONNREFUSED&lt;/code>,
+messages must pass the kernel capability check. I spoke with some of
+the audit subsystem maintainers (including Richard Guy Briggs, the
+author of this patch series), and the general consensus is that &amp;ldquo;if
+you want to write audit messages you need &lt;code>CAP_AUDIT_WRITE&lt;/code>&amp;rdquo;.&lt;/p>
+&lt;p>So while this patch did change the behavior of the kernel from the
+perspective of container tools such as Docker, the fix needs to be in
+the tool creating the namespaces.&lt;/p>
+&lt;h2 id="results">Results&lt;/h2>
+&lt;p>This issue was reported against Fedora in &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a> and &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1119849">BZ
+1119849&lt;/a>. This issue was also reported against Docker in &lt;a href="https://github.com/dotcloud/docker/issues/6345">GHI 6345&lt;/a>
+and &lt;a href="https://github.com/dotcloud/docker/issues/7123">GHI 7123&lt;/a>.&lt;/p>
+&lt;p>This problem has been corrected upstream in
+&lt;a href="https://github.com/dotcloud/docker/pull/7179" class="pull-request">#7179&lt;/a>
+.&lt;/p>
+&lt;p>Package &lt;a href="https://admin.fedoraproject.org/updates/FEDORA-2014-8877/docker-io-1.0.0-9.fc20">docker-io-1.0.0-9.fc20&lt;/a>, which includes
+the above fix, is now available for Fedora 20 (and Fedora 19).&lt;/p></content></item><item><title>Automatic maintenance of tag feeds</title><link>https://blog.oddbit.com/post/2013-11-22-automatic-maintenanc/</link><pubDate>Fri, 22 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-22-automatic-maintenanc/</guid><description>I recently added some scripts to automatically generate tag feeds for my blog when pushing new content. I&amp;rsquo;m using GitHub Pages to publish everything, so it seemed easiest to make tag generation part of a pre-push hook (new in Git 1.8.2). This hook is run automatically as part of the git push operation, so it&amp;rsquo;s the perfect place to insert generated content that must be kept in sync with posts on the blog.</description><content>&lt;p>I recently added some scripts to automatically generate tag feeds for
+my blog when pushing new content. I&amp;rsquo;m using GitHub Pages to publish
+everything, so it seemed easiest to make tag generation part of a
+&lt;code>pre-push&lt;/code> hook (new in Git 1.8.2). This hook is run automatically as
+part of the &lt;code>git push&lt;/code> operation, so it&amp;rsquo;s the perfect place to insert
+generated content that must be kept in sync with posts on the blog.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="keeping-things-in-sync">Keeping things in sync&lt;/h2>
+&lt;p>The &lt;code>_posts&lt;/code> directory of my blog is a &lt;a href="http://git-scm.com/book/en/Git-Tools-Submodules">git submodule&lt;/a>, which means
+it gets updated and pushed asynchronously with respect to the main
+repository. We want to make sure that we don&amp;rsquo;t regenerate the tag
+feeds if there are either uncomitted changes in &lt;code>_posts&lt;/code> &lt;em>or&lt;/em> if there
+are &lt;em>unpushed&lt;/em> changes in &lt;code>_posts&lt;/code>: in either situation, we could
+generate a tag feed for tags that weren&amp;rsquo;t actually used in any
+published posts.&lt;/p>
+&lt;p>The following checks for any uncomitted changes in &lt;code>_posts&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>if ! git diff-files --quiet _posts; then
+echo &amp;quot;posts are out of sync (skipping tag maintenance)&amp;quot;
+exit 0
+fi
+&lt;/code>&lt;/pre>
+&lt;p>This will abort the tag feed generation if any of the following is
+true:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>_posts&lt;/code> has uncomitted changes&lt;/li>
+&lt;li>&lt;code>_posts&lt;/code> has new, untracked content&lt;/li>
+&lt;li>&lt;code>_posts&lt;/code> is at a revision that differs from the last comitted
+revision in the parent repository.&lt;/li>
+&lt;/ul>
+&lt;p>This still leaves one possible failure mode: if we commit all changes
+in &lt;code>_posts&lt;/code>, and then commit the updated &lt;code>_posts&lt;/code> revision in the
+parent repository, all of the previous checks will pass&amp;hellip;but since we
+haven&amp;rsquo;t pushed the &lt;code>_posts&lt;/code> repository, we could still be pushing tags
+that don&amp;rsquo;t match up with published posts.&lt;/p>
+&lt;p>The following check will prevent this situation by checking if the
+repository differs from the upstream branch:&lt;/p>
+&lt;pre>&lt;code>if ! (cd _posts; git diff-index --quiet origin/posts); then
+echo &amp;quot;posts are out of sync (skipping tag maintenance)&amp;quot;
+exit 0
+fi
+&lt;/code>&lt;/pre>
+&lt;h2 id="generating-tag-feeds">Generating tag feeds&lt;/h2>
+&lt;p>In order to prevent stale tags, we need to delete and regenerate all
+the tag feeds. Cleaning up the existing tag feeds is taken care of by
+the &lt;code>cleantagfeeds&lt;/code> script:&lt;/p>
+&lt;pre>&lt;code>echo &amp;quot;cleaning tag feeds&amp;quot;
+_oddbit/cleantagfeeds
+&lt;/code>&lt;/pre>
+&lt;p>Which is really just a wrapper for the following &lt;code>find&lt;/code> commands:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+# Delete tag feeds unless there is a `.keep` file in the
+# same directory.
+find tag/* -name index.xml \
+-execdir sh -c 'test -f .keep || rm -f index.xml' \;
+find tag/* -type d -delete
+&lt;/code>&lt;/pre>
+&lt;p>This will preserve any tag feeds that have a corresponding &lt;code>.keep&lt;/code>
+file (just in case we&amp;rsquo;ve done something special that requires manual
+intervention) and deletes everything else.&lt;/p>
+&lt;p>Generating the tag feeds is taken care of by the &lt;code>gentagfeeds&lt;/code>
+script:&lt;/p>
+&lt;pre>&lt;code>echo &amp;quot;generating tag feeds&amp;quot;
+_oddbit/gentagfeeds
+&lt;/code>&lt;/pre>
+&lt;p>This is a Python program that iterates over all the files in &lt;code>_posts&lt;/code>,
+reads in the YAML frontmatter from each one, and then generates a feed
+file for each tag using a template.&lt;/p>
+&lt;p>Finally, we need to add any changes to the repository. We
+unilaterally add the &lt;code>tags/&lt;/code> directory:&lt;/p>
+&lt;pre>&lt;code>git add -A tag
+&lt;/code>&lt;/pre>
+&lt;p>And then see if that got us anything:&lt;/p>
+&lt;pre>&lt;code>if ! git diff-index --quiet HEAD -- tag; then
+git commit -m 'automatic tag update' tag
+fi
+&lt;/code>&lt;/pre>
+&lt;p>At this point, we&amp;rsquo;ve regenerated all the tag feeds and committed any
+new or modified tag feeds to the repository, which will get published
+to GitHub as part of the current &lt;code>push&lt;/code> operation.&lt;/p>
+&lt;p>The actual feed templates look like this:&lt;/p>
+&lt;pre>&lt;code>---
+layout: rss
+exclude: true
+tags:
+- {{tag}}
+---
+&lt;/code>&lt;/pre>
+&lt;p>I&amp;rsquo;m using a modified version of &lt;a href="https://github.com/thedereck/gh-pages-blog/">gh-pages-blog&lt;/a> in which I have
+modified &lt;code>_layouts/rss.xml&lt;/code> to optionally filter posts by tag using
+the following template code:&lt;/p>
+&lt;p>{% raw %}
+.
+.
+.
+{% for p in site.posts %}
+{% if page contains &amp;rsquo;tags&amp;rsquo; %}
+{% assign selected = false %}
+{% for t in p.tags %}
+{% if page.tags contains t %}
+{% assign selected = true %}
+{% endif %}
+{% endfor %}&lt;/p>
+&lt;pre>&lt;code> {% if selected == false %}
+{% continue %}
+{% endif %}
+{% endif %}
+.
+.
+.
+&lt;/code>&lt;/pre>
+&lt;p>{% endraw %}&lt;/p>
+&lt;p>For each post on the site (&lt;code>site.posts&lt;/code>), this checks for any overlap
+between the tags in the post and the tags selected in the tag feed.
+While the automatic feeds use only a single tag, this also makes it
+possible to create feeds that follow multiple tags.&lt;/p>
+&lt;p>All of the code used to implement this is available in the &lt;a href="http://github.com/larsks/blog.oddbit.com/">GitHub
+repository for this blog&lt;/a>.&lt;/p></content></item><item><title>Git fetch, tags, remotes, and more</title><link>https://blog.oddbit.com/post/2012-07-27-git-fetch-tags-et-al/</link><pubDate>Fri, 27 Jul 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-07-27-git-fetch-tags-et-al/</guid><description>I’ve been playing around with Git, Puppet, and GPG verification of our Puppet configuration repository, and these are some random facts about Git that have come to light as part of the process.
+If you want to pull both changes and new tags from a remote repository, you can do this:
+$ git fetch $ git fetch --tags Or you can do this:
+$ git fetch --tags $ git fetch What’s the difference?</description><content>&lt;p>I’ve been playing around with Git, Puppet, and GPG verification of our
+Puppet configuration repository, and these are some random facts about
+Git that have come to light as part of the process.&lt;/p>
+&lt;p>If you want to pull both changes &lt;em>and&lt;/em> new tags from a remote
+repository, you can do this:&lt;/p>
+&lt;pre>&lt;code>$ git fetch
+$ git fetch --tags
+&lt;/code>&lt;/pre>
+&lt;p>Or you can do this:&lt;/p>
+&lt;pre>&lt;code>$ git fetch --tags
+$ git fetch
+&lt;/code>&lt;/pre>
+&lt;p>What’s the difference? &lt;code>git fetch&lt;/code> will leave &lt;code>FETCH_HEAD&lt;/code> pointing at
+the remote &lt;code>HEAD&lt;/code>, whereas &lt;code>git fetch --tags&lt;/code> will leave &lt;code>FETCH_HEAD&lt;/code>
+pointing at the most recent tag.&lt;/p>
+&lt;p>You can also do:&lt;/p>
+&lt;pre>&lt;code>$ git remote update
+&lt;/code>&lt;/pre>
+&lt;p>Which unlike &lt;code>git fetch&lt;/code> will pull down any new tags…but unlike
+&lt;code>git fetch --tags&lt;/code> will not update tags that already exist in the local
+repository (&lt;code>git remote update&lt;/code> also sets &lt;code>FETCH_HEAD&lt;/code> to the remote
+&lt;code>HEAD&lt;/code>).&lt;/p></content></item><item><title>Pushing a Git repository to Subversion</title><link>https://blog.oddbit.com/post/2010-05-11-pushing-git-repository-to-subv/</link><pubDate>Tue, 11 May 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-05-11-pushing-git-repository-to-subv/</guid><description>I recently set up a git repository server (using gitosis and gitweb). Among the required features of the system was the ability to publish the git repository to a read-only Subversion repository. This sounds simple in principle but in practice proved to be a bit tricky.
+Git makes an excellent Subversion client. You can use the git svn &amp;hellip; series of commands to pull a remote Subversion repository into a local git working tree and then have all the local advantages of git forcing the central code repository to change version control software.</description><content>&lt;p>I recently set up a git repository server (using &lt;a href="http://scie.nti.st/2007/11/14/hosting-git-repositories-the-easy-and-secure-way">gitosis&lt;/a> and &lt;a href="https://git.wiki.kernel.org/index.php/Gitweb">gitweb&lt;/a>). Among the required features of the system was the ability to publish the git repository to a read-only Subversion repository. This sounds simple in principle but in practice proved to be a bit tricky.&lt;/p>
+&lt;p>Git makes an excellent Subversion client. You can use the git svn &amp;hellip; series of commands to pull a remote Subversion repository into a local git working tree and then have all the local advantages of git forcing the central code repository to change version control software. An important aspect of this model is that:&lt;/p>
+&lt;ul>
+&lt;li>The Subversion repository is the primary source of the code, and&lt;/li>
+&lt;li>You populate your local git repository by pulling from the remote Subversion repository.&lt;/li>
+&lt;/ul>
+&lt;p>It is possible to push a git change history into an empty Subversion repository. Most instructions for importing a git repository look something like this, and involve replaying your git change history on top of the Subversion change history:&lt;/p>
+&lt;ul>
+&lt;li>svn mkdir $REPO/{trunk, tags, branches}&lt;/li>
+&lt;li>git svn init -s $REPO&lt;/li>
+&lt;li>git svn fetch&lt;/li>
+&lt;li>git rebase trunk&lt;/li>
+&lt;li>git svn dcommit&lt;/li>
+&lt;/ul>
+&lt;p>This works, and is fine as long as there are no other clones of your git repository out there. The mechanism outlined here has a fatal flaw: it modifies the change history of the &lt;em>master&lt;/em> branch. If you were working in a clone of a remote git repository and you were to run git status after the above steps, you would see something like:&lt;/p>
+&lt;pre>&lt;code># On branch master
+# Your branch and 'origin/master' have diverged,
+# and have 3 and 2 different commit(s) each, respectively.
+&lt;/code>&lt;/pre>
+&lt;p>If you were then to try to push this to the remote repository, you would get an error:&lt;/p>
+&lt;pre>&lt;code>$ git push
+To .../myrepo:
+! [rejected] master -&amp;gt; master (non-fast forward)
+error: failed to push some refs to '.../myrepo'
+&lt;/code>&lt;/pre>
+&lt;p>In cases where the git change history is shared with other git repositories, we need a solution that does not modify the &lt;em>master&lt;/em> branch. We can get this my modifying the procedure slightly.&lt;/p>
+&lt;p>The initial sequence is still the same:&lt;/p>
+&lt;ul>
+&lt;li>svn mkdir $REPO/{trunk, tags, branches}&lt;/li>
+&lt;li>git svn init -s $REPO&lt;/li>
+&lt;li>git svn fetch&lt;/li>
+&lt;/ul>
+&lt;p>But instead of rebasing onto the &lt;em>master&lt;/em> branch, we create a local branch for managing the synchronization:&lt;/p>
+&lt;ul>
+&lt;li>git checkout -b svnsync&lt;/li>
+&lt;li>git rebase trunk&lt;/li>
+&lt;li>git svn dcommit&lt;/li>
+&lt;/ul>
+&lt;p>At this point we have changed the history of the &lt;em>svnsync&lt;/em> branch and we have left the &lt;em>master&lt;/em> branch untouched. Subsequent updates look like this:&lt;/p>
+&lt;ul>
+&lt;li>git checkout master&lt;/li>
+&lt;li>git pull&lt;/li>
+&lt;li>git checkout svnsync&lt;/li>
+&lt;li>git rebase master&lt;/li>
+&lt;li>git rebase trunk&lt;/li>
+&lt;li>git svn dcommit&lt;/li>
+&lt;/ul>
+&lt;p>This gives us what we want: we can publish our git repository to a Subversion repository while maintaining the shared change history among our existing git clones.&lt;/p></content></item><item><title>Cleaning up Subversion with Git</title><link>https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/</guid><description>Overview At my office, we have a crufty Subversion repository (dating back to early 2006) that contains a jumble of unrelated projects. We would like to split this single repository up into a number of smaller repositories, each following the recommended trunk/tags/branches repository organization.
+What we want to do is move a project from a path that looks like this:
+.../projects/some-project-name To a new repository using the recommended Subversion repository layout, like this:</description><content>&lt;h1 id="overview">Overview&lt;/h1>
+&lt;p>At my office, we have a crufty &lt;a href="http://subversion.tigris.org/">Subversion&lt;/a> repository (dating back to early 2006) that contains a jumble of unrelated projects. We would like to split this single repository up into a number of smaller repositories, each following the recommended trunk/tags/branches repository organization.&lt;/p>
+&lt;p>What we want to do is move a project from a path that looks like this:&lt;/p>
+&lt;pre>&lt;code>.../projects/some-project-name
+&lt;/code>&lt;/pre>
+&lt;p>To a new repository using the recommended Subversion repository layout, like this:&lt;/p>
+&lt;pre>&lt;code>.../some-project-name/trunk
+&lt;/code>&lt;/pre>
+&lt;p>Our lives are complicated by the fact that there has been a lot of mobility (renames/moves) of projects within the repository.&lt;/p>
+&lt;h1 id="setup">Setup&lt;/h1>
+&lt;p>We&amp;rsquo;ll set up a test environment that will demonstrate the problem and our solution.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Create the empty repositories:&lt;/p>
+&lt;p>set -x
+rm -rf work &amp;amp;&amp;amp; mkdir work
+cd work
+WORKDIR=$(pwd)
+mkdir repos&lt;/p>
+&lt;h1 id="create-source-repository">create source repository&lt;/h1>
+&lt;p>svnadmin create repos/src&lt;/p>
+&lt;h1 id="create-destination-reposiory">create destination reposiory&lt;/h1>
+&lt;p>svnadmin create repos/dst&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Create our desired repository structure in the destination repository:&lt;/p>
+&lt;p>svn mkdir -m &amp;lsquo;create trunk&amp;rsquo; file://$WORKDIR/repos/dst/trunk
+svn mkdir -m &amp;lsquo;create branches&amp;rsquo; file://$WORKDIR/repos/dst/branches
+svn mkdir -m &amp;lsquo;create tags&amp;rsquo; file://$WORKDIR/repos/dst/tags&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Create a simple revision history:&lt;/p>
+&lt;p>svn co file://$WORKDIR/repos/src src
+(
+cd src&lt;/p>
+&lt;h1 id="create-our-initial-set-of-projects">Create our initial set of projects.&lt;/h1>
+&lt;p>mkdir projects
+mkdir projects/{project1,project2}
+touch projects/project1/{file11,file12}
+touch projects/project2/{file21,file22}
+svn add *
+svn ci -m &amp;lsquo;initial commit&amp;rsquo;&lt;/p>
+&lt;h1 id="relocate-a-file-between-projects">Relocate a file between projects.&lt;/h1>
+&lt;p>svn mv projects/project1/file11 projects/project2/
+svn ci -m &amp;lsquo;moved file11&amp;rsquo;&lt;/p>
+&lt;h1 id="rename-a-project">Rename a project.&lt;/h1>
+&lt;p>svn mv projects/project2 projects/project3
+svn update
+svn ci -m &amp;lsquo;renamed project2 to project3&amp;rsquo;
+)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>We can see the structure of the source repository like this:&lt;/p>
+&lt;p>echo &amp;ldquo;Contents of source reposiory:&amp;rdquo;
+svn ls -R file://$WORKDIR/repos/src&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Your output should look something like this:&lt;/p>
+&lt;pre>&lt;code>projects/
+projects/project1/
+projects/project1/file12
+projects/project3/
+projects/project3/file11
+projects/project3/file21
+projects/project3/file22
+&lt;/code>&lt;/pre>
+&lt;p>In this example, we&amp;rsquo;ll try to import &lt;em>project3&lt;/em> into a new repository.&lt;/p>
+&lt;h1 id="using-subversion">Using Subversion&lt;/h1>
+&lt;p>With Subversion, it&amp;rsquo;s easy to extract a single project from the repository:&lt;/p>
+&lt;pre>&lt;code>svn co file://$WORKDIR/repos/src/projects/project3
+&lt;/code>&lt;/pre>
+&lt;p>This gives us a directory called project3 containing the contents of the project. Unfortunately, there are no tools that will allow us to take this working copy and move it into another repository.&lt;/p>
+&lt;p>Subversion includes a tool called svnadmin that allows on to perform a number of operations on a Subversion repository, but it requires access to the filesystem instance of the repository (it will not work over the network). This is a substantial limitation if you are working with a repository that is maintained by someone else, but we have the necessary access to our repository.&lt;/p>
+&lt;p>The svnadmin command includes a dump operation that serializes a repository &amp;ndash; and its entire revision history &amp;ndash; into a text stream that can be loaded into another repository with a corresponding load operation. We don&amp;rsquo;t want the entire repository, so we&amp;rsquo;ll make use of the svndumpfilter command which, as you might expect, can apply certain filters to the output of svnadmin dump.&lt;/p>
+&lt;p>We might try something like this:&lt;/p>
+&lt;pre>&lt;code>svnadmin dump repos/src |
+svndumpfilter include projects/project3/ |
+svnadmin load repos/dst
+&lt;/code>&lt;/pre>
+&lt;p>Unforunately, this will fail with an error along the lines of:&lt;/p>
+&lt;pre>&lt;code>svndumpfilter: Invalid copy source path '/projects/project2'
+svnadmin: Can't write to stream: Broken pipe
+&lt;/code>&lt;/pre>
+&lt;p>And if you were to look at the destination repository, you would find projec3 entirely absent:&lt;/p>
+&lt;pre>&lt;code>echo &amp;quot;Contents of destination repository (after dump/filter/load):&amp;quot;
+svn ls -R file://$WORKDIR/repos/dst
+&lt;/code>&lt;/pre>
+&lt;p>And even if it worked we would still have to muck about in the destination repository to create our desired repository layout.&lt;/p>
+&lt;h1 id="using-git">Using Git&lt;/h1>
+&lt;p>&lt;a href="http://git-scm.com/">Git&lt;/a> is another version control system, similar in some ways to &lt;a href="http://subversion.tigris.org/">Subversion&lt;/a> but designed for distributed operation. If you&amp;rsquo;re not familiar with git there is lots of documentation available online.&lt;/p>
+&lt;p>We&amp;rsquo;ll start by checking out &lt;em>project3&lt;/em> from the Subversion repository:&lt;/p>
+&lt;pre>&lt;code>rm -rf project3
+git svn clone file://$WORKDIR/repos/src/projects/project3
+cd project3
+&lt;/code>&lt;/pre>
+&lt;p>Because we&amp;rsquo;re going to import this code into a new repository we need to erase all references to the source repository:&lt;/p>
+&lt;pre>&lt;code>git branch -rD git-svn
+git config --remove-section svn-remote.svn
+rm -rf .git/svn
+&lt;/code>&lt;/pre>
+&lt;p>And now we associate this git repository with the destination Subversion repository:&lt;/p>
+&lt;pre>&lt;code>git svn init -s file://$WORKDIR/repos/dst
+git svn fetch
+&lt;/code>&lt;/pre>
+&lt;p>We now apply the revision history to the trunk of the destination repository and commit the changes:&lt;/p>
+&lt;pre>&lt;code>git rebase trunk
+git svn dcommit
+&lt;/code>&lt;/pre>
+&lt;p>After all of this, we have exactly what we want &amp;ndash; our project hosted in a new repository with our desired layout. The following commands show the contents of the repository:&lt;/p>
+&lt;pre>&lt;code>echo &amp;quot;Contents of destination repository (after git):&amp;quot;
+svn ls -R file://$WORKDIR/repos/dst
+&lt;/code>&lt;/pre>
+&lt;p>And produce output like this:&lt;/p>
+&lt;pre>&lt;code>branches/
+tags/
+trunk/
+trunk/file11
+trunk/file21
+trunk/file22
+&lt;/code>&lt;/pre>
+&lt;p>And the revision history of the project is available in the destination repository:&lt;/p>
+&lt;pre>&lt;code>echo &amp;quot;Revision history in destination repository:&amp;quot;
+svn log file://$WORKDIR/repos/dst
+&lt;/code>&lt;/pre>
+&lt;p>The output will look something like:&lt;/p>
+&lt;pre>&lt;code>Revision history in destination repository:
++ svn log file:///home/lars/projects/svn-to-svn-via-git/work/repos/dst
+------------------------------------------------------------------------
+r7 | lars | 2009-06-03 14:46:02 -0400 (Wed, 03 Jun 2009) | 1 line
+renamed project2 to project3
+------------------------------------------------------------------------
+r6 | lars | 2009-06-03 14:46:02 -0400 (Wed, 03 Jun 2009) | 1 line
+initial commit
+------------------------------------------------------------------------
+r5 | (no author) | 2009-06-03 14:45:55 -0400 (Wed, 03 Jun 2009) | 1 line
+This is an empty revision for padding.
+------------------------------------------------------------------------
+r4 | (no author) | 2009-06-03 14:45:53 -0400 (Wed, 03 Jun 2009) | 1 line
+This is an empty revision for padding.
+------------------------------------------------------------------------
+r3 | lars | 2009-06-03 14:45:52 -0400 (Wed, 03 Jun 2009) | 1 line
+create tags
+------------------------------------------------------------------------
+r2 | lars | 2009-06-03 14:45:52 -0400 (Wed, 03 Jun 2009) | 1 line
+create branches
+------------------------------------------------------------------------
+r1 | lars | 2009-06-03 14:45:52 -0400 (Wed, 03 Jun 2009) | 1 line
+create trunk
+------------------------------------------------------------------------
+&lt;/code>&lt;/pre></content></item></channel></rss>

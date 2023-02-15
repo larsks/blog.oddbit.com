@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>kvm on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/kvm/</link><description>Recent content in kvm on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Apr 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/kvm/rss.xml" rel="self" type="application/rss+xml"/><item><title>Did Arch Linux eat your KVM?</title><link>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</link><pubDate>Mon, 08 Apr 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</guid><description>A recent update to Arch Linux replaced the qemu-kvm package with an updated version of qemu. A side effect of this change is that the qemu-kvm binary is no longer available, and any libvirt guests on your system utilizing that binary will no longer operate. As is typical with Arch, there is no announcement about this incompatible change, and queries to #archlinux will be met with the knowledge, grace and decorum you would expect of that channel:</description><content>&lt;p>A recent update to &lt;a href="https://www.archlinux.org/">Arch Linux&lt;/a> replaced the &lt;code>qemu-kvm&lt;/code> package with
+an updated version of &lt;code>qemu&lt;/code>. A side effect of this change is that
+the &lt;code>qemu-kvm&lt;/code> binary is no longer available, and any &lt;code>libvirt&lt;/code> guests
+on your system utilizing that binary will no longer operate. As is
+typical with Arch, there is no announcement about this incompatible
+change, and queries to &lt;code>#archlinux&lt;/code> will be met with the knowledge,
+grace and decorum you would expect of that channel:&lt;/p>
+&lt;pre>&lt;code>2013-04-08T18:00 &amp;lt; gtmanfred&amp;gt; USE --enable-kvm for fucks sake
+2013-04-08T18:00 &amp;lt; gtmanfred&amp;gt; DO I HAVE TO SAY IT AGAIN?
+&lt;/code>&lt;/pre>
+&lt;p>The emulator binary is hardcoded into your domain in the &lt;code>&amp;lt;emulator&amp;gt;&lt;/code>
+emulator, and typically looks something like this:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;emulator&amp;gt;/usr/bin/qemu-kvm&amp;lt;/emulator&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>In order to get your guests working again after the upgrade you&amp;rsquo;ll
+need to replace this path with an appropriate selection from one of
+the other binaries provided by the &lt;code>qemu&lt;/code> package, which include
+&lt;code>qemu-system-i386&lt;/code> and &lt;code>qemu-system-x86_64&lt;/code>. You&amp;rsquo;ll want to select
+the one appropriate for your &lt;em>guest&lt;/em> architecture. You can do this
+manually running &lt;code>virsh edit&lt;/code> for each affected guest, but if you have
+more than a couple that rapidly becomes annoying.&lt;/p>
+&lt;p>We can use &lt;a href="https://en.wikipedia.org/wiki/XSLT">XSLT&lt;/a> to write a transformation that will set the
+&lt;code>&amp;lt;emulator&amp;gt;&lt;/code> to an appropriate value, and we can set things up to run
+this automatically across all of our guests. The following stylesheet
+will replace the &lt;code>&amp;lt;emulator&amp;gt;&lt;/code> tag with a path to an appropriate &lt;code>qemu&lt;/code> (by
+extracting the &lt;code>arch&lt;/code> attribute of the &lt;code>domain/os/type&lt;/code> element:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;?xml version=&amp;quot;1.0&amp;quot;?&amp;gt;
+&amp;lt;xsl:stylesheet version=&amp;quot;1.0&amp;quot; xmlns:xsl=&amp;quot;http://www.w3.org/1999/XSL/Transform&amp;quot;&amp;gt;
+&amp;lt;!-- copy all elements verbatim... --&amp;gt;
+&amp;lt;xsl:template match=&amp;quot;@*|node()&amp;quot;&amp;gt;
+&amp;lt;xsl:copy&amp;gt;
+&amp;lt;xsl:apply-templates select=&amp;quot;@*|node()&amp;quot;/&amp;gt;
+&amp;lt;/xsl:copy&amp;gt;
+&amp;lt;/xsl:template&amp;gt;
+&amp;lt;!-- ...except for the 'emulator' element. --&amp;gt;
+&amp;lt;xsl:template match=&amp;quot;emulator&amp;quot;&amp;gt;
+&amp;lt;emulator&amp;gt;/usr/bin/qemu-system-&amp;lt;xsl:value-of select=&amp;quot;/*/os/type/@arch&amp;quot;/&amp;gt;&amp;lt;/emulator&amp;gt;
+&amp;lt;/xsl:template&amp;gt;
+&amp;lt;/xsl:stylesheet&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;re going to apply this to all of our (inactive) guests via the
+&lt;code>virsh edit&lt;/code> subcommand. This command runs an editor (selected based
+on your &lt;code>VISUAL&lt;/code> or &lt;code>EDITOR&lt;/code> environment variables) on your domain
+XML. We need to create an &amp;ldquo;editor&amp;rdquo; that will apply the above
+transformation to its input file. Something like this will work:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+tmpfile=$(mktemp &amp;quot;$1.patched.XXXXXX&amp;quot;)
+xsltproc -o &amp;quot;$tmpfile&amp;quot; patch-emulator.xsl &amp;quot;$1&amp;quot;
+mv &amp;quot;$tmpfile&amp;quot; &amp;quot;$1&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Assuming the above script has been saved as &amp;ldquo;patch-emulator.sh&amp;rdquo; (and
+made executable), we can run this across all of our inactive guests
+like this:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+VISUAL=./patch-emulator.sh
+export VISUAL
+virsh list --inactive --name | while read vm; do
+[ &amp;quot;$vm&amp;quot; ] || continue
+virsh edit $vm
+done
+&lt;/code>&lt;/pre></content></item><item><title>Growing a filesystem on a virtual disk</title><link>https://blog.oddbit.com/post/2012-10-24-resizing-virtual-disk/</link><pubDate>Wed, 24 Oct 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-10-24-resizing-virtual-disk/</guid><description>Occasionally we will deploy a virtual instance into our KVM infrastructure and realize after the fact that we need more local disk space available. This is the process we use to expand the disk image. This process assumes the following:
+You&amp;rsquo;re using legacy disk partitions. The process for LVM is similar and I will describe that in another post (it&amp;rsquo;s generally identical except for an additional pvresize thrown in and lvextend in place of resize2fs).</description><content>&lt;p>Occasionally we will deploy a virtual instance into our KVM
+infrastructure and realize after the fact that we need more local disk
+space available. This is the process we use to expand the disk image.
+This process assumes the following:&lt;/p>
+&lt;ul>
+&lt;li>You&amp;rsquo;re using legacy disk partitions. The process for LVM is similar
+and I will describe that in another post (it&amp;rsquo;s generally identical
+except for an additional &lt;code>pvresize&lt;/code> thrown in and &lt;code>lvextend&lt;/code> in
+place of &lt;code>resize2fs&lt;/code>).&lt;/li>
+&lt;li>The partition you need to resize is the last partition on the disk.&lt;/li>
+&lt;/ul>
+&lt;p>This process will work with either a &lt;code>qcow2&lt;/code> or &lt;code>raw&lt;/code> disk image. For
+&lt;code>raw&lt;/code> images you can also run &lt;code>fdisk&lt;/code> on the host, potentially saving
+yourself a reboot, but that&amp;rsquo;s less convenient for &lt;code>qcow2&lt;/code> format
+images.&lt;/p>
+&lt;hr>
+&lt;p>We start with a 5.5G root filesystem with 4.4G free:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# df -h /
+Filesystem Size Used Avail Use% Mounted on
+/dev/vda2 5.5G 864M 4.4G 17% /
+&lt;/code>&lt;/pre>
+&lt;p>We need to shut down the system to grow the underlying image:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# poweroff
+&lt;/code>&lt;/pre>
+&lt;p>On the host, we use the &lt;code>qemu-img resize&lt;/code> command to grow the image.
+First we need the path to the underlying disk image:&lt;/p>
+&lt;pre>&lt;code>[lars@madhatter blog]$ virsh -c qemu:///system dumpxml lars-test-0 | grep file
+&amp;lt;disk type='file' device='disk'&amp;gt;
+&amp;lt;source file='/var/lib/libvirt/images/lars-test-0-1.img'/&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>And now we increase the image size by 10G:&lt;/p>
+&lt;pre>&lt;code>[lars@madhatter blog]$ sudo qemu-img resize /var/lib/libvirt/images/lars-test-0.img +10G
+Image resized.
+&lt;/code>&lt;/pre>
+&lt;p>Now reboot the instance:&lt;/p>
+&lt;pre>&lt;code>[lars@madhatter blog]$ virsh -c qemu:///system start lars-test-0
+&lt;/code>&lt;/pre>
+&lt;p>And login in on the console:&lt;/p>
+&lt;pre>&lt;code>[lars@madhatter blog]$ virsh -c qemu:///system console lars-test-0
+Connected to domain lars-test-0
+Escape character is ^]
+Fedora release 17 (Beefy Miracle)
+Kernel 3.6.2-4.fc17.x86_64 on an x86_64 (ttyS0)
+localhost login: root
+Password:
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;re going to use &lt;code>fdisk&lt;/code> to modify the partition layout. Run
+&lt;code>fdisk&lt;/code> on the system disk:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# fdisk /dev/vda
+Welcome to fdisk (util-linux 2.21.2).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+&lt;/code>&lt;/pre>
+&lt;p>Print out the existing partition table and verify that you really are
+going to be modifying the final partition:&lt;/p>
+&lt;pre>&lt;code>Command (m for help): p
+Disk /dev/vda: 19.3 GB, 19327352832 bytes
+16 heads, 63 sectors/track, 37449 cylinders, total 37748736 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00007d9f
+Device Boot Start End Blocks Id System
+/dev/vda1 * 2048 1026047 512000 83 Linux
+/dev/vda2 1026048 5154815 2064384 82 Linux swap / Solaris
+/dev/vda3 5154816 16777215 5811200 83 Linux
+&lt;/code>&lt;/pre>
+&lt;p>Delete and recreate the final partition, in this case &lt;code>/dev/vda3&lt;/code>&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>Command (m for help): d
+Partition number (1-4): 3
+Partition 3 is deleted
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and create a new partition, accepting all the defaults. This will
+create a new partition starting in the same place and extending to the
+end of the disk:&lt;/p>
+&lt;pre>&lt;code>Command (m for help): n
+Partition type:
+p primary (2 primary, 0 extended, 2 free)
+e extended
+Select (default p): p
+Partition number (1-4, default 3): 3
+First sector (5154816-37748735, default 5154816):
+Using default value 5154816
+Last sector, +sectors or +size{K,M,G} (5154816-37748735, default 37748735):
+Using default value 37748735
+Partition 3 of type Linux and of size 15.6 GiB is set
+&lt;/code>&lt;/pre>
+&lt;p>You can print out the new partition table to see that indeed
+&lt;code>/dev/vda3&lt;/code> is now larger:&lt;/p>
+&lt;pre>&lt;code>Command (m for help): p
+Disk /dev/vda: 19.3 GB, 19327352832 bytes
+16 heads, 63 sectors/track, 37449 cylinders, total 37748736 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00007d9f
+Device Boot Start End Blocks Id System
+/dev/vda1 * 2048 1026047 512000 83 Linux
+/dev/vda2 1026048 5154815 2064384 82 Linux swap / Solaris
+/dev/vda3 5154816 37748735 16296960 83 Linux
+&lt;/code>&lt;/pre>
+&lt;p>Write the changes to disk:&lt;/p>
+&lt;pre>&lt;code>Command (m for help): w
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+WARNING: Re-reading the partition table failed with error 16: Device or resource busy.
+The kernel still uses the old table. The new table will be used at
+the next reboot or after you run partprobe(8) or kpartx(8)
+Syncing disks.
+&lt;/code>&lt;/pre>
+&lt;p>&lt;strong>Note the warning!&lt;/strong> The kernel has cached a copy of the old
+partition table. We need to reboot the system before our changes are
+visible! So we reboot the system:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# reboot
+&lt;/code>&lt;/pre>
+&lt;p>And log back in. Run &lt;code>df&lt;/code> to see the current size of the root
+filesystem:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# df -h /
+Filesystem Size Used Avail Use% Mounted on
+/dev/vda3 5.5G 864M 4.4G 17% /
+&lt;/code>&lt;/pre>
+&lt;p>Now run &lt;code>resize2fs&lt;/code> to resize the root filesystem so that it expands
+to fill our extended &lt;code>/dev/vda3&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# resize2fs /dev/vda3
+resize2fs 1.42.3 (14-May-2012)
+Filesystem at /dev/vda3 is mounted on /; on-line resizing required
+old_desc_blocks = 1, new_desc_blocks = 1
+The filesystem on /dev/vda3 is now 4074240 blocks long.
+&lt;/code>&lt;/pre>
+&lt;p>Run &lt;code>df&lt;/code> again to see that we now have additional space available:&lt;/p>
+&lt;pre>&lt;code>[root@localhost ~]# df -h /
+Filesystem Size Used Avail Use% Mounted on
+/dev/vda3 16G 867M 14G 6% /
+[root@localhost ~]#
+&lt;/code>&lt;/pre></content></item></channel></rss>

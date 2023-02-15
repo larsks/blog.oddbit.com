@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>zeromq on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/zeromq/</link><description>Recent content in zeromq on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 23 Nov 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/zeromq/rss.xml" rel="self" type="application/rss+xml"/><item><title>Long polling with Javascript and Python</title><link>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</guid><description>In this post I&amp;rsquo;m going to step through an example web chat system implemented in Python (with Bottle and gevent) that uses long polling to implement a simple publish/subscribe mechanism for efficiently updating connected clients.
+My pubsub_example repository on GitHub has a complete project that implements the ideas discussed in this article. This project can be deployed directly on OpenShift if you want to try things out on your own. You can also try it out online at http://pubsub.</description><content>&lt;p>In this post I&amp;rsquo;m going to step through an example web chat system
+implemented in Python (with &lt;a href="http://bottlepy.org/docs/">Bottle&lt;/a> and &lt;a href="http://www.gevent.org/">gevent&lt;/a>) that uses long
+polling to implement a simple publish/subscribe mechanism for
+efficiently updating connected clients.&lt;/p>
+&lt;p>My &lt;a href="http://github.com/larsks/pusub_example/">pubsub_example&lt;/a> repository on &lt;a href="http://github.com/">GitHub&lt;/a> has a complete
+project that implements the ideas discussed in this article. This
+project can be deployed directly on &lt;a href="http://openshift.com/">OpenShift&lt;/a> if you want to try
+things out on your own. You can also try it out online at
+&lt;a href="http://pubsub.example.oddbit.com/">http://pubsub.example.oddbit.com/&lt;/a>.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="what-is-long-polling">What is long polling?&lt;/h2>
+&lt;p>Long polling is a technique used in web applications to enable a
+low-latency response to server messages without the CPU or traffic
+overhead of high frequency polling.&lt;/p>
+&lt;p>A client makes a request to the web server, but rather than responding
+immediately the server holds the connection (for a potentially lengthy
+time), and only response when data is available. The client will
+react to this data and then restart the poll and wait for more data.&lt;/p>
+&lt;h2 id="long-polling-with-jquery">Long polling with Jquery&lt;/h2>
+&lt;p>I&amp;rsquo;ve opted to use &lt;a href="http://jquery.com/">jquery&lt;/a> as part of my client-side implementation,
+because I&amp;rsquo;ve used it a little in the past and it simplifies things a
+great deal.&lt;/p>
+&lt;p>There are a number of articles out there that describe the client-side
+implementation of long polling using jquery. &lt;a href="http://techoctave.com/c7/posts/60-simple-long-polling-example-with-javascript-and-jquery">This&lt;/a>
+article from Seventh Octave gives what is a typical example:&lt;/p>
+&lt;pre>&lt;code>(function poll(){
+$.ajax({
+url: &amp;quot;/poll&amp;quot;,
+success: function (data) {
+do_something_with(data);
+},
+dataType: &amp;quot;json&amp;quot;,
+complete: poll,
+timeout: 30000
+});
+})();
+&lt;/code>&lt;/pre>
+&lt;p>This defines a function &lt;code>poll()&lt;/code> that gets called automatically.
+Because I&amp;rsquo;m not a JavaScript person it took me a moment to figure out
+exactly how that worked. So that you are less mysified than I: The
+basic structure of this function is:&lt;/p>
+&lt;pre>&lt;code>(function poll() {...})();
+&lt;/code>&lt;/pre>
+&lt;p>Since the &lt;code>function&lt;/code> keyword returns a value (a reference to the
+defined function), we can call that reference immediately. This
+construct is entirely equivalent to:&lt;/p>
+&lt;pre>&lt;code>function poll() {...}
+poll();
+&lt;/code>&lt;/pre>
+&lt;p>When called, it fires off an asynchronous AJAX request to &lt;code>/poll&lt;/code> on
+our server. If the server sends a response, the browser will call the
+function in the &lt;code>success&lt;/code> attribute, which will presumably do
+something useful with the response data.&lt;/p>
+&lt;p>It&amp;rsquo;s important not to gloss over the fact that the &lt;a href="http://api.jquery.com/jQuery.ajax/">ajax&lt;/a> method is
+called asynchronously. The &lt;code>poll()&lt;/code> function returns immediately when
+it is called, allowing your client to continue processing your
+script(s).&lt;/p>
+&lt;p>The callable in the &lt;code>complete&lt;/code> attribute will be called at the end of
+the AJAX request, regardless of whether or not the request was
+successful. The use of the &lt;code>timeout&lt;/code> attribute ensures that this code
+will not poll more frequently than once every 30 seconds (this helps
+prevent the code from monopolizing the CPU by polling too frequently
+if an error is causing the AJAX request to return immediately).&lt;/p>
+&lt;h2 id="a-simple-web-page">A simple web page&lt;/h2>
+&lt;p>Our chat application is going be built around a very simple web page
+with two fields (one for a &amp;ldquo;nickname&amp;rdquo;, and one for entering messages
+to send) and a container for printing messages received from the
+server. Stripped of headers and extraneous content, it looks like
+this:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;form id=&amp;quot;chatform&amp;quot;&amp;gt;
+&amp;lt;table&amp;gt;
+&amp;lt;tr&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;label for=&amp;quot;nick&amp;quot;&amp;gt;Nickname:&amp;lt;/label&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;input id=&amp;quot;nick&amp;quot; size=&amp;quot;10&amp;quot; /&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;/tr&amp;gt;
+&amp;lt;tr&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;label for=&amp;quot;message&amp;quot;&amp;gt;message:&amp;lt;/label&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;td&amp;gt;
+&amp;lt;input id=&amp;quot;message&amp;quot; size=&amp;quot;40&amp;quot; /&amp;gt;
+&amp;lt;button id=&amp;quot;send&amp;quot;&amp;gt;Send&amp;lt;/button&amp;gt;
+&amp;lt;/td&amp;gt;
+&amp;lt;/tr&amp;gt;
+&amp;lt;/table&amp;gt;
+&amp;lt;/form&amp;gt;
+&amp;lt;hr /&amp;gt;
+&amp;lt;div id=&amp;quot;conversation&amp;quot;&amp;gt;&amp;lt;/div&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>It doesn&amp;rsquo;t get much simpler than that.&lt;/p>
+&lt;p>We&amp;rsquo;ll use &lt;a href="http://jquery.com/">jquery&lt;/a> to attach JavaScript functions to various actions
+using constructs such as the following, which attaches the
+&lt;code>send_message&lt;/code> to the &lt;code>click&lt;/code> event on an element with id &lt;code>send&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$(&amp;quot;#send&amp;quot;).click(send_message);
+&lt;/code>&lt;/pre>
+&lt;p>Attaching functions this way, rather than using &lt;code>onclick=&lt;/code> attributes
+in our HTML, helps keep the HTML simple.&lt;/p>
+&lt;h2 id="making-things-go">Making things go&lt;/h2>
+&lt;p>For this simple application, our client is going to need to implement
+two basic operations:&lt;/p>
+&lt;ul>
+&lt;li>Sending messages from the user to the server, and&lt;/li>
+&lt;li>Receiving messages from the server and displaying them to the user.&lt;/li>
+&lt;/ul>
+&lt;p>Polling for new messages is implemented using a function that looks
+very much like the sample shown above. The final code looks like
+this:&lt;/p>
+&lt;pre>&lt;code>function poll() {
+var poll_interval=0;
+$.ajax({
+url: poll_url,
+type: 'GET',
+dataType: 'json',
+success: function(data) {
+display_message(data);
+poll_interval=0;
+},
+error: function () {
+poll_interval=1000;
+},
+complete: function () {
+setTimeout(poll, poll_interval);
+},
+});
+}
+&lt;/code>&lt;/pre>
+&lt;p>Upon successfully receiving a message from the server this starts
+&lt;code>poll()&lt;/code> again immediately, but in the event of an error this code
+waits one second (1000 ms) before initiating a new poll.&lt;/p>
+&lt;p>The &lt;code>display_message&lt;/code> function simply updates a &lt;code>&amp;lt;div&amp;gt;&lt;/code> element using
+the data supplied by the server:&lt;/p>
+&lt;pre>&lt;code>function display_message(data) {
+$(&amp;quot;#conversation&amp;quot;).append(&amp;quot;&amp;lt;p&amp;gt;&amp;lt;span class='nick'&amp;gt;&amp;quot;
++ (data['nick'] ? data['nick'] : &amp;quot;&amp;amp;lt;unknown&amp;amp;gt;&amp;quot;)
++ &amp;quot;&amp;lt;/span&amp;gt;: &amp;quot; + data['message'] + &amp;quot;&amp;lt;/p&amp;gt;&amp;quot;);
+$(&amp;quot;#conversation&amp;quot;).each(function () {
+this.scrollTop = this.scrollHeight;
+});
+}
+&lt;/code>&lt;/pre>
+&lt;p>Sending messages is even simpler; we just make a one-off AJAX request
+to send the message to the server:&lt;/p>
+&lt;pre>&lt;code>function send_message() {
+$.ajax({
+url: '/pub',
+type: 'POST',
+dataType: 'json',
+data: {
+nick: $(&amp;quot;#nick&amp;quot;).val(),
+message: $(&amp;quot;#message&amp;quot;).val(),
+},
+complete: function () {
+$(&amp;quot;#message&amp;quot;).val(&amp;quot;&amp;quot;);
+},
+});
+}
+&lt;/code>&lt;/pre>
+&lt;p>This reads the value of the &lt;code>nick&lt;/code> and &lt;code>message&lt;/code> fields in our HTML
+document and then posts the message to the server.&lt;/p>
+&lt;p>The complete JavaScript code can be found online as &lt;a href="https://github.com/larsks/pubsub_example/blob/master/static/pubsub.js">pubsub.js&lt;/a>.&lt;/p>
+&lt;h2 id="making-bottle-asynchronous">Making Bottle asynchronous&lt;/h2>
+&lt;p>I generally lean on &lt;a href="http://bottlepy.org/docs/">Bottle&lt;/a> when writing simple Python web
+applications. It&amp;rsquo;s simple to work with, but Bottle&amp;rsquo;s native server is
+single-threaded, which makes it ill suited to a long-poll scenario:
+when one request is active, all other connections will block until the
+first request has been serviced. You can test this out yourself with
+the following &lt;a href="https://github.com/larsks/pubsub_example/blob/master/example_blocking.py">simple webapp&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>import time
+import bottle
+@bottle.route('/')
+def default():
+data = [ 'one', 'two', 'three', 'four' ]
+for d in data:
+yield d
+time.sleep(5)
+def main():
+bottle.run(port=9090)
+if __name__ == '__main__':
+main()
+&lt;/code>&lt;/pre>
+&lt;p>Open two simultaneous connections to this application. In two
+dfferent windows, run the following command at approximately the same
+time:&lt;/p>
+&lt;pre>&lt;code>curl --trace-ascii /dev/stderr http://localhost:9090
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll see that one will block with no activity until the first
+completes.&lt;/p>
+&lt;p>Fortunately, there are a number of solutions to this issue. I opted
+to use Bottle&amp;rsquo;s support for &lt;a href="http://www.gevent.org/">gevent&lt;/a>, an asynchronous networking
+library that includes a WSGI server. Using Bottle&amp;rsquo;s &lt;code>gevent&lt;/code> support
+is easy; the above code, using the &lt;code>gevent&lt;/code> server, would look
+&lt;a href="https://github.com/larsks/pubsub_example/blob/master/example_nonblocking.py">like this&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>import time
+from gevent import monkey; monkey.patch_all()
+import bottle
+@bottle.route('/')
+def default():
+data = [ 'one', 'two', 'three', 'four' ]
+for d in data:
+yield d
+time.sleep(5)
+def main():
+bottle.run(port=9090, server=&amp;quot;gevent&amp;quot;)
+if __name__ == '__main__':
+main()
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;a href="http://www.gevent.org/gevent.monkey.html">monkey.patch_all&lt;/a> routine in the above code is necessary to
+patch a number of core Python libraries to work correctly with gevent.&lt;/p>
+&lt;p>If you re-run the &lt;code>curl --trace-ascii ...&lt;/code> test from earlier, you&amp;rsquo;ll
+see that this webapp will now service multiple requests
+simultaneously.&lt;/p>
+&lt;h2 id="writing-the-server-receiving-messages">Writing the server: receiving messages&lt;/h2>
+&lt;p>The server needs to perform two basic operations:&lt;/p>
+&lt;ul>
+&lt;li>Receive a message from one client, and&lt;/li>
+&lt;li>Broadcast that message to all connected clients.&lt;/li>
+&lt;/ul>
+&lt;p>Receiving a message is easy (we&amp;rsquo;re just grabbing some data from a
+&lt;code>POST&lt;/code> request), but how do we handle the broadcast aspect of things?
+In this application, I opted to use &lt;a href="http://zeromq.org/">0MQ&lt;/a>, a communication library
+that has been described as &amp;ldquo;&lt;a href="https://speakerdeck.com/methodmissing/zeromq-sockets-on-steroids">sockets on steroids&lt;/a>&amp;rdquo;. In this case,
+two features of 0MQ are particularly attractive:&lt;/p>
+&lt;ul>
+&lt;li>support for publish/subscribe communication patterns, and&lt;/li>
+&lt;li>an easy to use &lt;a href="http://api.zeromq.org/2-1:zmq-inproc">in-process message transport&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>Note that while you would normally import the Python 0MQ module like
+this:&lt;/p>
+&lt;pre>&lt;code>import zmq
+&lt;/code>&lt;/pre>
+&lt;p>When working with &lt;a href="http://www.gevent.org/">gevent&lt;/a> you must do this instead:&lt;/p>
+&lt;pre>&lt;code>from zmq import green as zmq
+&lt;/code>&lt;/pre>
+&lt;p>This imports the &amp;ldquo;green&amp;rdquo; version of 0MQ, which uses non-blocking
+operations compatible with &lt;code>gevent&lt;/code>.&lt;/p>
+&lt;/blockquote>
+&lt;p>We&amp;rsquo;ll start by creating a global 0MQ &lt;code>PUB&lt;/code> socket (called &lt;code>pubsock&lt;/code>)
+that will be used as one end of our in-process message bus:&lt;/p>
+&lt;pre>&lt;code>ctx = zmq.Context()
+pubsock = ctx.socket(zmq.PUB)
+pubsock.bind('inproc://pub')
+&lt;/code>&lt;/pre>
+&lt;p>With this in place, the code for receiving messages is trivial:&lt;/p>
+&lt;pre>&lt;code>@app.route('/pub', method='POST')
+def pub():
+global pubsock
+pubsock.send_json({
+'message': bottle.request.params.get('message'),
+'nick': bottle.request.params.get('nick'),
+})
+return {'status': 'sent'}
+&lt;/code>&lt;/pre>
+&lt;p>We grab the &lt;code>message&lt;/code> and &lt;code>nick&lt;/code> parameters from a &lt;code>POST&lt;/code> request and
+publish a JSON message onto the message bus.&lt;/p>
+&lt;h2 id="writing-the-server-sending-messages">Writing the server: sending messages&lt;/h2>
+&lt;p>Having received a message from a client, our task is to send that
+message out to all connected clients. Each client connected to our
+server will be polling the &lt;code>/sub&lt;/code> endpoint for messages. A simple
+implementation of &lt;code>/sub&lt;/code> might look like this:&lt;/p>
+&lt;pre>&lt;code>@app.route('/sub')
+def sub():
+subsock = ctx.socket(zmq.SUB)
+subsock.setsockopt(zmq.SUBSCRIBE, '')
+subsock.connect('inproc://pub')
+msg = subsock.recv_json()
+return msg
+&lt;/code>&lt;/pre>
+&lt;p>This sets up a 0MQ &lt;code>SUB&lt;/code> socket and connects it to the message bus
+that we established when we created &lt;code>pubsocket&lt;/code>, earlier. Because
+we&amp;rsquo;re using 0MQ&amp;rsquo;s publish-and-subscribe support, any message sent on
+&lt;code>pubsocket&lt;/code> will automatically be propagated to any connected
+subscribers.&lt;/p>
+&lt;p>When each client requests &lt;code>/sub&lt;/code>, Bottle runs this function, which blocks
+waiting for messages on the message bus. When a message arrives, the
+function returns it to the client and exits. Note there&amp;rsquo;s a little
+bit of magic here: when a request handler returns a dictionary to
+Bottle, Bottle automatically serializes that as JSON before sending
+the response to the client.&lt;/p>
+&lt;h2 id="fixing-things-up">Fixing things up&lt;/h2>
+&lt;p>While the above code seems to work, there is a potential problem with
+the implementation: If a client that has been waiting on &lt;code>/sub&lt;/code>
+disconnects, the &lt;code>sub&lt;/code> function will continue to remain blocked on the
+call to &lt;code>subsock.recv_json&lt;/code>. This means that the server will hold
+open the file descriptor associated with the connection. Once a
+message is received, the server will attempt to send a response,
+notice that the client has disconnected, and close the file
+descriptor. Given a large enough population of clients, the number of
+open file descriptors could run into system resource limits. In order
+to prevent this situation, we need to react to client
+disconnects&amp;hellip;which means that now, instead of just blocking waiting
+for messages, we &lt;em>also&lt;/em> need to wait for some notification that a
+client has disconnected.&lt;/p>
+&lt;p>In a traditional socket program, you might do this with something like
+the &lt;code>poll()&lt;/code> or &lt;code>select()&lt;/code> function. Since we&amp;rsquo;re using 0MQ&amp;hellip;we&amp;rsquo;ll
+do exactly the same thing, which is one of the reasons 0MQ is fun to
+work with. We first need to figure out how to detect client
+disconnects. The &lt;a href="http://www.python.org/dev/peps/pep-0333/">WSGI specification&lt;/a> doesn&amp;rsquo;t provide a standard way
+to expose the client socket to our application. However, inspection
+of the WSGI environment (in &lt;code>bottle.request.environ&lt;/code> reveals that the
+&lt;code>wsgi.input&lt;/code> member contains an &lt;code>rfile&lt;/code> attribute, which is exactly
+what we need. With that in hand, we set up a polling object to listen
+for activity on either the message bus or on the client socket:&lt;/p>
+&lt;pre>&lt;code>rfile = bottle.request.environ['wsgi.input'].rfile
+poll = zmq.Poller()
+poll.register(subsock, zmq.POLLIN)
+poll.register(rfile, zmq.POLLIN)
+&lt;/code>&lt;/pre>
+&lt;p>And now we can block waiting for either event:&lt;/p>
+&lt;pre>&lt;code>events = dict(poll.poll())
+# This means the client has disconnected.
+if rfile.fileno() in events:
+return
+# If we get this far it's because there's a message
+# available.
+msg = subsock.recv_json()
+return msg
+&lt;/code>&lt;/pre>
+&lt;h2 id="finishing-up">Finishing up&lt;/h2>
+&lt;p>Those are pretty much all the parts necessary to implement a simple
+publish/subscribe web application in Python. You can see all the
+parts put together into a functioning project in the
+&lt;a href="http://github.com/larsks/pusub_example/">pubsub_example&lt;/a> repository, and you can try out the running code at
+&lt;a href="http://pubsub.example.oddbit.com">http://pubsub.example.oddbit.com&lt;/a>. The code in the repository is
+slightly more complete than the snippets presented in this article.&lt;/p>
+&lt;p>If you encounter any problems with the code (or this article), or if
+I&amp;rsquo;ve gotten something terribly wrong, please open a new issue
+&lt;a href="https://github.com/larsks/pubsub_example/issues">here&lt;/a>.&lt;/p></content></item></channel></rss>

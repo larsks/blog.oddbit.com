@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>logging on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/logging/</link><description>Recent content in logging on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 14 Jun 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/logging/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenStack, Containers, and Logging</title><link>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</link><pubDate>Wed, 14 Jun 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</guid><description>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.
+There are effectively three different mechanisms that an application can use to emit log messages:
+Via some logging-specific API, such as the legacy syslog API By writing a byte stream to stdout/stderr By writing a byte stream to a file A substantial advantage to the first mechanism (using a logging API) is that the application is logging messages rather than bytes.</description><content>&lt;p>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.&lt;/p>
+&lt;p>There are effectively three different mechanisms that an application can use to emit log messages:&lt;/p>
+&lt;ul>
+&lt;li>Via some logging-specific API, such as the legacy syslog API&lt;/li>
+&lt;li>By writing a byte stream to stdout/stderr&lt;/li>
+&lt;li>By writing a byte stream to a file&lt;/li>
+&lt;/ul>
+&lt;p>A substantial advantage to the first mechanism (using a logging API) is that the application is logging &lt;em>messages&lt;/em> rather than &lt;em>bytes&lt;/em>. This means that if you log a message containing embedded newlines (e.g., python or java tracebacks), you can collect that as a single message rather than having to impose some sort of structure on the byte stream after the fact in order to reconstruct those message.&lt;/p>
+&lt;p>Another advantage to the use of a logging API is that whatever is receiving logs from your application may be able to annotate the message in various interesting ways.&lt;/p>
+&lt;h2 id="requirements">Requirements&lt;/h2>
+&lt;p>We&amp;rsquo;re probably going to need to support all three of the above mechanisms. Some applications (such as &lt;code>haproxy&lt;/code>) will only log to syslog. Others may only log to files (such as &lt;code>mariadb&lt;/code>), and still others may only log to stdout.&lt;/p>
+&lt;h2 id="comparing-different-log-mechanisms">Comparing different log mechanisms&lt;/h2>
+&lt;h3 id="logging-via-syslog">Logging via syslog&lt;/h3>
+&lt;p>In RHEL, the &lt;code>journald&lt;/code> process is what listens to &lt;code>/dev/log&lt;/code>. If you bind mount journald&amp;rsquo;s &lt;code>/dev/log&lt;/code> inside a container and then run the following Python code inside that container&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>import logging
+import logging.handlers
+handler = logging.handlers.SysLogHandler(address='/dev/log')
+log = logging.getLogger(__name__)
+log.setLevel('DEBUG')
+log.addHandler(handler)
+log.warning('This is a test')
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;you will find that your simple log message has been annotated with
+a variety of useful metadata (the output below is the result of
+running &lt;code>journalctl -o verbose ...&lt;/code>):&lt;/p>
+&lt;pre>&lt;code>Wed 2017-06-14 12:35:57.577061 EDT [s=dc1dd9d61cf045e991f265aa17c5af03;i=6eb6e;b=0d9dc78871c34f43a4a6c27f43cf4167;m=a171206ec6;t=551ee258c6492;x=4e3c71faa52ba9d8]
+_BOOT_ID=0d9dc78871c34f43a4a6c27f43cf4167
+_MACHINE_ID=229916fba5b54252ad4d08efbc581213
+_HOSTNAME=lkellogg-pc0dzzve
+_UID=0
+_GID=0
+_SYSTEMD_SLICE=-.slice
+_TRANSPORT=syslog
+PRIORITY=4
+SYSLOG_FACILITY=1
+_EXE=/usr/bin/python3.5
+_CAP_EFFECTIVE=a80425fb
+_SELINUX_CONTEXT=system_u:system_r:unconfined_service_t:s0
+_COMM=python3
+MESSAGE=This is a test
+_PID=13849
+_CMDLINE=python3 logtest.py
+_SYSTEMD_CGROUP=/docker/7ed1e97d5bb4076caf99393ae3f88b07102a26b0ade2176ed07890bee9a84d24
+_SOURCE_REALTIME_TIMESTAMP=1497458157577061
+&lt;/code>&lt;/pre>
+&lt;p>There are several items of interest there:&lt;/p>
+&lt;ul>
+&lt;li>A high resolution timestamp&lt;/li>
+&lt;li>The kernel cgroup, which corresponds to the docker container id and thus uniquely identifies the container that originated the message&lt;/li>
+&lt;li>The executable path inside the container that generated the message&lt;/li>
+&lt;li>The machine id, which uniquely identifies the host&lt;/li>
+&lt;/ul>
+&lt;p>By logging via syslog you have removed the necessity of either (a) handling log rotation in your application or (b) handling log rotation in your container or (c) having to communicate log rotation configuration from the container to the host. Additionally, you can rely on journald to take care of rate limiting and log size management to prevent a broken application from performing a local DOS of the server.&lt;/p>
+&lt;h3 id="logging-via-stdoutstderr">Logging via stdout/stderr&lt;/h3>
+&lt;p>Applications that write a byte stream to stdout/stderr will have their output handled by the Docker log driver. If we run Docker with the &lt;code>journald&lt;/code> log driver (using the &lt;code>--log-driver=journald&lt;/code> option to the Docker server), then Docker will add metadata lines read from stdout/stderr. For example, if we run&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>docker run fedora echo This is a test.
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;then our journal will contain:&lt;/p>
+&lt;pre>&lt;code>Wed 2017-06-14 12:46:45.511515 EDT [s=dc1dd9d61cf045e991f265aa17c5af03;i=6ee72;b=0d9dc78871c34f43a4a6c27f43cf4167;m=a197bf222b;t=551ee4c2b17f7;x=e7c1a220c93ef3cf]
+_BOOT_ID=0d9dc78871c34f43a4a6c27f43cf4167
+_MACHINE_ID=229916fba5b54252ad4d08efbc581213
+_HOSTNAME=lkellogg-pc0dzzve
+PRIORITY=6
+_TRANSPORT=journal
+_UID=0
+_GID=0
+_CAP_EFFECTIVE=3fffffffff
+_SYSTEMD_SLICE=system.slice
+_SELINUX_CONTEXT=system_u:system_r:unconfined_service_t:s0
+_COMM=dockerd
+_EXE=/usr/bin/dockerd
+_SYSTEMD_CGROUP=/system.slice/docker.service
+_SYSTEMD_UNIT=docker.service
+_PID=14309
+_CMDLINE=/usr/bin/dockerd -G docker --dns 172.23.254.1 --log-driver journald -s overlay2
+MESSAGE=This is a test.
+CONTAINER_NAME=happy_euclid
+CONTAINER_TAG=82b87e8902e8
+CONTAINER_ID=82b87e8902e8
+CONTAINER_ID_FULL=82b87e8902e8ac36f3365012ef10c66444fbb8c00e8cec7d7c2a14c05b054127
+&lt;/code>&lt;/pre>
+&lt;p>Like the messages logged via syslog, this also containers information that identifies the source container. It does not identify the particular binary responsible for emitting the message.&lt;/p>
+&lt;h3 id="logging-to-a-file">Logging to a file&lt;/h3>
+&lt;p>When logging to a file, the system is unable to add any metadata for us automatically. We can derive similar information by logging to a container-specific location (&lt;code>/var/log/CONTAINERNAME/...&lt;/code>, for example), or by configuring our application to include specific information in the log messages, but ultimately this is the least information-rich mechanism available to us. Furthermore, it necessitates that we configure some sort of container-aware log rotation strategy to avoid eating up all the available disk space over time.&lt;/p>
+&lt;h2 id="log-collection">Log collection&lt;/h2>
+&lt;p>Our goal is not simply to make log messages available locally. In
+general, we also want to aggregate log messages from several machines
+into a single location where we can perform various sorts of queries,
+analysis, and visualization. There are a number of solutions in place
+for getting logs off a local server to a central collector, including both &lt;a href="http://www.fluentd.org/">fluentd&lt;/a> and &lt;a href="http://www.rsyslog.com/">rsyslog&lt;/a>.&lt;/p>
+&lt;p>In the context of the above discussion, it turns out that &lt;code>rsyslog&lt;/code> has some very desirable features. In particular, the &lt;a href="http://www.rsyslog.com/doc/v8-stable/configuration/modules/imjournal.html">imjournal&lt;/a> input module has support for reading structured messages from journald and exporting those to a remote collector (such as &lt;a href="https://www.elastic.co/">ElasticSearch&lt;/a>) with their structure intact. Fluentd does not ship with journald support as a core plugin.&lt;/p>
+&lt;p>Rsyslog version 8.x and later have a rich language for filtering, annotating, and otherwise modifying log messages that would allow us to do things such as add host-specific tags to messages, normalize log messages from applications with poorly designed log messages, and perform other transformations before sending them on to a remote collector.&lt;/p>
+&lt;p>For example, we would ensure that messages from containerized services logged via syslog &lt;em>or&lt;/em> via stdout/stderr have a &lt;code>CONTAINER_ID_FULL&lt;/code> field with something like the following:&lt;/p>
+&lt;pre>&lt;code>if re_match($!_SYSTEMD_CGROUP, &amp;quot;^/docker/&amp;quot;) then {
+set $!CONTAINER_ID_FULL = re_extract($!_SYSTEMD_CGROUP, &amp;quot;^/docker/(.*)&amp;quot;, 0, 1, &amp;quot;unknown&amp;quot;);
+}
+&lt;/code>&lt;/pre>
+&lt;p>This matches the &lt;code>_SYSTEMD_CGROUP&lt;/code> field of the message, extracts the container id, and uses that to set the &lt;code>CONTAINER_ID_FULL&lt;/code> property on the message.&lt;/p>
+&lt;h2 id="recommendations">Recommendations&lt;/h2>
+&lt;ol>
+&lt;li>Provide a consistent logging environment to containerized services. Provide every container both with &lt;code>/dev/log&lt;/code> and a container-specific host directory mounted on &lt;code>/var/log&lt;/code>.&lt;/li>
+&lt;li>For applications that support logging to syslog (such as all consumers of &lt;code>oslo.log&lt;/code>), configure them to log exclusively via syslog.&lt;/li>
+&lt;li>For applications that are unable to log via syslog but are able to log to stdout/stderr, ensure that Docker is using the &lt;code>journald&lt;/code> log driver.&lt;/li>
+&lt;li>For applications that can only log to files, configure rsyslog on the host to read those files using the &lt;a href="http://www.rsyslog.com/doc/v8-stable/configuration/modules/imfile.html">imfile&lt;/a> input plugin.&lt;/li>
+&lt;li>Use rsyslog on the host to forward structured messages to a remote collector.&lt;/li>
+&lt;/ol></content></item><item><title>Apache virtual host statistics</title><link>https://blog.oddbit.com/post/2010-02-19-apache-virtual-host-statistics/</link><pubDate>Fri, 19 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-19-apache-virtual-host-statistics/</guid><description>As part of a project I&amp;rsquo;m working on I wanted to get a rough idea of the activity of the Apache virtual hosts on the system. I wasn&amp;rsquo;t able to find exactly what I wanted, so I refreshed my memory of curses to bring you vhoststats.
+This tools reads an Apache log file (with support for arbitrary formats) and generates a dynamic bar chart showing the activity (in number of requests and bytes transferred) of hosts on the system.</description><content>&lt;p>As part of a project I&amp;rsquo;m working on I wanted to get a rough idea of the activity of the Apache virtual hosts on the system. I wasn&amp;rsquo;t able to find exactly what I wanted, so I refreshed my memory of curses to bring you &lt;em>vhoststats&lt;/em>.&lt;/p>
+&lt;p>This tools reads an Apache log file (with support for arbitrary formats) and generates a dynamic bar chart showing the activity (in number of requests and bytes transferred) of hosts on the system. The output might look something like this (but with colors):&lt;/p>
+&lt;pre>&lt;code>[2010/02/19 20:21:32] Hosts: 7 [Displayed: 7] Requests: 104
+host1.companyA.com [R:1 ] #
+[B:3 ]
+devel.internal [R:1 ] #
+[B:208 ]
+host2.companyA.com [R:1 ] #
+[B:4499 ]
+A-truncated-host-nam [R:10 ] ############
+[B:65380 ] #
+host1.companyB.com [R:21 ] ##########################
+[B:166715 ] ####
+www.google.com [R:32 ] #################################
+[B:1566614 ] ####################################
+&lt;/code>&lt;/pre>
+&lt;p>The tool keeps running totals over a five minute window, but you can change the window size on the command line. You can tail your active access log to see live results, or for a more exciting display you can just pipe in an existing log.&lt;/p>
+&lt;p>It&amp;rsquo;s not &lt;a href="http://code.google.com/p/logstalgia/">pong&lt;/a>, but I&amp;rsquo;ve found it useful.&lt;/p>
+&lt;p>You can download the code from the &lt;a href="http://github.com/larsks/vhoststats/">project page&lt;/a> on GitHub.&lt;/p></content></item></channel></rss>

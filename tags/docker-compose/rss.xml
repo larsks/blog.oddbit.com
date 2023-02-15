@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>docker-compose on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/docker-compose/</link><description>Recent content in docker-compose on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 07 Jun 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/docker-compose/rss.xml" rel="self" type="application/rss+xml"/><item><title>Running Keystone with Docker Compose</title><link>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</link><pubDate>Fri, 07 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</guid><description>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s Keystone service (and the requisite database server) in containers using Docker Compose.
+Running MariaDB The standard mariadb docker image can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple docker command line for starting MariaDB might look something like:</description><content>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
+&lt;h2 id="running-mariadb">Running MariaDB&lt;/h2>
+&lt;p>The standard &lt;a href="https://hub.docker.com/_/mariadb/">mariadb docker image&lt;/a> can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple &lt;code>docker&lt;/code> command line for starting MariaDB might look something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker run \
+-v mariadb_data:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=secret.password
+mariadb
+&lt;/code>&lt;/pre>&lt;p>The above assumes that we have previously created a Docker volume named &lt;code>mariadb_data&lt;/code> by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker volume create mariadb_data
+&lt;/code>&lt;/pre>&lt;p>An equivalent &lt;code>docker-compose.yml&lt;/code> would look like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>version: 3
+services:
+database:
+image: mariadb
+environment:
+MYSQL_ROOT_PASSWORD: secret.password
+volumes:
+- &amp;#34;mariadb_data:/var/lib/mysql&amp;#34;
+volumes:
+mariadb_data:
+&lt;/code>&lt;/pre>&lt;p>Now, rather than typing a long &lt;code>docker run&lt;/code> command line (and possibly forgetting something), you can simply run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker-compose up
+&lt;/code>&lt;/pre>&lt;h3 id="pre-creating-a-database">Pre-creating a database&lt;/h3>
+&lt;p>For the purposes of setting up Keystone in Docker, we will need to make a few changes. In particular, we will need to have the &lt;code>mariadb&lt;/code> container create the &lt;code>keystone&lt;/code> database (and user) for us, and as a matter of best practice we will want to specify an explicit tag for the &lt;code>mariadb&lt;/code> image rather than relying on the default &lt;code>latest&lt;/code>.&lt;/p>
+&lt;p>We can have the &lt;code>mariadb&lt;/code> image create a database for us at startup by setting the &lt;code>MYSQL_DATABASE&lt;/code>, &lt;code>MYSQL_USER&lt;/code>, and &lt;code>MYSQL_PASSWORD&lt;/code> environment variables:&lt;/p>
+&lt;pre tabindex="0">&lt;code>version: 3
+services:
+database:
+image: mariadb:10.4.5-bionic
+environment:
+MYSQL_ROOT_PASSWORD: secret.password
+MYSQL_USER: keystone
+MYSQL_PASSWORD: another.password
+MYSQL_DATABASE: keystone
+volumes:
+- &amp;#34;mariadb_data:/var/lib/mysql&amp;#34;
+volumes:
+mariadb_data:
+&lt;/code>&lt;/pre>&lt;p>When the &lt;code>database&lt;/code> service starts up, it will create a &lt;code>keystone&lt;/code> database accessible by the &lt;code>keystone&lt;/code> user.&lt;/p>
+&lt;h3 id="parameterize-all-the-things">Parameterize all the things&lt;/h3>
+&lt;p>The above example is pretty much what we want, but there is one problem: we&amp;rsquo;ve hardcoded our passwords (and database name) into the &lt;code>docker-compose.yml&lt;/code> file, which makes it hard to share: it would be unsuitable for hosting on a public git repository, because anybody who wanted to use it would need to modify the file first, which would make it difficult to contribute changes or bring in new changes from the upstream repository. We can solve that problem by using environment variables in our &lt;code>docker-compose.yml&lt;/code>. Much like the shell, &lt;code>docker-compose&lt;/code> will replace an expression of the form &lt;code>${MY_VARIABLE}&lt;/code> with the value of the &lt;code>MY_VARIABLE&lt;/code> environment variable. It is possible to provide a fallback value in the event that an environment variable is undefined by writing &lt;code>${MY_VARIABLE:-some_default_value}&lt;/code>.&lt;/p>
+&lt;p>You have a couple options for providing values for this variables. You can of course simply set them in the environment, either like this:&lt;/p>
+&lt;pre>&lt;code>export MY_VARIABLE=some_value
+&lt;/code>&lt;/pre>
+&lt;p>Or as part of the &lt;code>docker-compose&lt;/code> command line, like this:&lt;/p>
+&lt;pre>&lt;code>MY_VARIABLE=some_value docker-compose up
+&lt;/code>&lt;/pre>
+&lt;p>Alternatively, you can also set them in a &lt;code>.env&lt;/code> file in the same directory as your &lt;code>docker-compose.yml&lt;/code> file; &lt;code>docker-compose&lt;/code> reads this file automatically when it runs. A &lt;code>.env&lt;/code> file looks like this:&lt;/p>
+&lt;pre>&lt;code>MY_VARIABLE=some_value
+&lt;/code>&lt;/pre>
+&lt;p>With the above in mind, we can restructure our example &lt;code>docker-compose.yml&lt;/code> so that it looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>version: 3
+services:
+database:
+image: mariadb:${MARIADB_IMAGE_TAG:-10.4.5-bionic}
+environment:
+MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+MYSQL_USER: ${KEYSTONE_DB_USER:-keystone}
+MYSQL_PASSWORD: ${KEYSTONE_DB_PASSWORD}
+MYSQL_DATABASE: ${KEYSTONE_DB_NAME:-keystone}
+volumes:
+- &amp;#34;mariadb_data:/var/lib/mysql&amp;#34;
+volumes:
+mariadb_data:
+&lt;/code>&lt;/pre>&lt;h2 id="running-keystone">Running Keystone&lt;/h2>
+&lt;h3 id="selecting-a-base-image">Selecting a base image&lt;/h3>
+&lt;p>While there is an official MariaDB image available in Docker Hub, there is no such thing as an official Keystone image. A search for &lt;code>keystone&lt;/code> yields over 300 results. I have elected to use the Keystone image produced as part of the &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a> project, &lt;a href="https://hub.docker.com/r/tripleomaster/centos-binary-keystone">tripleo-master/centos-binary-keystone&lt;/a>. The &lt;code>current-rdo&lt;/code> tag follows the head of the Keystone repository, and the images are produced automatically as part of the CI process. Unlike the MariaDB image, which is designed to pretty much be &amp;ldquo;plug and play&amp;rdquo;, the Keystone image is going to require some configuration before it provides us with a useful service.&lt;/p>
+&lt;p>Using the &lt;code>centos-binary-keystone&lt;/code> image, there are two required configuration tasks we will have to complete when starting the container:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>We will need to inject an appropriate configuration file to run Keystone as a &lt;a href="https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface">WSGI&lt;/a> binary under Apache &lt;a href="http://httpd.apache.org/">httpd&lt;/a>. This is certainly not the only way to run Keystone, but the &lt;code>centos-binary-keystone&lt;/code> image has both &lt;code>httpd&lt;/code> and &lt;code>mod_wsgi&lt;/code> installed.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>We will need to inject a minimal configuration for Keystone (for example, we will need to provide Keystone with connection information for the database instance).&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="keystone-wsgi-configuration">Keystone WSGI configuration&lt;/h3>
+&lt;p>We need to configure Keystone as a WSGI service running on port 5000. We will do this with the following configuration file:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Listen 5000
+ErrorLog &amp;#34;/dev/stderr&amp;#34;
+CustomLog &amp;#34;/dev/stderr&amp;#34; combined
+&amp;lt;VirtualHost *:5000&amp;gt;
+ServerName keystone
+ServerSignature Off
+DocumentRoot &amp;#34;/var/www/cgi-bin/keystone&amp;#34;
+&amp;lt;Directory &amp;#34;/var/www/cgi-bin/keystone&amp;#34;&amp;gt;
+Options Indexes FollowSymLinks MultiViews
+AllowOverride None
+Require all granted
+&amp;lt;/Directory&amp;gt;
+WSGIApplicationGroup %{GLOBAL}
+WSGIDaemonProcess keystone_main display-name=keystone-main \
+processes=12 threads=1 user=keystone group=keystone
+WSGIProcessGroup keystone_main
+WSGIScriptAlias / &amp;#34;/var/www/cgi-bin/keystone/main&amp;#34;
+WSGIPassAuthorization On
+&amp;lt;/VirtualHost&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>The easiest way to inject this custom configuration is to bake it into a custom image. Using the &lt;code>tripleomaster/centos-binary-keystone&lt;/code> base image identified earlier, we can start with a custom &lt;code>Dockerfile&lt;/code> that looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ARG KEYSTONE_IMAGE_TAG=current-tripleo
+FROM tripleomaster/centos-binary-keystone:${KEYSTONE_IMAGE_TAG}
+COPY keystone-wsgi-main.conf /etc/httpd/conf.d/keystone-wsgi-main.conf
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>ARG&lt;/code> directive permits us to select an image tag via a build argument (but defaults to &lt;code>current-tripleo&lt;/code>).&lt;/p>
+&lt;p>We can ask &lt;code>docker-compose&lt;/code> to build our custom image for us when we run &lt;code>docker-compose up&lt;/code>. Instead of specifying an &lt;code>image&lt;/code> as we did with the MariaDB container, we use the &lt;code>build&lt;/code> directive:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[...]
+keystone:
+build:
+context: .
+args:
+KEYSTONE_IMAGE_TAG: current-tripleo
+[...]
+&lt;/code>&lt;/pre>&lt;p>This tells &lt;code>docker-compose&lt;/code> to use the &lt;code>Dockerfile&lt;/code> in the current directory (and to set the &lt;code>KEYSTONE_IMAGE_TAG&lt;/code> build argument to &lt;code>current-tripleo&lt;/code>). Note that &lt;code>docker-compose&lt;/code> will only build this image for us by default if it doesn&amp;rsquo;t already exist; we can ask &lt;code>docker-compose&lt;/code> to build it explicitly by running &lt;code>docker-compose build&lt;/code>, or by providing the &lt;code>--build&lt;/code> option to &lt;code>docker-compose up&lt;/code>.&lt;/p>
+&lt;h3 id="configuring-at-build-time-vs-run-time">Configuring at build time vs run time&lt;/h3>
+&lt;p>In the previous section, we used a &lt;code>Dockerfile&lt;/code> to build on a selected base image by adding custom content. Other sorts of configuration must happen when the container starts up (for example, we probably want to be able to set passwords at runtime). One way of solving this problem is to embed some scripts into our custom image and then run them when the container starts in order to perform any necessary initialization.&lt;/p>
+&lt;p>I have placed some custom scripts and templates into the &lt;code>runtime&lt;/code> directory and arranged to copy that directory into the custom image like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ARG KEYSTONE_IMAGE_TAG=current-tripleo
+FROM tripleomaster/centos-binary-keystone:${KEYSTONE_IMAGE_TAG}
+COPY keystone-wsgi-main.conf /etc/httpd/conf.d/keystone-wsgi-main.conf
+COPY runtime /runtime
+CMD [&amp;#34;/bin/sh&amp;#34;, &amp;#34;/runtime/startup.sh&amp;#34;]
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>runtime&lt;/code> directory contains the following files:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>runtime/dtu.py&lt;/code> &amp;ndash; a short Python script for generating files from templates.&lt;/li>
+&lt;li>&lt;code>runtime/startup.sh&lt;/code> &amp;ndash; a shell script that performs all the necessary initialization tasks before starting Keystone&lt;/li>
+&lt;li>&lt;code>runtime/keystone.j2.conf&lt;/code> &amp;ndash; template for the Keystone configuration file&lt;/li>
+&lt;li>&lt;code>runtime/clouds.j2.yaml&lt;/code> &amp;ndash; template for a &lt;code>clouds.yaml&lt;/code> for use by the &lt;code>openshift&lt;/code> command line client.&lt;/li>
+&lt;/ul>
+&lt;h3 id="starting-up">Starting up&lt;/h3>
+&lt;p>The &lt;code>startup.sh&lt;/code> script performs the following actions:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Generates &lt;code>/etc/keystone/keystone.conf&lt;/code> from &lt;code>/runtime/keystone.j2.conf&lt;/code>.&lt;/p>
+&lt;p>The file &lt;code>/runtime/keystone.j2.conf&lt;/code> is a minimal Keystone configuration template. It ensures that Keystone logs to &lt;code>stderr&lt;/code> (by setting &lt;code>log_file&lt;/code> to an empty value) and configures the database connection using values from the environment.&lt;/p>
+&lt;pre tabindex="0">&lt;code>[DEFAULT]
+debug = {{ environ.KEYSTONE_DEBUG|default(&amp;#39;false&amp;#39;) }}
+log_file =
+[database]
+{% set keystone_db_user = environ.KEYSTONE_DB_USER|default(&amp;#39;keystone&amp;#39;) %}
+{% set keystone_db_host = environ.KEYSTONE_DB_HOST|default(&amp;#39;localhost&amp;#39;) %}
+{% set keystone_db_port = environ.KEYSTONE_DB_PORT|default(&amp;#39;3306&amp;#39;) %}
+{% set keystone_db_name = environ.KEYSTONE_DB_NAME|default(&amp;#39;keystone&amp;#39;) %}
+{% set keystone_db_pass = environ.KEYSTONE_DB_PASSWORD|default(&amp;#39;insert-password-here&amp;#39;) %}
+connection = mysql+pymysql://{{ keystone_db_user }}:{{ keystone_db_pass }}@{{ keystone_db_host }}:{{ keystone_db_port }}/{{ keystone_db_name }}
+[token]
+provider = fernet
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Generates &lt;code>/root/clouds.yaml&lt;/code> from &lt;code>/runtime/clouds.j2.yaml&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>clouds.yaml&lt;/code> file can be used with to provide authentication information to the &lt;code>openshift&lt;/code> command line client (and other applications that use the OpenStack Python SDK). We&amp;rsquo;ll see an example of this further on in this article.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Initializes Keystone&amp;rsquo;s fernet token mechanism by running &lt;code>keystone-manage fernet_setup&lt;/code>.&lt;/p>
+&lt;p>Keystone supports various token generation mechanisms. Fernet tokens provide some advantages over the older UUID token mechanism. From the &lt;a href="fernet-faq">FAQ&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>Even though fernet tokens operate very similarly to UUID tokens, they do not require persistence or leverage the configured token persistence driver in any way. The keystone token database no longer suffers bloat as a side effect of authentication. Pruning expired tokens from the token database is no longer required when using fernet tokens. Because fernet tokens do not require persistence, they do not have to be replicated. As long as each keystone node shares the same key repository, fernet tokens can be created and validated instantly across nodes.&lt;/p>
+&lt;/blockquote>
+&lt;/li>
+&lt;li>
+&lt;p>Initializes the Keystone database schema by running &lt;code>keystone-manage db_sync&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>db_sync&lt;/code> command creates the database tables that Keystone requires to operate.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Creates the Keystone &lt;code>admin&lt;/code> user and initial service catalog entries by running &lt;code>keystone-manage bootstrap&lt;/code>&lt;/p>
+&lt;p>Before we can authenticate to Keystone, there needs to exist a user with administrative privileges (so that we can create other users, projects, and so forth).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Starts &lt;code>httpd&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="avoiding-race-conditions">Avoiding race conditions&lt;/h3>
+&lt;p>When we run &lt;code>docker-compose up&lt;/code>, it will bring up both the &lt;code>keystone&lt;/code> container and the &lt;code>database&lt;/code> container in parallel. This is going to cause problems if we try to initialize the Keystone database schema before the database server is actually up and running. There is a &lt;code>depends_on&lt;/code> keyword that can be used to order the startup of containers in your &lt;code>docker-compose.yml&lt;/code> file, but this isn&amp;rsquo;t useful to us: this only delays the startup of the dependent container until the indicated container is &lt;em>running&lt;/em>. It doesn&amp;rsquo;t know anything about application startup, and so it would not wait for the database to be ready.&lt;/p>
+&lt;p>We need to explicitly wait until we can successfully connect to the database before we can complete initializing the Keystone service. It turns out the easiest solution to this problem is to imply run the database schema initialization in a loop until it is successful, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>echo &amp;#34;* initializing database schema&amp;#34;
+while ! keystone-manage db_sync; do
+echo &amp;#34;! database schema initialization failed; retrying in 5 seconds...&amp;#34;
+sleep 5
+done
+&lt;/code>&lt;/pre>&lt;p>This will attempt the &lt;code>db_sync&lt;/code> command every five seconds until it is sucessful.&lt;/p>
+&lt;h2 id="the-final-docker-compose-file">The final docker-compose file&lt;/h2>
+&lt;p>Taking all of the above into account, this is what the final &lt;code>docker-compose.yml&lt;/code> file looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>---
+version: &amp;#34;3&amp;#34;
+services:
+database:
+image: mariadb:10.4.5-bionic
+environment:
+MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+MYSQL_USER: ${KEYSTONE_DB_USER:-keystone}
+MYSQL_PASSWORD: ${KEYSTONE_DB_PASSWORD}
+MYSQL_DATABASE: ${KEYSTONE_DB_NAME:-keystone}
+volumes:
+- mysql:/var/lib/mysql
+keystone:
+build:
+context: .
+args:
+KEYSTONE_IMAGE_TAG: current-tripleo
+environment:
+MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+KEYSTONE_ADMIN_PASSWORD: ${KEYSTONE_ADMIN_PASSWORD}
+KEYSTONE_DB_PASSWORD: ${KEYSTONE_DB_PASSWORD}
+KEYSTONE_DB_USER: ${KEYSTONE_DB_USER:-keystone}
+KEYSTONE_DB_NAME: ${KEYSTONE_DB_NAME:-keystone}
+KEYSTONE_DEBUG: ${KEYSTONE_DEBUG:-&amp;#34;false&amp;#34;}
+ports:
+- &amp;#34;127.0.0.1:5000:5000&amp;#34;
+volumes:
+mysql:
+&lt;/code>&lt;/pre>&lt;h2 id="interacting-with-keystone">Interacting with Keystone&lt;/h2>
+&lt;p>Once Keystone is up and running, we can grab the generated &lt;code>clouds.yaml&lt;/code> file like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker-compose exec keystone cat /root/clouds.yaml &amp;gt; clouds.yaml
+&lt;/code>&lt;/pre>&lt;p>Now we can run the &lt;code>openstack&lt;/code> command line client:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ export OS_CLOUD=openstack-public
+$ openstack catalog list
++----------+----------+-----------------------------------+
+| Name | Type | Endpoints |
++----------+----------+-----------------------------------+
+| keystone | identity | RegionOne |
+| | | internal: http://localhost:5000 |
+| | | RegionOne |
+| | | public: http://localhost:5000 |
+| | | |
++----------+----------+-----------------------------------+
+$ openstack user list
++----------------------------------+-------+
+| ID | Name |
++----------------------------------+-------+
+| e8f460619a854c849feaf278b8d68e2c | admin |
++----------------------------------+-------+
+&lt;/code>&lt;/pre>&lt;h2 id="project-sources">Project sources&lt;/h2>
+&lt;p>You can find everything reference in this article in the &lt;a href="https://github.com/cci-moc/flocx-keystone-dev">flocx-keystone-dev&lt;/a> repository.&lt;/p></content></item></channel></rss>

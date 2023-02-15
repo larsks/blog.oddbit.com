@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>atomic on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/atomic/</link><description>Recent content in atomic on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 09 Oct 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/atomic/rss.xml" rel="self" type="application/rss+xml"/><item><title>Running NTP in a Container</title><link>https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/</link><pubDate>Fri, 09 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/</guid><description>Someone asked on IRC about running ntpd in a container on Atomic, so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple Dockerfile:
+FROM alpine RUN apk update RUN apk add openntpd ENTRYPOINT [&amp;quot;ntpd&amp;quot;] I&amp;rsquo;m using the alpine image as my starting point because it&amp;rsquo;s very small, which makes this whole process go a little faster. I&amp;rsquo;m installing the openntpd package, which provides the ntpd binary.
+By setting an ENTRYPOINT here, the ntpd binary will be started by default, and any arguments passed to docker run after the image name will be passed to ntpd.</description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
+so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple
+&lt;code>Dockerfile&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>FROM alpine
+RUN apk update
+RUN apk add openntpd
+ENTRYPOINT [&amp;quot;ntpd&amp;quot;]
+&lt;/code>&lt;/pre>
+&lt;p>I&amp;rsquo;m using the &lt;code>alpine&lt;/code> image as my starting point because it&amp;rsquo;s very
+small, which makes this whole process go a little faster. I&amp;rsquo;m
+installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p>
+&lt;p>By setting an &lt;code>ENTRYPOINT&lt;/code> here, the &lt;code>ntpd&lt;/code> binary will be started by
+default, and any arguments passed to &lt;code>docker run&lt;/code> after the image name
+will be passed to &lt;code>ntpd&lt;/code>.&lt;/p>
+&lt;p>We need to first build the image:&lt;/p>
+&lt;pre>&lt;code># docker build -t larsks/ntpd .
+&lt;/code>&lt;/pre>
+&lt;p>And then we can try to run it:&lt;/p>
+&lt;pre>&lt;code># docker run larsks/ntpd -h
+ntpd: unrecognized option: h
+usage: ntpd [-dnSsv] [-f file] [-p file]
+&lt;/code>&lt;/pre>
+&lt;p>That confirms that we can run the command. Now we need to provide it
+with a configuration file. I looked briefly at &lt;a href="http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man5/ntpd.conf.5?query=ntpd.conf">the ntpd.conf man
+page&lt;/a>, and I think we can get away with just providing the
+name of an ntp server. I created &lt;code>/etc/ntpd.conf&lt;/code> on my atomic host
+with the following content:&lt;/p>
+&lt;pre>&lt;code>servers pool.ntp.org
+&lt;/code>&lt;/pre>
+&lt;p>And then I tried running the container like this:&lt;/p>
+&lt;pre>&lt;code>docker run -v /etc/ntpd.conf:/etc/ntpd.conf larsks/ntpd -d -f /etc/ntpd.conf
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>-v&lt;/code> in the above command line makes &lt;code>/etc/ntpd.conf&lt;/code> on the host
+available as &lt;code>/etc/ntpd.conf&lt;/code> inside the container. This gets me:&lt;/p>
+&lt;pre>&lt;code>ntpd: can't set priority: Permission denied
+reset adjtime failed: Operation not permitted
+adjtimex (2) failed: Operation not permitted
+adjtimex adjusted frequency by 0.000000ppm
+fatal: privsep dir /var/empty could not be opened: No such file or directory
+Lost child: child exited
+dispatch_imsg in main: pipe closed
+Terminating
+&lt;/code>&lt;/pre>
+&lt;p>The first few errors (&amp;ldquo;Permission denied&amp;rdquo;) mean that we need to pass
+&lt;code>--privileged&lt;/code> on the &lt;code>docker run&lt;/code> command line. Normally, Docker
+runs containers with limited capabilities, but because an ntp service
+needs to be able to set the time in the kernel it won&amp;rsquo;t run in that
+limited environment.&lt;/p>
+&lt;p>The &amp;ldquo;fatal: privsep dir /var/empty could not be opened&amp;rdquo; suggests we
+need an empty directory at &lt;code>/var/empty&lt;/code>. With the above two facts in
+mind, I tried:&lt;/p>
+&lt;pre>&lt;code>docker run --privileged -v /var/empty \
+-v /etc/ntpd.conf:/etc/ntpd.conf larsks/ntpd -d -f /etc/ntpd.conf -s
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>-s&lt;/code> on the end means &amp;ldquo;Try to set the time immediately at
+startup.&amp;rdquo; This results in:&lt;/p>
+&lt;pre>&lt;code>adjtimex adjusted frequency by 0.000000ppm
+ntp engine ready
+reply from 104.131.53.252: offset -3.543963 delay 0.018517, next query 5s
+set local clock to Fri Oct 9 18:03:41 UTC 2015 (offset -3.543963s)
+reply from 198.23.200.19: negative delay -7.039390s, next query 3190s
+reply from 107.170.224.8: negative delay -6.983865s, next query 3139s
+reply from 209.118.204.201: negative delay -6.982698s, next query 3216s
+reply from 104.131.53.252: offset 3.523820 delay 0.018231, next query 8s
+&lt;/code>&lt;/pre>
+&lt;p>So that seems to work correctly. To make this service persistent, I
+can add &lt;code>-d&lt;/code> to start the container in the background, and
+&lt;code>--restart=always&lt;/code> to make Docker responsible for restarting it if it
+fails:&lt;/p>
+&lt;pre>&lt;code>docker run --privileged -v /var/empty \
+--restart=always -d \
+-v /etc/ntpd.conf:/etc/ntpd.conf larsks/ntpd -d -f /etc/ntpd.conf -s
+&lt;/code>&lt;/pre>
+&lt;p>And my Atomic host has an ntp service keeping the time in sync.&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>Next week is the Red Hat Summit in Boston, and I&amp;rsquo;ll be taking part in a Project Atomic presentation in which I will discuss various (well, two) options for deploying Atomic into an OpenStack environment, focusing on my heat-kubernetes templates.
+As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:
+This shows off the autoscaling behavior available with recent versions of these templates (and also serves as a very brief introduction to working with Kubernetes).</description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
+(well, two) options for deploying Atomic into an OpenStack
+environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
+&lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>This shows off the autoscaling behavior available with recent versions
+of these templates (and also serves as a very brief introduction to
+working with Kubernetes).&lt;/p></content></item><item><title>Fedora Atomic, OpenStack, and Kubernetes (oh my)</title><link>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</link><pubDate>Mon, 24 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</guid><description>While experimenting with Fedora Atomic, I was looking for an elegant way to automatically deploy Atomic into an OpenStack environment and then automatically schedule some Docker containers on the Atomic host. This post describes my solution.
+Like many other cloud-targeted distributions, Fedora Atomic runs cloud-init when the system boots. We can take advantage of this to configure the system at first boot by providing a user-data blob to Nova when we boot the instance.</description><content>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
+elegant way to automatically deploy Atomic into an &lt;a href="http://openstack.org/">OpenStack&lt;/a>
+environment and then automatically schedule some &lt;a href="http://docker.com/">Docker&lt;/a> containers
+on the Atomic host. This post describes my solution.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>Like many other cloud-targeted distributions, Fedora Atomic runs
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> when the system boots. We can take advantage of this
+to configure the system at first boot by providing a &lt;code>user-data&lt;/code> blob
+to Nova when we boot the instance. A &lt;code>user-data&lt;/code> blob can be as
+simple as a shell script, and while we could arguably mash everything
+into a single script it wouldn&amp;rsquo;t be particularly maintainable or
+flexible in the face of different pod/service/etc descriptions.&lt;/p>
+&lt;p>In order to build a more flexible solution, we&amp;rsquo;re going to take
+advantage of the following features:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Support for &lt;a href="http://cloudinit.readthedocs.org/en/latest/topics/format.html#mime-multi-part-archive">multipart MIME archives&lt;/a>.&lt;/p>
+&lt;p>Cloud-init allows you to pass in multiple files via &lt;code>user-data&lt;/code> by
+encoding them as a multipart MIME archive.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Support for a &lt;a href="http://cloudinit.readthedocs.org/en/latest/topics/format.html#part-handler">custom part handler&lt;/a>.&lt;/p>
+&lt;p>Cloud-init recognizes a number of specific MIME types (such as
+&lt;code>text/cloud-config&lt;/code> or &lt;code>text/x-shellscript&lt;/code>). We can provide a
+custom part handler that will be used to handle MIME types not
+intrinsincally supported by &lt;code>cloud-init&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="a-custom-part-handler-for-kubernetes-configurations">A custom part handler for Kubernetes configurations&lt;/h2>
+&lt;p>I have written a &lt;a href="https://github.com/larsks/atomic-kubernetes-tools/blob/master/kube-part-handler.py">custom part handler&lt;/a> that knows
+about the following MIME types:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>text/x-kube-pod&lt;/code>&lt;/li>
+&lt;li>&lt;code>text/x-kube-service&lt;/code>&lt;/li>
+&lt;li>&lt;code>text/x-kube-replica&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>When the part handler is first initialized it will ensure the
+Kubernetes is started. If it is provided with a document matching one
+of the above MIME types, it will pass it to the appropriate &lt;code>kubecfg&lt;/code>
+command to create the objects in Kubernetes.&lt;/p>
+&lt;h2 id="creating-multipart-mime-archives">Creating multipart MIME archives&lt;/h2>
+&lt;p>I have also created a &lt;a href="https://github.com/larsks/atomic-kubernetes-tools/blob/master/write-mime-multipart.py">modified version&lt;/a> of the standard
+&lt;code>write-multipart-mime.py&lt;/code> Python script. This script will inspect the
+first lines of files to determine their content type; in addition to
+the standard &lt;code>cloud-init&lt;/code> types (like &lt;code>#cloud-config&lt;/code> for a
+&lt;code>text/cloud-config&lt;/code> type file), this script recognizes:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>#kube-pod&lt;/code> for &lt;code>text/x-kube-pod&lt;/code>&lt;/li>
+&lt;li>&lt;code>#kube-service&lt;/code> for &lt;code>text/x-kube-service&lt;/code>&lt;/li>
+&lt;li>&lt;code>#kube-replica&lt;/code> for &lt;code>text/x-kube-replca&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>That is, a simple pod description might look something like:&lt;/p>
+&lt;pre>&lt;code>#kube-pod
+id: dbserver
+desiredState:
+manifest:
+version: v1beta1
+id: dbserver
+containers:
+- image: mysql
+name: dbserver
+env:
+- name: MYSQL_ROOT_PASSWORD
+value: secret
+&lt;/code>&lt;/pre>
+&lt;h2 id="putting-it-all-together">Putting it all together&lt;/h2>
+&lt;p>Assuming that the pod description presented in the previous section is
+stored in a file named &lt;code>dbserver.yaml&lt;/code>, we can bundle that file up
+with our custom part handler like this:&lt;/p>
+&lt;pre>&lt;code>$ write-mime-multipart.py \
+kube-part-handler.py dbserver.yaml &amp;gt; userdata
+&lt;/code>&lt;/pre>
+&lt;p>We would then launch a Nova instance using the &lt;code>nova boot&lt;/code> command,
+providing the generated &lt;code>userdata&lt;/code> file as an argument to the
+&lt;code>user-data&lt;/code> command:&lt;/p>
+&lt;pre>&lt;code>$ nova boot --image fedora-atomic --key-name mykey \
+--flavor m1.small --user-data userdata my-atomic-server
+&lt;/code>&lt;/pre>
+&lt;p>You would obviously need to substitute values for &lt;code>--image&lt;/code> and
+&lt;code>--key-name&lt;/code> that are appropriate for your environment.&lt;/p>
+&lt;h2 id="details-details">Details, details&lt;/h2>
+&lt;p>If you are experimenting with Fedora Atomic 21, you may find out that
+the above example doesn&amp;rsquo;t work &amp;ndash; the official &lt;code>mysql&lt;/code> image generates
+an selinux error. We can switch selinux to permissive mode by putting
+the following into a file called &lt;code>disable-selinux.sh&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+setenforce 0
+sed -i '/^SELINUX=/ s/=.*/=permissive/' /etc/selinux/config
+&lt;/code>&lt;/pre>
+&lt;p>And then including that in our MIME archive:&lt;/p>
+&lt;pre>&lt;code>$ write-mime-multipart.py \
+kube-part-handler.py disable-selinux.sh dbserver.yaml &amp;gt; userdata
+&lt;/code>&lt;/pre>
+&lt;h2 id="a-brief-demonstration">A brief demonstration&lt;/h2>
+&lt;p>If we launch an instance as described in the previous section and then
+log in, we should find that the pod has already been scheduled:&lt;/p>
+&lt;pre>&lt;code># kubecfg list pods
+ID Image(s) Host Labels Status
+---------- ---------- ---------- ---------- ----------
+dbserver mysql / Waiting
+&lt;/code>&lt;/pre>
+&lt;p>At this point, &lt;code>docker&lt;/code> needs to pull the &lt;code>mysql&lt;/code> image locally, so
+this step can take a bit depending on the state of your local internet
+connection.&lt;/p>
+&lt;p>Running &lt;code>docker ps&lt;/code> at this point will yield:&lt;/p>
+&lt;pre>&lt;code># docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+3561e39f198c kubernetes/pause:latest &amp;quot;/pause&amp;quot; 46 seconds ago Up 43 seconds k8s--net.d96a64a9--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--d872be51
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>pause&lt;/code> image here is a Kubernetes detail that is used to
+configure the networking for a pod (in the Kubernetes world, a pod is
+a group of linked containers that share a common network namespace).&lt;/p>
+&lt;p>After a few minutes, you should eventually see:&lt;/p>
+&lt;pre>&lt;code># docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+644c8fc5a79c mysql:latest &amp;quot;/entrypoint.sh mysq 3 minutes ago Up 3 minutes k8s--dbserver.fd48803d--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--58794467
+3561e39f198c kubernetes/pause:latest &amp;quot;/pause&amp;quot; 5 minutes ago Up 5 minutes k8s--net.d96a64a9--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--d872be51
+&lt;/code>&lt;/pre>
+&lt;p>And &lt;code>kubecfg&lt;/code> should show the pod as running:&lt;/p>
+&lt;pre>&lt;code># kubecfg list pods
+ID Image(s) Host Labels Status
+---------- ---------- ---------- ---------- ----------
+dbserver mysql 127.0.0.1/ Running
+&lt;/code>&lt;/pre>
+&lt;h2 id="problems-problems">Problems, problems&lt;/h2>
+&lt;p>This works and is I think a relatively elegant solution. However,
+there are some drawbacks. In particular, the custom part handler
+runs fairly early in the &lt;code>cloud-init&lt;/code> process, which means that it
+cannot depend on changes implemented by &lt;code>user-data&lt;/code> scripts (because
+these run much later).&lt;/p>
+&lt;p>A better solution might be to have the custom part handler simply
+write the Kubernetes configs into a directory somewhere, and then
+install a service that launches after Kubernetes and (a) watches that
+directory for files, then (b) passes the configuration to Kubernetes
+and deletes (or relocates) the file.&lt;/p></content></item></channel></rss>

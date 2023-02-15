@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>micropython on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/micropython/</link><description>Recent content in micropython on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Feb 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/micropython/rss.xml" rel="self" type="application/rss+xml"/><item><title>Udev rules for CH340 serial devices</title><link>https://blog.oddbit.com/post/2022-02-13-wemos-udev-rules/</link><pubDate>Sun, 13 Feb 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-02-13-wemos-udev-rules/</guid><description>I like to fiddle with Micropython, particularly on the Wemos D1 Mini, because these are such a neat form factor. Unfortunately, they have a cheap CH340 serial adapter on board, which means that from the perspective of Linux these devices are all functionally identical &amp;ndash; there&amp;rsquo;s no way to identify one device from another. This by itself would be a manageable problem, except that the device names assigned to these devices aren&amp;rsquo;t constant: depending on the order in which they get plugged in (and the order in which they are detected at boot), a device might be /dev/ttyUSB0 one day and /dev/ttyUSB2 another day.</description><content>&lt;p>I like to fiddle with &lt;a href="https://micropython.org">Micropython&lt;/a>, particularly on the &lt;a href="https://www.wemos.cc/en/latest/d1/d1_mini.html">Wemos D1 Mini&lt;/a>, because these are such a neat form factor. Unfortunately, they have a cheap CH340 serial adapter on board, which means that from the perspective of Linux these devices are all functionally identical &amp;ndash; there&amp;rsquo;s no way to identify one device from another. This by itself would be a manageable problem, except that the device names assigned to these devices aren&amp;rsquo;t constant: depending on the order in which they get plugged in (and the order in which they are detected at boot), a device might be &lt;code>/dev/ttyUSB0&lt;/code> one day and &lt;code>/dev/ttyUSB2&lt;/code> another day.&lt;/p>
+&lt;p>On more than one occasion, I have accidentally re-flashed the wrong device. Ouch.&lt;/p>
+&lt;p>A common solution to this problem is to create device names based on the USB topology &amp;ndash; that is, assign names based on a device&amp;rsquo;s position in the USB bus: e.g., when attaching a new USB serial device, expose it at something like &lt;code>/dev/usbserial/&amp;lt;bus&amp;gt;/&amp;lt;device_path&amp;gt;&lt;/code>. While that sounds conceptually simple, it took me a while to figure out the correct &lt;a href="https://en.wikipedia.org/wiki/Udev">udev&lt;/a> rules.&lt;/p>
+&lt;p>Looking at the available attributes for a serial device, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm info -a -n /dev/ttyUSB0
+[...]
+looking at device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0/ttyUSB0/tty/ttyUSB0&amp;#39;:
+KERNEL==&amp;#34;ttyUSB0&amp;#34;
+SUBSYSTEM==&amp;#34;tty&amp;#34;
+DRIVER==&amp;#34;&amp;#34;
+ATTR{power/control}==&amp;#34;auto&amp;#34;
+ATTR{power/runtime_active_time}==&amp;#34;0&amp;#34;
+ATTR{power/runtime_status}==&amp;#34;unsupported&amp;#34;
+ATTR{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0/ttyUSB0&amp;#39;:
+KERNELS==&amp;#34;ttyUSB0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb-serial&amp;#34;
+DRIVERS==&amp;#34;ch341-uart&amp;#34;
+ATTRS{port_number}==&amp;#34;0&amp;#34;
+ATTRS{power/control}==&amp;#34;auto&amp;#34;
+ATTRS{power/runtime_active_time}==&amp;#34;0&amp;#34;
+ATTRS{power/runtime_status}==&amp;#34;unsupported&amp;#34;
+ATTRS{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0&amp;#39;:
+KERNELS==&amp;#34;3-1.4.3:1.0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;ch341&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{bAlternateSetting}==&amp;#34; 0&amp;#34;
+ATTRS{bInterfaceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bInterfaceNumber}==&amp;#34;00&amp;#34;
+ATTRS{bInterfaceProtocol}==&amp;#34;02&amp;#34;
+ATTRS{bInterfaceSubClass}==&amp;#34;01&amp;#34;
+ATTRS{bNumEndpoints}==&amp;#34;03&amp;#34;
+ATTRS{supports_autosuspend}==&amp;#34;1&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3&amp;#39;:
+KERNELS==&amp;#34;3-1.4.3&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;usb&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{avoid_reset_quirk}==&amp;#34;0&amp;#34;
+ATTRS{bConfigurationValue}==&amp;#34;1&amp;#34;
+ATTRS{bDeviceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bDeviceProtocol}==&amp;#34;00&amp;#34;
+ATTRS{bDeviceSubClass}==&amp;#34;00&amp;#34;
+ATTRS{bMaxPacketSize0}==&amp;#34;8&amp;#34;
+ATTRS{bMaxPower}==&amp;#34;98mA&amp;#34;
+ATTRS{bNumConfigurations}==&amp;#34;1&amp;#34;
+ATTRS{bNumInterfaces}==&amp;#34; 1&amp;#34;
+ATTRS{bcdDevice}==&amp;#34;0262&amp;#34;
+ATTRS{bmAttributes}==&amp;#34;80&amp;#34;
+ATTRS{busnum}==&amp;#34;3&amp;#34;
+ATTRS{configuration}==&amp;#34;&amp;#34;
+ATTRS{devnum}==&amp;#34;8&amp;#34;
+ATTRS{devpath}==&amp;#34;1.4.3&amp;#34;
+ATTRS{idProduct}==&amp;#34;7523&amp;#34;
+ATTRS{idVendor}==&amp;#34;1a86&amp;#34;
+ATTRS{ltm_capable}==&amp;#34;no&amp;#34;
+ATTRS{maxchild}==&amp;#34;0&amp;#34;
+ATTRS{power/active_duration}==&amp;#34;48902765&amp;#34;
+ATTRS{power/autosuspend}==&amp;#34;2&amp;#34;
+ATTRS{power/autosuspend_delay_ms}==&amp;#34;2000&amp;#34;
+ATTRS{power/connected_duration}==&amp;#34;48902765&amp;#34;
+ATTRS{power/control}==&amp;#34;on&amp;#34;
+ATTRS{power/level}==&amp;#34;on&amp;#34;
+ATTRS{power/persist}==&amp;#34;1&amp;#34;
+ATTRS{power/runtime_active_time}==&amp;#34;48902599&amp;#34;
+ATTRS{power/runtime_status}==&amp;#34;active&amp;#34;
+ATTRS{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+ATTRS{product}==&amp;#34;USB2.0-Serial&amp;#34;
+ATTRS{quirks}==&amp;#34;0x0&amp;#34;
+ATTRS{removable}==&amp;#34;unknown&amp;#34;
+ATTRS{rx_lanes}==&amp;#34;1&amp;#34;
+ATTRS{speed}==&amp;#34;12&amp;#34;
+ATTRS{tx_lanes}==&amp;#34;1&amp;#34;
+ATTRS{urbnum}==&amp;#34;17&amp;#34;
+ATTRS{version}==&amp;#34; 1.10&amp;#34;
+[...]
+&lt;/code>&lt;/pre>&lt;p>In this output, we find that the device itself (at the top) doesn&amp;rsquo;t have any useful attributes we can use for creating a systematic device name. It&amp;rsquo;s not until we&amp;rsquo;ve moved up the device hierarchy to &lt;code>/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3&lt;/code> that we find topology information (in the &lt;code>busnum&lt;/code> and &lt;code>devpath&lt;/code> attributes). This complicates matters because a udev rule only has access to attributes defined directly on matching device, so we can&amp;rsquo;t right something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEM==&amp;#34;usb-serial&amp;#34;, SYMLINK+=&amp;#34;usbserial/$attr{busnum}/$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>How do we access the attributes of a parent node in our rule?&lt;/p>
+&lt;p>The answer is by creating environment variables that preserve the values in which we are interested. I started with this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Here, my goal was to stash the &lt;code>busnum&lt;/code> and &lt;code>devpath&lt;/code> attributes in &lt;code>.USB_BUSNUM&lt;/code> and &lt;code>.USB_DEVPATH&lt;/code>, but this didn&amp;rsquo;t work: it matches device path &lt;code>/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0&lt;/code>, which is:&lt;/p>
+&lt;pre tabindex="0">&lt;code>KERNELS==&amp;#34;3-1.4.3:1.0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;ch341&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{bAlternateSetting}==&amp;#34; 0&amp;#34;
+ATTRS{bInterfaceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bInterfaceNumber}==&amp;#34;00&amp;#34;
+ATTRS{bInterfaceProtocol}==&amp;#34;02&amp;#34;
+ATTRS{bInterfaceSubClass}==&amp;#34;01&amp;#34;
+ATTRS{bNumEndpoints}==&amp;#34;03&amp;#34;
+ATTRS{supports_autosuspend}==&amp;#34;1&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>We need to match the next device up the chain, so we need to make our match more specific. There are a couple of different options we can pursue; the simplest is probably to take advantage of the fact that the next device up the chain has &lt;code>SUBSYSTEMS==&amp;quot;usb&amp;quot;&lt;/code> and &lt;code>DRIVERS=&amp;quot;usb&amp;quot;&lt;/code>, so we could instead write:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, DRIVERS==&amp;#34;usb&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Alternately, we could ask for &amp;ldquo;the first device that has a &lt;code>busnum&lt;/code> attribute&amp;rdquo; like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ATTRS{busnum}==&amp;#34;?*&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Where (from the &lt;code>udev(7)&lt;/code> man page), &lt;code>?&lt;/code> matches any single character and &lt;code>*&lt;/code> matches zero or more characters, so this matches any device in which &lt;code>busnum&lt;/code> has a non-empty value. We can test this rule out using the &lt;code>udevadm test&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm test $(udevadm info --query=path --name=/dev/ttyUSB0)
+[...]
+.USB_BUSNUM=3
+.USB_DEVPATH=1.4.3
+[...]
+&lt;/code>&lt;/pre>&lt;p>This shows us that our rule is matching and setting up the appropriate variables. We can now use those in a subsequent rule to create the desired symlink:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ATTRS{busnum}==&amp;#34;?*&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+SUBSYSTEMS==&amp;#34;usb-serial&amp;#34;, SYMLINK+=&amp;#34;usbserial/$env{.USB_BUSNUM}/$env{.USB_DEVPATH}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Re-running the test command, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm test $(udevadm info --query=path --name=/dev/ttyUSB0)
+[...]
+DEVLINKS=/dev/serial/by-path/pci-0000:03:00.0-usb-0:1.4.3:1.0-port0 /dev/usbserial/3/1.4.3 /dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0
+[...]
+&lt;/code>&lt;/pre>&lt;p>You can see the new symlink in the &lt;code>DEVLINKS&lt;/code> value, and looking at &lt;code>/dev/usbserial&lt;/code> we can see the expected symlinks:&lt;/p>
+&lt;pre tabindex="0">&lt;code># tree /dev/usbserial
+/dev/usbserial/
+└── 3
+├── 1.1 -&amp;gt; ../../ttyUSB1
+└── 1.4.3 -&amp;gt; ../../ttyUSB0
+&lt;/code>&lt;/pre>&lt;p>And there have it. Now as long as I attach a specific device to the same USB port on my system, it will have the same device node. I&amp;rsquo;ve updated my tooling to use these paths (&lt;code>/dev/usbserial/3/1.4.3&lt;/code>) instead of the kernel names (&lt;code>/dev/ttyUSB0&lt;/code>), and it has greatly simplified things.&lt;/p></content></item><item><title>To sleep or not to sleep?</title><link>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</link><pubDate>Fri, 18 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</guid><description>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running MicroPython. You&amp;rsquo;d like to sample them at different frequencies (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like to do it as efficiently as possible in terms of power consumption. What are your options?
+If we don&amp;rsquo;t care about power efficiency, the simplest solution is probably a loop like this:
+import machine lastrun_1 = 0 lastrun_2 = 0 while True: now = time.</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
+(say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
+to do it as efficiently as possible in terms of power consumption.
+What are your options?&lt;/p>
+&lt;p>If we don&amp;rsquo;t care about power efficiency, the simplest solution is
+probably a loop like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+lastrun_1 = 0
+lastrun_2 = 0
+while True:
+now = time.time()
+if (lastrun_1 == 0) or (now - lastrun_1 &amp;gt;= 60):
+read_sensor_1()
+lastrun_1 = now
+if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
+read_sensor_2()
+lastrun_2 = now
+machine.idle()
+&lt;/code>&lt;/pre>&lt;p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266&amp;rsquo;s deep
+sleep mode (assuming we have &lt;a href="http://docs.micropython.org/en/latest/esp8266/tutorial/powerctrl.html#deep-sleep-mode">wired things properly&lt;/a>):&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+def deepsleep(duration):
+rtc = machine.RTC()
+rtc.irq(trigger=rtc.ALARM0, wake=machine.DEEPSLEEP)
+rtc.alarm(rtc.ALARM0, duration)
+read_sensor_1()
+deepsleep(60000)
+&lt;/code>&lt;/pre>&lt;p>This will wake up, read the sensor, then sleep for 60 seconds, at
+which point the device will reboot and repeat the process.&lt;/p>
+&lt;p>If we want both use deep sleep &lt;em>and&lt;/em> run tasks at different intervals,
+we can effectively combine the above two methods. This requires a
+little help from the RTC, which in addition to keeping time also
+provides us with a small amount of memory (492 bytes when using
+MicroPython) that will persist across a deepsleep/reset cycle.&lt;/p>
+&lt;p>The &lt;code>machine.RTC&lt;/code> class includes a &lt;code>memory&lt;/code> method that provides
+access to the RTC memory. We can read the memory like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+rtc = machine.RTC()
+bytes = rtc.memory()
+&lt;/code>&lt;/pre>&lt;p>Note that &lt;code>rtc.memory()&lt;/code> will always return a byte string.&lt;/p>
+&lt;p>We write to it like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>rtc.memory(&amp;#39;somevalue&amp;#39;)
+&lt;/code>&lt;/pre>&lt;p>Lastly, note that the time maintained by the RTC also persists across
+a deepsleep/reset cycle, so that if we call &lt;code>time.time()&lt;/code> and then
+deepsleep for 10 seconds, when the module boots back up &lt;code>time.time()&lt;/code>
+will show that 10 seconds have elapsed.&lt;/p>
+&lt;p>We&amp;rsquo;re going to implement a solution similar to the loop presented at
+the beginning of this article in that we will store the time at which
+at task was last run. Because we need to maintain two different
+values, and because the RTC memory operates on bytes, we need a way to
+serialize and deserialize a pair of integers. We could use functions
+like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import json
+def store_time(t1, t2):
+rtc.memory(json.dumps([t1, t2]))
+def load_time():
+data = rtc.memory()
+if not data:
+return [0, 0]
+try:
+return json.loads(data)
+except ValueError:
+return [0, 0]
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>load_time&lt;/code> method returns &lt;code>[0, 0]&lt;/code> if either (a) the RTC memory
+was unset or (b) we were unable to decode the value stored in memory
+(which might happen if you had previously stored something else
+there).&lt;/p>
+&lt;p>You don&amp;rsquo;t have to use &lt;code>json&lt;/code> for serializing the data we&amp;rsquo;re storing in
+the RTC; you could just as easily use the &lt;code>struct&lt;/code> module:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import struct
+def store_time(t1, t2):
+rtc.memory(struct.pack(&amp;#39;ll&amp;#39;, t1, t2))
+def load_time():
+data = rtc.memory()
+if not data:
+return [0, 0]
+try:
+return struct.unpack(&amp;#39;ll&amp;#39;, data)
+except ValueError:
+return [0, 0]
+&lt;/code>&lt;/pre>&lt;p>Once we&amp;rsquo;re able to store and retrieve data from the RTC, the main part
+of our code ends up looking something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>lastrun_1, lastrun_2 = load_time()
+now = time.time()
+something_happened = False
+if lastrun_1 == 0 or (now - lastrun_1 &amp;gt; 60):
+read_sensor_1()
+lastrun_1 = now
+something_happened = True
+if lastrun_2 == 0 or (now - lastrun_2 &amp;gt; 300):
+read_sensor_2()
+lastrun_2 = now
+something_happened = True
+if something_happened:
+store_time(lastrun_1, lastrun_2)
+deepsleep(60000)
+&lt;/code>&lt;/pre>&lt;p>This code will wake up every 60 seconds. That means it will always run
+the &lt;code>read_sensor_1&lt;/code> task, and it will run the &lt;code>read_sensor_2&lt;/code> task
+every five minutes. In between, the ESP8266 will be in deep sleep
+mode, consuming around 20µA. In order to avoid too many unnecessary
+writes to RTC memory, we only store values when &lt;code>lastrun_1&lt;/code> or
+&lt;code>lastrun_2&lt;/code> has changed.&lt;/p>
+&lt;p>While developing your code, it can be inconvenient to have the device
+enter deep sleep mode (because you can&amp;rsquo;t just &lt;code>^C&lt;/code> to return to the
+REPL). You can make the deep sleep behavior optional by wrapping
+everything in a loop, and optionally calling &lt;code>deepsleep&lt;/code> at the end of
+the loop, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>lastrun_1, lastrun_2 = load_time()
+while True:
+now = time.time()
+something_happened = False
+if lastrun_1 == 0 or (now - lastrun_1 &amp;gt; 60):
+read_sensor_1()
+lastrun_1 = now
+something_happened = True
+if lastrun_2 == 0 or (now - lastrun_2 &amp;gt; 300):
+read_sensor_2()
+lastrun_2 = now
+something_happened = True
+if something_happened:
+store_time(lastrun_1, lastrun_2)
+if use_deep_sleep:
+deepsleep(60000)
+else:
+machine.idle()
+&lt;/code>&lt;/pre>&lt;p>If the variable &lt;code>use_deepsleep&lt;/code> is &lt;code>True&lt;/code>, this code will perform as
+described in the previous section, waking once every 60 seconds. If
+&lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</guid><description>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and for me that means leaping at the chance to turn a small problem into a slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go into here I wanted to generate an alert when a certain WiFi BSSID becomes visible. A simple solution to this problem would have been a few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t about simple solutions!</description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+for me that means leaping at the chance to turn a small problem into a
+slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
+into here I wanted to generate an alert when a certain WiFi BSSID
+becomes visible. A simple solution to this problem would have been a
+few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t
+about simple solutions!&lt;/p>
+&lt;p>I thought it would be fun to put together a physical device of some
+sort that would sound an alarm when the network in question was
+visible. There weren&amp;rsquo;t too many options floating around the house &amp;ndash; I
+found a &lt;a href="https://www.amazon.com/RuiLing-Decibels-Continuous-Sounder-Electronic/dp/B07NK8MGL9">small buzzer&lt;/a>, but it wasn&amp;rsquo;t very loud so wasn&amp;rsquo;t much use
+unless I was right next to it. I needed something a little more
+dramatic, and found it in the old chime doorbell I had floating
+around the basement. This means the problem statement became:&lt;/p>
+&lt;blockquote>
+&lt;p>Design a device that will ring the doorbell chime when a given BSSID
+becomes visible.&lt;/p>
+&lt;/blockquote>
+&lt;p>(Why a BSSID? The BSSID is the hardware address of the access point.
+In most cases, it&amp;rsquo;s easy to change the name of a WiFi network &amp;ndash; the
+SSID &amp;ndash; but somewhat more difficult to change the BSSID.)&lt;/p>
+&lt;h1 id="tldr">TL;DR&lt;/h1>
+&lt;p>Before looking at the implementation in more detail, let&amp;rsquo;s take a look
+at the finished project. When the device detects a target BSSID, it
+rings the bell twice and lights the &lt;code>ALARM&lt;/code> LED:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/cT2JB-aDhTQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>After the initial alarm, the bell will ring once every five minutes
+while the alarm persists. Once the BSSID goes offline, the device
+cancels the alarm and extinguishes the &lt;code>ALARM&lt;/code> LED:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/XY6YKFK2qv4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>If the doorbell proves annoying, there&amp;rsquo;s a switch that activates
+silent mode:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/bgM7Asc4FD4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>When silent mode is active, the device will illuminate the &lt;code>ALARM&lt;/code> LED
+without sounding the bell:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/xRxxqKiiYVc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;h2 id="but-wait-theres-more">But wait, there&amp;rsquo;s more!&lt;/h2>
+&lt;p>There&amp;rsquo;s also a web interface that allows one to monitor and configure
+the device. The web interface allows one to:&lt;/p>
+&lt;ul>
+&lt;li>See a list of visible networks&lt;/li>
+&lt;li>Add a network to the list of targets&lt;/li>
+&lt;li>Remove a network from the list of targets&lt;/li>
+&lt;li>See whether or not the scanning &amp;ldquo;thread&amp;rdquo; is active&lt;/li>
+&lt;li>See whether or not there is currently an active alarm&lt;/li>
+&lt;/ul>
+&lt;p>Here&amp;rsquo;s a video of it in action:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/TtDwYMXy-b8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;h2 id="and-thats-not-all">And that&amp;rsquo;s not all!&lt;/h2>
+&lt;p>In order to support the UI, there&amp;rsquo;s a simple HTTP API that permits
+programmatic interaction with the device. The API supports the
+following endpoints:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>GET /api/target&lt;/code> &amp;ndash; get a list of targets&lt;/li>
+&lt;li>`POST /api/target&amp;rsquo; &amp;ndash; add a BSSID to the list of targets&lt;/li>
+&lt;li>&lt;code>DELETE /api/target/&amp;lt;bssid&amp;gt;&lt;/code> &amp;ndash; remove a BSSID from the list of
+targets&lt;/li>
+&lt;li>&lt;code>GET /api/status&lt;/code> &amp;ndash; get the current alarm status and whether or not
+the scan is running&lt;/li>
+&lt;li>&lt;code>GET /api/scan/result&lt;/code> &amp;ndash; get list of visible networks&lt;/li>
+&lt;li>&lt;code>GET /api/scan/start&lt;/code> &amp;ndash; start the scan&lt;/li>
+&lt;li>&lt;code>GET /api/scan/stop&lt;/code> &amp;ndash; stop the scan&lt;/li>
+&lt;/ul>
+&lt;p>There are a couple of other methods, too, but they&amp;rsquo;re more for
+debugging than anything else.&lt;/p>
+&lt;h2 id="show-me-the-code">Show me the code!&lt;/h2>
+&lt;p>The code for this project is all online at
+&lt;a href="https://github.com/larsks/maxdetector">https://github.com/larsks/maxdetector&lt;/a>.&lt;/p>
+&lt;h1 id="implementation-details">Implementation details&lt;/h1>
+&lt;h2 id="software-notes">Software notes&lt;/h2>
+&lt;p>My initial inclination was to implement the entire solution in
+&lt;a href="https://micropython.org/">MicroPython&lt;/a> on an &lt;a href="https://docs.wemos.cc/en/latest/d1/d1_mini.html">Wemos D1 mini&lt;/a> (an &lt;a href="https://en.wikipedia.org/wiki/ESP8266">esp8266&lt;/a> development
+board), but this proved problematic: MicroPython&amp;rsquo;s &lt;code>network.WLAN.scan&lt;/code>
+method is a blocking operation, by which I mean it blocks
+&lt;em>everything&lt;/em>, including interrupt handling, timer tasks, etc. This
+made it difficult to handle some physical UI aspects, such as button
+debouncing, in a reliable fashion.&lt;/p>
+&lt;p>I ended up moving the physical UI aspects to an &lt;a href="https://store.arduino.cc/usa/arduino-uno-rev3">Arduino Uno&lt;/a>. The
+ESP8266 handles scanning for WiFi networks, and raises a signal to the
+Uno when an alarm is active. The Uno handles the silent mode button,
+the LEDs, and the relay attached to the doorbell.&lt;/p>
+&lt;p>After the initial implementation, I realized that it really need a web
+interface (because of course it does), so in addition to the WiFi
+scanning the ESP8266 now hosts a simple web server. Because of the
+blocking nature of the WiFi scan, this means the web server may
+occasionally pause for a few seconds, but this hasn&amp;rsquo;t proven to be a
+problem.&lt;/p>
+&lt;p>In the end, I have four major blocks of code in three different languages:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/maxdetector.py">maxdetector.py&lt;/a> implements the WiFi scanning&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/server.py">server.py&lt;/a> implements the server side of the web interface&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/static/md.js">md.js&lt;/a> implements the dynamic portion of the web interface&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/src/maxdetector.cpp">maxdetector.cpp&lt;/a> implements the physical UI and operates the doorbell&lt;/li>
+&lt;/ul>
+&lt;h3 id="wifi-scanning">Wifi scanning&lt;/h3>
+&lt;p>The WiFi scanning operation is implemented as a &amp;ldquo;background task&amp;rdquo;
+driven by a MicroPython &lt;a href="https://docs.micropython.org/en/latest/esp8266/quickref.html#timers">virtual timer&lt;/a>. The scanning task triggers
+once every 10 seconds (and takes a little over 2 seconds to complete).&lt;/p>
+&lt;h3 id="web-server">Web server&lt;/h3>
+&lt;p>The web server is a simple &lt;code>select.poll()&lt;/code> based server capable of
+servicing multiple clients (very, very slowly). I was interested in an
+&lt;code>asyncio&lt;/code> implementation, but at the time the only &lt;code>asyncio&lt;/code>
+module for MicroPython was the one in &lt;a href="https://github.com/micropython/micropython-lib">micropython-lib&lt;/a>, which
+hadn&amp;rsquo;t been touched in several years. A new &lt;code>asyncio&lt;/code> module has
+recently been &lt;a href="https://github.com/micropython/micropython/commit/1d4d688b3b251120f5827a3605ec232d977eaa0f">added to micropython&lt;/a>, but that post-dates the
+implementation of this project.&lt;/p>
+&lt;p>The server uses a very simple route-registration mechanism that should
+be familiar if you&amp;rsquo;ve worked with various other Python web frameworks.
+It would be relatively easy to repurpose it for something other than
+this project.&lt;/p>
+&lt;h2 id="the-hardware">The hardware&lt;/h2>
+&lt;p>Everything is bundled &amp;ldquo;neatly&amp;rdquo; (whereby &amp;ldquo;neatly&amp;rdquo; I mean &amp;ldquo;haphazardly&amp;rdquo;)
+into an old shoe box. On the outside, you can see the three LEDs (for
+the ACTIVE, SILENT, and ALARM signals), the SILENT switch, and the
+doorbell itself:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="detector-outside-labelled.png" />
+&lt;/figure>
+&lt;p>On the inside, you&amp;rsquo;ll find the Arduino Uno, the Wemos D1 mini, the
+relay, and a step-down converter:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="detector-inside-labelled.png" />
+&lt;/figure>
+&lt;p>The step-down converter isn&amp;rsquo;t actually necessary: when I put things
+together, I didn&amp;rsquo;t realize that the Uno would accept up to 12V into
+its regulator. Since I already had the step-down converter in place,
+I&amp;rsquo;m feeding about 7.5v to the Uno. The doorbell gets 12V.&lt;/p>
+&lt;p>I initially prototyped the circuit in &lt;a href="https://www.tinkercad.com/things/cpRuevAoV5L-max-detector">Tinkercad Circuits&lt;/a>, where
+everything worked just fine. But after wiring things up and testing out
+the device, it would start ringing endlessly. Upon inspection, this
+was because the Uno was resetting every time the doorbell chimed. This
+was due to flyback voltage from the relay, which is simple to fix if
+you happen to have an appropriate diode handy&amp;hellip;but if you don&amp;rsquo;t, it
+means calling around to all your aquaintenances to find someone who
+happens to have some lying around. With a diode in place, everything
+worked swimmingly.&lt;/p></content></item><item><title>Using a TM1637 LED module with CircuitPython</title><link>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</link><pubDate>Thu, 03 May 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</guid><description>CircuitPython is &amp;ldquo;an education friendly open source derivative of MicroPython&amp;rdquo;. MicroPython is a port of Python to microcontroller environments; it can run on boards with very few resources such as the ESP8266. I&amp;rsquo;ve recently started experimenting with CircuitPython on a Wemos D1 mini, which is a small form-factor ESP8266 board.
+I had previously been using Mike Causer&amp;rsquo;s micropython-tm1637 for MicroPython to drive a 4 digit LED display. I was hoping to get the same code working under CircuitPython, but when I tried to build an image that included the tm1637 module I ran into:</description><content>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>&amp;rdquo;. MicroPython is a port of Python to microcontroller
+environments; it can run on boards with very few resources such as the
+&lt;a href="https://en.wikipedia.org/wiki/ESP8266">ESP8266&lt;/a>. I&amp;rsquo;ve recently started experimenting with CircuitPython
+on a &lt;a href="https://wiki.wemos.cc/products:d1:d1_mini">Wemos D1 mini&lt;/a>, which is a small form-factor ESP8266 board.&lt;/p>
+&lt;p>I had previously been using Mike Causer&amp;rsquo;s &lt;a href="https://github.com/mcauser/micropython-tm1637/">micropython-tm1637&lt;/a> for
+MicroPython to drive a &lt;a href="http://a.co/gQVPtPr">4 digit LED display&lt;/a>. I was hoping to
+get the same code working under CircuitPython, but when I tried to
+build an image that included the &lt;code>tm1637&lt;/code> module I ran into:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> tm1637
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Traceback (most recent call last):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;&amp;lt;stdin&amp;gt;&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;tm1637.py&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">6&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ImportError&lt;/span>: cannot &lt;span style="color:#f92672">import&lt;/span> name sleep_us
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>One of CircuitPython&amp;rsquo;s goals is to be as close to CPython as possible.
+This means that in many cases that the CircuitPython folks have
+re-implemented MicroPython modules to have syntax that is more a
+strict subset of the CPython equivalent, and the MicroPython &lt;code>time&lt;/code>
+module as impacted by this change. With stock MicroPython, the &lt;code>time&lt;/code>
+module has:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#ae81ff">\n&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(dir(time)))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__class__
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__name__
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>localtime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mktime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep_ms
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep_us
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_add
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_cpu
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_diff
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_ms
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ticks_us
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>time
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>But the corresponding CircuitPython module has:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#ae81ff">\n&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(dir(time)))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__name__
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>monotonic
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sleep
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>struct_time
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>localtime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mktime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>time
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>It turns out that the necessary functions are defined in the &lt;code>utime&lt;/code>
+module, which is implemented by &lt;code>ports/esp8266/modutime.c&lt;/code>, but this
+module is not included in the CircuitPython build. How do we fix that?&lt;/p>
+&lt;p>The most obvious change is to add &lt;code>modutime.c&lt;/code> to the &lt;code>SRC_C&lt;/code> variable
+in &lt;code>ports/esp8266/Makefile&lt;/code>, which gets us:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SRC_C = \
+[...]
+modesp.c \
+modnetwork.c \
+modutime.c \
+[...]
+&lt;/code>&lt;/pre>&lt;p>After making this change and trying to build CircuitPython, I
+hit 70 or so lines like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Generating build/genhdr/mpversion.h
+In file included from ../../py/mpstate.h:35:0,
+from ../../py/runtime.h:29,
+from modutime.c:32:
+modutime.c:109:50: error: &amp;#39;MP_QSTR_utime&amp;#39; undeclared here (not in a function)
+{ MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_utime) },
+^
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>MP_QSTR_&lt;/code> macros are sort of magical: they are generated during
+the build process by scanning for references of the form
+&lt;code>MP_QSTR_utime&lt;/code> and creating definitions that look like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">QDEF&lt;/span>(MP_QSTR_utime, (&lt;span style="color:#66d9ef">const&lt;/span> byte&lt;span style="color:#f92672">*&lt;/span>)&lt;span style="color:#e6db74">&amp;#34;&lt;/span>&lt;span style="color:#ae81ff">\xe5\x9d\x05&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span> &lt;span style="color:#e6db74">&amp;#34;utime&amp;#34;&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>But&amp;hellip;and this is the immediate problem&amp;hellip;this generation only happens
+with a clean build. Running &lt;code>make clean&lt;/code> and then re-running the
+build yields:&lt;/p>
+&lt;pre tabindex="0">&lt;code>build/shared-bindings/time/__init__.o:(.rodata.time_localtime_obj+0x0): multiple definition of `time_localtime_obj&amp;#39;
+build/modutime.o:(.rodata.time_localtime_obj+0x0): first defined here
+build/shared-bindings/time/__init__.o:(.rodata.time_mktime_obj+0x0): multiple definition of `time_mktime_obj&amp;#39;
+build/modutime.o:(.rodata.time_mktime_obj+0x0): first defined here
+build/shared-bindings/time/__init__.o:(.rodata.time_time_obj+0x0): multiple definition of `time_time_obj&amp;#39;
+build/modutime.o:(.rodata.time_time_obj+0x0): first defined here
+&lt;/code>&lt;/pre>&lt;p>The above errors show a conflict between the structures defined in
+&lt;code>utime&lt;/code>, which have just activated, and the existing &lt;code>time&lt;/code>
+module. A simple rename will take care of that problem; instead of:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN&lt;/span>(time_localtime_obj, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, time_localtime);
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We want:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN&lt;/span>(utime_localtime_obj, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, time_localtime);
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And so forth. At this point, everything builds correctly, but if we
+deploy the image to our board and try to import the &lt;code>utime&lt;/code> module, we
+see:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> utime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Traceback (most recent call last):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;&amp;lt;stdin&amp;gt;&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ImportError&lt;/span>: no module named &lt;span style="color:#e6db74">&amp;#39;utime&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The final piece of this puzzle is that there is a list of built-in
+modules defined in &lt;code>mpconfigport.h&lt;/code>. We need to add our &lt;code>utime&lt;/code>
+module to that list:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#define MICROPY_PORT_BUILTIN_MODULES \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"> [...]
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> { &lt;span style="color:#a6e22e">MP_ROM_QSTR&lt;/span>(MP_QSTR_utime), &lt;span style="color:#a6e22e">MP_ROM_PTR&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>utime_module) }, \
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> [...]
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we build and deploy our image, we&amp;rsquo;re now able to use the methods
+from the &lt;code>utime&lt;/code> module:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>Adafruit CircuitPython &lt;span style="color:#ae81ff">3.0.0&lt;/span>&lt;span style="color:#f92672">-&lt;/span>alpha&lt;span style="color:#ae81ff">.6&lt;/span>&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">42&lt;/span>&lt;span style="color:#f92672">-&lt;/span>gb46567004 on &lt;span style="color:#ae81ff">2018&lt;/span>&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">05&lt;/span>&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">06&lt;/span>; ESP module &lt;span style="color:#66d9ef">with&lt;/span> ESP8266
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> utime
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> utime&lt;span style="color:#f92672">.&lt;/span>sleep_ms(&lt;span style="color:#ae81ff">1000&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We need to make one final change to the &lt;code>tm1637&lt;/code> module, since as
+written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">from&lt;/span> time &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We have to modify it to read:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">try&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> time &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">except&lt;/span> &lt;span style="color:#a6e22e">ImportError&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> utime &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
+are now able to drive our display:&lt;/p>
+&lt;!-- raw HTML omitted --></content></item></channel></rss>

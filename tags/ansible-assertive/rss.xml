@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>ansible-assertive on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/ansible-assertive/</link><description>Recent content in ansible-assertive on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 02 Aug 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/ansible-assertive/rss.xml" rel="self" type="application/rss+xml"/><item><title>Ansible for Infrastructure Testing</title><link>https://blog.oddbit.com/post/2017-08-02-ansible-for-infrastructure-tes/</link><pubDate>Wed, 02 Aug 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-08-02-ansible-for-infrastructure-tes/</guid><description>At $JOB we often find ourselves at customer sites where we see the same set of basic problems that we have previously encountered elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo; or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a simple tool that could be run either by the customer or by our own engineers to test for and report on these common issues. Fundamentally, we want something that acts like a typical code test suite, but for infrastructure.</description><content>&lt;p>At &lt;code>$JOB&lt;/code> we often find ourselves at customer sites where we see the
+same set of basic problems that we have previously encountered
+elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo;
+or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a
+simple tool that could be run either by the customer or by our own
+engineers to test for and report on these common issues.
+Fundamentally, we want something that acts like a typical code test
+suite, but for infrastructure.&lt;/p>
+&lt;p>It turns out that Ansible is &lt;em>almost&lt;/em> the right tool for the job:&lt;/p>
+&lt;ul>
+&lt;li>It&amp;rsquo;s easy to write simple tests.&lt;/li>
+&lt;li>It works well in distributed environments.&lt;/li>
+&lt;li>It&amp;rsquo;s easy to extend with custom modules and plugins.&lt;/li>
+&lt;/ul>
+&lt;p>The only real problem is that Ansible has, by default, &amp;ldquo;fail fast&amp;rdquo;
+behavior: once a task fails on a host, no more tasks will run on that
+host. That&amp;rsquo;s great if you&amp;rsquo;re actually making configuration changes,
+but for our purposes we are running a set of read-only independent
+checks, and we want to know the success or failure of all of those
+checks in a single operation (and in many situations we may not have
+the option of correcting the underlying problem ourselves).&lt;/p>
+&lt;p>In this post, I would like to discuss a few Ansible extensions I&amp;rsquo;ve
+put together to make it more useful as an infrastructure testing tool.&lt;/p>
+&lt;h2 id="the-ansible-assertive-project">The ansible-assertive project&lt;/h2>
+&lt;p>The &lt;a href="https://github.com/larsks/ansible-assertive/">ansible-assertive&lt;/a> project contains two extensions for Ansible:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>The &lt;code>assert&lt;/code> action plugin replaces Ansible&amp;rsquo;s native &lt;code>assert&lt;/code>
+behavior with something more appropriate for infrastructure testing.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The &lt;code>assertive&lt;/code> callback plugin modifies the output of &lt;code>assert&lt;/code>
+tasks and collects and reports results.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>The idea is that you write all of your tests using the &lt;code>assert&lt;/code>
+plugin, which means you can run your playbooks in a stock environment
+and see the standard Ansible fail-fast behavior, or you can activate
+the &lt;code>assert&lt;/code> plugin from the ansible-assertive project and get
+behavior more useful for infrastructure testing.&lt;/p>
+&lt;h2 id="a-simple-example">A simple example&lt;/h2>
+&lt;p>Ansible&amp;rsquo;s native &lt;code>assert&lt;/code> plugin will trigger a task failure when an
+assertion evaluates to &lt;code>false&lt;/code>. Consider the following example:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">hosts&lt;/span>: &lt;span style="color:#ae81ff">localhost&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">vars&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">fruits&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#ae81ff">oranges&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#ae81ff">lemons&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">tasks&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assert&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">that&lt;/span>: &amp;gt;-&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> &lt;/span> &lt;span style="color:#e6db74">&amp;#39;apples&amp;#39;&lt;/span> &lt;span style="color:#ae81ff">in fruits&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">you have no apples&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assert&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">that&lt;/span>: &amp;gt;-&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> &lt;/span> &lt;span style="color:#e6db74">&amp;#39;lemons&amp;#39;&lt;/span> &lt;span style="color:#ae81ff">in fruits&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">you have no lemons&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we run this in a stock Ansible environment, we will see the
+following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>PLAY [localhost] ***************************************************************
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+TASK [assert] ******************************************************************
+fatal: [localhost]: FAILED! =&amp;gt; {
+&amp;#34;assertion&amp;#34;: &amp;#34;&amp;#39;apples&amp;#39; in fruits&amp;#34;,
+&amp;#34;changed&amp;#34;: false,
+&amp;#34;evaluated_to&amp;#34;: false,
+&amp;#34;failed&amp;#34;: true,
+&amp;#34;msg&amp;#34;: &amp;#34;you have no apples&amp;#34;
+}
+to retry, use: --limit @/home/lars/projects/ansible-assertive/examples/ex-005/playbook1.retry
+PLAY RECAP *********************************************************************
+localhost : ok=1 changed=0 unreachable=0 failed=1
+&lt;/code>&lt;/pre>&lt;h2 id="a-modified-assert-plugin">A modified assert plugin&lt;/h2>
+&lt;p>Let&amp;rsquo;s activate the &lt;code>assert&lt;/code> plugin in &lt;a href="https://github.com/larsks/ansible-assertive/">ansible-assertive&lt;/a>. We&amp;rsquo;ll
+start by cloning the project into our local directory:&lt;/p>
+&lt;pre>&lt;code>$ git clone https://github.com/larsks/ansible-assertive
+&lt;/code>&lt;/pre>
+&lt;p>And we&amp;rsquo;ll activate the plugin by creating an &lt;code>ansible.cfg&lt;/code> file with
+the following content:&lt;/p>
+&lt;pre>&lt;code>[defaults]
+action_plugins = ./ansible-assertive/action_plugins
+&lt;/code>&lt;/pre>
+&lt;p>Now when we re-run the playbook we see that a failed assertion now
+registers as &lt;code>changed&lt;/code> rather than &lt;code>failed&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>PLAY [localhost] ***************************************************************
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+TASK [assert] ******************************************************************
+changed: [localhost]
+TASK [assert] ******************************************************************
+ok: [localhost]
+PLAY RECAP *********************************************************************
+localhost : ok=3 changed=1 unreachable=0 failed=0
+&lt;/code>&lt;/pre>&lt;p>While that doesn&amp;rsquo;t look like much of a change, there are two things of
+interest going on here. The first is that the &lt;code>assert&lt;/code> plugin
+provides detailed information about the assertions specified in the
+task; if we were to &lt;code>register&lt;/code> the result of the failed assertion and
+display it in a &lt;code>debug&lt;/code> task, it would look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>TASK [debug] *******************************************************************
+ok: [localhost] =&amp;gt; {
+&amp;#34;apples&amp;#34;: {
+&amp;#34;ansible_stats&amp;#34;: {
+&amp;#34;aggregate&amp;#34;: true,
+&amp;#34;data&amp;#34;: {
+&amp;#34;assertions&amp;#34;: 1,
+&amp;#34;assertions_failed&amp;#34;: 1,
+&amp;#34;assertions_passed&amp;#34;: 0
+},
+&amp;#34;per_host&amp;#34;: true
+},
+&amp;#34;assertions&amp;#34;: [
+{
+&amp;#34;assertion&amp;#34;: &amp;#34;&amp;#39;apples&amp;#39; in fruits&amp;#34;,
+&amp;#34;evaluated_to&amp;#34;: false
+}
+],
+&amp;#34;changed&amp;#34;: true,
+&amp;#34;failed&amp;#34;: false,
+&amp;#34;msg&amp;#34;: &amp;#34;you have no apples&amp;#34;
+}
+}
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>assertions&lt;/code> key in the result dictionary contains of a list of
+tests and their results. The &lt;code>ansible_stats&lt;/code> key contains metadata
+that will be consumed by the custom statistics support in recent
+versions of Ansible. If you have Ansible 2.3.0.0 or later, add
+the following to the &lt;code>defaults&lt;/code> section of your &lt;code>ansible.cfg&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>show_custom_stats = yes
+&lt;/code>&lt;/pre>&lt;p>With this feature enabled, your playbook run will conclude with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>CUSTOM STATS: ******************************************************************
+localhost: { &amp;#34;assertions&amp;#34;: 2, &amp;#34;assertions_failed&amp;#34;: 1, &amp;#34;assertions_passed&amp;#34;: 1}
+&lt;/code>&lt;/pre>&lt;h2 id="a-callback-plugin-for-better-output">A callback plugin for better output&lt;/h2>
+&lt;p>The &lt;code>assertive&lt;/code> callback plugin provided by the &lt;a href="https://github.com/larsks/ansible-assertive/">ansible-assertive&lt;/a>
+project will provide more useful output concerning the result of
+failed assertions. We activate it by adding the following to our
+&lt;code>ansible.cfg&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>callback_plugins = ./ansible-assertive/callback_plugins
+stdout_callback = assertive
+&lt;/code>&lt;/pre>
+&lt;p>Now when we run our playbook we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code>PLAY [localhost] ***************************************************************
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+TASK [assert] ******************************************************************
+failed: [localhost] ASSERT(&amp;#39;apples&amp;#39; in fruits)
+failed: you have no apples
+TASK [assert] ******************************************************************
+passed: [localhost] ASSERT(&amp;#39;lemons&amp;#39; in fruits)
+PLAY RECAP *********************************************************************
+localhost : ok=3 changed=1 unreachable=0 failed=0
+&lt;/code>&lt;/pre>&lt;h2 id="machine-readable-statistics">Machine readable statistics&lt;/h2>
+&lt;p>The above is nice but is still primarily human-consumable. What if we
+want to collect test statistics for machine processing (maybe we want
+to produce a nicely formatted report of some kind, or maybe we want to
+aggregate information from multiple test runs, or maybe we want to
+trigger some action in the event there are failed tests, or&amp;hellip;)? You
+can ask the &lt;code>assertive&lt;/code> plugin to write a YAML format document with
+this information by adding the following to your &lt;code>ansible.cfg&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[assertive]
+results = testresult.yml
+&lt;/code>&lt;/pre>
+&lt;p>After running our playbook, this file would contain:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">groups&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">hosts&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">localhost&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">stats&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions&lt;/span>: &lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_failed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_passed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_skipped&lt;/span>: &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">tests&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assertions&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">test&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;apples&amp;#39;&amp;#39; in fruits&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">failed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">you have no apples&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">failed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testtime&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.624789&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assertions&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">test&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;lemons&amp;#39;&amp;#39; in fruits&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">passed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">All assertions passed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">passed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testtime&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.669144&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">localhost&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">stats&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions&lt;/span>: &lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_failed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_passed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_skipped&lt;/span>: &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">stats&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions&lt;/span>: &lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_failed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_passed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_skipped&lt;/span>: &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">timing&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">test_finished_at&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.670802&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">test_started_at&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:57.918412&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With these tools it becomes much easier to design playbooks for
+testing your infrastructure.&lt;/p></content></item></channel></rss>
