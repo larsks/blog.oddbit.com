@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>hamradio on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/hamradio/</link><description>Recent content in hamradio on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 03 Oct 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/hamradio/rss.xml" rel="self" type="application/rss+xml"/><item><title>TM-V71A and Linux, part 1: Programming mode</title><link>https://blog.oddbit.com/post/2019-10-03-tm-v71a-linux-part-1/</link><pubDate>Thu, 03 Oct 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-10-03-tm-v71a-linux-part-1/</guid><description>I recently acquired my Technician amateur radio license, and like many folks my first radio purchase was a Baofeng UV-5R. Due to its low cost, this is a very popular radio, and there is excellent open source software available for programming it in the form of the CHIRP project. After futzing around with the UV-5R for a while, I wanted to get something a little nicer for use at home, so I purchased a Kenwood TM-V71A.</description><content>&lt;p>I recently acquired my Technician amateur radio license, and like many folks my first radio purchase was a &lt;a href="https://baofengtech.com/uv-5r?PageSpeed=noscript">Baofeng UV-5R&lt;/a>. Due to its low cost, this is a very popular radio, and there is excellent open source software available for programming it in the form of the &lt;a href="https://chirp.danplanet.com/projects/chirp/wiki/Home">CHIRP&lt;/a> project. After futzing around with the UV-5R for a while, I wanted to get something a little nicer for use at home, so I purchased a &lt;a href="https://www.kenwood.com/usa/com/amateur/tm-v71a/">Kenwood TM-V71A&lt;/a>. CHIRP claims to have support for this radio as well, but it turns out it&amp;rsquo;s not very good: it uses a &amp;ldquo;live&amp;rdquo; connection so every time you edit a channel it tries to update the radio. This result in a slow and flaky UI, especially when trying to make bulk changes (like relocating a block of channels). I ended up using Kenwood&amp;rsquo;s official &lt;a href="https://www.kenwood.com/i/products/info/amateur/mcp_2a.html">MCP-2A&lt;/a> software running on a Windows guest on my system, which works but isn&amp;rsquo;t ideal. I decided to learn more about how the radio interacts with the computer to see if I could improve the situation.&lt;/p>
+&lt;hr>
+&lt;h2 id="existing-solutions">Existing solutions&lt;/h2>
+&lt;p>The &lt;a href="https://hamlib.github.io/">Hamlib&lt;/a> project has an &lt;a href="https://github.com/Hamlib/Hamlib/blob/master/kenwood/tmd710.c">existing TM-D710 driver&lt;/a> that also support the TM-V71. Using either the &lt;code>rigctl&lt;/code> command line tool or using the Hamlib API, it is possible to&amp;hellip;&lt;/p>
+&lt;ul>
+&lt;li>Control PTT on the radio&lt;/li>
+&lt;li>Tune to a specific frequency&lt;/li>
+&lt;li>Tune to a specific memory channel&lt;/li>
+&lt;li>Change the current modulation (AM/FM/NFM)&lt;/li>
+&lt;/ul>
+&lt;p>&amp;hellip;and perform a few other actions. However, neither the command line tool nor the API appear to provide facilities for importing/exporting channels, editing channels, performing a memory backup and restore, and so forth. Additionaly, I do most of development these days in Python. While there exists a Python binding for Hamlib, it&amp;rsquo;s not terrible intuitive.&lt;/p>
+&lt;h2 id="programming-mode">Programming mode&lt;/h2>
+&lt;p>The way the MCP-2A program interacts with the TM-V71 is via a memory dump and restore process (which is much like how CHIRP interacts with Baofeng radios). This makes use of the radio&amp;rsquo;s &amp;ldquo;programming mode&amp;rdquo;, and support for that in Hamlib doesn&amp;rsquo;t exist. In fact, while the control commands for the radio have been documented in various places (such as LA3QMA&amp;rsquo;s &lt;a href="https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/blob/master/commands/MR.md">TM-V71_TM-D710-Kenwood repository&lt;/a>), I was not able to find any documentation that described how to interact with the radio in programming mode. In order to figure out how things work, I would need to trace the interaction between MCP-2A and the radio.&lt;/p>
+&lt;p>I run MCP-2A in a Windows 10 guest on my Linux host. Normally, when configuring the radio, I expose the USB serial adapter to the Windows guest using the USB redirection feature offered by libvirt. In order to trace the interaction between the software and the radio, I need to stick something in between that will log the data being sent back and forth.&lt;/p>
+&lt;p>I started by configuring a serial port on the Windows guest that was connected to a Unix socket:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-xml" data-lang="xml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;lt;serial&lt;/span> &lt;span style="color:#a6e22e">type=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;unix&amp;#39;&lt;/span>&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;source&lt;/span> &lt;span style="color:#a6e22e">mode=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;bind&amp;#39;&lt;/span> &lt;span style="color:#a6e22e">path=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;/tmp/win10-serial&amp;#39;&lt;/span>&lt;span style="color:#f92672">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;target&lt;/span> &lt;span style="color:#a6e22e">type=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;isa-serial&amp;#39;&lt;/span> &lt;span style="color:#a6e22e">port=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;1&amp;#39;&lt;/span>&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;model&lt;/span> &lt;span style="color:#a6e22e">name=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;isa-serial&amp;#39;&lt;/span>&lt;span style="color:#f92672">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;/target&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;lt;/serial&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This exposes a Unix socket at &lt;code>/tmp/win10-serial&lt;/code> when the guest is running. On the host, I use &lt;a href="http://www.dest-unreach.org/socat/">socat&lt;/a> as a proxy between that socket and the actual serial port. I ended up running &lt;code>socat&lt;/code> like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>socat -x -v \
+/dev/ttyUSB1,b57600,crtscts=1,raw,echo=0 \
+unix-connect:/tmp/win10-serial
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>-x&lt;/code> and &lt;code>-v&lt;/code> options instruct &lt;code>socat&lt;/code> to log on stdout data passing through the proxy, in both raw and hexadecimal format. With the proxy running, I started MCP-2A on the Windows guest and performed a &amp;ldquo;Read data from the transceiver&amp;rdquo; operation. This resulted in a log that looks like the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt; 2019/09/28 14:42:32.732010 length=1 from=0 to=0
+49 I
+--
+&amp;lt; 2019/09/28 14:42:32.834799 length=1 from=1 to=1
+44 D
+--
+&amp;lt; 2019/09/28 14:42:33.043626 length=1 from=2 to=2
+0d .
+--
+&amp;gt; 2019/09/28 14:42:33.069589 length=10 from=0 to=9
+49 44 20 54 4d 2d 56 37 31 0d ID TM-V71.
+[...]
+&lt;/code>&lt;/pre>&lt;p>In this output, chunks marked with &lt;code>&amp;lt;&lt;/code> represent data sent FROM the software TO the radio, and chunks marked with &lt;code>&amp;gt;&lt;/code> represent data sent FROM the radio TO the software. The information we need is there, but the output is a little too cluttered, making it hard to interpret. I wrote a quick script to clean it up; after processing, the beginning of the transaction look like this (where &lt;code>&amp;lt;&amp;lt;&amp;lt;&lt;/code> represents date being sent to the radio, and &lt;code>&amp;gt;&amp;gt;&amp;gt;&lt;/code> represents data received from the radio):&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 49 I
+&amp;lt;&amp;lt;&amp;lt; 00000000: 44 D
+&amp;lt;&amp;lt;&amp;lt; 00000000: 0D .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 49 44 20 54 4D 2D 56 37 31 0D ID TM-V71.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 54 43 20 31 0D TC 1.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 3F 0D ?.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 49 44 0D ID.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 49 44 20 54 4D 2D 56 37 31 0D ID TM-V71.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 54 59 0D TY.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 54 59 20 4B 2C 30 2C 30 2C 31 2C 30 0D TY K,0,0,1,0.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 46 56 20 30 FV 0
+&amp;lt;&amp;lt;&amp;lt; 00000000: 0D .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 46 56 20 30 2C 31 2E 30 30 2C 32 2E 31 30 2C 41 FV 0,1.00,2.10,A
+&amp;gt;&amp;gt;&amp;gt; 00000000: 2C 31 0D ,1.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 30 4D 20 50 0M P
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 4F 47 52 41 4D 0D ROGRAM.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 30 4D 0D 0M.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 00 R.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 00 00 00 00 4B 01 FF FF FF FF FF FF FF FF FF W....K..........
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF 00 FF FF 00 00 39 31 35 01 00 00 00 00 01 01 ......915.......
+&amp;gt;&amp;gt;&amp;gt; 00000000: 00 00 00 01 02 03 00 00 FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF ....
+&amp;lt;&amp;lt;&amp;lt; 00000000: 06 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 01 R.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 01 00 00 FF FF FF FF FF FF FF FF FF FF FF FF W...............
+[...]
+&lt;/code>&lt;/pre>&lt;p>And the end of the transaction looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[...]
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 7E 00 R~.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 7E 00 00 FF FF FF FF FF FF FF FF FF FF FF FF W~..............
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF ....
+&amp;lt;&amp;lt;&amp;lt; 00000000: 06 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 45 E
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 0D ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 00 .
+&lt;/code>&lt;/pre>&lt;p>This is a lot easier to read. We can see the software initially sends some commands to identify the radio:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>ID&lt;/code> to get the radio model&lt;/li>
+&lt;li>&lt;code>TY&lt;/code> to get the radio type&lt;/li>
+&lt;li>&lt;code>FV 0&lt;/code> to get the firmware version&lt;/li>
+&lt;/ul>
+&lt;p>And then enters programming mode by sending &lt;code>0M PROGRAM&lt;/code>. Inspecting the remainder of the dump shows us that the software makes a series of read requests that look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 52 00 R.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 ..
+&lt;/code>&lt;/pre>&lt;p>That is, a four byte request of the form:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>R&lt;/code>&lt;/li>
+&lt;li>Address (2 bytes)&lt;/li>
+&lt;li>Size&lt;/li>
+&lt;/ol>
+&lt;p>When a read request has a size of &lt;code>0&lt;/code>, that means &lt;code>read 256 bytes&lt;/code>.&lt;/p>
+&lt;p>The response to a read request looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;gt;&amp;gt;&amp;gt; 00000000: 57 00 00 00 00 4B 01 FF FF FF FF FF FF FF FF FF W....K..........
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF 00 FF FF 00 00 39 31 35 01 00 00 00 00 01 01 ......915.......
+&amp;gt;&amp;gt;&amp;gt; ...
+&lt;/code>&lt;/pre>&lt;p>That is:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>W&lt;/code>&lt;/li>
+&lt;li>Address (2 bytes)&lt;/li>
+&lt;li>Size&lt;/li>
+&lt;li>&lt;code>&amp;lt;Size&amp;gt;&lt;/code> bytes of data&lt;/li>
+&lt;/ol>
+&lt;p>It turns out that the response to the read request is exactly the syntax used to perform a write request. The log of the write operation starts like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 54 43 20 TC
+&amp;lt;&amp;lt;&amp;lt; 00000000: 31 0D 1.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 3F 0D ?.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 49 I
+&amp;lt;&amp;lt;&amp;lt; 00000000: 44 0D D.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 49 44 20 54 4D 2D 56 37 31 0D ID TM-V71.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 54 59 0D TY.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 54 59 20 4B 2C 30 2C 30 2C 31 2C 30 0D TY K,0,0,1,0.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 46 56 FV
+&amp;lt;&amp;lt;&amp;lt; 00000000: 20 30 0D 0.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 46 56 20 30 2C 31 2E 30 30 2C 32 2E 31 30 2C 41 FV 0,1.00,2.10,A
+&amp;gt;&amp;gt;&amp;gt; 00000000: 2C 31 0D ,1.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 30 4D 0M
+&amp;lt;&amp;lt;&amp;lt; 00000000: 20 50 52 4F 47 52 41 4D 0D PROGRAM.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 30 4D 0D 0M.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 R
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 04 ...
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 00 00 04 00 4B 01 FF W....K..
+&amp;lt;&amp;lt;&amp;lt; 00000000: 06 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 01 FF ...
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 04 FC FF FF FF FF FF FF FF FF FF 00 ............
+&amp;lt;&amp;lt;&amp;lt; 00000000: FF FF 00 00 39 31 35 01 00 00 00 00 ....915.....
+&amp;lt;&amp;lt;&amp;lt; 00000000: 01 01 00 00 00 01 02 .......
+&amp;lt;&amp;lt;&amp;lt; 00000000: 03 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000010: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000020: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000030: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000040: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000050: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000060: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000070: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000080: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000010: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000020: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000030: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000040: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ...............
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+[...]
+&lt;/code>&lt;/pre>&lt;p>And concludes with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[...]
+&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 04 00 4B 01 FF ...K..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 45 E
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 0D ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 00 .
+&lt;/code>&lt;/pre>&lt;p>In this log, we see a series of write requests; for example:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 01 FF ...
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&lt;/code>&lt;/pre>&lt;p>In the above trace, the software is first writing one byte (&lt;code>0xFF&lt;/code>) to address &lt;code>0x0&lt;/code>. The radio acknowledges a write request with a response byte (&lt;code>0x06&lt;/code>).&lt;/p>
+&lt;p>By experimenting a bit, it seems as if writing &lt;code>0xFF&lt;/code> to &lt;code>0x0&lt;/code>, will cause the radio to reset to defaults when you exit programming mode. That&amp;rsquo;s why at the conclusion of the write operation, we see the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 04 00 4B 01 FF ...K..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&lt;/code>&lt;/pre>&lt;p>That is, the software is rewriting the first four bytes of memory with their original contents.&lt;/p>
+&lt;h3 id="a-warning-about-manual-interaction">A warning about manual interaction&lt;/h3>
+&lt;p>If you manually place the radio into programming mode, you will see that after entering &lt;code>0M PROGRAM&lt;/code> the radio displays &lt;code>PROG MCP&lt;/code>. Unless you are a preternaturally fast typist, the radio display will shortly switch to &lt;code>PROG ERR&lt;/code> because of the delay between entering programming mode and any read or write transactions. In this state, you will still be able to enter read or write commands, but the status byte in response to a successful write command will be &lt;code>0x15&lt;/code> instead of &lt;code>0x06&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>I&amp;rsquo;ve summarized this information in a document that I submitted as a pull request to &lt;a href="https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/">https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/&lt;/a>. You can read it &lt;a href="https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/blob/master/PROGRAMMING_MODE.md">here&lt;/a>.&lt;/p></content></item></channel></rss>

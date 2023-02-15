@@ -1,0 +1,138 @@
+<!doctype html><html lang=en><head><title>Connecting another vm to your tripleo-quickstart deployment :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Let&amp;rsquo;s say that you have set up an environment using tripleo-quickstart and you would like to add another virtual machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo; in quotes because I am using it in the same way as the quickstart does w/r/t the undercloud) and connectivity to the overcloud nodes. How would you go about setting that up?
+For a concrete example, let&amp;rsquo;s presume you have deployed an environment using the default tripleo-quickstart configuration, which looks like this:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Connecting another vm to your tripleo-quickstart deployment"><meta property="og:description" content="Let&amp;rsquo;s say that you have set up an environment using tripleo-quickstart and you would like to add another virtual machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo; in quotes because I am using it in the same way as the quickstart does w/r/t the undercloud) and connectivity to the overcloud nodes. How would you go about setting that up?
+For a concrete example, let&amp;rsquo;s presume you have deployed an environment using the default tripleo-quickstart configuration, which looks like this:"><meta property="og:url" content="https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2016-05-19 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/>Connecting another vm to your tripleo-quickstart deployment</a></h1><div class=post-meta><time class=post-date>2016-05-19 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openvswitch/>openvswitch</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/tripleo/>tripleo</a>&nbsp;</span><div class=post-content><div><p>Let&rsquo;s say that you have set up an environment using
+<a href=https://github.com/openstack/tripleo-quickstart/>tripleo-quickstart</a> and you would like to add another virtual
+machine to the mix that has both &ldquo;external&rdquo; connectivity (&ldquo;external&rdquo;
+in quotes because I am using it in the same way as the quickstart does
+w/r/t the undercloud) and connectivity to the overcloud nodes. How
+would you go about setting that up?</p><p>For a concrete example, let&rsquo;s presume you have deployed an environment
+using the default tripleo-quickstart configuration, which looks like
+this:</p><pre><code>overcloud_nodes:
+  - name: control_0
+    flavor: control
+
+  - name: compute_0
+    flavor: compute
+
+extra_args: &gt;-
+  --neutron-network-type vxlan
+  --neutron-tunnel-types vxlan
+  --ntp-server pool.ntp.org
+
+network_isolation: true
+</code></pre><p>That gets you one controller, one compute node, and enables network
+isolation. When your deployment is complete, networking from the
+perspective of the undercloud looks like this:</p><ul><li><p><code>eth0</code> is connected to the host&rsquo;s <code>brext</code> bridge and gives the
+undercloud NAT access to the outside world. The interface will have
+an address on the <code>192.168.23.0/24</code> network.</p></li><li><p><code>eth1</code> is connected to the host&rsquo;s <code>brovc</code> bridge, which is the
+internal network for the overcloud. The interface is attached to
+the OVS bridge <code>br-ctlplane</code>.</p><p>The <code>br-ctlplane</code> bridge has the address <code>192.0.2.1</code>.</p></li></ul><p>And your overcloud environment probably looks something like this:</p><pre><code>[stack@undercloud ~]$ nova list
++-------...+-------------------------+--------+...+--------------------+
+| ID    ...| Name                    | Status |...| Networks           |
++-------...+-------------------------+--------+...+--------------------+
+| 32f6ec...| overcloud-controller-0  | ACTIVE |...| ctlplane=192.0.2.7 |
+| d98474...| overcloud-novacompute-0 | ACTIVE |...| ctlplane=192.0.2.8 |
++-------...+-------------------------+--------+...+--------------------+
+</code></pre><p>We want to set up a new machine that has the same connectivity as the
+undercloud.</p><h2 id=upload-an-image>Upload an image<a href=#upload-an-image class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Before we can boot a new vm we&rsquo;ll need an image; let&rsquo;s start with the
+standard CentOS 7 cloud image. First we&rsquo;ll download it:</p><pre><code>curl -O http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2
+</code></pre><p>Let&rsquo;s add a root password to the image and disable <a href=https://cloudinit.readthedocs.io/en/latest/>cloud-init</a>,
+since we&rsquo;re not booting in a cloud environment:</p><pre><code>virt-customize -a CentOS-7-x86_64-GenericCloud.qcow2 \
+  --root-password password:changeme \
+  --run-command &quot;yum -y remove cloud-init&quot;
+</code></pre><p>Now let&rsquo;s upload it to libvirt:</p><pre><code>virsh vol-create-as oooq_pool centos-7-cloud.qcow2 8G \
+  --format qcow2 \
+  --allocation 0
+virsh vol-upload --pool oooq_pool centos-7-cloud.qcow2 \
+  CentOS-7-x86_64-GenericCloud.qcow2
+</code></pre><h2 id=a-idboot-the-vmboot-the-vma>Boot the vm<a href=#a-idboot-the-vmboot-the-vma class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I like to boot from a copy-on-write clone of the image, so that I can
+use the base image multiple times or quickly revert to a pristine
+state, so let&rsquo;s first create that clone:</p><pre><code>virsh vol-create-as oooq_pool myguest.qcow2 10G \
+  --allocation 0 --format qcow2 \
+  --backing-vol centos-7-cloud.qcow2 \
+  --backing-vol-format qcow2
+</code></pre><p>And then boot our vm:</p><pre><code>virt-install --disk vol=oooq_pool/myguest.qcow2,bus=virtio \
+  --import \
+  -r 2048 -n myguest --cpu host \
+  --os-variant rhel7 \
+  -w bridge=brext,model=virtio \
+  -w bridge=brovc,model=virtio \
+  --serial pty \
+  --noautoconsole
+</code></pre><p>The crucial parts of the above command are the two <code>-w ...</code> arguments,
+which create interfaces attached to the named bridges.</p><p>We can now connect to the console and log in as <code>root</code>:</p><pre><code>$ virsh console myguest
+.
+.
+.
+localhost login: root
+Password:
+</code></pre><p>We&rsquo;ll see that the system already has an ip address on the &ldquo;external&rdquo;
+network:</p><pre><code>[root@localhost ~]# ip addr show eth0
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 52:54:00:7f:5c:5a brd ff:ff:ff:ff:ff:ff
+    inet 192.168.23.27/24 brd 192.168.23.255 scope global dynamic eth0
+       valid_lft 3517sec preferred_lft 3517sec
+    inet6 fe80::5054:ff:fe7f:5c5a/64 scope link 
+       valid_lft forever preferred_lft forever
+</code></pre><p>And we have external connectivity:</p><pre><code>[root@localhost ~]# ping -c1 google.com
+PING google.com (216.58.219.206) 56(84) bytes of data.
+64 bytes from lga25s40-in-f14.1e100.net (216.58.219.206): icmp_seq=1 ttl=56 time=20.6 ms
+
+--- google.com ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 20.684/20.684/20.684/0.000 ms
+</code></pre><p>Let&rsquo;s give <code>eth1</code> an address on the ctlplane network:</p><pre><code>[root@localhost ~]# ip addr add 192.0.2.254/24 dev eth1
+[root@localhost ~]# ip link set eth1 up
+</code></pre><p>Now we can access the undercloud:</p><pre><code>[root@localhost ~]# ping -c1 192.0.2.1
+PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.
+64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.464 ms
+
+--- 192.0.2.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.464/0.464/0.464/0.000 ms
+</code></pre><p>As well as all of the overcloud hosts using their addresses on the
+same network:</p><pre><code>[root@localhost ~]# ping -c1 192.0.2.1
+PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.
+64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.464 ms
+
+--- 192.0.2.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.464/0.464/0.464/0.000 ms
+</code></pre><h2 id=allocating-an-address-using-dhcp>Allocating an address using DHCP<a href=#allocating-an-address-using-dhcp class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In the above instructions we&rsquo;ve manually assigned an ip address on the
+ctlplane network. This works fine for testing, but it could
+ultimately prove problematic if neutron were to allocate the same
+address to another overcloud host. We can use neutron to configure a
+static dhcp lease for our new host.</p><p>First, we need the MAC address of our guest:</p><pre><code>virthost$ virsh dumpxml myguest |
+  xmllint --xpath '//interface[source/@bridge=&quot;brovc&quot;]' -
+&lt;interface type=&quot;bridge&quot;&gt;
+  &lt;mac address=&quot;52:54:00:42:d6:c2&quot;/&gt;
+  &lt;source bridge=&quot;brovc&quot;/&gt;
+  &lt;target dev=&quot;tap9&quot;/&gt;
+  &lt;model type=&quot;virtio&quot;/&gt;
+  &lt;alias name=&quot;net1&quot;/&gt;
+  &lt;address type=&quot;pci&quot; domain=&quot;0x0000&quot; bus=&quot;0x00&quot; slot=&quot;0x04&quot; function=&quot;0x0&quot;/&gt;
+&lt;/interface&gt;
+</code></pre><p>And then on the undercloud we run <code>neutron port-create</code> to create a
+port and associate it with our MAC address:</p><pre><code>[stack@undercloud]$ neutron port-create --mac-address 52:54:00:42:d6:c2 ctlplane
+</code></pre><p>Now if we run <code>dhclient</code> on our guest, it will acquire a lease from
+the neutron-managed DHCP server:</p><pre><code>[root@localhost]# dhclient -d eth1
+Internet Systems Consortium DHCP Client 4.2.5
+Copyright 2004-2013 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+
+Listening on LPF/eth1/52:54:00:42:d6:c2
+Sending on   LPF/eth1/52:54:00:42:d6:c2
+Sending on   Socket/fallback
+DHCPREQUEST on eth1 to 255.255.255.255 port 67 (xid=0xc90c0ba)
+DHCPACK from 192.0.2.5 (xid=0xc90c0ba)
+bound to 192.0.2.9 -- renewal in 42069 seconds.
+</code></pre><p>We can make this persistent by creating
+<code>/etc/sysconfig/network-scripts/ifcfg-eth1</code>:</p><pre><code>[root@localhost]# cd /etc/sysconfig/network-scripts
+[root@localhost]# sed s/eth0/eth1/g ifcfg-eth0 &gt; ifcfg-eth1
+[root@localhost]# ifup eth1
+Determining IP information for eth1... done.
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

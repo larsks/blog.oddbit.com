@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>development on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/development/</link><description>Recent content in development on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Feb 2010 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/development/rss.xml" rel="self" type="application/rss+xml"/><item><title>Funny usage message</title><link>https://blog.oddbit.com/post/2010-02-08-funny-usage-message/</link><pubDate>Mon, 08 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-08-funny-usage-message/</guid><description>I was poking around in a command shell on my Droid to see what was available. While it&amp;rsquo;s a pretty restricted environment, there&amp;rsquo;s a number of commands available in /system/bin, including dexopt.
+Apparently dexopt isn&amp;rsquo;t something I&amp;rsquo;m supposed to poke at:
+$ dexopt Usage: don't use this Hah.</description><content>&lt;p>I was poking around in a command shell on my Droid to see what was available. While it&amp;rsquo;s a pretty restricted environment, there&amp;rsquo;s a number of commands available in /system/bin, including dexopt.&lt;/p>
+&lt;p>Apparently dexopt isn&amp;rsquo;t something I&amp;rsquo;m supposed to poke at:&lt;/p>
+&lt;pre>&lt;code>$ dexopt
+Usage: don't use this
+&lt;/code>&lt;/pre>
+&lt;p>Hah.&lt;/p></content></item></channel></rss>

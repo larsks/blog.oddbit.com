@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>awk on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/awk/</link><description>Recent content in awk on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 16 Jul 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/awk/rss.xml" rel="self" type="application/rss+xml"/><item><title>Split concatenated certificates with awk</title><link>https://blog.oddbit.com/post/2013-07-16-split-concatenated-c/</link><pubDate>Tue, 16 Jul 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-07-16-split-concatenated-c/</guid><description>This is a short script that takes a list of concatenated certificates as input (such as a collection of CA certificates) and produces a collection of numbered files, each containing a single certificate.
+#!/bin/awk -f # This script expects a list of concatenated certificates on input and # produces a collection of individual numbered files each containing # a single certificate. BEGIN {incert=0} /-----BEGIN( TRUSTED)? CERTIFICATE-----/ { certno++ certfile=sprintf(&amp;quot;cert-%d.crt&amp;quot;, certno) incert=1 } /-----END( TRUSTED)?</description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
+certificates as input (such as a collection of CA certificates) and
+produces a collection of numbered files, each containing a single
+certificate.&lt;/p>
+&lt;pre>&lt;code>#!/bin/awk -f
+# This script expects a list of concatenated certificates on input and
+# produces a collection of individual numbered files each containing
+# a single certificate.
+BEGIN {incert=0}
+/-----BEGIN( TRUSTED)? CERTIFICATE-----/ {
+certno++
+certfile=sprintf(&amp;quot;cert-%d.crt&amp;quot;, certno)
+incert=1
+}
+/-----END( TRUSTED)? CERTIFICATE-----/ {
+print &amp;gt;&amp;gt; certfile
+incert=0
+}
+incert==1 { print &amp;gt;&amp;gt; certfile }
+&lt;/code>&lt;/pre></content></item><item><title>Parsing XML with Awk</title><link>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</link><pubDate>Mon, 10 Sep 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</guid><description>Recently, changes from the xmlgawk project have been integrated into GNU awk, and xmlgawk has been renamed to gawkextlib. With both a recent (post-4.0.70) gawk and gawkextlib built and installed correctly, you can write simple XML parsing scripts using gawk.
+For example, let&amp;rsquo;s say you would like to generate a list of disk image files associated with a KVM virtual instance. You can use the virsh dumpxml command to get output like the following:</description><content>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
+&lt;a href="https://www.gnu.org/software/gawk/">GNU awk&lt;/a>, and xmlgawk has been renamed to &lt;a href="http://gawkextlib.sourceforge.net/">gawkextlib&lt;/a>. With both a
+recent (post-4.0.70) gawk and gawkextlib built and installed
+correctly, you can write simple XML parsing scripts using gawk.&lt;/p>
+&lt;p>For example, let&amp;rsquo;s say you would like to generate a list of disk image
+files associated with a KVM virtual instance. You can use the &lt;code>virsh dumpxml&lt;/code> command to get output like the following:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;devices&amp;gt;
+&amp;lt;emulator&amp;gt;/usr/bin/qemu-kvm&amp;lt;/emulator&amp;gt;
+&amp;lt;disk type='file' device='disk'&amp;gt;
+&amp;lt;driver name='qemu' type='qcow2'/&amp;gt;
+&amp;lt;source file='/var/lib/libvirt/images/client.qcow2'/&amp;gt;
+&amp;lt;target dev='sda' bus='ide'/&amp;gt;
+&amp;lt;alias name='ide0-0-0'/&amp;gt;
+&amp;lt;address type='drive' controller='0' bus='0' unit='0'/&amp;gt;
+&amp;lt;/disk&amp;gt;
+...
+&amp;lt;/devices&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>You could then write code similar to &lt;a href="https://gist.github.com/4012705">the
+following&lt;/a> to extract the relevant
+information:&lt;/p>
+&lt;pre>&lt;code>@load &amp;quot;xml&amp;quot;
+XMLSTARTELEM == &amp;quot;disk&amp;quot; {
+in_disk=1
+disk_file=&amp;quot;&amp;quot;
+disk_target=&amp;quot;&amp;quot;
+}
+in_disk == 1 &amp;amp;&amp;amp; XMLSTARTELEM == &amp;quot;source&amp;quot; {
+disk_file=XMLATTR[&amp;quot;file&amp;quot;]
+}
+in_disk == 1 &amp;amp;&amp;amp; XMLSTARTELEM == &amp;quot;target&amp;quot; {
+disk_target=XMLATTR[&amp;quot;dev&amp;quot;]
+}
+XMLENDELEM == &amp;quot;disk&amp;quot; {
+in_disk=0
+print disk_target, disk_file
+}
+&lt;/code>&lt;/pre>
+&lt;p>Given the sample input above, the script will produce the following
+output:&lt;/p>
+&lt;pre>&lt;code>sda /var/lib/libvirt/images/client.qcow2
+&lt;/code>&lt;/pre>
+&lt;p>The xml extension for gawk populates a number of variables that
+can be used in your scripts:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>XMLSTARTELEM&lt;/code> marks the start of a new element (and is set to the
+name of that element).&lt;/li>
+&lt;li>&lt;code>XMLATTR&lt;/code> is available when &lt;code>XMLSTARTELEM&lt;/code> is set and contains the
+element attributes.&lt;/li>
+&lt;li>&lt;code>XMLENDELEM&lt;/code> marks the end of an element (and is set to the name of
+the element).&lt;/li>
+&lt;/ul>
+&lt;p>There are other variables available, but with this basic set is
+becomes easy to extract information from XML documents.&lt;/p></content></item></channel></rss>

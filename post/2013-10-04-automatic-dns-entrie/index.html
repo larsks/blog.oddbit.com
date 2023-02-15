@@ -1,0 +1,59 @@
+<!doctype html><html lang=en><head><title>Automatic hostname entries for libvirt domains :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Have you ever wished that you could use libvirt domain names as hostnames? So that you could do something like this:
+$ virt-install -n anewhost ... $ ssh clouduser@anewhost Since this is something that would certainly make my life convenient, I put together a small script called virt-hosts that makes this possible. You can find virt-hosts in my virt-utils GitHub repository:
+https://raw.github.com/larsks/virt-utils/master/virt-hosts Run by itself, with no options, virt-hosts will scan through your running domains for interfaces on the libvirt default network, look up those MAC addresses up in the corresponding default."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-10-04-automatic-dns-entrie/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Automatic hostname entries for libvirt domains"><meta property="og:description" content="Have you ever wished that you could use libvirt domain names as hostnames? So that you could do something like this:
+$ virt-install -n anewhost ... $ ssh clouduser@anewhost Since this is something that would certainly make my life convenient, I put together a small script called virt-hosts that makes this possible. You can find virt-hosts in my virt-utils GitHub repository:
+https://raw.github.com/larsks/virt-utils/master/virt-hosts Run by itself, with no options, virt-hosts will scan through your running domains for interfaces on the libvirt default network, look up those MAC addresses up in the corresponding default."><meta property="og:url" content="https://blog.oddbit.com/post/2013-10-04-automatic-dns-entrie/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-10-04 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-10-04-automatic-dns-entrie/>Automatic hostname entries for libvirt domains</a></h1><div class=post-meta><time class=post-date>2013-10-04 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/libvirt/>libvirt</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/virtualization/>virtualization</a>&nbsp;</span><div class=post-content><div><p>Have you ever wished that you could use <code>libvirt</code> domain names as
+hostnames? So that you could do something like this:</p><pre><code>$ virt-install -n anewhost ...
+$ ssh clouduser@anewhost
+</code></pre><p>Since this is something that would certainly make my life convenient,
+I put together a small script called <a href=https://raw.github.com/larsks/virt-utils/master/virt-hosts>virt-hosts</a> that makes this
+possible. You can find <a href=https://raw.github.com/larsks/virt-utils/master/virt-hosts>virt-hosts</a> in my <a href=https://raw.github.com/larsks/virt-utils/>virt-utils</a> GitHub
+repository:</p><ul><li><a href=https://raw.github.com/larsks/virt-utils/master/virt-hosts>https://raw.github.com/larsks/virt-utils/master/virt-hosts</a></li></ul><p>Run by itself, with no options, <code>virt-hosts</code> will scan through your
+running domains for interfaces on the libvirt <code>default</code> network, look
+up those MAC addresses up in the corresponding <code>default.leases</code> file,
+and then generate a hosts file on <code>stdout</code> like this:</p><pre><code>$ virt-hosts
+192.168.122.221	compute-tmp0-net0.default.virt compute-tmp0.default.virt
+192.168.122.101	centos-0-net0.default.virt centos-0.default.virt
+192.168.122.214	controller-tmp-net0.default.virt controller-tmp.default.virt
+</code></pre><p>Each address will be assigned the name
+<code>&lt;domain_name>-&lt;interface_name>.&lt;network_name>.virt</code>. The first
+interface on the network will also be given the alias
+<code>&lt;domain_name>.&lt;network_name>.virt</code>, so a host with multiple
+interfaces on the same network would look like this:</p><pre><code>$ virt-hosts
+192.168.122.221	host0-net0.default.virt host0.default.virt
+192.168.122.110	host0-net1.default.virt
+</code></pre><p>Of course, this is only half the solution: having generated a hosts
+file we need to put it somewhere where your system can find it.</p><h2 id=an-aside-incron>An aside: incron<a href=#an-aside-incron class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Both of the following solutions rely on <a href="http://inotify.aiken.cz/?section=incron&page=about&lang=en">incron</a>, a tool that uses
+the Linux <a href=http://en.wikipedia.org/wiki/Inotify>inotify</a> subsystem to trigger scripts in reaction to
+events on file and directories. In this case, we&rsquo;ll be using <code>incron</code>
+to monitor the dnsmasq <code>default.leases</code> file and firing off a script
+when it changes.</p><p>You could accomplish the same thing using the <code>inotifywait</code> program
+from the <a href=https://github.com/rvoicilas/inotify-tools/wiki>inotify-tools</a> package and a small wrapper script, or you
+could hook up something to the libvirt events framework.</p><h2 id=using-etchosts>Using /etc/hosts<a href=#using-etchosts class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If you want to update your <code>/etc/hosts</code> file, you can place the
+following into a script called <code>update-virt-hosts</code> (somewhere in
+root&rsquo;s <code>PATH</code>) and run that via <a href="http://inotify.aiken.cz/?section=incron&page=about&lang=en">incron</a>:</p><pre><code>#!/bin/sh
+
+sed -i '/^# BEGIN VIRT HOSTS/,/^# END VIRT HOSTS/ d' /etc/hosts
+cat &lt;&lt;EOF &gt;&gt;/etc/hosts
+# BEGIN VIRT HOSTS
+$(virt-hosts)
+# END VIRT HOSTS
+EOF
+</code></pre><p>Make sure you have <code>incron</code> installed, and add the following to
+<code>/etc/incron.d/virt-hosts</code>:</p><pre><code>/var/lib/libvirt/dnsmasq/default.leases IN_MODIFY update-virt-hosts
+</code></pre><p>This will cause <code>incron</code> to run your <code>update-virt-hosts</code> script
+whenever it sees an <code>IN_MODIFY</code> event on the <code>default.leases</code> file.</p><h2 id=using-networkmanager--dnsmasq>Using NetworkManager + dnsmasq<a href=#using-networkmanager--dnsmasq class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I am running NetworkManager with the <code>dnsmasq</code> dns plugin. I created
+the file <code>/etc/NetworkManager/dnsmasq.d/virthosts</code> containing:</p><pre><code>addn-hosts=/var/lib/libvirt/dnsmasq/default.addnhosts
+</code></pre><p>This will cause the <code>dnsmasq</code> process started by <code>NetworkManager</code> to
+use that file as an additional hosts file. I then installed the
+<code>incron</code> package and dropped the following in
+<code>/etc/incron.d/virt-hosts</code>:</p><pre><code>/var/lib/libvirt/dnsmasq/default.leases IN_MODIFY /usr/local/bin/virt-hosts -ur
+</code></pre><p>This has <code>incron</code> listen for changes to the <code>default.leases</code> file, and
+whenever it receives the <code>IN_MODIFY</code> event it runs <code>virt-hosts</code> with
+the <code>-u</code> (aka <code>--update</code>) and <code>-r</code> (aka <code>--reload-dnsmasq</code>) flags.
+Thef former causes <code>virt-hosts</code> to send output to
+<code>/var/lib/libvirt/dnsmasq/default.addnhosts</code> instead of <code>stdout</code>, and
+the latter does a <code>killall -HUP dnsmasq</code> after installing the new
+hosts file.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

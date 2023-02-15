@@ -1,0 +1,40 @@
+<!doctype html><html lang=en><head><title>Flat networks with ML2 and OpenVSwitch :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Due to an unfortunate incident involving sleep mode and an overheated backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant reinstalling OpenStack I used this as an excuse to finally move to the ML2 network plugin for Neutron.
+I was attempting to add an external network using the normal incantation:
+neutron net-create external -- --router:external=true \ --provider:network_type=flat \ --provider:physical_network=physnet1 While this command completed successfully, I was left without any connectivity between br-int and br-ex, despite having in my /etc/neutron/plugins/ml2/ml2_conf."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Flat networks with ML2 and OpenVSwitch"><meta property="og:description" content="Due to an unfortunate incident involving sleep mode and an overheated backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant reinstalling OpenStack I used this as an excuse to finally move to the ML2 network plugin for Neutron.
+I was attempting to add an external network using the normal incantation:
+neutron net-create external -- --router:external=true \ --provider:network_type=flat \ --provider:physical_network=physnet1 While this command completed successfully, I was left without any connectivity between br-int and br-ex, despite having in my /etc/neutron/plugins/ml2/ml2_conf."><meta property="og:url" content="https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-05-19 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/>Flat networks with ML2 and OpenVSwitch</a></h1><div class=post-meta><time class=post-date>2014-05-19 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openvswitch/>openvswitch</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/neutron/>neutron</a>&nbsp;</span><div class=post-content><div><p>Due to an unfortunate incident involving sleep mode and an overheated
+backpack I had the &ldquo;opportunity&rdquo; to rebuild my laptop. Since this meant
+reinstalling OpenStack I used this as an excuse to finally move to the ML2
+network plugin for Neutron.</p><p>I was attempting to add an external network using the normal incantation:</p><pre><code>neutron net-create external -- --router:external=true \
+    --provider:network_type=flat \
+    --provider:physical_network=physnet1
+</code></pre><p>While this command completed successfully, I was left without any
+connectivity between <code>br-int</code> and <code>br-ex</code>, despite having in my
+<code>/etc/neutron/plugins/ml2/ml2_conf.ini</code>:</p><pre><code>[ml2_type_flat]
+flat_networks = *
+
+[ovs]
+network_vlan_ranges = physnet1
+bridge_mappings = physnet1:br-ex
+</code></pre><p>The reason this is failing is very simple, but not terribly clear from
+the existing documentation. This is how the <code>neutron-server</code> process
+is running:</p><pre><code>/usr/bin/python /usr/bin/neutron-server \
+  --config-file /usr/share/neutron/neutron-dist.conf \
+  --config-file /etc/neutron/neutron.conf \
+  --config-file /etc/neutron/plugin.ini \
+  --log-file /var/log/neutron/server.log
+</code></pre><p>This is how the <code>neutron-openvswitch-agent</code> process is running:</p><pre><code>/usr/bin/python /usr/bin/neutron-openvswitch-agent \
+  --config-file /usr/share/neutron/neutron-dist.conf \
+  --config-file /etc/neutron/neutron.conf \
+  --config-file /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini \
+  --log-file /var/log/neutron/openvswitch-agent.log
+</code></pre><p>Note in particular that <code>neutron-server</code> is looking at
+<code>/etc/neutron/plugin.ini</code>, which is a symlink to
+<code>/etc/neutron/plugins/ml2/ml2_conf.ini</code>, while
+<code>neutron-openvswitch-agent</code> is looking explicitly at
+<code>/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini</code>. The
+physical network configuration needs to go into the
+<code>ovs_neutron_plugin.ini</code> configuration file.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

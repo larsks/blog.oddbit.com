@@ -1,0 +1,86 @@
+<!doctype html><html lang=en><head><title>Interrupt driven GPIO with Python :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
+RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Interrupt driven GPIO with Python"><meta property="og:description" content="There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
+RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses."><meta property="og:url" content="https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-03-08 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/>Interrupt driven GPIO with Python</a></h1><div class=post-meta><time class=post-date>2013-03-08 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/raspberrypi/>raspberrypi</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/hardware/>hardware</a>&nbsp;</span><div class=post-content><div><p>There are several Python libraries out there for interacting with the
+<a href=https://en.wikipedia.org/wiki/General_Purpose_Input/Output>GPIO</a> pins on a Raspberry Pi:</p><ul><li><a href=https://pypi.python.org/pypi/RPi.GPIO>RPi.GPIO</a></li><li>The <a href=https://github.com/WiringPi/WiringPi-Python>WiringPi</a> bindings for Python, and</li><li>The <a href=https://github.com/quick2wire/quick2wire-python-api>Quick2Wire</a> Python API (which depends on Python 3)</li></ul><p>All of them are reasonably easy to use, but the Quick2Wire API
+provides a uniquely useful feature: <code>epoll</code>-enabled GPIO interrupts.
+This makes it trivial to write code that efficiently waits for and
+responds to things like button presses.</p><p>The following simple example waits for a button press attached to
+<code>GPIO1</code> (but refer to the chart in <a href=https://projects.drogon.net/raspberry-pi/wiringpi/pins/>this document</a> to see
+exactly what that means; this is pin 12 on a Raspberry Pi v2 board)
+and lights an LED attached to <code>GPIO0</code> when the button is pressed:</p><pre><code>#!/usr/bin/env python3
+
+import select
+from quick2wire.gpio import pins, In, Out, Rising, Falling, Both
+
+button1 = pins.pin(0, direction=In, interrupt=Both)
+led = pins.pin(1, direction=Out)
+
+with button1,led:
+    epoll = select.epoll()
+    epoll.register(button1, select.EPOLLIN|select.EPOLLET)
+    while True:
+        events = epoll.poll()
+        for fileno, event in events:
+            if fileno == button1.fileno():
+                print('BUTTON 1!', button1.value)
+                led.value = button1.value
+</code></pre><p>There is also a <code>Selector</code> class that makes the <code>epoll</code> interface a
+little easier to use. The following code is equivalent to the above
+<code>epoll</code> example:</p><pre><code>#!/usr/bin/env python3
+
+from quick2wire.gpio import pins, In, Out, Both
+from quick2wire.selector import Selector
+
+button1 = pins.pin(0, direction=In, interrupt=Both)
+led = pins.pin(1, direction=Out)
+
+with button1, led, Selector(1) as selector:
+    selector.add(button1)
+    while True:
+        selector.wait()
+        if selector.ready == button1:
+            print('BUTTON 1!', button1.value)
+            led.value = button1.value
+</code></pre><p>The <code>selector</code> module includes a <code>Timer</code> class that lets you add
+one-shot or repeating timers to a <code>Selector</code>. The following example
+will light the LED for one second after the button is pressed, unless
+the button is pressed again, in which case the LED will go out
+immediately:</p><pre><code>#!/usr/bin/env python3
+
+from quick2wire.gpio import pins, In, Out, Both
+from quick2wire.selector import Selector, Timer
+
+button1 = pins.pin(0, direction=In, interrupt=Both)
+led = pins.pin(1, direction=Out)
+active = False
+
+with button1, led, \
+        Selector(1) as selector, \
+        Timer(offset=2) as timer:
+
+    selector.add(button1)
+    selector.add(timer)
+
+    while True:
+        selector.wait()
+        if selector.ready == button1:
+            print('BUTTON 1!', button1.value, active)
+
+            if button1.value:
+                if active:      
+                    active = False      
+                    led.value = 0       
+                    timer.stop()        
+                else:           
+                    active = True       
+                    led.value = 1       
+                    timer.start()       
+
+        if selector.ready == timer:
+            if active:  
+                active = False  
+                led.value = 0   
+</code></pre><p>All of these examples rely on Python&rsquo;s <a href=http://docs.python.org/3/reference/compound_stmts.html#the-with-statement>with statement</a>. If you&rsquo;re
+unfamiliar with <code>with</code>, you can find more information <a href=http://docs.python.org/3/reference/compound_stmts.html#the-with-statement>here</a>.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

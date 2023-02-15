@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>linux on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/linux/</link><description>Recent content in linux on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Feb 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/linux/rss.xml" rel="self" type="application/rss+xml"/><item><title>Udev rules for CH340 serial devices</title><link>https://blog.oddbit.com/post/2022-02-13-wemos-udev-rules/</link><pubDate>Sun, 13 Feb 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-02-13-wemos-udev-rules/</guid><description>I like to fiddle with Micropython, particularly on the Wemos D1 Mini, because these are such a neat form factor. Unfortunately, they have a cheap CH340 serial adapter on board, which means that from the perspective of Linux these devices are all functionally identical &amp;ndash; there&amp;rsquo;s no way to identify one device from another. This by itself would be a manageable problem, except that the device names assigned to these devices aren&amp;rsquo;t constant: depending on the order in which they get plugged in (and the order in which they are detected at boot), a device might be /dev/ttyUSB0 one day and /dev/ttyUSB2 another day.</description><content>&lt;p>I like to fiddle with &lt;a href="https://micropython.org">Micropython&lt;/a>, particularly on the &lt;a href="https://www.wemos.cc/en/latest/d1/d1_mini.html">Wemos D1 Mini&lt;/a>, because these are such a neat form factor. Unfortunately, they have a cheap CH340 serial adapter on board, which means that from the perspective of Linux these devices are all functionally identical &amp;ndash; there&amp;rsquo;s no way to identify one device from another. This by itself would be a manageable problem, except that the device names assigned to these devices aren&amp;rsquo;t constant: depending on the order in which they get plugged in (and the order in which they are detected at boot), a device might be &lt;code>/dev/ttyUSB0&lt;/code> one day and &lt;code>/dev/ttyUSB2&lt;/code> another day.&lt;/p>
+&lt;p>On more than one occasion, I have accidentally re-flashed the wrong device. Ouch.&lt;/p>
+&lt;p>A common solution to this problem is to create device names based on the USB topology &amp;ndash; that is, assign names based on a device&amp;rsquo;s position in the USB bus: e.g., when attaching a new USB serial device, expose it at something like &lt;code>/dev/usbserial/&amp;lt;bus&amp;gt;/&amp;lt;device_path&amp;gt;&lt;/code>. While that sounds conceptually simple, it took me a while to figure out the correct &lt;a href="https://en.wikipedia.org/wiki/Udev">udev&lt;/a> rules.&lt;/p>
+&lt;p>Looking at the available attributes for a serial device, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm info -a -n /dev/ttyUSB0
+[...]
+looking at device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0/ttyUSB0/tty/ttyUSB0&amp;#39;:
+KERNEL==&amp;#34;ttyUSB0&amp;#34;
+SUBSYSTEM==&amp;#34;tty&amp;#34;
+DRIVER==&amp;#34;&amp;#34;
+ATTR{power/control}==&amp;#34;auto&amp;#34;
+ATTR{power/runtime_active_time}==&amp;#34;0&amp;#34;
+ATTR{power/runtime_status}==&amp;#34;unsupported&amp;#34;
+ATTR{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0/ttyUSB0&amp;#39;:
+KERNELS==&amp;#34;ttyUSB0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb-serial&amp;#34;
+DRIVERS==&amp;#34;ch341-uart&amp;#34;
+ATTRS{port_number}==&amp;#34;0&amp;#34;
+ATTRS{power/control}==&amp;#34;auto&amp;#34;
+ATTRS{power/runtime_active_time}==&amp;#34;0&amp;#34;
+ATTRS{power/runtime_status}==&amp;#34;unsupported&amp;#34;
+ATTRS{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0&amp;#39;:
+KERNELS==&amp;#34;3-1.4.3:1.0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;ch341&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{bAlternateSetting}==&amp;#34; 0&amp;#34;
+ATTRS{bInterfaceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bInterfaceNumber}==&amp;#34;00&amp;#34;
+ATTRS{bInterfaceProtocol}==&amp;#34;02&amp;#34;
+ATTRS{bInterfaceSubClass}==&amp;#34;01&amp;#34;
+ATTRS{bNumEndpoints}==&amp;#34;03&amp;#34;
+ATTRS{supports_autosuspend}==&amp;#34;1&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3&amp;#39;:
+KERNELS==&amp;#34;3-1.4.3&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;usb&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{avoid_reset_quirk}==&amp;#34;0&amp;#34;
+ATTRS{bConfigurationValue}==&amp;#34;1&amp;#34;
+ATTRS{bDeviceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bDeviceProtocol}==&amp;#34;00&amp;#34;
+ATTRS{bDeviceSubClass}==&amp;#34;00&amp;#34;
+ATTRS{bMaxPacketSize0}==&amp;#34;8&amp;#34;
+ATTRS{bMaxPower}==&amp;#34;98mA&amp;#34;
+ATTRS{bNumConfigurations}==&amp;#34;1&amp;#34;
+ATTRS{bNumInterfaces}==&amp;#34; 1&amp;#34;
+ATTRS{bcdDevice}==&amp;#34;0262&amp;#34;
+ATTRS{bmAttributes}==&amp;#34;80&amp;#34;
+ATTRS{busnum}==&amp;#34;3&amp;#34;
+ATTRS{configuration}==&amp;#34;&amp;#34;
+ATTRS{devnum}==&amp;#34;8&amp;#34;
+ATTRS{devpath}==&amp;#34;1.4.3&amp;#34;
+ATTRS{idProduct}==&amp;#34;7523&amp;#34;
+ATTRS{idVendor}==&amp;#34;1a86&amp;#34;
+ATTRS{ltm_capable}==&amp;#34;no&amp;#34;
+ATTRS{maxchild}==&amp;#34;0&amp;#34;
+ATTRS{power/active_duration}==&amp;#34;48902765&amp;#34;
+ATTRS{power/autosuspend}==&amp;#34;2&amp;#34;
+ATTRS{power/autosuspend_delay_ms}==&amp;#34;2000&amp;#34;
+ATTRS{power/connected_duration}==&amp;#34;48902765&amp;#34;
+ATTRS{power/control}==&amp;#34;on&amp;#34;
+ATTRS{power/level}==&amp;#34;on&amp;#34;
+ATTRS{power/persist}==&amp;#34;1&amp;#34;
+ATTRS{power/runtime_active_time}==&amp;#34;48902599&amp;#34;
+ATTRS{power/runtime_status}==&amp;#34;active&amp;#34;
+ATTRS{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+ATTRS{product}==&amp;#34;USB2.0-Serial&amp;#34;
+ATTRS{quirks}==&amp;#34;0x0&amp;#34;
+ATTRS{removable}==&amp;#34;unknown&amp;#34;
+ATTRS{rx_lanes}==&amp;#34;1&amp;#34;
+ATTRS{speed}==&amp;#34;12&amp;#34;
+ATTRS{tx_lanes}==&amp;#34;1&amp;#34;
+ATTRS{urbnum}==&amp;#34;17&amp;#34;
+ATTRS{version}==&amp;#34; 1.10&amp;#34;
+[...]
+&lt;/code>&lt;/pre>&lt;p>In this output, we find that the device itself (at the top) doesn&amp;rsquo;t have any useful attributes we can use for creating a systematic device name. It&amp;rsquo;s not until we&amp;rsquo;ve moved up the device hierarchy to &lt;code>/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3&lt;/code> that we find topology information (in the &lt;code>busnum&lt;/code> and &lt;code>devpath&lt;/code> attributes). This complicates matters because a udev rule only has access to attributes defined directly on matching device, so we can&amp;rsquo;t right something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEM==&amp;#34;usb-serial&amp;#34;, SYMLINK+=&amp;#34;usbserial/$attr{busnum}/$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>How do we access the attributes of a parent node in our rule?&lt;/p>
+&lt;p>The answer is by creating environment variables that preserve the values in which we are interested. I started with this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Here, my goal was to stash the &lt;code>busnum&lt;/code> and &lt;code>devpath&lt;/code> attributes in &lt;code>.USB_BUSNUM&lt;/code> and &lt;code>.USB_DEVPATH&lt;/code>, but this didn&amp;rsquo;t work: it matches device path &lt;code>/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0&lt;/code>, which is:&lt;/p>
+&lt;pre tabindex="0">&lt;code>KERNELS==&amp;#34;3-1.4.3:1.0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;ch341&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{bAlternateSetting}==&amp;#34; 0&amp;#34;
+ATTRS{bInterfaceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bInterfaceNumber}==&amp;#34;00&amp;#34;
+ATTRS{bInterfaceProtocol}==&amp;#34;02&amp;#34;
+ATTRS{bInterfaceSubClass}==&amp;#34;01&amp;#34;
+ATTRS{bNumEndpoints}==&amp;#34;03&amp;#34;
+ATTRS{supports_autosuspend}==&amp;#34;1&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>We need to match the next device up the chain, so we need to make our match more specific. There are a couple of different options we can pursue; the simplest is probably to take advantage of the fact that the next device up the chain has &lt;code>SUBSYSTEMS==&amp;quot;usb&amp;quot;&lt;/code> and &lt;code>DRIVERS=&amp;quot;usb&amp;quot;&lt;/code>, so we could instead write:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, DRIVERS==&amp;#34;usb&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Alternately, we could ask for &amp;ldquo;the first device that has a &lt;code>busnum&lt;/code> attribute&amp;rdquo; like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ATTRS{busnum}==&amp;#34;?*&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Where (from the &lt;code>udev(7)&lt;/code> man page), &lt;code>?&lt;/code> matches any single character and &lt;code>*&lt;/code> matches zero or more characters, so this matches any device in which &lt;code>busnum&lt;/code> has a non-empty value. We can test this rule out using the &lt;code>udevadm test&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm test $(udevadm info --query=path --name=/dev/ttyUSB0)
+[...]
+.USB_BUSNUM=3
+.USB_DEVPATH=1.4.3
+[...]
+&lt;/code>&lt;/pre>&lt;p>This shows us that our rule is matching and setting up the appropriate variables. We can now use those in a subsequent rule to create the desired symlink:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ATTRS{busnum}==&amp;#34;?*&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+SUBSYSTEMS==&amp;#34;usb-serial&amp;#34;, SYMLINK+=&amp;#34;usbserial/$env{.USB_BUSNUM}/$env{.USB_DEVPATH}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Re-running the test command, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm test $(udevadm info --query=path --name=/dev/ttyUSB0)
+[...]
+DEVLINKS=/dev/serial/by-path/pci-0000:03:00.0-usb-0:1.4.3:1.0-port0 /dev/usbserial/3/1.4.3 /dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0
+[...]
+&lt;/code>&lt;/pre>&lt;p>You can see the new symlink in the &lt;code>DEVLINKS&lt;/code> value, and looking at &lt;code>/dev/usbserial&lt;/code> we can see the expected symlinks:&lt;/p>
+&lt;pre tabindex="0">&lt;code># tree /dev/usbserial
+/dev/usbserial/
+└── 3
+├── 1.1 -&amp;gt; ../../ttyUSB1
+└── 1.4.3 -&amp;gt; ../../ttyUSB0
+&lt;/code>&lt;/pre>&lt;p>And there have it. Now as long as I attach a specific device to the same USB port on my system, it will have the same device node. I&amp;rsquo;ve updated my tooling to use these paths (&lt;code>/dev/usbserial/3/1.4.3&lt;/code>) instead of the kernel names (&lt;code>/dev/ttyUSB0&lt;/code>), and it has greatly simplified things.&lt;/p></content></item><item><title>TM-V71A and Linux, part 1: Programming mode</title><link>https://blog.oddbit.com/post/2019-10-03-tm-v71a-linux-part-1/</link><pubDate>Thu, 03 Oct 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-10-03-tm-v71a-linux-part-1/</guid><description>I recently acquired my Technician amateur radio license, and like many folks my first radio purchase was a Baofeng UV-5R. Due to its low cost, this is a very popular radio, and there is excellent open source software available for programming it in the form of the CHIRP project. After futzing around with the UV-5R for a while, I wanted to get something a little nicer for use at home, so I purchased a Kenwood TM-V71A.</description><content>&lt;p>I recently acquired my Technician amateur radio license, and like many folks my first radio purchase was a &lt;a href="https://baofengtech.com/uv-5r?PageSpeed=noscript">Baofeng UV-5R&lt;/a>. Due to its low cost, this is a very popular radio, and there is excellent open source software available for programming it in the form of the &lt;a href="https://chirp.danplanet.com/projects/chirp/wiki/Home">CHIRP&lt;/a> project. After futzing around with the UV-5R for a while, I wanted to get something a little nicer for use at home, so I purchased a &lt;a href="https://www.kenwood.com/usa/com/amateur/tm-v71a/">Kenwood TM-V71A&lt;/a>. CHIRP claims to have support for this radio as well, but it turns out it&amp;rsquo;s not very good: it uses a &amp;ldquo;live&amp;rdquo; connection so every time you edit a channel it tries to update the radio. This result in a slow and flaky UI, especially when trying to make bulk changes (like relocating a block of channels). I ended up using Kenwood&amp;rsquo;s official &lt;a href="https://www.kenwood.com/i/products/info/amateur/mcp_2a.html">MCP-2A&lt;/a> software running on a Windows guest on my system, which works but isn&amp;rsquo;t ideal. I decided to learn more about how the radio interacts with the computer to see if I could improve the situation.&lt;/p>
+&lt;hr>
+&lt;h2 id="existing-solutions">Existing solutions&lt;/h2>
+&lt;p>The &lt;a href="https://hamlib.github.io/">Hamlib&lt;/a> project has an &lt;a href="https://github.com/Hamlib/Hamlib/blob/master/kenwood/tmd710.c">existing TM-D710 driver&lt;/a> that also support the TM-V71. Using either the &lt;code>rigctl&lt;/code> command line tool or using the Hamlib API, it is possible to&amp;hellip;&lt;/p>
+&lt;ul>
+&lt;li>Control PTT on the radio&lt;/li>
+&lt;li>Tune to a specific frequency&lt;/li>
+&lt;li>Tune to a specific memory channel&lt;/li>
+&lt;li>Change the current modulation (AM/FM/NFM)&lt;/li>
+&lt;/ul>
+&lt;p>&amp;hellip;and perform a few other actions. However, neither the command line tool nor the API appear to provide facilities for importing/exporting channels, editing channels, performing a memory backup and restore, and so forth. Additionaly, I do most of development these days in Python. While there exists a Python binding for Hamlib, it&amp;rsquo;s not terrible intuitive.&lt;/p>
+&lt;h2 id="programming-mode">Programming mode&lt;/h2>
+&lt;p>The way the MCP-2A program interacts with the TM-V71 is via a memory dump and restore process (which is much like how CHIRP interacts with Baofeng radios). This makes use of the radio&amp;rsquo;s &amp;ldquo;programming mode&amp;rdquo;, and support for that in Hamlib doesn&amp;rsquo;t exist. In fact, while the control commands for the radio have been documented in various places (such as LA3QMA&amp;rsquo;s &lt;a href="https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/blob/master/commands/MR.md">TM-V71_TM-D710-Kenwood repository&lt;/a>), I was not able to find any documentation that described how to interact with the radio in programming mode. In order to figure out how things work, I would need to trace the interaction between MCP-2A and the radio.&lt;/p>
+&lt;p>I run MCP-2A in a Windows 10 guest on my Linux host. Normally, when configuring the radio, I expose the USB serial adapter to the Windows guest using the USB redirection feature offered by libvirt. In order to trace the interaction between the software and the radio, I need to stick something in between that will log the data being sent back and forth.&lt;/p>
+&lt;p>I started by configuring a serial port on the Windows guest that was connected to a Unix socket:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-xml" data-lang="xml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;lt;serial&lt;/span> &lt;span style="color:#a6e22e">type=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;unix&amp;#39;&lt;/span>&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;source&lt;/span> &lt;span style="color:#a6e22e">mode=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;bind&amp;#39;&lt;/span> &lt;span style="color:#a6e22e">path=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;/tmp/win10-serial&amp;#39;&lt;/span>&lt;span style="color:#f92672">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;target&lt;/span> &lt;span style="color:#a6e22e">type=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;isa-serial&amp;#39;&lt;/span> &lt;span style="color:#a6e22e">port=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;1&amp;#39;&lt;/span>&lt;span style="color:#f92672">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;model&lt;/span> &lt;span style="color:#a6e22e">name=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;isa-serial&amp;#39;&lt;/span>&lt;span style="color:#f92672">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">&amp;lt;/target&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;lt;/serial&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This exposes a Unix socket at &lt;code>/tmp/win10-serial&lt;/code> when the guest is running. On the host, I use &lt;a href="http://www.dest-unreach.org/socat/">socat&lt;/a> as a proxy between that socket and the actual serial port. I ended up running &lt;code>socat&lt;/code> like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>socat -x -v \
+/dev/ttyUSB1,b57600,crtscts=1,raw,echo=0 \
+unix-connect:/tmp/win10-serial
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>-x&lt;/code> and &lt;code>-v&lt;/code> options instruct &lt;code>socat&lt;/code> to log on stdout data passing through the proxy, in both raw and hexadecimal format. With the proxy running, I started MCP-2A on the Windows guest and performed a &amp;ldquo;Read data from the transceiver&amp;rdquo; operation. This resulted in a log that looks like the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt; 2019/09/28 14:42:32.732010 length=1 from=0 to=0
+49 I
+--
+&amp;lt; 2019/09/28 14:42:32.834799 length=1 from=1 to=1
+44 D
+--
+&amp;lt; 2019/09/28 14:42:33.043626 length=1 from=2 to=2
+0d .
+--
+&amp;gt; 2019/09/28 14:42:33.069589 length=10 from=0 to=9
+49 44 20 54 4d 2d 56 37 31 0d ID TM-V71.
+[...]
+&lt;/code>&lt;/pre>&lt;p>In this output, chunks marked with &lt;code>&amp;lt;&lt;/code> represent data sent FROM the software TO the radio, and chunks marked with &lt;code>&amp;gt;&lt;/code> represent data sent FROM the radio TO the software. The information we need is there, but the output is a little too cluttered, making it hard to interpret. I wrote a quick script to clean it up; after processing, the beginning of the transaction look like this (where &lt;code>&amp;lt;&amp;lt;&amp;lt;&lt;/code> represents date being sent to the radio, and &lt;code>&amp;gt;&amp;gt;&amp;gt;&lt;/code> represents data received from the radio):&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 49 I
+&amp;lt;&amp;lt;&amp;lt; 00000000: 44 D
+&amp;lt;&amp;lt;&amp;lt; 00000000: 0D .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 49 44 20 54 4D 2D 56 37 31 0D ID TM-V71.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 54 43 20 31 0D TC 1.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 3F 0D ?.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 49 44 0D ID.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 49 44 20 54 4D 2D 56 37 31 0D ID TM-V71.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 54 59 0D TY.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 54 59 20 4B 2C 30 2C 30 2C 31 2C 30 0D TY K,0,0,1,0.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 46 56 20 30 FV 0
+&amp;lt;&amp;lt;&amp;lt; 00000000: 0D .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 46 56 20 30 2C 31 2E 30 30 2C 32 2E 31 30 2C 41 FV 0,1.00,2.10,A
+&amp;gt;&amp;gt;&amp;gt; 00000000: 2C 31 0D ,1.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 30 4D 20 50 0M P
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 4F 47 52 41 4D 0D ROGRAM.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 30 4D 0D 0M.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 00 R.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 00 00 00 00 4B 01 FF FF FF FF FF FF FF FF FF W....K..........
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF 00 FF FF 00 00 39 31 35 01 00 00 00 00 01 01 ......915.......
+&amp;gt;&amp;gt;&amp;gt; 00000000: 00 00 00 01 02 03 00 00 FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF ....
+&amp;lt;&amp;lt;&amp;lt; 00000000: 06 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 01 R.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 01 00 00 FF FF FF FF FF FF FF FF FF FF FF FF W...............
+[...]
+&lt;/code>&lt;/pre>&lt;p>And the end of the transaction looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[...]
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 7E 00 R~.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 7E 00 00 FF FF FF FF FF FF FF FF FF FF FF FF W~..............
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF FF FF FF ....
+&amp;lt;&amp;lt;&amp;lt; 00000000: 06 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 45 E
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 0D ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 00 .
+&lt;/code>&lt;/pre>&lt;p>This is a lot easier to read. We can see the software initially sends some commands to identify the radio:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>ID&lt;/code> to get the radio model&lt;/li>
+&lt;li>&lt;code>TY&lt;/code> to get the radio type&lt;/li>
+&lt;li>&lt;code>FV 0&lt;/code> to get the firmware version&lt;/li>
+&lt;/ul>
+&lt;p>And then enters programming mode by sending &lt;code>0M PROGRAM&lt;/code>. Inspecting the remainder of the dump shows us that the software makes a series of read requests that look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 52 00 R.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 ..
+&lt;/code>&lt;/pre>&lt;p>That is, a four byte request of the form:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>R&lt;/code>&lt;/li>
+&lt;li>Address (2 bytes)&lt;/li>
+&lt;li>Size&lt;/li>
+&lt;/ol>
+&lt;p>When a read request has a size of &lt;code>0&lt;/code>, that means &lt;code>read 256 bytes&lt;/code>.&lt;/p>
+&lt;p>The response to a read request looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;gt;&amp;gt;&amp;gt; 00000000: 57 00 00 00 00 4B 01 FF FF FF FF FF FF FF FF FF W....K..........
+&amp;gt;&amp;gt;&amp;gt; 00000000: FF 00 FF FF 00 00 39 31 35 01 00 00 00 00 01 01 ......915.......
+&amp;gt;&amp;gt;&amp;gt; ...
+&lt;/code>&lt;/pre>&lt;p>That is:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>W&lt;/code>&lt;/li>
+&lt;li>Address (2 bytes)&lt;/li>
+&lt;li>Size&lt;/li>
+&lt;li>&lt;code>&amp;lt;Size&amp;gt;&lt;/code> bytes of data&lt;/li>
+&lt;/ol>
+&lt;p>It turns out that the response to the read request is exactly the syntax used to perform a write request. The log of the write operation starts like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 54 43 20 TC
+&amp;lt;&amp;lt;&amp;lt; 00000000: 31 0D 1.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 3F 0D ?.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 49 I
+&amp;lt;&amp;lt;&amp;lt; 00000000: 44 0D D.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 49 44 20 54 4D 2D 56 37 31 0D ID TM-V71.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 54 59 0D TY.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 54 59 20 4B 2C 30 2C 30 2C 31 2C 30 0D TY K,0,0,1,0.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 46 56 FV
+&amp;lt;&amp;lt;&amp;lt; 00000000: 20 30 0D 0.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 46 56 20 30 2C 31 2E 30 30 2C 32 2E 31 30 2C 41 FV 0,1.00,2.10,A
+&amp;gt;&amp;gt;&amp;gt; 00000000: 2C 31 0D ,1.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 30 4D 0M
+&amp;lt;&amp;lt;&amp;lt; 00000000: 20 50 52 4F 47 52 41 4D 0D PROGRAM.
+&amp;gt;&amp;gt;&amp;gt; 00000000: 30 4D 0D 0M.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 52 R
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 00 04 ...
+&amp;gt;&amp;gt;&amp;gt; 00000000: 57 00 00 04 00 4B 01 FF W....K..
+&amp;lt;&amp;lt;&amp;lt; 00000000: 06 .
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 01 FF ...
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 04 FC FF FF FF FF FF FF FF FF FF 00 ............
+&amp;lt;&amp;lt;&amp;lt; 00000000: FF FF 00 00 39 31 35 01 00 00 00 00 ....915.....
+&amp;lt;&amp;lt;&amp;lt; 00000000: 01 01 00 00 00 01 02 .......
+&amp;lt;&amp;lt;&amp;lt; 00000000: 03 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000010: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000020: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000030: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000040: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000050: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000060: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000070: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000080: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000010: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000020: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000030: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ................
+&amp;lt;&amp;lt;&amp;lt; 00000040: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF ...............
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+[...]
+&lt;/code>&lt;/pre>&lt;p>And concludes with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[...]
+&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 04 00 4B 01 FF ...K..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&amp;lt;&amp;lt;&amp;lt; 00000000: 45 E
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 0D ..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 00 .
+&lt;/code>&lt;/pre>&lt;p>In this log, we see a series of write requests; for example:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 01 FF ...
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&lt;/code>&lt;/pre>&lt;p>In the above trace, the software is first writing one byte (&lt;code>0xFF&lt;/code>) to address &lt;code>0x0&lt;/code>. The radio acknowledges a write request with a response byte (&lt;code>0x06&lt;/code>).&lt;/p>
+&lt;p>By experimenting a bit, it seems as if writing &lt;code>0xFF&lt;/code> to &lt;code>0x0&lt;/code>, will cause the radio to reset to defaults when you exit programming mode. That&amp;rsquo;s why at the conclusion of the write operation, we see the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;lt;&amp;lt;&amp;lt; 00000000: 57 00 W.
+&amp;lt;&amp;lt;&amp;lt; 00000000: 00 04 00 4B 01 FF ...K..
+&amp;gt;&amp;gt;&amp;gt; 00000000: 06 .
+&lt;/code>&lt;/pre>&lt;p>That is, the software is rewriting the first four bytes of memory with their original contents.&lt;/p>
+&lt;h3 id="a-warning-about-manual-interaction">A warning about manual interaction&lt;/h3>
+&lt;p>If you manually place the radio into programming mode, you will see that after entering &lt;code>0M PROGRAM&lt;/code> the radio displays &lt;code>PROG MCP&lt;/code>. Unless you are a preternaturally fast typist, the radio display will shortly switch to &lt;code>PROG ERR&lt;/code> because of the delay between entering programming mode and any read or write transactions. In this state, you will still be able to enter read or write commands, but the status byte in response to a successful write command will be &lt;code>0x15&lt;/code> instead of &lt;code>0x06&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>I&amp;rsquo;ve summarized this information in a document that I submitted as a pull request to &lt;a href="https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/">https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/&lt;/a>. You can read it &lt;a href="https://github.com/LA3QMA/TM-V71_TM-D710-Kenwood/blob/master/PROGRAMMING_MODE.md">here&lt;/a>.&lt;/p></content></item><item><title>Rate limiting made simple</title><link>https://blog.oddbit.com/post/2011-12-26-simple-rate-limiting/</link><pubDate>Mon, 26 Dec 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-12-26-simple-rate-limiting/</guid><description>I use CrashPlan as a backup service. It works and is very simple to set up, but has limited options for controlling bandwidth. In fact, if you&amp;rsquo;re running it on a headless system (e.g., a fileserver of some sort), your options are effectively &amp;ldquo;too slow&amp;rdquo; and &amp;ldquo;CONSUME EVERYTHING&amp;rdquo;. There is an open request to add time-based limitations to the application itself, but for now I&amp;rsquo;ve solved this using a very simple traffic shaping configuration.</description><content>&lt;p>I use &lt;a href="http://www.crashplan.com/">CrashPlan&lt;/a> as a backup service. It works and is very simple to set
+up, but has limited options for controlling bandwidth. In fact, if you&amp;rsquo;re
+running it on a headless system (e.g., a fileserver of some sort), your options
+are effectively &amp;ldquo;too slow&amp;rdquo; and &amp;ldquo;CONSUME EVERYTHING&amp;rdquo;. There is an &lt;a href="https://crashplan.zendesk.com/entries/446273-throttle-bandwidth-by-hours?page=1#post_20799486">open
+request&lt;/a> to add time-based limitations to the application itself, but for
+now I&amp;rsquo;ve solved this using a very simple traffic shaping configuration.
+Because the learning curve for &amp;ldquo;tc&amp;rdquo; and friends is surprisingly high, I&amp;rsquo;m
+putting &lt;a href="https://gist.github.com/larsks/4014881">my script&lt;/a> here in the hopes
+that other people might find it useful, and so that I can find it when I need
+to do this again someday.&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+# The network device used for backups
+dev=p10p1
+# The remove address of the CrashPlanserver
+crashplan_addr=50.93.246.1
+# The port
+crashplan_port=443
+# The rate limit. See tc(8) for acceptable syntax.
+crashplan_limit=2mbit
+if [ &amp;quot;$1&amp;quot; = &amp;quot;enable&amp;quot; ]; then
+#
+# This creates and activates the traffic shaper
+# configuration.
+#
+logger -s -t ratelimit -p user.notice &amp;quot;enabling rate limits&amp;quot;
+tc qdisc del dev $dev root &amp;gt; /dev/null 2&amp;gt;&amp;amp;1
+tc qdisc add dev $dev root handle 1: htb
+tc class add dev $dev parent 1: classid 1:10 htb rate $crashplan_limit
+tc filter add dev $dev parent 1: prio 0 protocol ip handle 10 fw flowid 1:10
+iptables -t mangle -A OUTPUT -d $crashplan_addr -p tcp --dport $crashplan_port -j MARK --set-mark 10
+elif [ &amp;quot;$1&amp;quot; = &amp;quot;disable&amp;quot; ]; then
+#
+# This removes the traffic shaper
+# configuration.
+#
+logger -s -t ratelimit -p user.notice &amp;quot;disabling rate limits&amp;quot;
+tc qdisc del dev $dev root &amp;gt; /dev/null 2&amp;gt;&amp;amp;1
+iptables -t mangle -D OUTPUT -d $crashplan_addr -p tcp --dport $crashplan_port -j MARK --set-mark 10
+elif [ &amp;quot;$1&amp;quot; = &amp;quot;show&amp;quot; ]; then
+#
+# Shows the current traffic shaper configuration.
+#
+tc qdisc show dev $dev
+tc class show dev $dev
+tc filter show dev $dev
+iptables -t mangle -vnL OUTPUT
+fi
+&lt;/code>&lt;/pre></content></item><item><title>Patch to gPXE dhcp command</title><link>https://blog.oddbit.com/post/2010-07-22-patch-to-gpxe-dhcp-command/</link><pubDate>Thu, 22 Jul 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-07-22-patch-to-gpxe-dhcp-command/</guid><description>Update: This patch has been accepted into gPXE.
+I just released a patch to gPXE that modifies the dhcp command so that it can iterate over multiple interfaces. The stock dhcp command only accepts a single interface as an argument, which can be a problem if you are trying to boot on a machine with multiple interfaces. The builtin autoboot commands attempts to resolve this, but is only useful if you expect to receive appropriate boot parameters from your dhcp server.</description><content>&lt;p>&lt;strong>Update&lt;/strong>: This patch has been &lt;a href="http://git.etherboot.org/?p=gpxe.git;a=commit;h=fa91c2c3269554df855107a24afec9a1149fee8f">accepted&lt;/a> into gPXE.&lt;/p>
+&lt;p>I just released a &lt;a href="http://gist.github.com/486907">patch&lt;/a> to &lt;a href="http://etherboot.org/wiki/index.php">gPXE&lt;/a> that modifies the dhcp command so that it can iterate over multiple interfaces. The stock dhcp command only accepts a single interface as an argument, which can be a problem if you are trying to boot on a machine with multiple interfaces. The builtin autoboot commands attempts to resolve this, but is only useful if you expect to receive appropriate boot parameters from your dhcp server.&lt;/p>
+&lt;p>My patch extends the dhcp command in the following ways:&lt;/p>
+&lt;ol>
+&lt;li>It allows the &amp;ldquo;dhcp&amp;rdquo; command to accept a list of interfaces and to try them in order until it succeeds, e.g.:&lt;/li>
+&lt;/ol>
+&lt;pre>&lt;code>gPXE&amp;gt; dhcp net0 net1 net2
+&lt;/code>&lt;/pre>
+&lt;p>In order to preserve the original syntax of the command, this will fail on an unknown interface name:&lt;/p>
+&lt;pre>&lt;code>gPXE&amp;gt; dhcp foo net0
+No such interface: foo
+gPXE&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>The &amp;ldquo;-c&amp;rdquo; flag allows it to continue:&lt;/p>
+&lt;pre>&lt;code>gPXE&amp;gt; dhcp -c foo net0
+No such interface: foo
+DHCP (net0 xx:xx:xx:xx:xx:xx).... ok
+gPXE&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;ol start="2">
+&lt;li>If given the single parameter &amp;ldquo;any&amp;rdquo; as an interface name, iterate over all known interfaces in a manner similar to autoboot():&lt;/li>
+&lt;/ol>
+&lt;pre>&lt;code>gPXE&amp;gt; dhcp any
+DHCP (net0 xx:xx:xx:xx:xx:xx)........ Connection timed out (...)
+Could not configure net0: Connection timed out (...)
+DHCP (net1 xx:xx:xx:xx:xx:xx).... ok
+gPXE&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>I think this manages to preserve the syntax of the existing &amp;ldquo;dhcp&amp;rdquo; command while making the magic of autoboot available to gpxe scripts.&lt;/p></content></item><item><title>Blocking VNC with iptables</title><link>https://blog.oddbit.com/post/2010-02-04-vnc-blockingrst/</link><pubDate>Thu, 04 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-04-vnc-blockingrst/</guid><description>VNC clients use the RFB protocol to provide virtual display capabilities. The RFB protocol, as implemented by most clients, provides very poor authentication options. While passwords are not actually sent &amp;ldquo;in the clear&amp;rdquo;, it is possible to brute force them based on information available on the wire. The RFB 3.x protocol limits passwords to a maximum of eight characters, so the potential key space is relatively small.
+It&amp;rsquo;s possible to securely connect to a remote VNC server by tunneling your connection using ssh port forwarding (or setting up some sort of SSL proxy).</description><content>&lt;p>VNC clients use the &lt;a href="http://www.realvnc.com/docs/rfbproto.pdf">RFB protocol&lt;/a> to provide virtual display capabilities. The RFB protocol, as implemented by most clients, provides very poor authentication options. While passwords are not actually sent &amp;ldquo;in the clear&amp;rdquo;, it is possible to brute force them based on information available on the wire. The RFB 3.x protocol limits passwords to a maximum of eight characters, so the potential key space is relatively small.&lt;/p>
+&lt;p>It&amp;rsquo;s possible to securely connect to a remote VNC server by tunneling your connection using ssh port forwarding (or setting up some sort of SSL proxy). However, while this ameliorates the password problem, it still leaves a VNC server running that, depending on the local system configuration, may accept connections from all over the world. This leaves open the possibility that someone could brute force the password and gain access to the systsem. The problem is exacerbated if a user is running a passwordless VNC session.&lt;/p>
+&lt;p>My colleague and I looked into the options for blocking VNC connections using layer 7 packet classification. This means identifying the protocol in use by inspecting packet payloads, rather than relying exclusively on port numbers (this prevents clever or malicious users from circumventing the restrictions by running a service on a non-standard port). Unfortunately, the actual &lt;a href="http://l7-filter.sourceforge.net/">l7 netfilter module&lt;/a> is not available in CentOS (or Fedora). But wait, all is not lost!&lt;/p>
+&lt;p>First, a brief digression into the RFB protocol used by VNC. After completing a standard TCP handshake, the client and server engage in a RFB handshake. The server first sents the string &amp;ldquo;RFB &amp;quot; followed by the RFB protocol version supported by the server. The client responds with a similar message.&lt;/p>
+&lt;p>The initial handshake packet from the server:&lt;/p>
+&lt;pre>&lt;code>0000 00 00 0c 07 ac 34 00 21 86 14 e8 aa 08 00 45 00 .....4.!......E.
+0010 00 40 e8 b7 40 00 40 06 b6 51 8c f7 34 e0 62 76 .@..@.@..Q..4.bv
+0020 77 61 17 0d da ad ae 06 16 3f 22 48 92 cc 80 18 wa.......?&amp;quot;H....
+0030 00 5b 9b e1 00 00 01 01 08 0a e8 b1 fe 88 24 f1 .[............$.
+0040 e3 56 52 46 42 20 30 30 33 2e 30 30 38 0a .VRFB 003.008.
+&lt;/code>&lt;/pre>
+&lt;p>And the response from the client:&lt;/p>
+&lt;pre>&lt;code>0000 00 21 86 14 e8 aa 00 1a 30 4d 0c 00 08 00 45 40 .!......0M....E@
+0010 00 40 e7 15 40 00 34 06 c3 b3 62 76 77 61 8c f7 .@..@.4...bvwa..
+0020 34 e0 da ad 17 0d 22 48 92 cc ae 06 16 4b 80 18 4.....&amp;quot;H.....K..
+0030 ff ff 20 56 00 00 01 01 08 0a 24 f1 e3 57 e8 b1 .. V......$..W..
+0040 fe 88 52 46 42 20 30 30 33 2e 30 30 38 0a ..RFB 003.008.
+&lt;/code>&lt;/pre>
+&lt;p>Ergo: if we can match the string &amp;ldquo;RFB &amp;quot; at the beginning of the TCP payload on inbound packets, we have a reliable way of blocking VNC packets ergardless of port.&lt;/p>
+&lt;p>Looking through the iptables man page, we find:&lt;/p>
+&lt;pre>&lt;code>u32
+U32 tests whether quantities of up to 4 bytes extracted from
+a packet have specified values. The specification of what to
+extract is general enough to find data at given offsets from
+tcp headers or payloads.
+&lt;/code>&lt;/pre>
+&lt;p>This looks especially appropriate, since our target match is exactly four bytes. Unfortunately, the syntax of the u32 module is a little baroque:&lt;/p>
+&lt;pre>&lt;code>Example:
+match IP packets with total length &amp;gt;= 256
+The IP header contains a total length field in bytes 2-3.
+--u32 &amp;quot;0 &amp;amp; 0xFFFF = 0x100:0xFFFF&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Fortunately, the internet is our friend:&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;a href="http://www.stearns.org/doc/iptables-u32.v0.1.7.html">http://www.stearns.org/doc/iptables-u32.v0.1.7.html&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>This document provides a number of recipes designed for use with u32 module, including one that matches content at the beginning of the TCP payload. This gives us, ultimately:&lt;/p>
+&lt;pre>&lt;code>iptables -A INPUT -p tcp \
+-m connbytes --connbytes 0:1024 \
+--connbytes-dir both --connbytes-mode bytes \
+-m state --state ESTABLISHED \
+-m u32 --u32 &amp;quot;0&amp;gt;&amp;gt;22&amp;amp;0x3C@ 12&amp;gt;&amp;gt;26&amp;amp;0x3C@ 0=0x52464220&amp;quot; \
+-j REJECT --reject-with tcp-reset
+&lt;/code>&lt;/pre>
+&lt;p>This means:&lt;/p>
+&lt;ul>
+&lt;li>Match tcp packets only (-p tcp)&lt;/li>
+&lt;li>Match only during the first 1024 bytes of the connection (-m connbytes &amp;ndash;connbytes 0:1024 &amp;ndash;connbytes-dir both &amp;ndash;connbytes-mode bytes)&lt;/li>
+&lt;li>Match only ESTABLISHED connections (-m state &amp;ndash;state ESTABLISHED)&lt;/li>
+&lt;li>Match bytes &amp;ldquo;0x52464240&amp;rdquo; (&amp;ldquo;RFB &amp;ldquo;) at the beginning of the TCP payload (-m u32 &amp;ndash;u32 &amp;ldquo;0&amp;raquo;22&amp;amp;0x3C@ 12&amp;raquo;26&amp;amp;0x3C@ 0=0x52464220&amp;rdquo;)&lt;/li>
+&lt;li>Upon a match, force-close the connection with a RST packet. (-j REJECT &amp;ndash;reject-with tcp-reset)&lt;/li>
+&lt;/ul>
+&lt;p>With this rule in place, all unenrypted VNC connections will be forcefully disconnected by the server.&lt;/p>
+&lt;p>Our original plan had been to try redirecting VNC traffic so that we could display a big &amp;ldquo;DON&amp;rsquo;T DO THAT&amp;rdquo; message, but this isn&amp;rsquo;t possible &amp;ndash; by the time we match the client payload, the connection has already been established and is not amendable to redirection.&lt;/p>
+&lt;h1 id="update">Update&lt;/h1>
+&lt;p>We modified this rule to use the iptables string module to make the match more specific to further reduce the chances of false positives. The rule now looks like this:&lt;/p>
+&lt;pre>&lt;code>iptables -A INPUT -p tcp \
+-m connbytes --connbytes 0:1024 \
+--connbytes-dir both --connbytes-mode bytes \
+-m state --state ESTABLISHED \
+-m u32 --u32 &amp;quot;0&amp;gt;&amp;gt;22&amp;amp;0x3C@ 12&amp;gt;&amp;gt;26&amp;amp;0x3C@ 0=0x52464220&amp;quot; \
+-m string --algo kmp --string &amp;quot;RFB 003.&amp;quot; --to 130 \
+-j REJECT --reject-with tcp-reset
+&lt;/code>&lt;/pre>
+&lt;p>We thought about using the string module exclusively, but unlike the u32 module it is not possible to anchor the string match to the beginning of the TCP payload (since the ip and tcp headers may both be variable length).&lt;/p></content></item><item><title>Linux UPnP Gateway</title><link>https://blog.oddbit.com/post/2010-01-29-linux-upnp-gateway/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-linux-upnp-gateway/</guid><description>Like many other folks out there, I have several computers in my house connected to the outside world via a Linux box acting as a NAT gateway. I often want to use application such as BitTorrent and Freenet, which require that a number of ports be forwarded from my external connection to the particular computer on which I happen to be working. It turns out there&amp;rsquo;s a protocol for this, called UPnP.</description><content>&lt;p>Like many other folks out there, I have several computers in my house connected to the outside world via a Linux box acting as a NAT gateway. I often want to use application such as BitTorrent and Freenet, which require that a number of ports be forwarded from my external connection to the particular computer on which I happen to be working. It turns out there&amp;rsquo;s a protocol for this, called &lt;a href="http://en.wikipedia.org/wiki/Universal_Plug_and_Play">UPnP&lt;/a>. From Wikipedia:&lt;/p>
+&lt;blockquote>
+&lt;p>Universal Plug and Play (UPnP) is a set of networking protocols
+promulgated by the UPnP Forum. The goals of UPnP are to allow
+devices to connect seamlessly and to simplify the implementation of
+networks in the home (data sharing, communications, and
+entertainment) and in corporate environments for simplified
+installation of computer components.&lt;/p>
+&lt;/blockquote>
+&lt;p>The practical use of UPnP, from my perspective, is that it allows a device or application &lt;em>inside&lt;/em> the network to request specific ports to be forwarded on the gateway. This means that what used to be a manual process &amp;ndash; adding the necessary forwarding rules to my iptables configuration &amp;ndash; is now performed automatically, and only when necessary.&lt;/p>
+&lt;p>The &lt;a href="http://linux-igd.sourceforge.net/">Linux UPnP Internet Gateway Device&lt;/a> project implements a Linux UPnP service. You can download the source from the project web page.&lt;/p>
+&lt;p>Using the gateway service is really simple:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Start upnpd:&lt;/p>
+&lt;pre>&lt;code> # /etc/init.d/upnpd
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Start your application. You will see messages like the following in syslog (if you are logging DEBUG level messages):&lt;/p>
+&lt;pre>&lt;code> Aug 6 20:10:12 arcadia upnpd[19816]: Failure in
+GateDeviceDeletePortMapping: DeletePortMap: Proto:UDP Port:57875
+Aug 6 20:10:12 arcadia upnpd[19816]: AddPortMap: DevUDN:
+uuid:75802409-bccb-40e7-8e6c-fa095ecce13e ServiceID: urn:upnp-org:serviceId:WANIPConn1
+RemoteHost: (null) Prot: UDP ExtPort: 57875 Int: 192.168.1.118.57875
+Aug 6 20:10:12 arcadia upnpd[19816]: Failure in
+GateDeviceDeletePortMapping: DeletePortMap: Proto:UDP Port:11657
+Aug 6 20:10:12 arcadia upnpd[19816]: AddPortMap: DevUDN:
+uuid:75802409-bccb-40e7-8e6c-fa095ecce13e ServiceID: urn:upnp-org:serviceId:WANIPConn1
+RemoteHost: (null) Prot: UDP ExtPort: 11657 Int: 192.168.1.118.11657
+&lt;/code>&lt;/pre>
+&lt;p>For each forwarding requested by the client, upnpd first attempts to remove the mapping and then creates a new rule. Exactly how upnp implements these rules on your system is controlled by &lt;code>/etc/upnpd.conf&lt;/code> &amp;ndash; if you want to use something other than &lt;em>iptables&lt;/em>, or use custom chains, this is where you would make your changes.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Look at your firewall rules. Upnpd modifies the &lt;em>FORWARD&lt;/em> chain in the &lt;em>filter&lt;/em> table and the &lt;em>PREROUTING&lt;/em> chain in the &lt;em>nat&lt;/em> table. You can change this behavior by editing &lt;code>/etc/upnpd.conf&lt;/code>.&lt;/p>
+&lt;p>To see forwarding rules:&lt;/p>
+&lt;pre>&lt;code> # iptables -nL FORWARD
+&lt;/code>&lt;/pre>
+&lt;p>The rules might look something like this:&lt;/p>
+&lt;pre>&lt;code> Chain FORWARD (policy DROP)
+target prot opt source destination
+ACCEPT udp -- 0.0.0.0/0 192.168.1.118 udp dpt:57875
+ACCEPT udp -- 0.0.0.0/0 192.168.1.118 udp dpt:11657
+&lt;/code>&lt;/pre>
+&lt;p>To see prerouting rules:&lt;/p>
+&lt;pre>&lt;code> # iptables -t nat -vnL PREROUTING
+&lt;/code>&lt;/pre>
+&lt;p>The rules might look something like this:&lt;/p>
+&lt;pre>&lt;code> Chain PREROUTING (policy ACCEPT)
+target prot opt source destination
+DNAT udp -- 0.0.0.0/0 0.0.0.0/0 udp dpt:11657 to:192.168.1.118:11657
+DNAT udp -- 0.0.0.0/0 0.0.0.0/0 udp dpt:57875 to:192.168.1.118:57875
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Upnpd will delete the mappings when they expire. The expiration time may be set by the client, or, if the client specifies no expiration, than by the &amp;ldquo;duration&amp;rdquo; configuration item in /etc/upnpd.conf.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;h1 id="configuration-file">Configuration file&lt;/h1>
+&lt;p>The upnpd configuration file (&lt;code>/etc/upnpd.conf&lt;/code>) allows you to change various aspects of upnpd&amp;rsquo;s behavior. Of particular interest:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>insert_forward_rules&lt;/code>&lt;br>
+Default: &lt;code>yes&lt;/code>&lt;/p>
+&lt;p>Whether or not upnpd needs to create entries in the &lt;code>FORWARD&lt;/code> chain of the &lt;code>filter&lt;/code> table. If your &lt;code>FORWARD&lt;/code> chain has a policy of &lt;code>DROP&lt;/code> you need set to yes.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>forward_chain_name&lt;/code>&lt;br>
+Default: &lt;code>FORWARD&lt;/code>&lt;/p>
+&lt;p>Normally, upnpd creates entries in the &lt;code>FORWARD&lt;/code> chain. If you have a more advanced firewall setup this may not be the appropriate place to make changes. If you enter a custom name here, you will need to create the corresponding chain:&lt;/p>
+&lt;pre>&lt;code> iptables -N my-forward-chain
+&lt;/code>&lt;/pre>
+&lt;p>You will also need to call this chain from the &lt;em>FORWARD&lt;/em> chain:&lt;/p>
+&lt;pre>&lt;code> iptables -A FORWARD -j my-forward-chain
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>prerouting_chain_name&lt;/code>&lt;br>
+Default: &lt;code>PREROUTING&lt;/code>&lt;/p>
+&lt;p>Like &lt;code>forward&lt;/code>chain&lt;code>name&lt;/code>, but for entries in the &lt;code>nat&lt;/code> table.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h1 id="security-considerations">Security considerations&lt;/h1>
+&lt;p>Consider the following, from the &lt;a href="http://linux-igd.sourceforge.net/documentation.php">Linux IGD documentation&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>UPnP version 1.0, on which this program is based, is inherently flawed&amp;hellip;what appears to have happened is that in Microsoft&amp;rsquo;s first UPnP implementation they weren&amp;rsquo;t concerned with security &amp;hellip;. Simply all they wanted was connectivity&amp;hellip;. The UPnP server, by itself, does no security checking. If it recieves a UPnP request to add a portmapping for some ip address inside the firewall, it just does it. This program will attempt to verify the source ip contained in the UPnP request against the source ip of the actual packet, but as always, these can be forged. The UPnP server makes no attempt to verify this connection with the caller, and therefore it just assumes that whoever asked is the person really wanting it.&lt;/p>
+&lt;/blockquote>
+&lt;p>In other words, in the battle between security and convenience, UPnP is weighs in heavily on the convenience side. You will have to decide whether this meets your particular requirements.&lt;/p></content></item></channel></rss>

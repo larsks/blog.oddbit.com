@@ -1,0 +1,41 @@
+<!doctype html><html lang=en><head><title>Configuring a static address for wlan0 on Raspbian Stretch :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
+First, disable dhcpcd and wpa_supplicant.
+systemctl disable --now dhdpcd wpa_supplicant You will need a wpa_supplicant configuration for wlan0 in /etc/wpa_supplicant/wpa_supplicant-wlan0.conf.
+If you already have an appropriate configuration in /etc/wpa_supplicant/wpa_supplicant.conf, you can just symlink the file:
+cd /etc/wpa_supplicant ln -s wpa_supplicant."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Configuring a static address for wlan0 on Raspbian Stretch"><meta property="og:description" content="Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
+First, disable dhcpcd and wpa_supplicant.
+systemctl disable --now dhdpcd wpa_supplicant You will need a wpa_supplicant configuration for wlan0 in /etc/wpa_supplicant/wpa_supplicant-wlan0.conf.
+If you already have an appropriate configuration in /etc/wpa_supplicant/wpa_supplicant.conf, you can just symlink the file:
+cd /etc/wpa_supplicant ln -s wpa_supplicant."><meta property="og:url" content="https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2018-06-14 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/>Configuring a static address for wlan0 on Raspbian Stretch</a></h1><div class=post-meta><time class=post-date>2018-06-14 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/raspberrypi/>raspberrypi</a>&nbsp;</span><div class=post-content><div><p>Recent releases of Raspbian have adopted the use of <a href=http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html>dhcpcd</a> to
+manage both dynamic and static interface configuration. If you would
+prefer to use the traditional <code>/etc/network/interfaces</code> mechanism
+instead, follow these steps.</p><ol><li><p>First, disable <code>dhcpcd</code> and <code>wpa_supplicant</code>.</p><pre><code> systemctl disable --now dhdpcd wpa_supplicant
+</code></pre></li><li><p>You will need a <code>wpa_supplicant</code> configuration for <code>wlan0</code> in
+<code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf</code>.</p><p>If you already have an appropriate configuration in
+<code>/etc/wpa_supplicant/wpa_supplicant.conf</code>, you can just symlink the
+file:</p><pre><code>  cd /etc/wpa_supplicant
+  ln -s wpa_supplicant.conf wpa_supplicant-wlan0.conf
+</code></pre></li><li><p>Enable the <code>wpa_supplicant</code> service for <code>wlan0</code>:</p><pre><code> systemctl enable --now wpa_supplicant@wlan0
+</code></pre></li><li><p>Create an appropriate configuration in
+<code>/etc/network/interfaces.d/wlan0</code>. For example:</p><pre><code> allow-hotplug wlan0
+
+ iface wlan0 inet static
+ address 192.168.2.100
+ netmask 255.255.255.0
+
+ iface wlan0 inet6 static
+ address 2607:f0d0:2001:000a:0000:0000:0000:0010
+ netmask 64
+</code></pre></li><li><p>Reboot to make sure everything comes up as expected. With the
+above configuration, after rebooting you should see:</p><pre><code> root@raspberrypi:~# ip addr show wlan0
+ 3: wlan0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+     link/ether 00:e1:b0:67:98:67 brd ff:ff:ff:ff:ff:ff
+     inet 192.168.2.100/24 brd 192.168.2.255 scope global wlan0
+        valid_lft forever preferred_lft forever
+     inet6 2607:f0d0:2001:a::10/64 scope global
+        valid_lft forever preferred_lft forever
+     inet6 fe80::2e1:b0ff:fe67:9867/64 scope link
+        valid_lft forever preferred_lft forever
+</code></pre></li></ol></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,95 @@
+<!doctype html><html lang=en><head><title>Cleaning up Subversion with Git :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Overview At my office, we have a crufty Subversion repository (dating back to early 2006) that contains a jumble of unrelated projects. We would like to split this single repository up into a number of smaller repositories, each following the recommended trunk/tags/branches repository organization.
+What we want to do is move a project from a path that looks like this:
+.../projects/some-project-name To a new repository using the recommended Subversion repository layout, like this:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Cleaning up Subversion with Git"><meta property="og:description" content="Overview At my office, we have a crufty Subversion repository (dating back to early 2006) that contains a jumble of unrelated projects. We would like to split this single repository up into a number of smaller repositories, each following the recommended trunk/tags/branches repository organization.
+What we want to do is move a project from a path that looks like this:
+.../projects/some-project-name To a new repository using the recommended Subversion repository layout, like this:"><meta property="og:url" content="https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2010-01-29 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/>Cleaning up Subversion with Git</a></h1><div class=post-meta><time class=post-date>2010-01-29 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/svn/>svn</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/versioncontrol/>versioncontrol</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/git/>git</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/subversion/>subversion</a>&nbsp;</span><div class=post-content><div><h1 id=overview>Overview<a href=#overview class=hanchor arialabel=Anchor>&#8983;</a></h1><p>At my office, we have a crufty <a href=http://subversion.tigris.org/>Subversion</a> repository (dating back to early 2006) that contains a jumble of unrelated projects. We would like to split this single repository up into a number of smaller repositories, each following the recommended trunk/tags/branches repository organization.</p><p>What we want to do is move a project from a path that looks like this:</p><pre><code>.../projects/some-project-name
+</code></pre><p>To a new repository using the recommended Subversion repository layout, like this:</p><pre><code>.../some-project-name/trunk
+</code></pre><p>Our lives are complicated by the fact that there has been a lot of mobility (renames/moves) of projects within the repository.</p><h1 id=setup>Setup<a href=#setup class=hanchor arialabel=Anchor>&#8983;</a></h1><p>We&rsquo;ll set up a test environment that will demonstrate the problem and our solution.</p><ol><li><p>Create the empty repositories:</p><p>set -x
+rm -rf work && mkdir work
+cd work
+WORKDIR=$(pwd)
+mkdir repos</p><h1 id=create-source-repository>create source repository<a href=#create-source-repository class=hanchor arialabel=Anchor>&#8983;</a></h1><p>svnadmin create repos/src</p><h1 id=create-destination-reposiory>create destination reposiory<a href=#create-destination-reposiory class=hanchor arialabel=Anchor>&#8983;</a></h1><p>svnadmin create repos/dst</p></li><li><p>Create our desired repository structure in the destination repository:</p><p>svn mkdir -m &lsquo;create trunk&rsquo; file://$WORKDIR/repos/dst/trunk
+svn mkdir -m &lsquo;create branches&rsquo; file://$WORKDIR/repos/dst/branches
+svn mkdir -m &lsquo;create tags&rsquo; file://$WORKDIR/repos/dst/tags</p></li><li><p>Create a simple revision history:</p><p>svn co file://$WORKDIR/repos/src src
+(
+cd src</p><h1 id=create-our-initial-set-of-projects>Create our initial set of projects.<a href=#create-our-initial-set-of-projects class=hanchor arialabel=Anchor>&#8983;</a></h1><p>mkdir projects
+mkdir projects/{project1,project2}
+touch projects/project1/{file11,file12}
+touch projects/project2/{file21,file22}
+svn add *
+svn ci -m &lsquo;initial commit&rsquo;</p><h1 id=relocate-a-file-between-projects>Relocate a file between projects.<a href=#relocate-a-file-between-projects class=hanchor arialabel=Anchor>&#8983;</a></h1><p>svn mv projects/project1/file11 projects/project2/
+svn ci -m &lsquo;moved file11&rsquo;</p><h1 id=rename-a-project>Rename a project.<a href=#rename-a-project class=hanchor arialabel=Anchor>&#8983;</a></h1><p>svn mv projects/project2 projects/project3
+svn update
+svn ci -m &lsquo;renamed project2 to project3&rsquo;
+)</p></li><li><p>We can see the structure of the source repository like this:</p><p>echo &ldquo;Contents of source reposiory:&rdquo;
+svn ls -R file://$WORKDIR/repos/src</p></li></ol><p>Your output should look something like this:</p><pre><code>projects/
+projects/project1/
+projects/project1/file12
+projects/project3/
+projects/project3/file11
+projects/project3/file21
+projects/project3/file22
+</code></pre><p>In this example, we&rsquo;ll try to import <em>project3</em> into a new repository.</p><h1 id=using-subversion>Using Subversion<a href=#using-subversion class=hanchor arialabel=Anchor>&#8983;</a></h1><p>With Subversion, it&rsquo;s easy to extract a single project from the repository:</p><pre><code>svn co file://$WORKDIR/repos/src/projects/project3
+</code></pre><p>This gives us a directory called project3 containing the contents of the project. Unfortunately, there are no tools that will allow us to take this working copy and move it into another repository.</p><p>Subversion includes a tool called svnadmin that allows on to perform a number of operations on a Subversion repository, but it requires access to the filesystem instance of the repository (it will not work over the network). This is a substantial limitation if you are working with a repository that is maintained by someone else, but we have the necessary access to our repository.</p><p>The svnadmin command includes a dump operation that serializes a repository &ndash; and its entire revision history &ndash; into a text stream that can be loaded into another repository with a corresponding load operation. We don&rsquo;t want the entire repository, so we&rsquo;ll make use of the svndumpfilter command which, as you might expect, can apply certain filters to the output of svnadmin dump.</p><p>We might try something like this:</p><pre><code>svnadmin dump repos/src |
+  svndumpfilter include projects/project3/ |
+  svnadmin load repos/dst
+</code></pre><p>Unforunately, this will fail with an error along the lines of:</p><pre><code>svndumpfilter: Invalid copy source path '/projects/project2'
+svnadmin: Can't write to stream: Broken pipe
+</code></pre><p>And if you were to look at the destination repository, you would find projec3 entirely absent:</p><pre><code>echo &quot;Contents of destination repository (after dump/filter/load):&quot;
+svn ls -R file://$WORKDIR/repos/dst
+</code></pre><p>And even if it worked we would still have to muck about in the destination repository to create our desired repository layout.</p><h1 id=using-git>Using Git<a href=#using-git class=hanchor arialabel=Anchor>&#8983;</a></h1><p><a href=http://git-scm.com/>Git</a> is another version control system, similar in some ways to <a href=http://subversion.tigris.org/>Subversion</a> but designed for distributed operation. If you&rsquo;re not familiar with git there is lots of documentation available online.</p><p>We&rsquo;ll start by checking out <em>project3</em> from the Subversion repository:</p><pre><code>rm -rf project3
+git svn clone file://$WORKDIR/repos/src/projects/project3
+cd project3
+</code></pre><p>Because we&rsquo;re going to import this code into a new repository we need to erase all references to the source repository:</p><pre><code>git branch -rD git-svn
+git config --remove-section svn-remote.svn
+rm -rf .git/svn
+</code></pre><p>And now we associate this git repository with the destination Subversion repository:</p><pre><code>git svn init -s file://$WORKDIR/repos/dst
+git svn fetch
+</code></pre><p>We now apply the revision history to the trunk of the destination repository and commit the changes:</p><pre><code>git rebase trunk
+git svn dcommit
+</code></pre><p>After all of this, we have exactly what we want &ndash; our project hosted in a new repository with our desired layout. The following commands show the contents of the repository:</p><pre><code>echo &quot;Contents of destination repository (after git):&quot;
+svn ls -R file://$WORKDIR/repos/dst
+</code></pre><p>And produce output like this:</p><pre><code>branches/
+tags/
+trunk/
+trunk/file11
+trunk/file21
+trunk/file22
+</code></pre><p>And the revision history of the project is available in the destination repository:</p><pre><code>echo &quot;Revision history in destination repository:&quot;
+svn log file://$WORKDIR/repos/dst
+</code></pre><p>The output will look something like:</p><pre><code>Revision history in destination repository:
++ svn log file:///home/lars/projects/svn-to-svn-via-git/work/repos/dst
+------------------------------------------------------------------------
+r7 | lars | 2009-06-03 14:46:02 -0400 (Wed, 03 Jun 2009) | 1 line
+
+renamed project2 to project3
+------------------------------------------------------------------------
+r6 | lars | 2009-06-03 14:46:02 -0400 (Wed, 03 Jun 2009) | 1 line
+
+initial commit
+------------------------------------------------------------------------
+r5 | (no author) | 2009-06-03 14:45:55 -0400 (Wed, 03 Jun 2009) | 1 line
+
+This is an empty revision for padding.
+------------------------------------------------------------------------
+r4 | (no author) | 2009-06-03 14:45:53 -0400 (Wed, 03 Jun 2009) | 1 line
+
+This is an empty revision for padding.
+------------------------------------------------------------------------
+r3 | lars | 2009-06-03 14:45:52 -0400 (Wed, 03 Jun 2009) | 1 line
+
+create tags
+------------------------------------------------------------------------
+r2 | lars | 2009-06-03 14:45:52 -0400 (Wed, 03 Jun 2009) | 1 line
+
+create branches
+------------------------------------------------------------------------
+r1 | lars | 2009-06-03 14:45:52 -0400 (Wed, 03 Jun 2009) | 1 line
+
+create trunk
+------------------------------------------------------------------------
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

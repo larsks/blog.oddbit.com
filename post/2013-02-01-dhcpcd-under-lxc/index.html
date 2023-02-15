@@ -1,0 +1,53 @@
+<!doctype html><html lang=en><head><title>Running dhcpcd under LXC :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I&amp;rsquo;ve been working with Arch Linux recently, which uses dhcpcd as its default DHCP agent. If you try booting Arch inside an LXC container, you will find that dhcpcd is unable to configure your network interfaces. Running it by hand you will first see the following error:
+# dhcpcd eth0 dhcpcd[492]: version 5.6.4 starting dhcpcd[492]: eth0: if_init: Read-only file system dhcpcd[492]: eth0: interface not found or invalid This happens because dhcpcd is trying to modify a sysctl value."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-02-01-dhcpcd-under-lxc/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Running dhcpcd under LXC"><meta property="og:description" content="I&amp;rsquo;ve been working with Arch Linux recently, which uses dhcpcd as its default DHCP agent. If you try booting Arch inside an LXC container, you will find that dhcpcd is unable to configure your network interfaces. Running it by hand you will first see the following error:
+# dhcpcd eth0 dhcpcd[492]: version 5.6.4 starting dhcpcd[492]: eth0: if_init: Read-only file system dhcpcd[492]: eth0: interface not found or invalid This happens because dhcpcd is trying to modify a sysctl value."><meta property="og:url" content="https://blog.oddbit.com/post/2013-02-01-dhcpcd-under-lxc/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-02-01 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-02-01-dhcpcd-under-lxc/>Running dhcpcd under LXC</a></h1><div class=post-meta><time class=post-date>2013-02-01 ::</time></div><div class=post-content><div><p>I&rsquo;ve been working with <a href=http://www.archlinux.org/>Arch Linux</a> recently, which uses <a href=http://roy.marples.name/projects/dhcpcd/>dhcpcd</a>
+as its default DHCP agent. If you try booting Arch inside an <a href=http://lxc.sourceforge.net/>LXC</a>
+container, you will find that <code>dhcpcd</code> is unable to configure your
+network interfaces. Running it by hand you will first see the
+following error:</p><pre><code># dhcpcd eth0
+dhcpcd[492]: version 5.6.4 starting
+dhcpcd[492]: eth0: if_init: Read-only file system
+dhcpcd[492]: eth0: interface not found or invalid
+</code></pre><p>This happens because <code>dhcpcd</code> is trying to modify a sysctl value.
+Running <code>dhcpcd</code> under <code>strace</code> we see:</p><pre><code>open(&quot;/proc/sys/net/ipv4/conf/eth0/promote_secondaries&quot;, O_WRONLY|O_CREAT|O_TRUNC, 0666) = -1 EROFS (Read-only file system)
+</code></pre><p>This happens because <code>/proc</code> is typically mounted read-only in a
+container environment (to prevent the container from modifying things
+that would potentially affect the host system).</p><p>We can use a &ldquo;bind mount&rdquo; to solve this problem. A &ldquo;bind mount&rdquo;
+allows you to mount part of a filesystem on another part of the
+filesystem. In this case, we&rsquo;re going to mask that value in <code>/proc</code>
+by bind mounting a file on top of it.</p><ul><li><p>First, we create the file we&rsquo;ll use as a mask:</p><pre><code>  # echo 0 &gt; /var/tmp/promote_secondaries
+</code></pre></li><li><p>Then we mount in on top of the <code>/proc</code> entry:</p><pre><code>  # mount -o bind /var/tmp/promote_secondaries \
+      /proc/sys/net/ipv4/conf/eth0/promote_secondaries
+</code></pre></li></ul><p>And now that <code>/proc</code> value is &ldquo;writable&rdquo; from the perspective of
+<code>dhcpcd</code>. If we try to run <code>dhcpcd</code> now, we see:</p><pre><code># dhcpcd eth0
+dhcpcd[770]: version 5.6.4 starting
+dhcpcd[770]: eth0: sending IPv6 Router Solicitation
+dhcpcd[770]: eth0: rebinding lease of 192.168.117.53
+dhcpcd[770]: eth0: acknowledged 192.168.117.53 from 192.168.117.1
+dhcpcd[770]: eth0: checking for 192.168.117.53
+dhcpcd[770]: eth0: sending IPv6 Router Solicitation
+dhcpcd[770]: eth0: leased 192.168.117.53 for 3600 seconds
+dhcpcd[770]: forked to background, child pid 796
+</code></pre><p>If you are running <code>dhcpcd</code> via the <code>dhcpcd@.service</code> unit, then you
+can automate this masking with the following service unit:</p><pre><code>[Unit]
+Description=Mask read-only /proc entries for %I.
+RequiredBy=dhcpcd@%I
+Before=dhcpcd@%I
+
+[Service]
+ExecStartPre=/bin/dd if=/proc/sys/net/ipv4/conf/%I/promote_secondaries \
+  of=/var/tmp/promote_secondaries_%I
+ExecStart=/bin/mount -o bind /var/tmp/promote_secondaries_%I \
+  /proc/sys/net/ipv4/conf/%I/promote_secondaries
+RemainAfterExit=yes
+ExecStop=/bin/unmount /proc/sys/net/ipv4/conf/%I/promote_secondaries
+
+[Install]
+WantedBy=multi-user.target
+</code></pre><p>If you see&mldr;</p><pre><code>/usr/lib/dhcpcd/dhcpcd-hooks/30-hostname: line 17: /proc/sys/kernel/hostname: Read-only file system
+</code></pre><p>&mldr;you may need to do something similar to mask the <code>kernel.hostname</code>
+entry in <code>/proc</code>, although this will need to be done once rather than
+per-interface. Alternatively, you can modify the hook script
+responsible for setting the hostname
+(<code>/usr/lib/dhcpcd/dhcpcd-hooks/30-hostname</code>).</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,205 @@
+<!doctype html><html lang=en><head><title>Investigating connection timeouts in a Kubernetes application :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Investigating connection timeouts in a Kubernetes application"><meta property="og:description" content="We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause."><meta property="og:url" content="https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2022-09-10 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/>Investigating connection timeouts in a Kubernetes application</a></h1><div class=post-meta><time class=post-date>2022-09-10 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/kubernetes/>kubernetes</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openshift/>openshift</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/cloud/>cloud</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/labels/>labels</a>&nbsp;</span><div class=post-content><div><p>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&ldquo;I&rsquo;m seeing a lot of connection timeouts!&rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause. Absent a solid reproducer of the behavior in question, we looked at other aspects of our infrastructure:</p><ul><li>Networking seemed fine (we weren&rsquo;t able to find any evidence of interface errors, packet loss, or bandwidth issues)</li><li>Storage in most of our cloud environments is provided by remote Ceph clusters. In addition to not seeing any evidence of network problems in general, we weren&rsquo;t able to demonstrate specific problems with our storage, either (we did spot some performance variation between our Ceph clusters that may be worth investigating in the future, but it wasn&rsquo;t the sort that would cause the problems we&rsquo;re seeing)</li><li>My own attempts to reproduce the behavior using <a href=https://dev.mysql.com/doc/refman/8.0/en/mysqlslap.html>mysqlslap</a> did not demonstrate any problems, even though we were driving a far larger number of connections and queries/second in the benchmarks than we were in the application.</li></ul><p>What was going on?</p><p>I was finally able to get my hands on container images, deployment manifests, and instructions to reproduce the problem this past Friday. After working through some initial errors that weren&rsquo;t the errors we were looking for (insert Jedi hand gesture here), I was able to see the behavior in practice. In a section of code that makes a number of connections to the database, we were seeing:</p><pre tabindex=0><code>Failed to create databases:
+
+Command returned non-zero value &#39;1&#39;: ERROR 2003 (HY000): Can&#39;t connect to MySQL server on &#39;mariadb&#39; (110)
+
+#0 /usr/share/xdmod/classes/CCR/DB/MySQLHelper.php(521): CCR\DB\MySQLHelper::staticExecuteCommand(Array)
+#1 /usr/share/xdmod/classes/CCR/DB/MySQLHelper.php(332): CCR\DB\MySQLHelper::staticExecuteStatement(&#39;mariadb&#39;, &#39;3306&#39;, &#39;root&#39;, &#39;pass&#39;, NULL, &#39;SELECT SCHEMA_N...&#39;)
+#2 /usr/share/xdmod/classes/OpenXdmod/Shared/DatabaseHelper.php(65): CCR\DB\MySQLHelper::databaseExists(&#39;mariadb&#39;, &#39;3306&#39;, &#39;root&#39;, &#39;pass&#39;, &#39;mod_logger&#39;)
+#3 /usr/share/xdmod/classes/OpenXdmod/Setup/DatabaseSetupItem.php(39): OpenXdmod\Shared\DatabaseHelper::createDatabases(&#39;root&#39;, &#39;pass&#39;, Array, Array, Object(OpenXdmod\Setup\Console))
+#4 /usr/share/xdmod/classes/OpenXdmod/Setup/DatabaseSetup.php(109): OpenXdmod\Setup\DatabaseSetupItem-&gt;createDatabases(&#39;root&#39;, &#39;pass&#39;, Array, Array)
+#5 /usr/share/xdmod/classes/OpenXdmod/Setup/Menu.php(69): OpenXdmod\Setup\DatabaseSetup-&gt;handle()
+#6 /usr/bin/xdmod-setup(37): OpenXdmod\Setup\Menu-&gt;display()
+#7 /usr/bin/xdmod-setup(22): main()
+#8 {main}
+</code></pre><p>Where <code>110</code> is <code>ETIMEDOUT</code>, &ldquo;Connection timed out&rdquo;.</p><p>The application consists of two <a href=https://kubernetes.io/docs/concepts/workloads/controllers/deployment/>Deployment</a> resources, one that manages a MariaDB pod and another that manages the application itself. There are also the usual suspects, such as <a href=https://kubernetes.io/docs/concepts/storage/persistent-volumes/>PersistentVolumeClaims</a> for the database backing store, etc, and a <a href=https://kubernetes.io/docs/concepts/services-networking/service/>Service</a> to allow the application to access the database.</p><p>While looking at this problem, I attempted to look at the logs for the application by running:</p><pre tabindex=0><code>kubectl logs deploy/moc-xdmod
+</code></pre><p>But to my surprise, I found myself looking at the logs for the MariaDB container instead&mldr;which provided me just about all the information I needed about the problem.</p><h2 id=how-do-deployments-work>How do Deployments work?<a href=#how-do-deployments-work class=hanchor arialabel=Anchor>&#8983;</a></h2><p>To understand what&rsquo;s going on, let&rsquo;s first take a closer look at a Deployment manifest. The basic framework is something like this:</p><pre tabindex=0><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+spec:
+  selector:
+    matchLabels:
+      app: example
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+        - name: example
+          image: docker.io/alpine:latest
+          command:
+            - sleep
+            - inf
+</code></pre><p>There are labels in three places in this manifest:</p><ol><li><p>The Deployment itself has labels in the <code>metadata</code> section.</p></li><li><p>There are labels in <code>spec.template.metadata</code> that will be applied to Pods spawned by the Deployment.</p></li><li><p>There are labels in <code>spec.selector</code> which, in the words of [the documentation]:</p><blockquote><p>defines how the Deployment finds which Pods to manage</p></blockquote></li></ol><p>It&rsquo;s not spelled out explicitly anywhere, but the <code>spec.selector</code> field is also used to identify to which pods to attach when using the Deployment name in a command like <code>kubectl logs</code>: that is, given the above manifest, running <code>kubectl logs deploy/example</code> would look for pods that have label <code>app</code> set to <code>example</code>.</p><p>With this in mind, let&rsquo;s take a look at how our application manifests are being deployed. Like most of our applications, this is deployed using <a href=https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/>Kustomize</a>. The <code>kustomization.yaml</code> file for the application manifests looked like this:</p><pre tabindex=0><code>commonLabels:
+  app: xdmod
+
+resources:
+  - svc-mariadb.yaml
+  - deployment-mariadb.yaml
+  - deployment-xdmod.yaml
+</code></pre><p>That <code>commonLabels</code> statement will apply the label <code>app: xdmod</code> to all of the resources managed by the <code>kustomization.yaml</code> file. The Deployments looked like this:</p><p>For MariaDB:</p><pre tabindex=0><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+spec:
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+</code></pre><p>For the application experience connection problems:</p><pre tabindex=0><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moc-xdmod
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  template:
+    metadata:
+      labels:
+        app: xdmod
+</code></pre><p>The problem here is that when these are processed by <code>kustomize</code>, the <code>app</code> label hardcoded in the manifests will be replaced by the <code>app</code> label defined in the <code>commonLabels</code> section of <code>kustomization.yaml</code>. When we run <code>kustomize build</code> on these manifests, we will have as output:</p><pre tabindex=0><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: xdmod
+  name: mariadb
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  template:
+    metadata:
+      labels:
+        app: xdmod
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: xdmod
+  name: moc-xdmod
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+  template:
+    metadata:
+      labels:
+        app: xdmod
+</code></pre><p>In other words, all of our pods will have the same labels (because the <code>spec.template.metadata.labels</code> section is identical in both Deployments). When I run <code>kubectl logs deploy/moc-xdmod</code>, I&rsquo;m just getting whatever the first match is for a query that is effectively the same as <code>kubectl get pod -l app=xdmod</code>.</p><p>So, that&rsquo;s what was going on with the <code>kubectl logs</code> command.</p><h2 id=how-do-services-work>How do services work?<a href=#how-do-services-work class=hanchor arialabel=Anchor>&#8983;</a></h2><p>A Service manifest in Kubernetes looks something like this:</p><pre tabindex=0><code>apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+spec:
+  selector:
+    app: mariadb
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+</code></pre><p>Here, <code>spec.selector</code> has a function very similar to what it had in a <code>Deployment</code>: it selects pods to which the Service will direct traffic. From <a href=https://kubernetes.io/docs/concepts/services-networking/service/>the documentation</a>, we know that a Service proxy will select a backend either in a round-robin fashion (using the legacy user-space proxy) or in a random fashion (using the iptables proxy) (there is also an <a href=http://www.linuxvirtualserver.org/software/ipvs.html>IPVS</a> proxy mode, but that&rsquo;s not available in our environment).</p><p>Given what we know from the previous section about Deployments, you can probably see what&rsquo;s going on here:</p><ol><li>There are multiple pods with identical labels that are providing distinct services</li><li>For each incoming connection, the service proxy selects a Pod based on the labels in the service&rsquo;s <code>spec.selector</code>.</li><li>With only two pods involved, there&rsquo;s a 50% chance that traffic targeting our MariaDB instance will in fact be directed to the application pod, which will simply drop the traffic (because it&rsquo;s not listening on the appropriate port).</li></ol><p>We can see the impact of this behavior by running a simple loop that attempts to connect to MariaDB and run a query:</p><pre tabindex=0><code>while :; do
+  _start=$SECONDS
+  echo -n &#34;$(date +%T) &#34;
+  timeout 10 mysql -h mariadb -uroot -ppass -e &#39;select 1&#39; &gt; /dev/null &amp;&amp; echo -n OKAY || echo -n FAILED
+  echo &#34; $(( SECONDS - _start))&#34;
+  sleep 1
+done
+</code></pre><p>Which outputs:</p><pre tabindex=0><code>01:41:30 OKAY 1
+01:41:32 OKAY 0
+01:41:33 OKAY 1
+01:41:35 OKAY 0
+01:41:36 OKAY 3
+01:41:40 OKAY 1
+01:41:42 OKAY 0
+01:41:43 OKAY 3
+01:41:47 OKAY 3
+01:41:51 OKAY 4
+01:41:56 OKAY 1
+01:41:58 OKAY 1
+01:42:00 FAILED 10
+01:42:10 OKAY 0
+01:42:11 OKAY 0
+</code></pre><p>Here we can see that connection time is highly variable, and we occasionally hit the 10 second timeout imposed by the <code>timeout</code> call.</p><h2 id=solving-the-problem>Solving the problem<a href=#solving-the-problem class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In order to resolve this behavior, we want to ensure (a) that Pods managed by a Deployment are uniquely identified by their labels and that (b) <code>spec.selector</code> for both Deployments and Services will only select the appropriate Pods. We can do this with a few simple changes.</p><p>It&rsquo;s useful to apply some labels consistently across all of the resource we generate, so we&rsquo;ll keep the existing <code>commonLabels</code> section of our <code>kustomization.yaml</code>:</p><pre tabindex=0><code>commonLabels:
+  app: xdmod
+</code></pre><p>But then in each Deployment we&rsquo;ll add a <code>component</code> label identifying the specific service, like this:</p><pre tabindex=0><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  labels:
+    component: mariadb
+spec:
+  selector:
+    matchLabels:
+      component: mariadb
+  template:
+    metadata:
+      labels:
+        component: mariadb
+</code></pre><p>When we generate the final manifest with <code>kustomize</code>, we end up with:</p><pre tabindex=0><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: xdmod
+    component: mariadb
+  name: mariadb
+spec:
+  selector:
+    matchLabels:
+      app: xdmod
+      component: mariadb
+  template:
+    metadata:
+      labels:
+        app: xdmod
+        component: mariadb
+</code></pre><p>In the above output, you can see that <code>kustomize</code> has combined the <code>commonLabel</code> definition with the labels configured individually in the manifests. With this change, <code>spec.selector</code> will now select only the pod in which MariaDB is running.</p><p>We&rsquo;ll similarly modify the Service manifest to look like:</p><pre tabindex=0><code>apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+spec:
+  selector:
+    component: mariadb
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+</code></pre><p>Resulting in a generated manifest that looks like:</p><pre tabindex=0><code>apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: xdmod
+  name: mariadb
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app: xdmod
+    component: mariadb
+</code></pre><p>Which, as with the Deployment, will now select only the correct pods.</p><p>With these changes in place, if we re-run the test loop I presented earlier, we see as output:</p><pre tabindex=0><code>01:57:27 OKAY 0
+01:57:28 OKAY 0
+01:57:29 OKAY 0
+01:57:30 OKAY 0
+01:57:31 OKAY 0
+01:57:32 OKAY 0
+01:57:33 OKAY 0
+01:57:34 OKAY 0
+01:57:35 OKAY 0
+01:57:36 OKAY 0
+01:57:37 OKAY 0
+01:57:38 OKAY 0
+01:57:39 OKAY 0
+01:57:40 OKAY 0
+</code></pre><p>There is no variability in connection time, and there are no timeouts.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

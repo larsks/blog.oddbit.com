@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>sssd on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/sssd/</link><description>Recent content in sssd on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Jul 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/sssd/rss.xml" rel="self" type="application/rss+xml"/><item><title>Mapping local users to Kerberos principals with SSSD</title><link>https://blog.oddbit.com/post/2015-07-16-mapping-local-users-to-kerbero/</link><pubDate>Thu, 16 Jul 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-07-16-mapping-local-users-to-kerbero/</guid><description>I work for an organization that follows the common model of assigning people systematically generated user ids. Like most technically inclined employees of this organization, I have local accounts on my workstation that don&amp;rsquo;t bear any relation to the generated account ids. For the most part this isn&amp;rsquo;t a problem, except that our organization uses Kerberos to authenticate access to a variety of resources (such as the mailserver and a variety of web applications).</description><content>&lt;p>I work for an organization that follows the common model of assigning
+people systematically generated user ids. Like most technically
+inclined employees of this organization, I have local accounts on my
+workstation that don&amp;rsquo;t bear any relation to the generated account ids.
+For the most part this isn&amp;rsquo;t a problem, except that our organization
+uses Kerberos to authenticate access to a variety of resources (such
+as the mailserver and a variety of web applications).&lt;/p>
+&lt;p>In the past, I&amp;rsquo;ve gotten along by running an explicit &lt;code>kinit lkellogg@EXAMPLE.COM&lt;/code> on the command line once in a while, and that
+works, but it&amp;rsquo;s not particularly graceful.&lt;/p>
+&lt;p>I&amp;rsquo;m running Fedora, which of course ships with &lt;a href="https://fedorahosted.org/sssd/">SSSD&lt;/a>. Two of the
+neat features available through SSSD are (a) you can have it acquire a
+token for you automatically when you authenticate and (b) renew that
+token periodically, assuming that you have a renewable token.&lt;/p>
+&lt;p>There are two problems that were preventing me from taking advantage
+of this service.&lt;/p>
+&lt;h2 id="combining-kerberos-with-local-accounts">Combining Kerberos with local accounts&lt;/h2>
+&lt;p>The first problem is that there is a general assumption that if you&amp;rsquo;re
+using Kerberos for authentication, you are also using some sort of
+enterprise-wide identity service like LDAP. The practical evidence of
+this in SSSD is that you can&amp;rsquo;t use Kerberos as an &lt;code>auth_provider&lt;/code> if
+you are using the &lt;code>local&lt;/code> &lt;code>id_provider&lt;/code>. If you attempt a naive
+configuration that includes the following:&lt;/p>
+&lt;pre>&lt;code>[domain/local]
+id_provider = local
+auth_provider = krb5
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll get:&lt;/p>
+&lt;pre>&lt;code>(Thu Jul 16 22:19:44:802460 2015) [sssd] [confdb_get_domain_internal]
+(0x0010): Local ID provider does not support [krb5] as an AUTH provider.
+&lt;/code>&lt;/pre>
+&lt;p>It turns out that you can work around this limitation with a &amp;ldquo;proxy&amp;rdquo;
+identity provider. With this method, SSSD &lt;em>proxies&lt;/em> identity requests
+to an existing NSS library. This can, for example, be used to get
+SSSD to interoperate with a legacy NIS environment, as in &lt;a href="http://docs.fedoraproject.org/en-US/Fedora/15/html/Deployment_Guide/sect-SSSD_User_Guide-Domain_Configuration_Options-Configuring_a_Proxy_Domain.html#sect-SSSD-proxy-krb5">this
+example&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>[domain/PROXY_KRB5]
+auth_provider = krb5
+krb5_server = 192.168.1.1
+krb5_realm = EXAMPLE.COM
+id_provider = proxy
+proxy_lib_name = nis
+enumerate = true
+cache_credentials = true
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>proxy_lib_name&lt;/code> setting identifies the particular NSS provider to
+use for identity information. This would make use of the &lt;code>nis&lt;/code> NSS
+module (&lt;code>libnss_nis.so.2&lt;/code>) for identity information while using
+Kerberos for authentication.&lt;/p>
+&lt;p>For my own use case I want to use my local accounts for identity
+information, which means I need to use the &lt;code>files&lt;/code> NSS provider:&lt;/p>
+&lt;pre>&lt;code>[domain/example.com]
+id_provider = proxy
+proxy_lib_name = files
+auth_provider = krb5
+&lt;/code>&lt;/pre>
+&lt;h2 id="mapping-a-local-username-to-a-kerberos-principal">Mapping a local username to a Kerberos principal&lt;/h2>
+&lt;p>The second problem I had been struggling with was how to map my local
+username (&lt;code>lars&lt;/code>) to the organizational Kerberos principal
+(&lt;code>lkellogg@EXAMPLE.COM&lt;/code>). I had originally been looking at solutions
+involving &lt;code>kinit&lt;/code>, but despite promising verbage in the
+&lt;a href="http://web.mit.edu/kerberos/krb5-1.12/doc/user/user_config/k5identity.html">k5identity(5&lt;/a> man page, I wasn&amp;rsquo;t meeting with much success.&lt;/p>
+&lt;p>It turns out that SSSD has the &lt;code>krb5_map_user&lt;/code> option for exactly this
+purpose; the syntax looks like:&lt;/p>
+&lt;pre>&lt;code>krb5_map_user = &amp;lt;local name&amp;gt;:&amp;lt;principal name&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>So, for me:&lt;/p>
+&lt;pre>&lt;code>krb5_map_user = lars:lkellogg
+&lt;/code>&lt;/pre>
+&lt;h2 id="automatic-ticket-renewal">Automatic ticket renewal&lt;/h2>
+&lt;p>SSSD is able to automatically renew your Kerberos tickets for you,
+provided that you&amp;rsquo;re able to acquire a renewable ticket. You can
+check for this by running &lt;code>klist&lt;/code> and seeing if your ticket has a
+&lt;code>renew until&lt;/code> date in the future, as in the following example:&lt;/p>
+&lt;pre>&lt;code>Ticket cache: KEYRING:persistent:1000:krb_ccache_rOS6mR8
+Default principal: lkellogg@REDHAT.COM
+Valid starting Expires Service principal
+07/17/2015 11:02:31 07/17/2015 21:02:31 krbtgt/REDHAT.COM@REDHAT.COM
+renew until 07/24/2015 11:02:31
+&lt;/code>&lt;/pre>
+&lt;p>If you meet this criteria, then you can add the following
+configuration options to your domain configuration:&lt;/p>
+&lt;pre>&lt;code>krb5_renewable_lifetime = 7d
+krb5_renew_interval = 30m
+&lt;/code>&lt;/pre>
+&lt;p>The first (&lt;code>krb5_renewable_lifetime&lt;/code>) specifies the renewable lifetime
+to request when requesting a ticket, and the second (&lt;code>krb5_renew_interval&lt;/code>) indicates how often SSSD should check to see if the ticket should be renewed.&lt;/p>
+&lt;h2 id="an-example-configuration">An example configuration&lt;/h2>
+&lt;p>This is approximately (names of been changed to protect the innocent)
+configuration that I am currently using with SSSD:&lt;/p>
+&lt;pre>&lt;code>[domain/default]
+cache_credentials = True
+[sssd]
+config_file_version = 2
+reconnection_retries = 3
+sbus_timeout = 30
+services = nss, pam
+domains = example.com
+[nss]
+filter_groups = root
+filter_users = root
+reconnection_retries = 3
+[pam]
+reconnection_retries = 3
+[domain/example.com]
+id_provider = proxy
+proxy_lib_name = files
+enumerate = True
+auth_provider = krb5
+krb5_server = kerberos.example.com
+krb5_realm = EXAMPLE.COM
+cache_credentials = True
+krb5_store_password_if_offline = True
+krb5_map_user = lars:lkellogg
+chpass_provider = krb5
+krb5_kpasswd = kerberos.example.com
+offline_credentials_expiration = 0
+krb5_renewable_lifetime = 7d
+krb5_renew_interval = 30m
+&lt;/code>&lt;/pre>
+&lt;h2 id="configuring-pam">Configuring PAM&lt;/h2>
+&lt;p>You&amp;rsquo;re not done yet! Once you have SSSD configured correctly, you
+need to configure your system to make use of it for authentication.
+First, you&amp;rsquo;ll want to ensure that your &lt;code>/etc/nsswitch.conf&lt;/code> file is
+configured to use SSSD. You&amp;rsquo;ll want at least the &lt;code>passwd&lt;/code>, &lt;code>shadow&lt;/code>,
+and &lt;code>group&lt;/code> databases configured to use SSSD:&lt;/p>
+&lt;pre>&lt;code>passwd: files sss
+shadow: files sss
+group: files sss
+&lt;/code>&lt;/pre>
+&lt;p>Next, you&amp;rsquo;ll want configure PAM. On my system, I need to change two
+configuration files:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>/etc/pam.d/system-auth&lt;/code>, which is the default for many services,
+and&lt;/li>
+&lt;li>&lt;code>/etc/pam.d/password-auth&lt;/code>, which provides defaults for other
+services, including &lt;code>sshd&lt;/code>.&lt;/li>
+&lt;/ul>
+&lt;p>In my case, both files actually end up having identical content, which
+looks like this (largely cribbed from &lt;a href="http://docs.fedoraproject.org/en-US/Fedora/15/html/Deployment_Guide/chap-SSSD_User_Guide-Setting_Up_SSSD.html">the Fedora documentation&lt;/a>):&lt;/p>
+&lt;pre>&lt;code>#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth required pam_env.so
+auth sufficient pam_unix.so nullok try_first_pass
+auth requisite pam_succeed_if.so uid &amp;gt;= 1000 quiet_success
+auth sufficient pam_sss.so use_first_pass
+auth required pam_deny.so
+account required pam_unix.so
+account sufficient pam_localuser.so
+account sufficient pam_succeed_if.so uid &amp;lt; 1000 quiet
+account [default=bad success=ok user_unknown=ignore] pam_sss.so
+account required pam_permit.so
+password requisite pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
+password sufficient pam_unix.so sha512 shadow nullok try_first_pass use_authtok
+password sufficient pam_sss.so use_authtok
+password required pam_deny.so
+session optional pam_keyinit.so revoke
+session required pam_limits.so
+-session optional pam_systemd.so
+session [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session optional pam_sss.so
+session required pam_unix.so
+&lt;/code>&lt;/pre>
+&lt;p>Note the entries for &lt;code>pam_sss.so&lt;/code> in each stanza.&lt;/p>
+&lt;h2 id="the-proof-in-the-pudding">The proof in the pudding&lt;/h2>
+&lt;p>I start on my local system with no Kerberos tickets:&lt;/p>
+&lt;pre>&lt;code>$ klist
+klist: Credentials cache keyring 'persistent:1000:krb_ccache_Pzo4C6u' not found
+&lt;/code>&lt;/pre>
+&lt;p>Then I lock my screen and unlock it using my Kerberos password, and
+now:&lt;/p>
+&lt;pre>&lt;code>$ klist
+Ticket cache: KEYRING:persistent:1000:krb_ccache_rOS6mR8
+Default principal: lkellogg@EXAMPLE.COM
+Valid starting Expires Service principal
+07/16/2015 22:45:43 07/17/2015 08:45:43 krbtgt/EXAMPLE.COM@EXAMPLE.COM
+renew until 07/23/2015 22:45:43
+&lt;/code>&lt;/pre>
+&lt;h2 id="troubleshooting">Troubleshooting&lt;/h2>
+&lt;p>I found the easiest way to troubleshoot SSSD was to stop the service:&lt;/p>
+&lt;pre>&lt;code># systemctl stop sssd
+&lt;/code>&lt;/pre>
+&lt;p>And then run &lt;code>sssd&lt;/code> on the command line in debug mode:&lt;/p>
+&lt;pre>&lt;code># sssd -d 5 -i
+&lt;/code>&lt;/pre>
+&lt;p>This generates logs on &lt;code>stderr&lt;/code> and helped me identity problems in my
+configuration.&lt;/p>
+&lt;h2 id="kudos">Kudos&lt;/h2>
+&lt;p>Thanks to Jakub Hrozek for suggesting the use of the a proxy identity
+provider to overcome the limitation on combining Kerberos with the
+&lt;code>local&lt;/code> provider.&lt;/p></content></item></channel></rss>

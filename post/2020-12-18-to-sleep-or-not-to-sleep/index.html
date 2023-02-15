@@ -1,0 +1,145 @@
+<!doctype html><html lang=en><head><title>To sleep or not to sleep? :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running MicroPython. You&amp;rsquo;d like to sample them at different frequencies (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like to do it as efficiently as possible in terms of power consumption. What are your options?
+If we don&amp;rsquo;t care about power efficiency, the simplest solution is probably a loop like this:
+import machine lastrun_1 = 0 lastrun_2 = 0 while True: now = time."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="To sleep or not to sleep?"><meta property="og:description" content="Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running MicroPython. You&amp;rsquo;d like to sample them at different frequencies (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like to do it as efficiently as possible in terms of power consumption. What are your options?
+If we don&amp;rsquo;t care about power efficiency, the simplest solution is probably a loop like this:
+import machine lastrun_1 = 0 lastrun_2 = 0 while True: now = time."><meta property="og:url" content="https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2020-12-18 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/>To sleep or not to sleep?</a></h1><div class=post-meta><time class=post-date>2020-12-18 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/python/>python</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/micropython/>micropython</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/esp8266/>esp8266</a>&nbsp;</span><div class=post-content><div><p>Let&rsquo;s say you have a couple of sensors attached to an ESP8266 running
+<a href=https://micropython.org/>MicroPython</a>. You&rsquo;d like to sample them at different frequencies
+(say, one every 60 seconds and one every five minutes), and you&rsquo;d like
+to do it as efficiently as possible in terms of power consumption.
+What are your options?</p><p>If we don&rsquo;t care about power efficiency, the simplest solution is
+probably a loop like this:</p><pre tabindex=0><code>import machine
+
+lastrun_1 = 0
+lastrun_2 = 0
+
+while True:
+    now = time.time()
+
+    if (lastrun_1 == 0) or (now - lastrun_1 &gt;= 60):
+        read_sensor_1()
+        lastrun_1 = now
+    if (lastrun_2 == 0) or (now - lastrun_2 &gt;= 300):
+        read_sensor_2()
+        lastrun_2 = now
+
+    machine.idle()
+</code></pre><p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266&rsquo;s deep
+sleep mode (assuming we have <a href=http://docs.micropython.org/en/latest/esp8266/tutorial/powerctrl.html#deep-sleep-mode>wired things properly</a>):</p><pre tabindex=0><code>import machine
+
+def deepsleep(duration):
+    rtc = machine.RTC()
+    rtc.irq(trigger=rtc.ALARM0, wake=machine.DEEPSLEEP)
+    rtc.alarm(rtc.ALARM0, duration)
+
+
+read_sensor_1()
+deepsleep(60000)
+</code></pre><p>This will wake up, read the sensor, then sleep for 60 seconds, at
+which point the device will reboot and repeat the process.</p><p>If we want both use deep sleep <em>and</em> run tasks at different intervals,
+we can effectively combine the above two methods. This requires a
+little help from the RTC, which in addition to keeping time also
+provides us with a small amount of memory (492 bytes when using
+MicroPython) that will persist across a deepsleep/reset cycle.</p><p>The <code>machine.RTC</code> class includes a <code>memory</code> method that provides
+access to the RTC memory. We can read the memory like this:</p><pre tabindex=0><code>import machine
+
+rtc = machine.RTC()
+bytes = rtc.memory()
+</code></pre><p>Note that <code>rtc.memory()</code> will always return a byte string.</p><p>We write to it like this:</p><pre tabindex=0><code>rtc.memory(&#39;somevalue&#39;)
+</code></pre><p>Lastly, note that the time maintained by the RTC also persists across
+a deepsleep/reset cycle, so that if we call <code>time.time()</code> and then
+deepsleep for 10 seconds, when the module boots back up <code>time.time()</code>
+will show that 10 seconds have elapsed.</p><p>We&rsquo;re going to implement a solution similar to the loop presented at
+the beginning of this article in that we will store the time at which
+at task was last run. Because we need to maintain two different
+values, and because the RTC memory operates on bytes, we need a way to
+serialize and deserialize a pair of integers. We could use functions
+like this:</p><pre tabindex=0><code>import json
+
+def store_time(t1, t2):
+  rtc.memory(json.dumps([t1, t2]))
+
+def load_time():
+  data = rtc.memory()
+  if not data:
+    return [0, 0]
+
+  try:
+    return json.loads(data)
+  except ValueError:
+    return [0, 0]
+</code></pre><p>The <code>load_time</code> method returns <code>[0, 0]</code> if either (a) the RTC memory
+was unset or (b) we were unable to decode the value stored in memory
+(which might happen if you had previously stored something else
+there).</p><p>You don&rsquo;t have to use <code>json</code> for serializing the data we&rsquo;re storing in
+the RTC; you could just as easily use the <code>struct</code> module:</p><pre tabindex=0><code>import struct
+
+def store_time(t1, t2):
+  rtc.memory(struct.pack(&#39;ll&#39;, t1, t2))
+
+def load_time():
+  data = rtc.memory()
+  if not data:
+    return [0, 0]
+
+  try:
+    return struct.unpack(&#39;ll&#39;, data)
+  except ValueError:
+    return [0, 0]
+</code></pre><p>Once we&rsquo;re able to store and retrieve data from the RTC, the main part
+of our code ends up looking something like this:</p><pre tabindex=0><code>lastrun_1, lastrun_2 = load_time()
+now = time.time()
+something_happened = False
+
+if lastrun_1 == 0 or (now - lastrun_1 &gt; 60):
+    read_sensor_1()
+    lastrun_1 = now
+    something_happened = True
+
+if lastrun_2 == 0 or (now - lastrun_2 &gt; 300):
+    read_sensor_2()
+    lastrun_2 = now
+    something_happened = True
+
+if something_happened:
+  store_time(lastrun_1, lastrun_2)
+
+deepsleep(60000)
+</code></pre><p>This code will wake up every 60 seconds. That means it will always run
+the <code>read_sensor_1</code> task, and it will run the <code>read_sensor_2</code> task
+every five minutes. In between, the ESP8266 will be in deep sleep
+mode, consuming around 20µA. In order to avoid too many unnecessary
+writes to RTC memory, we only store values when <code>lastrun_1</code> or
+<code>lastrun_2</code> has changed.</p><p>While developing your code, it can be inconvenient to have the device
+enter deep sleep mode (because you can&rsquo;t just <code>^C</code> to return to the
+REPL). You can make the deep sleep behavior optional by wrapping
+everything in a loop, and optionally calling <code>deepsleep</code> at the end of
+the loop, like this:</p><pre tabindex=0><code>lastrun_1, lastrun_2 = load_time()
+
+while True:
+    now = time.time()
+    something_happened = False
+
+    if lastrun_1 == 0 or (now - lastrun_1 &gt; 60):
+        read_sensor_1()
+        lastrun_1 = now
+        something_happened = True
+
+    if lastrun_2 == 0 or (now - lastrun_2 &gt; 300):
+        read_sensor_2()
+        lastrun_2 = now
+        something_happened = True
+
+    if something_happened:
+      store_time(lastrun_1, lastrun_2)
+
+    if use_deep_sleep:
+        deepsleep(60000)
+    else:
+        machine.idle()
+</code></pre><p>If the variable <code>use_deepsleep</code> is <code>True</code>, this code will perform as
+described in the previous section, waking once every 60 seconds. If
+<code>use_deepsleep</code> is <code>False</code>, this will use a busy loop.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

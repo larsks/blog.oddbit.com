@@ -1,0 +1,87 @@
+<!doctype html><html lang=en><head><title>Fedora Atomic, OpenStack, and Kubernetes (oh my) :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="While experimenting with Fedora Atomic, I was looking for an elegant way to automatically deploy Atomic into an OpenStack environment and then automatically schedule some Docker containers on the Atomic host. This post describes my solution.
+Like many other cloud-targeted distributions, Fedora Atomic runs cloud-init when the system boots. We can take advantage of this to configure the system at first boot by providing a user-data blob to Nova when we boot the instance."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Fedora Atomic, OpenStack, and Kubernetes (oh my)"><meta property="og:description" content="While experimenting with Fedora Atomic, I was looking for an elegant way to automatically deploy Atomic into an OpenStack environment and then automatically schedule some Docker containers on the Atomic host. This post describes my solution.
+Like many other cloud-targeted distributions, Fedora Atomic runs cloud-init when the system boots. We can take advantage of this to configure the system at first boot by providing a user-data blob to Nova when we boot the instance."><meta property="og:url" content="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-11-24 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/>Fedora Atomic, OpenStack, and Kubernetes (oh my)</a></h1><div class=post-meta><time class=post-date>2014-11-24 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kubernetes/>kubernetes</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/fedora/>fedora</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/atomic/>atomic</a>&nbsp;</span><div class=post-content><div><p>While experimenting with <a href=http://www.projectatomic.io/>Fedora Atomic</a>, I was looking for an
+elegant way to automatically deploy Atomic into an <a href=http://openstack.org/>OpenStack</a>
+environment and then automatically schedule some <a href=http://docker.com/>Docker</a> containers
+on the Atomic host. This post describes my solution.</p><p>Like many other cloud-targeted distributions, Fedora Atomic runs
+<a href=http://cloudinit.readthedocs.org/>cloud-init</a> when the system boots. We can take advantage of this
+to configure the system at first boot by providing a <code>user-data</code> blob
+to Nova when we boot the instance. A <code>user-data</code> blob can be as
+simple as a shell script, and while we could arguably mash everything
+into a single script it wouldn&rsquo;t be particularly maintainable or
+flexible in the face of different pod/service/etc descriptions.</p><p>In order to build a more flexible solution, we&rsquo;re going to take
+advantage of the following features:</p><ul><li><p>Support for <a href=http://cloudinit.readthedocs.org/en/latest/topics/format.html#mime-multi-part-archive>multipart MIME archives</a>.</p><p>Cloud-init allows you to pass in multiple files via <code>user-data</code> by
+encoding them as a multipart MIME archive.</p></li><li><p>Support for a <a href=http://cloudinit.readthedocs.org/en/latest/topics/format.html#part-handler>custom part handler</a>.</p><p>Cloud-init recognizes a number of specific MIME types (such as
+<code>text/cloud-config</code> or <code>text/x-shellscript</code>). We can provide a
+custom part handler that will be used to handle MIME types not
+intrinsincally supported by <code>cloud-init</code>.</p></li></ul><h2 id=a-custom-part-handler-for-kubernetes-configurations>A custom part handler for Kubernetes configurations<a href=#a-custom-part-handler-for-kubernetes-configurations class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I have written a <a href=https://github.com/larsks/atomic-kubernetes-tools/blob/master/kube-part-handler.py>custom part handler</a> that knows
+about the following MIME types:</p><ul><li><code>text/x-kube-pod</code></li><li><code>text/x-kube-service</code></li><li><code>text/x-kube-replica</code></li></ul><p>When the part handler is first initialized it will ensure the
+Kubernetes is started. If it is provided with a document matching one
+of the above MIME types, it will pass it to the appropriate <code>kubecfg</code>
+command to create the objects in Kubernetes.</p><h2 id=creating-multipart-mime-archives>Creating multipart MIME archives<a href=#creating-multipart-mime-archives class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I have also created a <a href=https://github.com/larsks/atomic-kubernetes-tools/blob/master/write-mime-multipart.py>modified version</a> of the standard
+<code>write-multipart-mime.py</code> Python script. This script will inspect the
+first lines of files to determine their content type; in addition to
+the standard <code>cloud-init</code> types (like <code>#cloud-config</code> for a
+<code>text/cloud-config</code> type file), this script recognizes:</p><ul><li><code>#kube-pod</code> for <code>text/x-kube-pod</code></li><li><code>#kube-service</code> for <code>text/x-kube-service</code></li><li><code>#kube-replica</code> for <code>text/x-kube-replca</code></li></ul><p>That is, a simple pod description might look something like:</p><pre><code>#kube-pod
+id: dbserver
+desiredState:
+  manifest:
+    version: v1beta1
+    id: dbserver
+    containers:
+    - image: mysql
+      name: dbserver
+      env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: secret
+</code></pre><h2 id=putting-it-all-together>Putting it all together<a href=#putting-it-all-together class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Assuming that the pod description presented in the previous section is
+stored in a file named <code>dbserver.yaml</code>, we can bundle that file up
+with our custom part handler like this:</p><pre><code>$ write-mime-multipart.py \
+  kube-part-handler.py dbserver.yaml &gt; userdata
+</code></pre><p>We would then launch a Nova instance using the <code>nova boot</code> command,
+providing the generated <code>userdata</code> file as an argument to the
+<code>user-data</code> command:</p><pre><code>$ nova boot --image fedora-atomic --key-name mykey \
+  --flavor m1.small --user-data userdata my-atomic-server
+</code></pre><p>You would obviously need to substitute values for <code>--image</code> and
+<code>--key-name</code> that are appropriate for your environment.</p><h2 id=details-details>Details, details<a href=#details-details class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If you are experimenting with Fedora Atomic 21, you may find out that
+the above example doesn&rsquo;t work &ndash; the official <code>mysql</code> image generates
+an selinux error. We can switch selinux to permissive mode by putting
+the following into a file called <code>disable-selinux.sh</code>:</p><pre><code>#!/bin/sh
+
+setenforce 0
+sed -i '/^SELINUX=/ s/=.*/=permissive/' /etc/selinux/config
+</code></pre><p>And then including that in our MIME archive:</p><pre><code>$ write-mime-multipart.py \
+  kube-part-handler.py disable-selinux.sh dbserver.yaml &gt; userdata
+</code></pre><h2 id=a-brief-demonstration>A brief demonstration<a href=#a-brief-demonstration class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If we launch an instance as described in the previous section and then
+log in, we should find that the pod has already been scheduled:</p><pre><code># kubecfg list pods
+ID                  Image(s)            Host                Labels              Status
+----------          ----------          ----------          ----------          ----------
+dbserver            mysql               /                                       Waiting
+</code></pre><p>At this point, <code>docker</code> needs to pull the <code>mysql</code> image locally, so
+this step can take a bit depending on the state of your local internet
+connection.</p><p>Running <code>docker ps</code> at this point will yield:</p><pre><code># docker ps
+CONTAINER ID        IMAGE                     COMMAND             CREATED             STATUS              PORTS               NAMES
+3561e39f198c        kubernetes/pause:latest   &quot;/pause&quot;            46 seconds ago      Up 43 seconds                           k8s--net.d96a64a9--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--d872be51   
+</code></pre><p>The <code>pause</code> image here is a Kubernetes detail that is used to
+configure the networking for a pod (in the Kubernetes world, a pod is
+a group of linked containers that share a common network namespace).</p><p>After a few minutes, you should eventually see:</p><pre><code># docker ps
+CONTAINER ID        IMAGE                     COMMAND                CREATED             STATUS              PORTS               NAMES
+644c8fc5a79c        mysql:latest              &quot;/entrypoint.sh mysq   3 minutes ago       Up 3 minutes                            k8s--dbserver.fd48803d--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--58794467   
+3561e39f198c        kubernetes/pause:latest   &quot;/pause&quot;               5 minutes ago       Up 5 minutes                            k8s--net.d96a64a9--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--d872be51        
+</code></pre><p>And <code>kubecfg</code> should show the pod as running:</p><pre><code># kubecfg list pods
+ID                  Image(s)            Host                Labels              Status
+----------          ----------          ----------          ----------          ----------
+dbserver            mysql               127.0.0.1/                              Running
+</code></pre><h2 id=problems-problems>Problems, problems<a href=#problems-problems class=hanchor arialabel=Anchor>&#8983;</a></h2><p>This works and is I think a relatively elegant solution. However,
+there are some drawbacks. In particular, the custom part handler
+runs fairly early in the <code>cloud-init</code> process, which means that it
+cannot depend on changes implemented by <code>user-data</code> scripts (because
+these run much later).</p><p>A better solution might be to have the custom part handler simply
+write the Kubernetes configs into a directory somewhere, and then
+install a service that launches after Kubernetes and (a) watches that
+directory for files, then (b) passes the configuration to Kubernetes
+and deletes (or relocates) the file.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

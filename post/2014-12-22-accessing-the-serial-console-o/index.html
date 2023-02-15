@@ -1,0 +1,97 @@
+<!doctype html><html lang=en><head><title>Accessing the serial console of your Nova servers :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="One of the new features available in the Juno release of OpenStack is support for serial console access to your Nova servers. This post looks into how to configure the serial console feature and then how to access the serial consoles of your Nova servers.
+Configuring serial console support In previous release of OpenStack, read-only access to the serial console of your servers was available through the os-getConsoleOutput server action (exposed via nova console-log on the command line)."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Accessing the serial console of your Nova servers"><meta property="og:description" content="One of the new features available in the Juno release of OpenStack is support for serial console access to your Nova servers. This post looks into how to configure the serial console feature and then how to access the serial consoles of your Nova servers.
+Configuring serial console support In previous release of OpenStack, read-only access to the serial console of your servers was available through the os-getConsoleOutput server action (exposed via nova console-log on the command line)."><meta property="og:url" content="https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-12-22 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/>Accessing the serial console of your Nova servers</a></h1><div class=post-meta><time class=post-date>2014-12-22 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/nova/>nova</a>&nbsp;</span><div class=post-content><div><p>One of the new features available in the Juno release of OpenStack is
+support for <a href=https://blueprints.launchpad.net/nova/+spec/serial-ports>serial console access to your Nova
+servers</a>. This post looks into how to configure the
+serial console feature and then how to access the serial consoles of
+your Nova servers.</p><h2 id=configuring-serial-console-support>Configuring serial console support<a href=#configuring-serial-console-support class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In previous release of OpenStack, read-only access to the serial
+console of your servers was available through the
+<code>os-getConsoleOutput</code> server action (exposed via <code>nova console-log</code> on
+the command line). Most cloud-specific Linux images are configured
+with a command line that includes something like <code>console=tty0 console=ttyS0,115200n81</code>, which ensures that kernel output and other
+messages are available on the serial console. This is a useful
+mechanism for diagnosing problems in the event that you do not have
+network access to a server.</p><p>In Juno, you can exchange this read-only view of the console for
+read-write access by setting <code>enabled=true</code> in the <code>[serial_console]</code>
+section of your <code>nova.conf</code> file:</p><pre><code>[serial_console]
+enabled=true
+</code></pre><p>This enables the new <code>os-getSerialConsole</code> server action.</p><p>Much like the configuration for graphical console access, you will also
+probably need to provide values for <code>base_url</code>, <code>listen</code>, and
+<code>proxyclient_address</code>:</p><pre><code>[serial_console]
+enabled=true
+
+# Location of serial console proxy. (string value)
+base_url=ws://127.0.0.1:6083/
+
+# IP address on which instance serial console should listen
+# (string value)
+listen=127.0.0.1
+
+# The address to which proxy clients (like nova-serialproxy)
+# should connect (string value)
+proxyclient_address=127.0.0.1
+</code></pre><p>The <code>base_url</code> setting is what gets passed to clients, so this will
+probably be the address of one of your &ldquo;front-end&rdquo; controllers (e.g.,
+wherever you are running other public APIs or services like Horizon).</p><p>The <code>listen</code> address is used by <code>nova-compute</code> to control on which
+address the virtual console will listen (this can be set to <code>0.0.0.0</code>
+to listen on all available addresses). The <code>proxyclient_address</code>
+controls to which address the <code>nova-serialproxy</code> service will connect.</p><p>In other words: a remote client request a serial console will receive
+a websocket URL prefixed by <code>base_url</code>. This URL will connect the
+client to the <code>nova-serialproxy</code> service. The <code>nova-serialproxy</code>
+service will look up the <code>proxyclient_address</code> associated with the
+requested server, and will connect to the appropriate port at that
+address.</p><p>Enabling serial console support will result in an entry similar to the
+following in the XML description of libvirt guests started by Nova:</p><pre><code>&lt;console type='tcp'&gt;
+  &lt;source mode='bind' host='127.0.0.1' service='10000'/&gt;
+  &lt;protocol type='raw'/&gt;
+  &lt;target type='serial' port='0'/&gt;
+  &lt;alias name='serial0'/&gt;
+&lt;/console&gt;
+</code></pre><h2 id=accessing-the-serial-console>Accessing the serial console<a href=#accessing-the-serial-console class=hanchor arialabel=Anchor>&#8983;</a></h2><p>You can use the <code>nova get-serial-proxy</code> command to retrieve the
+websocket URL for a server&rsquo;s serial console, like this:</p><pre><code>$ nova get-serial-console my-server
++--------+-----------------------------------------------------------------+
+| Type   | Url                                                             |
++--------+-----------------------------------------------------------------+
+| serial | ws://127.0.0.1:6083/?token=18510769-71ad-4e5a-8348-4218b5613b3d |
++--------+-----------------------------------------------------------------+
+</code></pre><p>Or through the REST API like this:</p><pre><code>curl -i 'http://127.0.0.1:8774/v2/&lt;tenant_uuid&gt;/servers/&lt;server_uuid&gt;/action' \
+  -X POST \
+  -H &quot;Accept: application/json&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;X-Auth-Project-Id: &lt;project_id&gt;&quot; \
+  -H &quot;X-Auth-Token: &lt;auth_token&gt;&quot; \
+  -d '{&quot;os-getSerialConsole&quot;: {&quot;type&quot;: &quot;serial&quot;}}'
+</code></pre><p>But now that you have a websocket URL, what do you do with it? It
+turns out that there aren&rsquo;t all that many out-of-the-box tools that
+will let you connect interactively to this URL from the command line.
+While I&rsquo;m sure that a future version of Horizon will provide a
+web-accessible console access mechanism, it is often convenient to
+have a command-line tool for this sort of thing because that permits
+you to log or otherwise process the output.</p><p>Fortunately, it&rsquo;s not too difficult to write a simple client. The
+Python <code>websocket-client</code> module has the necessary support; given the
+above URL, you can open a connection like this:</p><pre><code>import websocket
+
+ws = websocket.create_connection(
+      'ws://127.0.0.1:6083/?token=18510769-71ad-4e5a-8348-4218b5613b3d',
+      subprotocols=['binary', 'base64'])
+</code></pre><p>This gets you a <code>WebSocket</code> object with <code>.send</code> and <code>.recv</code> methods
+for sending and receiving data (and a <code>.fileno</code> method for use in
+event loops).</p><h2 id=i-was-told-there-would-be-no-programming>I was told there would be no programming<a href=#i-was-told-there-would-be-no-programming class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If you don&rsquo;t feel like writing your own websocket client, have no
+fear! I have put together a simple client called <a href=http://github.com/larsks/novaconsole/>novaconsole</a>.
+Assuming that you have valid credentials in your environment, you can
+provide it with a server name or UUID:</p><pre><code>$ novaconsole my-server
+</code></pre><p>You can also provide a verbatim websocket URL (in which case you don&rsquo;t
+need to bother with OpenStack authentication):</p><pre><code>$ novaconsole --url ws://127.0.0.1:6083/?token=18510769-71ad-4e5a-8348-4218b5613b3d
+</code></pre><p>In either case, you will have an interactive session to the specified
+serial console. You can exit the session by typing <code>~.</code> at the
+beginning of a line.</p><p>You can only have a single active console connection at a time. Other
+connections will block until you disconnect from the active session.</p><h2 id=but-everything-is-not-roses-and-sunshine>But everything is not roses and sunshine<a href=#but-everything-is-not-roses-and-sunshine class=hanchor arialabel=Anchor>&#8983;</a></h2><p>One disadvantage to the serial console support is that it <em>replaces</em>
+the console log available via <code>nova console-log</code>. This means that if,
+for example, a server were to encounter problems configuring
+networking and emit errors on the console, you would not be able to
+see this information unless you happened to be connected to the
+console at the time the errors were generated.</p><p>It would be nice to have both mechanisms available &ndash; serial console
+support for interactive access, and console logs for retroactive
+debugging.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

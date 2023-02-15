@@ -1,0 +1,55 @@
+<!doctype html><html lang=en><head><title>Ansible 2.0: The Docker connection driver :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="As the release of Ansible 2.0 draws closer, I&amp;rsquo;d like to take a look at some of the new features that are coming down the pipe. In this post, we&amp;rsquo;ll look at the docker connection driver.
+A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to your target hosts. These days it uses ssh by default (which relies on the OpenSSH command line client for connectivity), and it also offers the Paramiko library as an alternative ssh implementation (this was in fact the default driver in earlier versions of Ansible)."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Ansible 2.0: The Docker connection driver"><meta property="og:description" content="As the release of Ansible 2.0 draws closer, I&amp;rsquo;d like to take a look at some of the new features that are coming down the pipe. In this post, we&amp;rsquo;ll look at the docker connection driver.
+A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to your target hosts. These days it uses ssh by default (which relies on the OpenSSH command line client for connectivity), and it also offers the Paramiko library as an alternative ssh implementation (this was in fact the default driver in earlier versions of Ansible)."><meta property="og:url" content="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-10-13 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/>Ansible 2.0: The Docker connection driver</a></h1><div class=post-meta><time class=post-date>2015-10-13 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/ansible_20_series/>ansible_20_series</a>&nbsp;</span><div class=post-content><div><p>As the release of <a href=http://ansible.com/>Ansible</a> 2.0 draws closer, I&rsquo;d like to take a
+look at some of the new features that are coming down the pipe. In
+this post, we&rsquo;ll look at the <code>docker</code> connection driver.</p><p>A &ldquo;connection driver&rdquo; is the mechanism by which Ansible connects to
+your target hosts. These days it uses <code>ssh</code> by default (which relies
+on the OpenSSH command line client for connectivity), and it also
+offers the <a href=http://www.paramiko.org/>Paramiko</a> library as an alternative ssh implementation
+(this was in fact the default driver in earlier versions of Ansible).
+Alternative drivers offered by recent versions of ansible included the
+<code>winrm</code> driver, for accessing Windows hosts, the <code>fireball</code> driver, a
+(deprecated) driver that used <a href=http://zeromq.org/>0mq</a> for communication, and <code>jail</code>, a
+driver for connecting to FreeBSD jails.</p><p>Ansible 2.0 will offer a <code>docker</code> connection driver, which can be used
+to connect to Docker containers via the <code>docker exec</code> command.
+Assuming you have a running container named <code>target</code>, you can run an
+ad-hoc command like this:</p><pre><code>$ ansible all -i target, -c docker -m command -a 'uptime'
+target | SUCCESS | rc=0 &gt;&gt;
+ 03:54:21 up 7 days, 15:00,  0 users,  load average: 0.81, 0.60, 0.46
+</code></pre><p>You can specify the connection driver as part of a play in your
+playbook:</p><pre><code>- hosts: target
+  connection: docker
+  tasks:
+    - package:
+        name: git
+        state: latest
+</code></pre><p>Or as a variable in your inventory. Here&rsquo;s an example that has both a
+docker container and an ssh-accessible host:</p><pre><code>target ansible_connection=docker
+server ansible_host=192.168.1.20 ansible_user=root
+</code></pre><p>Given the following playbook:</p><pre><code>- hosts: all
+  tasks:
+    - ping:
+</code></pre><p>If we run it like this, assuming the above inventory is in the file
+<code>inventory</code>:</p><pre><code>$ ansible-playbook -i inventory playbook.yml
+</code></pre><p>The output will look something like:</p><pre><code>TASK [ping] ********************************************************************
+&lt;192.168.1.20&gt; ESTABLISH SSH CONNECTION FOR USER: root
+&lt;192.168.1.20&gt; SSH: EXEC ssh -C -q -o ControlMaster=auto -o ControlPersist=60s ... 192.168.1.20 ...
+&lt;192.168.1.20&gt; PUT /tmp/tmpbtrmo5 TO /root/.ansible/tmp/ansible-tmp-1444795190.49-64658551273604/ping
+&lt;192.168.1.20&gt; SSH: EXEC sftp -b - -C -o ControlMaster=auto -o ControlPersist=60s ... 192.168.1.20 ...
+ESTABLISH DOCKER CONNECTION FOR USER: lars
+&lt;target&gt; EXEC ['/usr/bin/docker', 'exec', '-i', u'target', '/bin/sh', '-c', ...
+&lt;target&gt; PUT /tmp/tmpNmcPTf TO /root/.ansible/tmp/ansible-tmp-1444795190.53-251446545325875/ping
+&lt;192.168.1.20&gt; ESTABLISH SSH CONNECTION FOR USER: root
+&lt;192.168.1.20&gt; SSH: EXEC ssh -C -q -o ControlMaster=auto -o ControlPersist=60s ... 192.168.1.20 ...
+ok: [server -&gt; localhost] =&gt; {&quot;changed&quot;: false, &quot;ping&quot;: &quot;pong&quot;}
+&lt;target&gt; EXEC ['/usr/bin/docker', 'exec', '-i', u'target', '/bin/sh', '-c', ...
+ok: [target -&gt; localhost] =&gt; {&quot;changed&quot;: false, &quot;ping&quot;: &quot;pong&quot;}
+
+PLAY RECAP *********************************************************************
+server                     : ok=2    changed=0    unreachable=0    failed=0   
+target                     : ok=2    changed=0    unreachable=0    failed=0   
+</code></pre><p>Now you have a unified mechanism for managing configuration changes in
+traditional hosts as well as in Docker containers.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

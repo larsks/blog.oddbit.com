@@ -1,0 +1,125 @@
+<!doctype html><html lang=en><head><title>Chasing OpenStack idle connection timeouts :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="The original problem I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a problem in which the compute service would frequently stop communicating with the AMQP message broker (qpidd).
+In order to gather some data on the problem, I ran the following simple test:
+Wait n minutes Run nova boot ... to create an instance Wait a minute and see if the new instance becomes ACTIVE If it works, delete the instance, set n = 2n and repeat This demonstrated that communication was failing after about an hour, which correlates rather nicely with the idle connection timeout on the firewall."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Chasing OpenStack idle connection timeouts"><meta property="og:description" content="The original problem I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a problem in which the compute service would frequently stop communicating with the AMQP message broker (qpidd).
+In order to gather some data on the problem, I ran the following simple test:
+Wait n minutes Run nova boot ... to create an instance Wait a minute and see if the new instance becomes ACTIVE If it works, delete the instance, set n = 2n and repeat This demonstrated that communication was failing after about an hour, which correlates rather nicely with the idle connection timeout on the firewall."><meta property="og:url" content="https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2012-07-30 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/>Chasing OpenStack idle connection timeouts</a></h1><div class=post-meta><time class=post-date>2012-07-30 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;</span><div class=post-content><div><h2 id=the-original-problem>The original problem<a href=#the-original-problem class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I&rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a
+problem in which the <a href=http://docs.openstack.org/trunk/openstack-compute/starter/content/Compute_Worker_nova-compute_-d1e232.html>compute service</a> would frequently stop communicating
+with the <a href=http://www.amqp.org/>AMQP</a> message broker (<code>qpidd</code>).</p><p>In order to gather some data on the problem, I ran the following simple test:</p><ul><li>Wait <code>n</code> minutes</li><li>Run <code>nova boot ...</code> to create an instance</li><li>Wait a minute and see if the new instance becomes <code>ACTIVE</code></li><li>If it works, delete the instance, set <code>n</code> = <code>2n</code> and repeat</li></ul><p>This demonstrated that communication was failing after about an hour, which
+correlates rather nicely with the idle connection timeout on the firewall.</p><p>I wanted to continue working with our OpenStack environment while testing
+different solutions to this problem, so I put an additional interface on the
+controller (the system running the AMQ message broker, <code>qpidd</code>, as well as
+<code>nova-api</code>, <code>nova-scheduler</code>, etc) that was on the same network as our
+<code>nova-compute</code> hosts. This would allow the compute service to communicate with
+the message broker without traversing the firewall infrastructure.</p><p>As a workaround it worked fine, but it introduced a <em>new</em> problem that sent us
+down a bit of a rabbit hole.</p><h2 id=the-new-problem>The new problem<a href=#the-new-problem class=hanchor arialabel=Anchor>&#8983;</a></h2><p>With the compute hosts talking happily to the controller, I started looking at
+the connection timeout settings in the firewall. As a first step I cranked the
+default connection timeout up to two hours and repeated our earlier test&mldr;only
+to find that connections were now failing in a matter of minutes!</p><p>So, what happened?</p><p>By adding an interface on a shared network, I created an asymmetric route
+between the two hosts &ndash; that is, the network path taking by packets from the
+compute host to the controller was different from the network path taken by
+packets in the other direction.</p><p>In the most common configuration, Linux (and other operating systems) only have
+a single routing decision to make:</p><ul><li>Am I communicating with a host on a directly attached network?</li></ul><p>If the answer is &ldquo;yes&rdquo;, a packet will be routed directly to the destination
+host, otherwise it will be routed via the default gateway (and transit the
+campus routing/firewall infrastructure).</p><p>On the compute host, with its single interface, the decision is simple. Since
+the canonical address of the controller is not on the same network, packets
+will be routed via the default gateway. On the controller, the situation is
+different. While the packet came in on the canonical interface, the kernel will
+realize that the request comes from a host on a network to which there is a
+more specific route than the default gateway: the new network interface on the
+same network as the compute host. This means that reply packets will be routed
+directly.</p><p>Asymmetric routing is not, by itself, a problem. However, throw in a stateful
+firewall and you now have a recipe for dropped connections. The firewall
+appliances in use at my office maintain a table of established TCP connections.
+This is used to reduce the processing necessary for packets associated with
+established connections. From the <a href=http://www.cisco.com/en/US/docs/security/asdm/6_2/user/guide/protect.html#wp1291963>Cisco documentation</a>:</p><blockquote><p>By default, all traffic that goes through the security appliance is inspected
+using the Adaptive Security Algorithm and is either allowed through or
+dropped based on the security policy. The security appliance maximizes the
+firewall performance by checking the state of each packet (is this a new
+connection or an established connection?) and assigning it to either the
+session management path (a new connection SYN packet), the fast path (an
+established connection), or the control plane path (advanced inspection).</p></blockquote><p>In order for two systems to successfully established a TCP connection, they
+must complete a <a href=http://en.wikipedia.org/wiki/Transmission_Control_Protocol#Connection_establishment>three-way handshake</a>:</p><ul><li>The initiating systems sends a <code>SYN</code> packet.</li><li>The receiving system sends <code>SYN-ACK</code> packet.</li><li>The initiating system sends an <code>ACK</code> packet.</li></ul><p>The routing structure introduced by our interface change meant that while the
+initial <code>SYN</code> packet was traversing the firewall, the subsequent <code>SYN-ACK</code>
+packet was being routed directly, which means that from the point of view of
+the firewall the connection was never successfully established&mldr;and after 20
+seconds (the default &ldquo;embryonic connection timeout&rdquo;) the connection gets
+dropped by the firewall. The diagram below illustrates exactly what was
+happening:</p><p><img src=asymmetric-routing.png alt="assymetric routing"></p><p>There are various ways of correcting this situation:</p><ul><li><p>You could use the advanced <a href=http://www.policyrouting.org/PolicyRoutingBook/ONLINE/TOC.html>policy routing</a> features available in Linux
+to set up a routing policy that would route replies out the same interface
+on which a packet was received, thus returning to a more typical symmetric
+routing model.</p></li><li><p>You could use the <a href=http://www.cisco.com/en/US/docs/security/asdm/6_2/user/guide/protect.html#wp1291963>tcp state bypass</a> feature available in the Cisco
+firewall appliance to exempt AMQ packets from the normal TCP state
+processing.</p></li></ul><p>I&rsquo;m not going to look at either of these solution in detail, since this whole
+issue was secondary to the initial idle connection timeout problem, which has a
+different set of solutions.</p><h2 id=dealing-with-connection-timeouts>Dealing with connection timeouts<a href=#dealing-with-connection-timeouts class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Returning to the original problem, what am I to do about the idle connection
+timeouts?</p><h3 id=disable-idle-connection-timeouts-on-the-firewall>Disable idle connection timeouts on the firewall<a href=#disable-idle-connection-timeouts-on-the-firewall class=hanchor arialabel=Anchor>&#8983;</a></h3><p>Once can disable idle connection timeouts on the firewall, either globally &ndash;
+which would be a bad idea &ndash; or for certain traffic classes. For example, &ldquo;all
+traffic to or from TCP port 5672&rdquo;. This can be done by adding a rule to the
+default global policy:</p><pre><code>class-map amq
+ description Disable connection timeouts for AMQ connections (for OpenStack)
+ match port tcp eq 5672
+policy-map global_policy
+ class amq
+  set connection random-sequence-number disable
+  set connection timeout embryonic 0:00:20 half-closed 0:00:20 tcp 0:00:00
+</code></pre><p>While this works fine, it makes successful deployment of OpenStack dependent on
+a specific firewall configuration.</p><h3 id=enable-linux-kernel-keepalive-support-for-tcp-connections>Enable Linux kernel keepalive support for TCP connections<a href=#enable-linux-kernel-keepalive-support-for-tcp-connections class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The Linux kernel supports a <a href=http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/>keepalive</a> feature intended to deal with this
+exact situation. After a connection has been idle for a certain amount of time
+(<code>net.ipv4.tcp_keepalive_time</code>), the kernel will send zero-length packets every
+<code>net.ipv4.tcp_keepalive_intvl</code> seconds in order to keep the connection active.
+The kernel defaults to an initial interval of 7200 seconds (aka two hours),
+which is longer than the default idle connection timeout on our Cisco
+firewalls, but this value is easily tuneable via the
+<code>net.ipv4.tcp_keepalive_time</code> sysctl value.</p><p>This sounds like a great solution, until you pay close attention to the <code>tcp</code>
+man page (or the <code>HOWTO</code> document):</p><blockquote><p>Keep-alives are only sent when the <code>SO_KEEPALIVE</code> socket option is enabled.</p></blockquote><p>If your application doesn&rsquo;t already set <code>SO_KEEPALIVE</code> (or give you an option
+for doing do), you&rsquo;re mostly out of luck. While it would certainly be possible
+to modify either the OpenStack source or the QPID source to set the appropriate
+option on AMQ sockets, I don&rsquo;t really want to put myself in the position of
+having to maintain this sort of one-off patch.</p><p>But all is not lost! It is possible to override functions in dynamic
+executables using a mechanism called <a href=http://www.jayconrod.com/cgi/view_post.py?23>function interposition</a>. Create a
+library that implements the function you want to override, and then preload it
+when running an application via the <code>LD_PRELOAD</code> environment variable (or
+<code>/etc/ld.so.preload</code>, if you want it to affect everything).</p><p>It can be tricky to correctly implement function interposition, so I&rsquo;m
+fortunate that the <a href=http://libkeepalive.sourceforge.net>libkeepalive</a> project has already taken care of this. By
+installing <code>libkeepalive</code> and adding <code>libkeepalive.so</code> to <code>/etc/ld.so.preload</code>,
+it is possible to have the <code>SO_KEEPALIVE</code> option set by default on all sockets.
+<code>libkeepalive</code> implements a wrapper to the <code>socket</code> system call that calls
+<code>setsockopt</code> with the <code>SO_KEEPALIVE</code> option for all TCP sockets.</p><p>Here&rsquo;s what setting up a listening socket with [netcat][] looks like before
+installing <code>libkeepalive</code>:</p><pre><code>$ strace -e trace=setsockopt nc -l 8080
+setsockopt(3, SOL_SOCKET, SO_REUSEADDR, [1], 4) = 0
+</code></pre><p>And here&rsquo;s what things look like after adding <code>libkeepalive.so</code> to
+<code>/etc/ld.so.preload</code>:</p><pre><code>$ strace -e trace=setsockopt nc -l 8080
+setsockopt(3, SOL_SOCKET, SO_KEEPALIVE, [1], 4) = 0
+setsockopt(3, SOL_SOCKET, SO_REUSEADDR, [1], 4) = 0
+</code></pre><h3 id=enable-application-level-keepalive>Enable application level keepalive<a href=#enable-application-level-keepalive class=hanchor arialabel=Anchor>&#8983;</a></h3><p>Many applications implement their own keepalive mechanism. For example,
+<a href=http://openssh.org/>OpenSSH</a> provides the <a href=http://dan.hersam.com/2007/03/05/how-to-avoid-ssh-timeouts/>ClientAliveInterval</a> configuration setting to
+control how often keepalive packets are sent by the server to a connected
+client. When this option is available it&rsquo;s probably the best choice, since it
+has been designed with the particular application in mind.</p><p>OpenStack in theory provides the <a href=http://docs.openstack.org/essex/openstack-compute/admin/content/configuration-qpid.html>qpid_heartbeat</a> setting, which is meant
+to provide a heartbeat for AMQ connections to the <code>qpidd</code> process. According to
+the documentation, the default behavior of QPID clients in the OpenStack
+framework is to send heartbeat packets every five seconds.</p><p>When first testing this option it was obvious that things weren&rsquo;t working as
+documented. Querying the connection table on the firewall would often should
+connections with more than five seconds of idle time:</p><pre><code>% show conn lport 5672
+[...]
+TCP ...:630 10.243.16.151:39881 ...:621 openstack-dev-2:5672 idle 0:34:02 Bytes 5218662 FLAGS - UBOI
+[...]
+</code></pre><p>And of course if the <code>qpid_heartbeat</code> option had been working correctly I would
+not have experienced the idle connection timeout issue in the first place.</p><p>A <a href=https://lists.launchpad.net/openstack/msg15191.html>post to the OpenStack mailing list</a> led to the source of the problem: a
+typo in the <code>impl_qpid</code> Python module:</p><pre><code>diff --git a/nova/rpc/impl_qpid.py b/nova/rpc/impl_qpid.py
+index 289f21b..e19079e 100644
+--- a/nova/rpc/impl_qpid.py
++++ b/nova/rpc/impl_qpid.py
+@@ -317,7 +317,7 @@ class Connection(object):
+                     FLAGS.qpid_reconnect_interval_min)
+         if FLAGS.qpid_reconnect_interval:
+             self.connection.reconnect_interval = FLAGS.qpid_reconnect_interval
+-        self.connection.hearbeat = FLAGS.qpid_heartbeat
++        self.connection.heartbeat = FLAGS.qpid_heartbeat
+         self.connection.protocol = FLAGS.qpid_protocol
+         self.connection.tcp_nodelay = FLAGS.qpid_tcp_nodelay
+</code></pre><p>If it&rsquo;s not obvious, <code>heartbeat</code> was mispelled <code>hearbeat</code> in the above block of
+code. Putting this change into production has completely resolved the idle
+connection timeout problem.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

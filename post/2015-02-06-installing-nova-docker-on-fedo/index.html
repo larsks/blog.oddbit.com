@@ -1,0 +1,110 @@
+<!doctype html><html lang=en><head><title>Installing nova-docker on Fedora 21/RDO Juno :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This post comes about indirectly by a request on IRC in #rdo for help getting nova-docker installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.
+Getting started I started with the Fedora 21 Cloud Image, because I&amp;rsquo;m installing onto OpenStack and the cloud images include some features that are useful in this environment.
+We&amp;rsquo;ll be using OpenStack packages from the RDO Juno repository."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Installing nova-docker on Fedora 21/RDO Juno"><meta property="og:description" content="This post comes about indirectly by a request on IRC in #rdo for help getting nova-docker installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.
+Getting started I started with the Fedora 21 Cloud Image, because I&amp;rsquo;m installing onto OpenStack and the cloud images include some features that are useful in this environment.
+We&amp;rsquo;ll be using OpenStack packages from the RDO Juno repository."><meta property="og:url" content="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-02-06 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/>Installing nova-docker on Fedora 21/RDO Juno</a></h1><div class=post-meta><time class=post-date>2015-02-06 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/nova/>nova</a>&nbsp;</span><div class=post-content><div><p>This post comes about indirectly by a request on IRC in <code>#rdo</code> for help getting <a href=https://github.com/stackforge/nova-docker>nova-docker</a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.</p><h2 id=getting-started>Getting started<a href=#getting-started class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I started with the <a href=https://getfedora.org/en/cloud/download/>Fedora 21 Cloud Image</a>, because I&rsquo;m
+installing onto OpenStack and the cloud images include
+some features that are useful in this environment.</p><p>We&rsquo;ll be using OpenStack packages from the <a href=https://repos.fedorapeople.org/repos/openstack/openstack-juno/>RDO Juno</a> repository.
+Because there is often some skew between the RDO packages and the
+current Fedora selinux policy, we&rsquo;re going to start by putting SELinux
+into permissive mode (sorry, Dan):</p><pre><code># setenforce 0
+# sed -i '/^SELINUX=/ s/=.*/=permissive/' /etc/selinux/config
+</code></pre><p>Next, install the RDO Juno repository:</p><pre><code># yum -y install \
+  https://repos.fedorapeople.org/repos/openstack/openstack-juno/rdo-release-juno-1.noarch.rpm
+</code></pre><p>And upgrade all our existing packages:</p><pre><code># yum -y upgrade
+</code></pre><h2 id=install-openstack>Install OpenStack<a href=#install-openstack class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;ll be using <a href=https://wiki.openstack.org/wiki/Packstack>packstack</a> to install OpenStack onto this host.
+Start by installing the package:</p><pre><code># yum -y install openstack-packstack
+</code></pre><p>And then run a <code>--allinone</code> install, which sets up all OpenStack
+services on a single host:</p><pre><code># packstack --allinone
+</code></pre><h2 id=install-nova-docker-prequisites>Install nova-docker prequisites<a href=#install-nova-docker-prequisites class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Once <code>packstack</code> has completed successfully, we need to install some
+prerequisites for <a href=https://github.com/stackforge/nova-docker>nova-docker</a>.</p><pre><code># yum -y install git python-pip python-pbr \
+  docker-io fedora-repos-rawhide
+</code></pre><p>The <code>fedora-repos-rawhide</code> package provides a yum configuration for the
+<code>rawhide</code> repository (disabled by default). We&rsquo;re going to need that
+to pick up more recent versions of <code>systemd</code> (because of <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1187882">this
+bug</a>) and
+<code>python-six</code> (because <code>nova-docker</code> needs the <code>six.add_metaclass</code>
+method):</p><pre><code># yum --enablerepo=rawhide install python-six systemd
+</code></pre><p>At this point, having upgraded <code>systemd</code>, you should probably reboot:</p><pre><code># reboot
+</code></pre><h2 id=configure-docker>Configure Docker<a href=#configure-docker class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Once things are up and running, we will expect the <code>nova-compute</code>
+service to launch Docker containers. In order for this to work, the
+<code>nova</code> user will need access to the Docker socket,
+<code>/var/run/docker.sock</code>. By default, this is owned by <code>root:root</code> and
+has mode <code>660</code>:</p><pre><code># ls -l /var/run/docker.sock
+srw-rw----. 1 root root 0 Feb  1 12:43 /var/run/docker.sock
+</code></pre><p>The <code>nova-compute</code> service runs as the <code>nova</code> user and will not have
+access to that socket. There are a few ways of resolving this; an
+expedient method is simply to make this socket owned by the <code>nova</code>
+group, which we can do with <code>docker</code>&rsquo;s <code>-G</code> option.</p><p>Edit <code>/etc/sysconfig/docker</code>, and modify the <code>OPTIONS=</code> line to look
+like:</p><pre><code>OPTIONS='--selinux-enabled -G nova'
+</code></pre><p>Then enable and start the <code>docker</code> service:</p><pre><code># systemctl enable docker
+# systemctl start docker
+</code></pre><h2 id=install-nova-docker>Install nova-docker<a href=#install-nova-docker class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Clone the <a href=https://github.com/stackforge/nova-docker>nova-docker</a> repository:</p><pre><code># git clone http://github.com/stackforge/nova-docker.git
+# cd nova-docker
+</code></pre><p>And check out the <code>stable/juno</code> branch, since we&rsquo;re operating with an
+OpenStack Juno environment:</p><pre><code># git checkout stable/juno
+</code></pre><p>Now install the driver:</p><pre><code># python setup.py install
+</code></pre><h2 id=configure-nova>Configure Nova<a href=#configure-nova class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Following the <a href=https://github.com/stackforge/nova-docker/blob/master/README.rst>README</a> from <a href=https://github.com/stackforge/nova-docker>nova-docker</a>, we need to modify
+the Nova configuration to use the <code>nova-docker</code> driver. Edit
+<code>/etc/nova/nova.conf</code> and add the following line to the <code>DEFAULT</code>
+section:</p><pre><code>compute_driver=novadocker.virt.docker.DockerDriver
+</code></pre><p>If there is already a line setting <code>compute_driver</code>, then comment it
+out or delete before adding the new one.</p><p>Modify the Glance configuration to permit storage of Docker images.
+Edit <code>/etc/glance/glance-api.conf</code>, and add the following line to the
+<code>DEFAULT</code> section:</p><pre><code>container_formats=ami,ari,aki,bare,ovf,ova,docker
+</code></pre><p>Next, we need to augment the <code>rootwrap</code> configuration such that
+<code>nova-docker</code> is able run the <code>ln</code> command with <code>root</code> privileges.
+We&rsquo;ll install the <a href=https://github.com/stackforge/nova-docker/blob/master/etc/nova/rootwrap.d/docker.filters>docker.filters</a> file from the <code>nova-docker</code>
+source:</p><pre><code># mkdir -p /etc/nova/rootwrap.d
+# cp etc/nova/rootwrap.d/docker.filters \
+  /etc/nova/rootwrap.d/docker.filters
+</code></pre><p>We&rsquo;ve changed a number of configuration files, so we should restart
+the affected services:</p><pre><code># openstack-service restart nova glance
+</code></pre><h2 id=testing-things-out>Testing things out<a href=#testing-things-out class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Let&rsquo;s try starting a container! We need to select one that will run
+in the <code>nova-docker</code> environment. Generally, that means one that does
+not expect to have an interactive terminal and that will automatically
+start some sort of web-accessible service. I have a <a href=https://registry.hub.docker.com/u/larsks/thttpd/>minimal thttpd
+container</a> that fits the bill nicely:</p><pre><code># docker pull larsks/thttpd
+</code></pre><p>We need to store this image into Glance using the same name:</p><pre><code># docker save larsks/thttpd | 
+  glance image-create --name larsks/thttpd \
+  --container-format docker --disk-format raw --is-public true
+</code></pre><p>And now we should be able to start a container:</p><pre><code># nova boot --image larsks/thttpd --flavor m1.tiny test0
+</code></pre><p>After a bit, <code>nova list</code> should show:</p><pre><code>+------...+-------+--------+...+------------------+
+| ID   ...| Name  | Status |...| Networks         |
++------...+-------+--------+...+------------------+
+| 430a1...| test0 | ACTIVE |...| private=10.0.0.6 |
++------...+-------+--------+...+------------------+
+</code></pre><p>And we should also see the container if we run <code>docker ps</code>:</p><pre><code># docker ps
+CONTAINER ID        IMAGE                  COMMAND                CREATED             STATUS              PORTS               NAMES
+ee864da30cf1        larsks/thttpd:latest   &quot;/thttpd -D -l /dev/   7 hours ago         Up 7 hours                              nova-430a197e-a0ca-4e72-a7db-1969d0773cf7   
+</code></pre><h2 id=getting-connected>Getting connected<a href=#getting-connected class=hanchor arialabel=Anchor>&#8983;</a></h2><p>At this point, the container will <em>not</em> be network accessible; it&rsquo;s
+attached to a private tenant network. Let&rsquo;s assign it a floating ip
+address:</p><pre><code># nova floating-ip-create public
++--------------+-----------+----------+--------+
+| Ip           | Server Id | Fixed Ip | Pool   |
++--------------+-----------+----------+--------+
+| 172.24.4.229 | -         | -        | public |
++--------------+-----------+----------+--------+
+# nova floating-ip-associate test0 172.24.4.229
+</code></pre><p>This isn&rsquo;t going to be immediately accessible because Packstack left
+us without a route to the floating ip network. We can fix that
+temporarily like this:</p><pre><code># ip addr add 172.24.4.225/28 dev br-ex
+</code></pre><p>And now we can ping our Docker container:</p><pre><code># ping -c2 172.24.4.229
+PING 172.24.4.229 (172.24.4.229) 56(84) bytes of data.
+64 bytes from 172.24.4.229: icmp_seq=1 ttl=63 time=0.291 ms
+64 bytes from 172.24.4.229: icmp_seq=2 ttl=63 time=0.074 ms
+
+--- 172.24.4.229 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
+</code></pre><p>And access the webserver:</p><pre><code># curl http://172.24.4.229
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;            
+    &lt;title&gt;Your web server is working&lt;/title&gt;
+.
+.
+.</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

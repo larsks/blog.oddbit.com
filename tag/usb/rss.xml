@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>usb on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/usb/</link><description>Recent content in usb on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 19 Oct 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/usb/rss.xml" rel="self" type="application/rss+xml"/><item><title>Systemd unit for managing USB gadgets</title><link>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</guid><description>The Pi Zero (and Zero W) have support for acting as a USB gadget: that means that they can be configured to act as a USB device &amp;ndash; like a serial port, an ethernet interface, a mass storage device, etc.
+There are two different ways of configuring this support. The first only allows you to configure a single type of gadget at a time, and boils down to:
+Enable the dwc2 overlay in /boot/config.</description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+that means that they can be configured to act as a USB device &amp;ndash; like
+a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
+&lt;p>There are two different ways of configuring this support. The first
+only allows you to configure a single type of gadget at a time, and
+boils down to:&lt;/p>
+&lt;ol>
+&lt;li>Enable the dwc2 overlay in &lt;code>/boot/config.txt&lt;/code>&lt;/li>
+&lt;li>Reboot.&lt;/li>
+&lt;li>&lt;code>modprobe g_serial&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>This process is more fully documented &lt;a href="https://learn.adafruit.com/turning-your-raspberry-pi-zero-into-a-usb-gadget/overview">here&lt;/a>.&lt;/p>
+&lt;p>The second mechanism makes use of the &lt;code>libcomposite&lt;/code> driver to create
+multifunction gadgets. The manual procedure is documented in &lt;a href="https://www.kernel.org/doc/Documentation/usb/gadget_configfs.txt">the
+kernel documentation&lt;/a>. While it&amp;rsquo;s a useful feature, the
+configuration process requires several steps and if you only do it
+infrequently it can be easy to forget.&lt;/p>
+&lt;p>In order to make this easier for me to manage, I&amp;rsquo;ve wrapped the
+process up in a &lt;a href="https://fedoramagazine.org/systemd-template-unit-files/">systemd template unit&lt;/a> that takes care of the
+various steps necessary to both create and remove a multifunction USB
+gadget.&lt;/p>
+&lt;p>Once installed, creating a gadget that offers both a serial interface
+and a network interface is as simple as:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Create a file &lt;code>/etc/gadget/g0.conf&lt;/code> containing:&lt;/p>
+&lt;pre>&lt;code> USB_FUNCTIONS=&amp;quot;rndis.usb0 acm.usb0&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Run &lt;code>systemctl start usb-gadget@g0&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>You can remove the gadget by running &lt;code>systemctl stop usb-gadget@g0&lt;/code>.
+As with any systemd service, you can mark the unit to start
+automatically when your system boots by running &lt;code>systemctl enable usb-gadget@g0&lt;/code>.&lt;/p>
+&lt;p>The &lt;a href="https://github.com/larsks/systemd-usb-gadget">systemd-usb-gadget&lt;/a> project can be found at:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/systemd-usb-gadget">https://github.com/larsks/systemd-usb-gadget&lt;/a>&lt;/li>
+&lt;/ul></content></item></channel></rss>

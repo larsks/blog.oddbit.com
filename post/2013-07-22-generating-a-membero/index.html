@@ -1,0 +1,119 @@
+<!doctype html><html lang=en><head><title>Generating a memberOf attribute for posixGroups :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This showed up on #openstack earlier today:
+2013-07-22T13:56:10 &amp;lt;m0zes&amp;gt; hello, all. I am looking to setup keystone with an ldap backend. I need to filter users based on group membership, in this case a non-rfc2307 posixGroup. This means that memberOf doesn't show up, and that the memberUid in the group is not a dn. any thoughts on how to accomplish this? It turns out that this is a not uncommon question, so I spent some time today working out a solution using the dynlist overlay for OpenLDAP."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-07-22-generating-a-membero/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Generating a memberOf attribute for posixGroups"><meta property="og:description" content="This showed up on #openstack earlier today:
+2013-07-22T13:56:10 &amp;lt;m0zes&amp;gt; hello, all. I am looking to setup keystone with an ldap backend. I need to filter users based on group membership, in this case a non-rfc2307 posixGroup. This means that memberOf doesn't show up, and that the memberUid in the group is not a dn. any thoughts on how to accomplish this? It turns out that this is a not uncommon question, so I spent some time today working out a solution using the dynlist overlay for OpenLDAP."><meta property="og:url" content="https://blog.oddbit.com/post/2013-07-22-generating-a-membero/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-07-22 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-07-22-generating-a-membero/>Generating a memberOf attribute for posixGroups</a></h1><div class=post-meta><time class=post-date>2013-07-22 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ldap/>ldap</a>&nbsp;</span><div class=post-content><div><p>This showed up on <a href=https://wiki.openstack.org/wiki/IRC>#openstack</a> earlier today:</p><pre><code>2013-07-22T13:56:10  &lt;m0zes&gt; hello, all. I am looking to
+setup keystone with an ldap backend. I need to filter
+users based on group membership, in this case a
+non-rfc2307 posixGroup. This means that memberOf doesn't
+show up, and that the memberUid in the group is not a
+dn. any thoughts on how to accomplish this?
+</code></pre><p>It turns out that this is a not uncommon question, so I spent some
+time today working out a solution using the <a href=http://www.openldap.org/faq/data/cache/1209.html>dynlist</a> overlay for
+<a href=http://www.openldap.org/>OpenLDAP</a>.</p><p>The LDIF data presented in this article can be found <a href=https://github.com/larsks/blog-openldap-dynlist>on github</a>.</p><h2 id=assumptions>Assumptions<a href=#assumptions class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I&rsquo;m assuming that you have a traditional <code>posixGroup</code> that looks
+something like this:</p><pre><code>dn: cn=lars,ou=groups,dc=oddbit,dc=com
+objectClass: posixGroup
+cn: lars
+gidNumber: 1000
+memberUid: lars
+</code></pre><p>That is, members are recorded in the <code>memberUid</code> attribute which
+corresponds to the <code>uidNumber</code> attribute of a user object.</p><h2 id=loading-the-dynlist-module>Loading the dynlist module<a href=#loading-the-dynlist-module class=hanchor arialabel=Anchor>&#8983;</a></h2><p>This solution makes use of the <code>dynlist</code> dynamic overlay, so you&rsquo;ll
+first need to make sure that module is loaded. Most modern OpenLDAP
+deployments make use of the new <code>slapd.d</code> configuration directory,
+which means you&rsquo;ll modify your configuration by loading the following
+LDIF file:</p><pre><code>dn: cn=modules,cn=config
+objectClass: olcModuleList
+cn: modules
+olcModuleLoad: dynlist
+</code></pre><p>You would load this into your running instance with something like the
+following:</p><pre><code># ldapadd -Y EXTERNAL -H ldapi://%2fvar%2frun%2fldapi -f dynlist.ldif
+</code></pre><p>This makes certain assumptions about how your permissions are
+configured (in particular, it assumes that your server is configured
+to permit administrative access to system UID 0 when accessing the
+<code>ldapi</code> socket).</p><p>If you already have a <code>cn=modules{0},cn=config</code> object, you&rsquo;ll need to
+modify instead using the following:</p><pre><code>dn: cn=modules,cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: dynlist
+</code></pre><p>And use <code>ldapmodify</code>:</p><pre><code># ldapmodify -Y EXTERNAL -H ldapi://%2fvar%2frun%2fldapi -f dynlist.ldif
+</code></pre><h2 id=schema-modifications>Schema modifications<a href=#schema-modifications class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In an ideal world, we would be able to make our solution populate the
+standard <code>memberOf</code> attribute. Unfortunately, this is an
+&ldquo;operational&rdquo; attribute in OpenLDAP, which means we can&rsquo;t make it
+available to a user class&mldr;so, we&rsquo;re going to define (a) a new
+<code>attributeType</code> that is largely identical to the <code>memberOf</code> attribute,
+and (b) a new auxiliary object class that allows the new attribute.</p><pre><code>dn: cn=oddbit,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: oddbit
+olcAttributeTypes: ( 1.3.6.1.4.1.24441.1.1.1 
+ NAME 'obMemberOf' 
+ DESC 'Distinguished name of a group of which the object is a member' 
+ EQUALITY distinguishedNameMatch 
+ SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+olcObjectClasses: ( 1.3.6.1.4.1.24441.2.1.1 
+ NAME 'obPerson' DESC 'oddbit.com person' 
+ AUXILIARY MAY ( obMemberOf ) )
+</code></pre><p>This gives us the <code>obMemberOf</code> attribute and the <code>obPerson</code> object
+class. <strong>NOTE</strong>: the OIDs I&rsquo;m using here are using my own
+IANA-assigned OID prefix. You should replace <code>1.3.6.1.4.1.24441</code> with
+your own OID prefix. If you don&rsquo;t have one (and you&rsquo;re sure your
+organization doesn&rsquo;t already have one), you can <a href=http://pen.iana.org/pen/PenApplication.page>register</a> for your
+own.</p><h2 id=defining-a-dynamic-list>Defining a dynamic list<a href=#defining-a-dynamic-list class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;re going to configure the <code>dynlist</code> overlay so that when it sees an
+<code>obPerson</code> object, it will use the <code>labeledURI</code> attribute of that
+object to generate a list of <code>obMemberOf</code> attributes containing the
+distinguished names of the groups of which the user is a member.
+We&rsquo;ll load the following LDIF file into our server:</p><pre><code>dn: olcOverlay=dynlist,olcDatabase={2}hdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcDynamicList
+olcOverlay: dynlist
+olcDlAttrSet: obPerson labeledURI obMemberOf
+</code></pre><p>Note that the distinguished name for this entry depends on the DN of
+the database which you are configuring, so you&rsquo;ll need to modify the
+<code>olcDatabase=</code> component in the DN.</p><h2 id=setting-user-attributes>Setting user attributes<a href=#setting-user-attributes class=hanchor arialabel=Anchor>&#8983;</a></h2><p>With the above configuration in place, we can now add the necessary
+<code>labeledURI</code> attribute to a user and see what happens. For our
+purposes, this attribute needs to contain an LDAP URI that returns the
+groups of which the user is a member. Assuming a user like this:</p><pre><code>dn: cn=user1,ou=people,dc=oddbit,dc=com
+objectClass: posixAccount
+objectClass: inetOrgPerson
+cn: user1
+sn: testuser
+uid: user1
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user1
+</code></pre><p>We&rsquo;ll need to add the following:</p><pre><code>labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;(
+ objectclass=posixgroup)(memberuid=user1))
+</code></pre><p>You could do this with the following LDIF file and <code>ldapmodify</code>:</p><pre><code>dn: cn=user1,ou=people,dc=oddbit,dc=com
+changetype: modify
+add: labeledURI
+labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;(
+ objectclass=posixgroup)(memberuid=user1))
+</code></pre><h2 id=testing-things-out>Testing things out<a href=#testing-things-out class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Assuming we have the following groups:</p><pre><code>dn: cn=user1,ou=groups,dc=oddbit,dc=com
+objectClass: posixGroup
+cn: user1
+gidNumber: 1001
+memberUid: lars
+memberUid: user1
+
+dn: cn=staff,ou=groups,dc=oddbit,dc=com
+objectClass: posixGroup
+cn: staff
+gidNumber: 2000
+memberUid: user1
+</code></pre><p>If we look up the <code>user1</code> user:</p><pre><code># ldapsearch -Y EXTERNAL -H ldapi://%2fvar%2frun%2fldapi -b \
+  ou=people,dc=oddbit,dc=com cn=user1
+</code></pre><p>We should see <code>obMemberOf</code> attributes in the result:</p><pre><code>dn: cn=user1,ou=people,dc=oddbit,dc=com
+cn: user1
+sn: testuser
+uid: user1
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user1
+labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;(objectclass=posixgroup)
+ (memberuid=user1))
+objectClass: inetOrgPerson
+objectClass: oddPerson
+objectClass: posixAccount
+obmemberof: cn=user1,ou=groups,dc=oddbit,dc=com
+obmemberof: cn=staff,ou=groups,dc=oddbit,dc=com
+</code></pre><h2 id=caveats>Caveats<a href=#caveats class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Note that this solution requires searching through all of your group
+entries every time you look up a user object. Given a sufficiently
+large directory this may not be an optimal solution.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

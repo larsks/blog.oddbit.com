@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>udev on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/udev/</link><description>Recent content in udev on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Feb 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/udev/rss.xml" rel="self" type="application/rss+xml"/><item><title>Udev rules for CH340 serial devices</title><link>https://blog.oddbit.com/post/2022-02-13-wemos-udev-rules/</link><pubDate>Sun, 13 Feb 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-02-13-wemos-udev-rules/</guid><description>I like to fiddle with Micropython, particularly on the Wemos D1 Mini, because these are such a neat form factor. Unfortunately, they have a cheap CH340 serial adapter on board, which means that from the perspective of Linux these devices are all functionally identical &amp;ndash; there&amp;rsquo;s no way to identify one device from another. This by itself would be a manageable problem, except that the device names assigned to these devices aren&amp;rsquo;t constant: depending on the order in which they get plugged in (and the order in which they are detected at boot), a device might be /dev/ttyUSB0 one day and /dev/ttyUSB2 another day.</description><content>&lt;p>I like to fiddle with &lt;a href="https://micropython.org">Micropython&lt;/a>, particularly on the &lt;a href="https://www.wemos.cc/en/latest/d1/d1_mini.html">Wemos D1 Mini&lt;/a>, because these are such a neat form factor. Unfortunately, they have a cheap CH340 serial adapter on board, which means that from the perspective of Linux these devices are all functionally identical &amp;ndash; there&amp;rsquo;s no way to identify one device from another. This by itself would be a manageable problem, except that the device names assigned to these devices aren&amp;rsquo;t constant: depending on the order in which they get plugged in (and the order in which they are detected at boot), a device might be &lt;code>/dev/ttyUSB0&lt;/code> one day and &lt;code>/dev/ttyUSB2&lt;/code> another day.&lt;/p>
+&lt;p>On more than one occasion, I have accidentally re-flashed the wrong device. Ouch.&lt;/p>
+&lt;p>A common solution to this problem is to create device names based on the USB topology &amp;ndash; that is, assign names based on a device&amp;rsquo;s position in the USB bus: e.g., when attaching a new USB serial device, expose it at something like &lt;code>/dev/usbserial/&amp;lt;bus&amp;gt;/&amp;lt;device_path&amp;gt;&lt;/code>. While that sounds conceptually simple, it took me a while to figure out the correct &lt;a href="https://en.wikipedia.org/wiki/Udev">udev&lt;/a> rules.&lt;/p>
+&lt;p>Looking at the available attributes for a serial device, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm info -a -n /dev/ttyUSB0
+[...]
+looking at device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0/ttyUSB0/tty/ttyUSB0&amp;#39;:
+KERNEL==&amp;#34;ttyUSB0&amp;#34;
+SUBSYSTEM==&amp;#34;tty&amp;#34;
+DRIVER==&amp;#34;&amp;#34;
+ATTR{power/control}==&amp;#34;auto&amp;#34;
+ATTR{power/runtime_active_time}==&amp;#34;0&amp;#34;
+ATTR{power/runtime_status}==&amp;#34;unsupported&amp;#34;
+ATTR{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0/ttyUSB0&amp;#39;:
+KERNELS==&amp;#34;ttyUSB0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb-serial&amp;#34;
+DRIVERS==&amp;#34;ch341-uart&amp;#34;
+ATTRS{port_number}==&amp;#34;0&amp;#34;
+ATTRS{power/control}==&amp;#34;auto&amp;#34;
+ATTRS{power/runtime_active_time}==&amp;#34;0&amp;#34;
+ATTRS{power/runtime_status}==&amp;#34;unsupported&amp;#34;
+ATTRS{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0&amp;#39;:
+KERNELS==&amp;#34;3-1.4.3:1.0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;ch341&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{bAlternateSetting}==&amp;#34; 0&amp;#34;
+ATTRS{bInterfaceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bInterfaceNumber}==&amp;#34;00&amp;#34;
+ATTRS{bInterfaceProtocol}==&amp;#34;02&amp;#34;
+ATTRS{bInterfaceSubClass}==&amp;#34;01&amp;#34;
+ATTRS{bNumEndpoints}==&amp;#34;03&amp;#34;
+ATTRS{supports_autosuspend}==&amp;#34;1&amp;#34;
+looking at parent device &amp;#39;/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3&amp;#39;:
+KERNELS==&amp;#34;3-1.4.3&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;usb&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{avoid_reset_quirk}==&amp;#34;0&amp;#34;
+ATTRS{bConfigurationValue}==&amp;#34;1&amp;#34;
+ATTRS{bDeviceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bDeviceProtocol}==&amp;#34;00&amp;#34;
+ATTRS{bDeviceSubClass}==&amp;#34;00&amp;#34;
+ATTRS{bMaxPacketSize0}==&amp;#34;8&amp;#34;
+ATTRS{bMaxPower}==&amp;#34;98mA&amp;#34;
+ATTRS{bNumConfigurations}==&amp;#34;1&amp;#34;
+ATTRS{bNumInterfaces}==&amp;#34; 1&amp;#34;
+ATTRS{bcdDevice}==&amp;#34;0262&amp;#34;
+ATTRS{bmAttributes}==&amp;#34;80&amp;#34;
+ATTRS{busnum}==&amp;#34;3&amp;#34;
+ATTRS{configuration}==&amp;#34;&amp;#34;
+ATTRS{devnum}==&amp;#34;8&amp;#34;
+ATTRS{devpath}==&amp;#34;1.4.3&amp;#34;
+ATTRS{idProduct}==&amp;#34;7523&amp;#34;
+ATTRS{idVendor}==&amp;#34;1a86&amp;#34;
+ATTRS{ltm_capable}==&amp;#34;no&amp;#34;
+ATTRS{maxchild}==&amp;#34;0&amp;#34;
+ATTRS{power/active_duration}==&amp;#34;48902765&amp;#34;
+ATTRS{power/autosuspend}==&amp;#34;2&amp;#34;
+ATTRS{power/autosuspend_delay_ms}==&amp;#34;2000&amp;#34;
+ATTRS{power/connected_duration}==&amp;#34;48902765&amp;#34;
+ATTRS{power/control}==&amp;#34;on&amp;#34;
+ATTRS{power/level}==&amp;#34;on&amp;#34;
+ATTRS{power/persist}==&amp;#34;1&amp;#34;
+ATTRS{power/runtime_active_time}==&amp;#34;48902599&amp;#34;
+ATTRS{power/runtime_status}==&amp;#34;active&amp;#34;
+ATTRS{power/runtime_suspended_time}==&amp;#34;0&amp;#34;
+ATTRS{product}==&amp;#34;USB2.0-Serial&amp;#34;
+ATTRS{quirks}==&amp;#34;0x0&amp;#34;
+ATTRS{removable}==&amp;#34;unknown&amp;#34;
+ATTRS{rx_lanes}==&amp;#34;1&amp;#34;
+ATTRS{speed}==&amp;#34;12&amp;#34;
+ATTRS{tx_lanes}==&amp;#34;1&amp;#34;
+ATTRS{urbnum}==&amp;#34;17&amp;#34;
+ATTRS{version}==&amp;#34; 1.10&amp;#34;
+[...]
+&lt;/code>&lt;/pre>&lt;p>In this output, we find that the device itself (at the top) doesn&amp;rsquo;t have any useful attributes we can use for creating a systematic device name. It&amp;rsquo;s not until we&amp;rsquo;ve moved up the device hierarchy to &lt;code>/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3&lt;/code> that we find topology information (in the &lt;code>busnum&lt;/code> and &lt;code>devpath&lt;/code> attributes). This complicates matters because a udev rule only has access to attributes defined directly on matching device, so we can&amp;rsquo;t right something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEM==&amp;#34;usb-serial&amp;#34;, SYMLINK+=&amp;#34;usbserial/$attr{busnum}/$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>How do we access the attributes of a parent node in our rule?&lt;/p>
+&lt;p>The answer is by creating environment variables that preserve the values in which we are interested. I started with this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Here, my goal was to stash the &lt;code>busnum&lt;/code> and &lt;code>devpath&lt;/code> attributes in &lt;code>.USB_BUSNUM&lt;/code> and &lt;code>.USB_DEVPATH&lt;/code>, but this didn&amp;rsquo;t work: it matches device path &lt;code>/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb3/3-1/3-1.4/3-1.4.3/3-1.4.3:1.0&lt;/code>, which is:&lt;/p>
+&lt;pre tabindex="0">&lt;code>KERNELS==&amp;#34;3-1.4.3:1.0&amp;#34;
+SUBSYSTEMS==&amp;#34;usb&amp;#34;
+DRIVERS==&amp;#34;ch341&amp;#34;
+ATTRS{authorized}==&amp;#34;1&amp;#34;
+ATTRS{bAlternateSetting}==&amp;#34; 0&amp;#34;
+ATTRS{bInterfaceClass}==&amp;#34;ff&amp;#34;
+ATTRS{bInterfaceNumber}==&amp;#34;00&amp;#34;
+ATTRS{bInterfaceProtocol}==&amp;#34;02&amp;#34;
+ATTRS{bInterfaceSubClass}==&amp;#34;01&amp;#34;
+ATTRS{bNumEndpoints}==&amp;#34;03&amp;#34;
+ATTRS{supports_autosuspend}==&amp;#34;1&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>We need to match the next device up the chain, so we need to make our match more specific. There are a couple of different options we can pursue; the simplest is probably to take advantage of the fact that the next device up the chain has &lt;code>SUBSYSTEMS==&amp;quot;usb&amp;quot;&lt;/code> and &lt;code>DRIVERS=&amp;quot;usb&amp;quot;&lt;/code>, so we could instead write:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, DRIVERS==&amp;#34;usb&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Alternately, we could ask for &amp;ldquo;the first device that has a &lt;code>busnum&lt;/code> attribute&amp;rdquo; like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ATTRS{busnum}==&amp;#34;?*&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Where (from the &lt;code>udev(7)&lt;/code> man page), &lt;code>?&lt;/code> matches any single character and &lt;code>*&lt;/code> matches zero or more characters, so this matches any device in which &lt;code>busnum&lt;/code> has a non-empty value. We can test this rule out using the &lt;code>udevadm test&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm test $(udevadm info --query=path --name=/dev/ttyUSB0)
+[...]
+.USB_BUSNUM=3
+.USB_DEVPATH=1.4.3
+[...]
+&lt;/code>&lt;/pre>&lt;p>This shows us that our rule is matching and setting up the appropriate variables. We can now use those in a subsequent rule to create the desired symlink:&lt;/p>
+&lt;pre tabindex="0">&lt;code>SUBSYSTEMS==&amp;#34;usb&amp;#34;, ATTRS{busnum}==&amp;#34;?*&amp;#34;, ENV{.USB_BUSNUM}=&amp;#34;$attr{busnum}&amp;#34;, ENV{.USB_DEVPATH}=&amp;#34;$attr{devpath}&amp;#34;
+SUBSYSTEMS==&amp;#34;usb-serial&amp;#34;, SYMLINK+=&amp;#34;usbserial/$env{.USB_BUSNUM}/$env{.USB_DEVPATH}&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Re-running the test command, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code># udevadm test $(udevadm info --query=path --name=/dev/ttyUSB0)
+[...]
+DEVLINKS=/dev/serial/by-path/pci-0000:03:00.0-usb-0:1.4.3:1.0-port0 /dev/usbserial/3/1.4.3 /dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0
+[...]
+&lt;/code>&lt;/pre>&lt;p>You can see the new symlink in the &lt;code>DEVLINKS&lt;/code> value, and looking at &lt;code>/dev/usbserial&lt;/code> we can see the expected symlinks:&lt;/p>
+&lt;pre tabindex="0">&lt;code># tree /dev/usbserial
+/dev/usbserial/
+└── 3
+├── 1.1 -&amp;gt; ../../ttyUSB1
+└── 1.4.3 -&amp;gt; ../../ttyUSB0
+&lt;/code>&lt;/pre>&lt;p>And there have it. Now as long as I attach a specific device to the same USB port on my system, it will have the same device node. I&amp;rsquo;ve updated my tooling to use these paths (&lt;code>/dev/usbserial/3/1.4.3&lt;/code>) instead of the kernel names (&lt;code>/dev/ttyUSB0&lt;/code>), and it has greatly simplified things.&lt;/p></content></item></channel></rss>

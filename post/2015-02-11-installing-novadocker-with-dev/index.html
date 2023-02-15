@@ -1,0 +1,140 @@
+<!doctype html><html lang=en><head><title>Installing nova-docker with devstack :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is a long-form response to this question, and describes how to get the nova-docker driver up running with devstack under Ubuntu 14.04 (Trusty). I wrote a similar post for Fedora 21, although that one was using the RDO Juno packages, while this one is using devstack and the upstream sources.
+Getting started We&amp;rsquo;ll be using the Ubuntu 14.04 cloud image (because my test environment runs on OpenStack).
+First, let&amp;rsquo;s install a few prerequisites:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Installing nova-docker with devstack"><meta property="og:description" content="This is a long-form response to this question, and describes how to get the nova-docker driver up running with devstack under Ubuntu 14.04 (Trusty). I wrote a similar post for Fedora 21, although that one was using the RDO Juno packages, while this one is using devstack and the upstream sources.
+Getting started We&amp;rsquo;ll be using the Ubuntu 14.04 cloud image (because my test environment runs on OpenStack).
+First, let&amp;rsquo;s install a few prerequisites:"><meta property="og:url" content="https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-02-11 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/>Installing nova-docker with devstack</a></h1><div class=post-meta><time class=post-date>2015-02-11 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/devstack/>devstack</a>&nbsp;</span><div class=post-content><div><p>This is a long-form response to <a href=https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/>this question</a>, and describes
+how to get the <a href=http://github.com/stackforge/nova-docker/>nova-docker</a> driver up running with <a href=http://devstack.org/>devstack</a>
+under Ubuntu 14.04 (Trusty). I wrote a <a href=https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/>similar post</a> for Fedora
+21, although that one was using the <a href=http://openstack.redhat.com/>RDO</a> Juno packages, while this
+one is using <a href=http://devstack.org/>devstack</a> and the upstream sources.</p><h2 id=getting-started>Getting started<a href=#getting-started class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;ll be using the <a href=https://cloud-images.ubuntu.com/trusty/current/>Ubuntu 14.04 cloud image</a> (because my test
+environment runs on <a href=http://www.openstack.org/>OpenStack</a>).</p><p>First, let&rsquo;s install a few prerequisites:</p><pre><code>$ sudo apt-get update
+$ sudo apt-get -y install git git-review python-pip python-dev
+</code></pre><p>And generally make sure things are up-to-date:</p><pre><code>$ sudo apt-get -y upgrade
+</code></pre><h2 id=installing-docker>Installing Docker<a href=#installing-docker class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We need to install Docker if we&rsquo;re going to use <code>nova-docker</code>.</p><p>Ubuntu 14.04 includes a fairly dated version of Docker, so I followed
+<a href=https://docs.docker.com/installation/ubuntulinux/#docker-maintained-package-installation>the instructions</a> on the Docker website for installing the current
+version of Docker on Ubuntu; this ultimately got me:</p><pre><code>$ sudo apt-get -y install lxc-docker
+$ sudo docker version
+Client version: 1.5.0
+Client API version: 1.17
+Go version (client): go1.4.1
+Git commit (client): a8a31ef
+OS/Arch (client): linux/amd64
+Server version: 1.5.0
+Server API version: 1.17
+Go version (server): go1.4.1
+Git commit (server): a8a31ef
+</code></pre><p>Docker by default creates its socket (<code>/var/run/docker.socket</code>) with
+<code>root:root</code> ownership. We&rsquo;re going to be running devstack as the
+<code>ubuntu</code> user, so let&rsquo;s change that by editing <code>/etc/default/docker</code>
+and setting:</p><pre><code>DOCKER_OPTS='-G ubuntu'
+</code></pre><p>And restart <code>docker</code>:</p><pre><code>$ sudo restart docker
+</code></pre><p>And verify that we can access Docker as the <code>ubuntu</code> user:</p><pre><code>$ docker version
+Client version: 1.5.0
+Client API version: 1.17
+[...]
+</code></pre><h2 id=installing-nova-docker>Installing nova-docker<a href=#installing-nova-docker class=hanchor arialabel=Anchor>&#8983;</a></h2><p>As the <code>ubuntu</code> user, let&rsquo;s get the <code>nova-docker</code> source code:</p><pre><code>$ git clone http://github.com/stackforge/nova-docker.git
+$ cd nova-docker
+</code></pre><p>As of this writing (<code>HEAD</code> is &ldquo;984900a Give some time for docker.stop
+to work&rdquo;), you need to apply <a href=https://review.openstack.org/#/c/154750/>a patch</a> to <code>nova-docker</code> to get it to
+work with the current Nova <code>master</code> branch:</p><pre><code>$ git fetch https://review.openstack.org/stackforge/nova-docker \
+  refs/changes/50/154750/3 \
+  &amp;&amp; git checkout FETCH_HEAD
+</code></pre><p>Once <a href=https://review.openstack.org/#/c/154750/>that change</a> has merged (<strong>update</strong>, 2015-02-12: the
+patch has merged), this step should no longer be
+necessary. With the patch we applied, we can install the
+<code>nova-docker</code> driver:</p><pre><code>$ sudo pip install .
+</code></pre><h2 id=configuring-devstack>Configuring devstack<a href=#configuring-devstack class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Now we&rsquo;re ready to get devstack up and running. Start by cloning the
+repository:</p><pre><code>$ git clone https://git.openstack.org/openstack-dev/devstack
+$ cd devstack
+</code></pre><p>Then create a <code>local.conf</code> file with the following content:</p><pre><code>[[local|localrc]]
+ADMIN_PASSWORD=secret
+DATABASE_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=super-secret-admin-token
+VIRT_DRIVER=novadocker.virt.docker.DockerDriver
+
+DEST=$HOME/stack
+SERVICE_DIR=$DEST/status
+DATA_DIR=$DEST/data
+LOGFILE=$DEST/logs/stack.sh.log
+LOGDIR=$DEST/logs
+
+# The default fixed range (10.0.0.0/24) conflicted with an address
+# range I was using locally.
+FIXED_RANGE=10.254.1.0/24
+NETWORK_GATEWAY=10.254.1.1
+
+# This enables Neutron, because that's how I roll.
+disable_service n-net
+enable_service q-svc
+enable_service q-agt
+enable_service q-dhcp
+enable_service q-l3
+enable_service q-meta
+
+# I am disabling horizon (because I rarely use the web ui)
+# and tempest in order to make the installer complete a 
+# little faster.
+disable_service horizon
+disable_service tempest
+
+# Introduce glance to docker images
+[[post-config|$GLANCE_API_CONF]]
+[DEFAULT]
+container_formats=ami,ari,aki,bare,ovf,ova,docker
+
+# Configure nova to use the nova-docker driver
+[[post-config|$NOVA_CONF]]
+[DEFAULT]
+compute_driver=novadocker.virt.docker.DockerDriver
+</code></pre><p>This will result in things getting installed in subdirectories of
+<code>$HOME/stack</code>. We enable Neutron and leave pretty much everything
+else set to default values.</p><h2 id=start-the-installation>Start the installation<a href=#start-the-installation class=hanchor arialabel=Anchor>&#8983;</a></h2><p>So, now we&rsquo;re all ready to roll!</p><pre><code>$ ./stack.sh
+[Call Trace]
+./stack.sh:151:source
+/home/ubuntu/devstack/stackrc:665:die
+[ERROR] /home/ubuntu/devstack/stackrc:665 Could not determine host ip address. See local.conf for suggestions on setting HOST_IP.
+/home/ubuntu/devstack/functions-common: line 322: /home/ubuntu/stack/logs/error.log: No such file or directory
+</code></pre><p>&mldr;or not. This error happens if devstack is unable to turn your
+hostname into an IP address. We can set <code>HOST_IP</code> in our
+environment:</p><pre><code>$ HOST_IP=10.0.0.232 ./stack.sh
+</code></pre><p>And then go grab a cup of coffee or something.</p><h2 id=install-nova-docker-rootwrap-filters>Install nova-docker rootwrap filters<a href=#install-nova-docker-rootwrap-filters class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Once <code>stack.sh</code> is finished running, we need to install a <code>rootwrap</code>
+configuration file for <code>nova-docker</code>:</p><pre><code>$ sudo cp nova-docker/etc/nova/rootwrap.d/docker.filters \
+  /etc/nova/rootwrap.d/
+</code></pre><h2 id=starting-a-docker-container>Starting a Docker container<a href=#starting-a-docker-container class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Now that our environment is up and running, we should be able to start
+a container. We&rsquo;ll start by grabbing some admin credentials for our
+OpenStack environment:</p><pre><code>$ . openrc admin
+</code></pre><p>Next, we need an appropriate image; my <a href=https://registry.hub.docker.com/u/larsks/thttpd/>larsks/thttpd</a> image
+is small (so it&rsquo;s quick to download) and does not require any
+interactive terminal (so it&rsquo;s appropriate for nova-docker), so let&rsquo;s
+start with that:</p><pre><code>$ docker pull larsks/thttpd
+$ docker save larsks/thttpd |
+  glance image-create --name larsks/thttpd \
+    --is-public true --container-format docker \
+    --disk-format raw
+</code></pre><p>And now we&rsquo;ll boot it up. I like to do this as a non-admin user:</p><pre><code>$ . openrc demo
+$ nova boot --image larsks/thttpd --flavor m1.small test0
+</code></pre><p>After a bit, we should see:</p><pre><code>$ nova list
++----...+-------+--------+...+-------------+--------------------+
+| ID ...| Name  | Status |...| Power State | Networks           |
++----...+-------+--------+...+-------------+--------------------+
+| 0c3...| test0 | ACTIVE |...| Running     | private=10.254.1.4 |
++----...+-------+--------+...+-------------+--------------------+
+</code></pre><p>Let&rsquo;s create a floating ip address:</p><pre><code>$ nova floating-ip-create
++------------+-----------+----------+--------+
+| Ip         | Server Id | Fixed Ip | Pool   |
++------------+-----------+----------+--------+
+| 172.24.4.3 | -         | -        | public |
++------------+-----------+----------+--------+
+</code></pre><p>And assign it to our container:</p><pre><code>$ nova floating-ip-associate test0 172.24.4.3
+</code></pre><p>And now access our service:</p><pre><code>$ curl http://172.24.4.3
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+        &lt;head&gt;            
+                &lt;title&gt;Your web server is working&lt;/title&gt;
+[...]
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>namespaces on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/namespaces/</link><description>Recent content in namespaces on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 18 Jan 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/namespaces/rss.xml" rel="self" type="application/rss+xml"/><item><title>Docker vs. PrivateTmp</title><link>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</link><pubDate>Sun, 18 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</guid><description>While working with Docker the other day, I ran into an undesirable interaction between Docker and systemd services that utilize the PrivateTmp directive.
+The PrivateTmp directive, if true, &amp;ldquo;sets up a new file system namespace for the executed processes and mounts private /tmp and /var/tmp directories inside it that is not shared by processes outside of the namespace&amp;rdquo;. This is a great idea from a security perspective, but can cause some unanticipated consequences.</description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
+utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
+&lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
+namespace for the executed processes and mounts private &lt;code>/tmp&lt;/code> and
+&lt;code>/var/tmp&lt;/code> directories inside it that is not shared by processes outside
+of the namespace&amp;rdquo;. This is a great idea from a &lt;a href="https://danwalsh.livejournal.com/51459.html">security
+perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p>
+&lt;h2 id="the-problem-in-a-nutshell">The problem in a nutshell&lt;/h2>
+&lt;ol>
+&lt;li>
+&lt;p>Start a Docker container:&lt;/p>
+&lt;pre>&lt;code> # cid=$(docker run -d larsks/thttpd)
+# echo $cid
+e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>See the &lt;code>devicemapper&lt;/code> mountpoint created by Docker for the
+container:&lt;/p>
+&lt;pre>&lt;code> # grep devicemapper/mnt /proc/mounts
+/dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&amp;quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&amp;quot;,relatime,discard,stripe=16,data=ordered 0 0
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Now restart a service &amp;ndash; any service! &amp;ndash; that has
+&lt;code>PrivateTmp=true&lt;/code>:&lt;/p>
+&lt;pre>&lt;code> # systemctl restart systemd-machined
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Get the PID for that service:&lt;/p>
+&lt;pre>&lt;code> # systemctl status systemd-machined | grep PID
+Main PID: 18698 (systemd-machine
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>And see that the mount created by the Docker &amp;ldquo;devicemapper&amp;rdquo; storage
+driver is visible inside the mount namespace for this process:&lt;/p>
+&lt;pre>&lt;code> # grep devicemapper/mnt /proc/18698/mounts
+/dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&amp;quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&amp;quot;,relatime,discard,stripe=16,data=ordered 0 0
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Attempt to destroy the container:&lt;/p>
+&lt;pre>&lt;code> # docker rm -f $cid
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Watch Docker fail to destroy the container because it is unable to
+remove the mountpoint directory:&lt;/p>
+&lt;pre>&lt;code> Jan 17 22:43:03 pk115wp-lkellogg docker-1.4.1-dev[18239]:
+time=&amp;quot;2015-01-17T22:43:03-05:00&amp;quot; level=&amp;quot;error&amp;quot; msg=&amp;quot;Handler for DELETE
+/containers/{name:.*} returned error: Cannot destroy container e68df3f45d61:
+Driver devicemapper failed to remove root filesystem
+e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62: Device is
+Busy&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Because while that mount is gone from the global namespace:&lt;/p>
+&lt;pre>&lt;code> # grep devicemapper/mnt /proc/mounts
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>It still exists inside the mount namespace for the service we restarted:&lt;/p>
+&lt;pre>&lt;code># grep devicemapper/mnt /proc/18698/mounts
+/dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&amp;quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&amp;quot;,relatime,discard,stripe=16,data=ordered 0 0
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>To resolve this problem, restart the service holding the mount open:&lt;/p>
+&lt;pre>&lt;code># systemctl restart systemd-machined
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ol>
+&lt;p>Now the mountpoint can be deleted.&lt;/p>
+&lt;h2 id="its-not-just-docker">It&amp;rsquo;s not just Docker&lt;/h2>
+&lt;p>While I ran into this problem while working with Docker, there is
+nothing particularly Docker-specific about the problem. You can
+replicate this behavior by hand without involving either &lt;code>systemd&lt;/code> or
+Docker:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Create a parent mountpoint, and make it private:&lt;/p>
+&lt;pre>&lt;code> # mkdir /tmp/parent /tmp/parent-backing
+# mount --bind --make-private /tmp/parent-backing /tmp/parent
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Create a private mount on a directory &lt;em>inside&lt;/em> &lt;code>/tmp/parent&lt;/code>:&lt;/p>
+&lt;pre>&lt;code> # mkdir /tmp/testmount /tmp/parent/mnt
+# mount --bind --make-private /tmp/testmount /tmp/parent/mnt
+# grep /tmp/parent/mnt /proc/self/mounts
+tmpfs /tmp/parent/mnt tmpfs rw,seclabel 0 0
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>In another window, create a new mount namespace using &lt;code>unshare&lt;/code>:&lt;/p>
+&lt;pre>&lt;code> # unshare -m env PS1='unshare# ' bash
+unshare#
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Unmount &lt;code>/tmp/parent/mnt&lt;/code> in the global namespace:&lt;/p>
+&lt;pre>&lt;code> # umount /tmp/parent/mnt
+# grep /tmp/parent/mnt /proc/self/mounts
+#
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Try to delete the mountpoint directory:&lt;/p>
+&lt;pre>&lt;code> # rmdir /tmp/parent/mnt
+rmdir: failed to remove ‘/tmp/parent/mnt’: Device or resource busy
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>See that the mount still exists in your &lt;code>unshare&lt;/code> namespace:&lt;/p>
+&lt;pre>&lt;code> unshare# grep /tmp/parent/mnt /proc/self/mounts
+tmpfs /tmp/parent/mnt tmpfs rw,seclabel 0 0
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ol>
+&lt;h2 id="so-whats-going-on-here">So what&amp;rsquo;s going on here?&lt;/h2>
+&lt;p>To understand what&amp;rsquo;s going on in these examples, you probably want to
+start by at least glancing through the &lt;a href="https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt">sharedsubtree.txt&lt;/a> kernel
+documentation.&lt;/p>
+&lt;p>The Docker &lt;code>devicemapper&lt;/code> driver creates a &lt;em>private&lt;/em> mount on
+&lt;code>/var/lib/docker/devicemapper&lt;/code>. A &lt;em>private&lt;/em> mount is one that does
+not propagate mount operations between parent and child mount
+namespaces.&lt;/p>
+&lt;p>Container filesystems are mounted underneath
+&lt;code>/var/lib/docker/devicemapper/mnt&lt;/code>, e.g:&lt;/p>
+&lt;pre>&lt;code> /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&amp;quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&amp;quot;,relatime,discard,stripe=16,data=ordered 0 0
+&lt;/code>&lt;/pre>
+&lt;p>When you create a new mount namespace as a child of the global mount
+namespace, either via the &lt;code>unshare&lt;/code> command or by starting a systemd
+service with &lt;code>PrivateTmp=true&lt;/code>, it inherits these private mounts.
+When Docker unmounts the the container filesystem in the global
+namespace, the fact that the &lt;code>/var/lib/docker/devicemapper&lt;/code> mountpoint
+is marked &lt;em>private&lt;/em> means that the unmount operation does not
+propagate to other namespaces.&lt;/p>
+&lt;h2 id="the-solution">The solution&lt;/h2>
+&lt;p>The simplest solution to this problem is to set the &lt;code>MountFlags=slave&lt;/code>
+option in the &lt;code>docker.service&lt;/code> file:&lt;/p>
+&lt;pre>&lt;code>MountFlags=slave
+&lt;/code>&lt;/pre>
+&lt;p>This will cause SystemD to run Docker in a cloned mount namespace and
+sets the &lt;code>MS_SLAVE&lt;/code> flag on all mountpoints; it is effectively
+equivalent to:&lt;/p>
+&lt;pre>&lt;code># unshare -m
+# mount --make-rslave /
+&lt;/code>&lt;/pre>
+&lt;p>With this change, mounts performed by Docker will not be visible in
+the global mount namespace, and they will thus not propagate into the
+mount namespaces of other services.&lt;/p>
+&lt;h2 id="not-necessarily-the-solution">Not necessarily the solution&lt;/h2>
+&lt;p>There was an &lt;a href="http://pkgs.fedoraproject.org/cgit/docker-io.git/commit/?id=6c9e373ee06cb1aee07d3cae426c46002663010d">attempt to fix this problem&lt;/a> committed to the Fedora
+&lt;code>docker-io&lt;/code> package that set &lt;code>MountFlags=private&lt;/code>. This will prevent
+the symptoms I originally encountered, in which Docker is unable to
+remove a mountpoint because it is still held open by another mount
+namespace&amp;hellip;&lt;/p>
+&lt;p>&amp;hellip;but it will result in behavior that might be confusing to a system
+administrator. Specifically, mounts made in the global mount
+namespace after Docker starts will not be visible to Docker
+containers. This means that if you were to make a remote filesystem
+available on your Docker host:&lt;/p>
+&lt;pre>&lt;code># mount my-fileserver:/vol/webcontent /srv/content
+&lt;/code>&lt;/pre>
+&lt;p>And then attempt to bind that into a Docker container as a volume:&lt;/p>
+&lt;pre>&lt;code># docker run -v /srv/content:/content larsks/thttpd -d /content
+&lt;/code>&lt;/pre>
+&lt;p>Your content would not be visible. The mount of
+&lt;code>my-fileserver:/vol/webcontent&lt;/code> would not propagate from the global
+namespace into the Docker mount namespace because of the &lt;em>private&lt;/em>
+flag.&lt;/p>
+&lt;h2 id="thanks">Thanks&lt;/h2>
+&lt;p>I had some help figuring this out. Thanks to &lt;a href="https://en.wikipedia.org/wiki/Lennart_Poettering">Lennart Poettering&lt;/a>,
+Andrey Borzenkov, and &lt;a href="http://blog.verbum.org/">Colin Walters&lt;/a>.&lt;/p></content></item></channel></rss>

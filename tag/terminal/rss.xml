@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>terminal on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/terminal/</link><description>Recent content in terminal on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 21 May 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/terminal/rss.xml" rel="self" type="application/rss+xml"/><item><title>Sharing a terminal session with termshare</title><link>https://blog.oddbit.com/post/2014-05-21-sharing-a-terminal-session-wit/</link><pubDate>Wed, 21 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-21-sharing-a-terminal-session-wit/</guid><description>Termshare is a tool for sharing your terminal in a browser session. It supports both read-only and read-write sessions, and unlike many other tools it does not require any software installation on the remote side. This makes it tremendously handy for:
+Streaming terminal demonstrations to a diverse audience, or Sharing a terminal session with someone without needing to much about with ssh, tmux, screen, etc. I&amp;rsquo;ve successfully used Termshare under both Fedora (19 and 20) and CentOS.</description><content>&lt;p>&lt;a href="https://github.com/progrium/termshare">Termshare&lt;/a> is a tool for sharing your terminal in a browser
+session. It supports both read-only and read-write sessions, and
+unlike many other tools it does not require any software installation
+on the remote side. This makes it tremendously handy for:&lt;/p>
+&lt;ul>
+&lt;li>Streaming terminal demonstrations to a diverse audience, or&lt;/li>
+&lt;li>Sharing a terminal session with someone without needing to much
+about with ssh, tmux, screen, etc.&lt;/li>
+&lt;/ul>
+&lt;p>I&amp;rsquo;ve successfully used &lt;a href="https://github.com/progrium/termshare">Termshare&lt;/a> under both Fedora (19 and 20) and
+CentOS. To get started on these platforms, you&amp;rsquo;ll need to install the
+&lt;a href="http://golang.org/">Go&lt;/a> language, &lt;a href="http://git-scm.org/">git&lt;/a> for cloning the termshare repository, and
+&lt;a href="http://mercurial.selenic.com/">mercurial&lt;/a> to support installation of some Go libraries:&lt;/p>
+&lt;pre>&lt;code># yum -y install golang git hg
+&lt;/code>&lt;/pre>
+&lt;p>Then, clone the &lt;a href="https://github.com/progrium/termshare">Termshare&lt;/a> repository:&lt;/p>
+&lt;pre>&lt;code>$ git clone https://github.com/progrium/termshare.git
+$ cd termshare
+&lt;/code>&lt;/pre>
+&lt;p>Install the Go dependencies:&lt;/p>
+&lt;pre>&lt;code>$ mkdir gopath
+$ export GOPATH=$PWD/gopath
+$ go get
+&lt;/code>&lt;/pre>
+&lt;p>This will yield&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>go install: no install location for directory /home/lars/src/termshare outside GOPATH
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;but you can ignore that. Then build the software:&lt;/p>
+&lt;pre>&lt;code>$ make
+&lt;/code>&lt;/pre>
+&lt;p>And you&amp;rsquo;re done! To start a read-only session, run &lt;code>./termshare&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ ./termshare
+_ _
+| |_ ___ _ __ _ __ ___ ___| |__ __ _ _ __ ___
+| __/ _ \ '__| '_ ` _ \/ __| '_ \ / _` | '__/ _ \
+| || __/ | | | | | | \__ \ | | | (_| | | | __/
+\__\___|_| |_| |_| |_|___/_| |_|\__,_|_| \___|
+Running this open source service supported 100% by community.
+Donate: https://www.gittip.com/termshare
+Session URL: https://termsha.re/12345678-ee85-49ba-66ce-987654321abc
+&lt;/code>&lt;/pre>
+&lt;p>Pass the session URL to people you want to view your terminal. Run
+&lt;code>./termshare -c&lt;/code> if you want someone to be able to control your
+terminal as well as view it.&lt;/p></content></item></channel></rss>

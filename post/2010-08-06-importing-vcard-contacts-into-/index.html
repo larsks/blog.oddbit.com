@@ -1,0 +1,73 @@
+<!doctype html><html lang=en><head><title>Importing vCard contacts into an LG 420G :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Alix recently acquired an LG 420G from TracFone. She was interested in getting all of her contacts onto the phone, which at first seemed like a simple task &amp;ndash; transfer a vCard (.vcf) file to the phone via Bluetooth, and the phone would import all the contacts. This turned out to be a great idea in theory, but in practice there was a fatal flaw &amp;ndash; while the phone did indeed import the contacts, it only imported names and the occasional note or email address."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2010-08-06-importing-vcard-contacts-into-/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Importing vCard contacts into an LG 420G"><meta property="og:description" content="Alix recently acquired an LG 420G from TracFone. She was interested in getting all of her contacts onto the phone, which at first seemed like a simple task &amp;ndash; transfer a vCard (.vcf) file to the phone via Bluetooth, and the phone would import all the contacts. This turned out to be a great idea in theory, but in practice there was a fatal flaw &amp;ndash; while the phone did indeed import the contacts, it only imported names and the occasional note or email address."><meta property="og:url" content="https://blog.oddbit.com/post/2010-08-06-importing-vcard-contacts-into-/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2010-08-06 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2010-08-06-importing-vcard-contacts-into-/>Importing vCard contacts into an LG 420G</a></h1><div class=post-meta><time class=post-date>2010-08-06 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/phone/>phone</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/vcard/>vcard</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/sync/>sync</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/contacts/>contacts</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/import/>import</a>&nbsp;</span><div class=post-content><div><p>Alix recently acquired an LG 420G from <a href=http://www.tracfone.com/>TracFone</a>. She was interested in getting all of her contacts onto the phone, which at first seemed like a simple task &ndash; transfer a vCard (.vcf) file to the phone via Bluetooth, and the phone would import all the contacts. This turned out to be a great idea in theory, but in practice there was a fatal flaw &ndash; while the phone did indeed import the contacts, it only imported names and the occasional note or email address. There were no phone numbers.</p><p>Thus began the long investigation to find out exactly what the phone expected the contacts to look like.</p><h1 id=eol-format>EOL format<a href=#eol-format class=hanchor arialabel=Anchor>&#8983;</a></h1><p>The LG 420G needs DOS end-of-line (CRLF), otherwise it won&rsquo;t recognize more than a single contact in your file. There are a number of ways to convert EOL style in a text document; I used the unix2dos tool.</p><h1 id=phone-number-labels>Phone number labels<a href=#phone-number-labels class=hanchor arialabel=Anchor>&#8983;</a></h1><p>In our source vCard files, telephone numbers were typically listed with one qualifier, like this:</p><pre><code>TEL;WORK:555-555-5555
+TEL;HOME:555-555-5555
+TEL;CELL:555-555-5555
+</code></pre><p>I created new contact entry on the phone and sent it back to my computer, and found that the telephone numbers were labelled with two qualifiers (and a character set identifier), like this:</p><pre><code>TEL;HOME;CELL;CHARSET=UTF-8:1111111111
+TEL;WORK;VOICE;CHARSET=UTF-8:2222222222
+TEL;HOME;VOICE;CHARSET=UTF-8:3333333333
+</code></pre><p>So, the first thing we needed to do was to transform the phone number entries in our original list into the format expected by the 420G. I extracted a list of all the unique phone number labels, like this:</p><pre><code>grep TEL contacts.vcf | cut -f1 -d: | sort -u
+</code></pre><p>Which resulted in this list:</p><pre><code>TEL;CELL
+TEL;HOME
+TEL;HOME;PREF
+TEL;PAGER
+TEL;PREF
+TEL;PREF;CELL
+TEL;PREF;FAX
+TEL;WORK
+TEL;WORK;PREF
+</code></pre><p>I used this to generate the following sed script:</p><pre><code>s/TEL;HOME;PREF/TEL;HOME;VOICE/
+t
+s/TEL;HOME/TEL;HOME;VOICE/
+t
+s/TEL;CELL/TEL;HOME;CELL/
+t
+s/TEL;WORK;PREF/TEL;WORK;VOICE/
+t
+s/TEL;PREF;CELL/TEL;WORK;CELL/
+t
+s/TEL;PREF;FAX/TEL;WORK;FAX/
+t
+s/TEL;WORK/TEL;WORK;VOICE/
+t
+s/TEL;PREF/TEL;WORK;VOICE/
+t
+s/TEL;PAGER/TEL;WORK;PAGER/
+t
+</code></pre><p>Running this over all the contacts gives us the following list of distinct labels:</p><pre><code>TEL;HOME;CELL
+TEL;HOME;VOICE
+TEL;WORK;CELL
+TEL;WORK;FAX
+TEL;WORK;PAGER
+TEL;WORK;VOICE
+</code></pre><h1 id=no-dashes-in-phone-numbers-really-lg>No dashes in phone numbers (really, LG?)<a href=#no-dashes-in-phone-numbers-really-lg class=hanchor arialabel=Anchor>&#8983;</a></h1><p>It turns out that the 420G does not accept anything other than digits in phone numbers. So, after processing the labels with the above sed script we fix up the data with the following awk script:</p><pre><code># Set input and output field separators to &quot;:&quot;.
+BEGIN {
+  FS=&quot;:&quot;
+  OFS=&quot;:&quot;
+}
+
+# Remove anything not a digit from the phone number.
+/TEL;/ {
+  gsub(&quot;[^0-9]&quot;, &quot;&quot;, $2)
+}
+
+{
+  print
+}
+</code></pre><h1 id=and-were-off>And we&rsquo;re off!<a href=#and-were-off class=hanchor arialabel=Anchor>&#8983;</a></h1><p>With these transformations in place, the LG 420G was able to successfully import the contacts. I automated the whole process with the following Makefile:</p><pre><code>SED = gsed
+AWK = awk
+
+FILTERS = \
+    fix-tel-labels.sed \
+    remove-non-digits.awk
+
+all: all-contacts-filtered.vcf
+
+all-contacts-filtered.vcf: all-contacts-orig.vcf $(FILTERS)
+  $(SED) -f fix-tel-labels.sed $&lt; | \
+    $(AWK) -f remove-non-digits.awk | \
+    unix2dos &gt; $@
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

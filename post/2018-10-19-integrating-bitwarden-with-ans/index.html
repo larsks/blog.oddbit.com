@@ -1,0 +1,99 @@
+<!doctype html><html lang=en><head><title>Integrating Bitwarden with Ansible :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Bitwarden is a password management service (like LastPass or 1Password). It&amp;rsquo;s unique in that it is built entirely on open source software. In addition to the the web UI and mobile apps that you would expect, Bitwarden also provides a command-line tool for interacting with the your password store.
+At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password sharing and management solution that was better than dropping files into directories on remote hosts or sharing things over Slack."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Integrating Bitwarden with Ansible"><meta property="og:description" content="Bitwarden is a password management service (like LastPass or 1Password). It&amp;rsquo;s unique in that it is built entirely on open source software. In addition to the the web UI and mobile apps that you would expect, Bitwarden also provides a command-line tool for interacting with the your password store.
+At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password sharing and management solution that was better than dropping files into directories on remote hosts or sharing things over Slack."><meta property="og:url" content="https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2018-10-19 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/>Integrating Bitwarden with Ansible</a></h1><div class=post-meta><time class=post-date>2018-10-19 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/bitwarden/>bitwarden</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/security/>security</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/pull-request/>pull-request</a>&nbsp;</span><div class=post-content><div><p><a href=https://bitwarden.com>Bitwarden</a> is a password management service (like <a href=https://www.lastpass.com/>LastPass</a> or
+<a href=https://1password.com/>1Password</a>). It&rsquo;s unique in that it is built entirely on open
+source software. In addition to the the web UI and mobile apps that
+you would expect, Bitwarden also provides a <a href=https://help.bitwarden.com/article/cli/>command-line tool</a> for
+interacting with the your password store.</p><p>At $WORK(-ish) we&rsquo;re looking into Bitwarden because we want a password
+sharing and management solution that was better than dropping files
+into directories on remote hosts or sharing things over Slack. At
+the same time, we are also thinking about bringing more automation to
+our operational environment, possibly by making more extensive use of
+<a href=https://ansible.com>Ansible</a>. It looked like all the pieces were available to use
+Bitwarden as a credential storage mechanism for Ansible playbooks, so
+I set out to write a lookup plugin to implement the integration&mldr;</p><p>&mldr;only to find that I was not the first person to have this idea;
+Matt Stofko <a href=https://github.com/c0sco/ansible-modules-bitwarden/>beat me to it</a>. While it worked, the directory
+structure of Matt&rsquo;s repository made it difficult to integrate into an
+existing Ansible project. It was also missing some convenience
+features I wanted to see, so I have submitted
+<a href=https://github.com/c0sco/ansible-modules-bitwarden/pull/1 class=pull-request>#1</a>
+that
+makes several changes to the module.</p><p>You can find my fork of the Bitwarden lookup plugin at
+<a href=https://github.com/larsks/ansible-modules-bitwarden>https://github.com/larsks/ansible-modules-bitwarden</a>.</p><h2 id=make-it-installable>Make it installable<a href=#make-it-installable class=hanchor arialabel=Anchor>&#8983;</a></h2><p>By re-arranging the repository to following the standard Ansible role
+structure, it is now possible to install it either a submodule of your
+own git repository, or to install it using the <code>ansible-galaxy</code> tool:</p><pre><code>ansible-galaxy install git+https://github.com/larsks/ansible-modules-bitwarden
+</code></pre><p>This command would place the role in <code>$HOME/.ansible/roles</code>, where it
+will be available to any playbooks you run on your system.</p><h2 id=add-explicit-support-for-custom-fields>Add explicit support for custom fields<a href=#add-explicit-support-for-custom-fields class=hanchor arialabel=Anchor>&#8983;</a></h2><p>While it was possible to access custom fields by fetching the complete
+JSON representation of an item in Bitwarden and then querying the
+resulting document, it wasn&rsquo;t particularly graceful. I&rsquo;ve added
+explicit support for looking up custom fields. Whereas the normal
+lookup will the specific keys that Bitwarden supports in the <code>bw get</code>:</p><pre><code>lookup('bitwarden', 'Google', field=username)
+</code></pre><p>&mldr;adding <code>custom_field=True</code> causes the lookup to be performed against
+the list of custom fields:</p><pre><code>lookup('bitwarden', 'Google', field=mycustomfield, custom_field=true)
+</code></pre><h2 id=add-support-for-the-sync-operation>Add support for the sync operation<a href=#add-support-for-the-sync-operation class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The Bitwarden CLI operates by keeping a local cache of your
+credentials. This means that if you have just modified an item through
+the web ui (or mobile app), you may still be querying stale data when
+querying Bitwarden through the CLI. The <code>bw sync</code> command refreshes
+the local cache.</p><p>You can add <code>sync=true</code> to the lookup to have Ansible run <code>bw sync</code>
+before querying Bitwarden for data:</p><pre><code>lookup('bitwarden', 'Google', field=username, sync=true)
+</code></pre><h2 id=using-the-lookup-module-in-practice>Using the lookup module in practice<a href=#using-the-lookup-module-in-practice class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;re using <a href=https://docs.openstack.org/tripleo-docs/latest/>TripleO</a> to deploy OpenStack. TripleO requires as input
+to the deployment process a number of parameters, including various
+credentials. For example, to set the password that will be assigned
+to the Keystone admin user, one would pass in a file that looks
+something like:</p><pre><code>---
+parameter_defaults:
+  AdminPassword: &quot;secret.password.goes.here&quot;
+</code></pre><p>Because our deployment configuration is public, we don&rsquo;t want to store
+credentials there. We&rsquo;ve been copying around a credentials file that
+lives outside the repository, but that&rsquo;s not a great solution.</p><p>Using the Bitwarden lookup module, we can replace the above with:</p><pre><code>---
+parameter_defaults:
+  AdminPassword: &quot;{{ lookup('bitwarden', 'keystone admin') }}&quot;
+</code></pre><p>With this change, we can use Ansible to query Bitwarden to get the
+Keystone admin password and generate as output a file with the
+passwords included.</p><p>Using the custom field support, we can include metadata associated
+with a credential in the same place as the credential itself. To
+configure access to a remote Ceph installation, we need to provide a
+client key and cluster id. By putting the cluster id in a custom
+field, we can do something like this:</p><pre><code>CephClientKey: &quot;{{ lookup('bitwarden', 'ceph client key') }}&quot;
+CephClusterFSID: &quot;{{ ((lookup('bitwarden', 'ceph client key', field='clusterid', custom_field=true) }}&quot;
+</code></pre><h2 id=an-example-playbook>An example playbook<a href=#an-example-playbook class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Before you can run a playbook making use of the Bitwarden lookup
+module, you need to <a href=https://help.bitwarden.com/article/cli/#download--install>install</a> the Bitwarden CLI. This is as simple
+as grabbing an appropriate binary and dropping it somewhere in
+your <code>$PATH</code>. I&rsquo;ve been doing this:</p><pre><code>$ curl -L 'https://vault.bitwarden.com/download/?app=cli&amp;platform=linux' |
+  funzip &gt; $HOME/bin/bw
+$ chmod 755 $HOME/bin/bw
+</code></pre><p>For the following example, assume that we have a template named
+<code>no-passwords-here.yml</code> matching the earlier example:</p><pre><code>---
+parameter_defaults:
+  AdminPassword: &quot;{{ lookup('bitwarden', 'keystone admin') }}&quot;
+</code></pre><p>We can generate a version of the file named <code>yes-passwords-here.yml</code>
+that includes the actual passwords by running the following playbook:</p><pre><code>---
+- hosts: localhost
+
+  # we need to include the role in order to make the lookup plugin
+  # available.
+  roles:
+    - ansible-modules-bitwarden
+
+  tasks:
+    - name: inject passwords into a file
+      template:
+        src: ./no-passwords-here.yml
+        dest: ./yes-passwords-here.yml
+</code></pre><p>To actually run the playbook, we need to be authenticated to Bitwarden
+first. That means:</p><ol><li>Run <code>bw login</code> (or <code>bw unlock</code>) to log in and get a session key.</li><li>Set the <code>BW_SESSION</code> environment variable to this value.</li><li>Run the playbook.</li></ol><p>The above tasks would look something like this:</p><pre><code>bash$ bw login
+? Email address: lars@redhat.com
+? Master password: [hidden]
+You are logged in!
+
+To unlock your vault, set your session key to the `BW_SESSION`
+environment variable. ex:
+$ export BW_SESSION=&quot;...&quot;
+[...]
+bash$ export BW_SESSION=&quot;...&quot;
+bash$ ansible-playbook inject-passwords.yml
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

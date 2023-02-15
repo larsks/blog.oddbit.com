@@ -1,0 +1,49 @@
+<!doctype html><html lang=en><head><title>Parsing XML with Awk :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Recently, changes from the xmlgawk project have been integrated into GNU awk, and xmlgawk has been renamed to gawkextlib. With both a recent (post-4.0.70) gawk and gawkextlib built and installed correctly, you can write simple XML parsing scripts using gawk.
+For example, let&amp;rsquo;s say you would like to generate a list of disk image files associated with a KVM virtual instance. You can use the virsh dumpxml command to get output like the following:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Parsing XML with Awk"><meta property="og:description" content="Recently, changes from the xmlgawk project have been integrated into GNU awk, and xmlgawk has been renamed to gawkextlib. With both a recent (post-4.0.70) gawk and gawkextlib built and installed correctly, you can write simple XML parsing scripts using gawk.
+For example, let&amp;rsquo;s say you would like to generate a list of disk image files associated with a KVM virtual instance. You can use the virsh dumpxml command to get output like the following:"><meta property="og:url" content="https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2012-09-10 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/>Parsing XML with Awk</a></h1><div class=post-meta><time class=post-date>2012-09-10 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/awk/>awk</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/xml/>xml</a>&nbsp;</span><div class=post-content><div><p>Recently, changes from the <a href=http://gawkextlib.sourceforge.net/>xmlgawk</a> project have been integrated into
+<a href=https://www.gnu.org/software/gawk/>GNU awk</a>, and xmlgawk has been renamed to <a href=http://gawkextlib.sourceforge.net/>gawkextlib</a>. With both a
+recent (post-4.0.70) gawk and gawkextlib built and installed
+correctly, you can write simple XML parsing scripts using gawk.</p><p>For example, let&rsquo;s say you would like to generate a list of disk image
+files associated with a KVM virtual instance. You can use the <code>virsh dumpxml</code> command to get output like the following:</p><pre><code>&lt;devices&gt;
+  &lt;emulator&gt;/usr/bin/qemu-kvm&lt;/emulator&gt;
+  &lt;disk type='file' device='disk'&gt;
+    &lt;driver name='qemu' type='qcow2'/&gt;
+    &lt;source file='/var/lib/libvirt/images/client.qcow2'/&gt;
+    &lt;target dev='sda' bus='ide'/&gt;
+    &lt;alias name='ide0-0-0'/&gt;
+    &lt;address type='drive' controller='0' bus='0' unit='0'/&gt;
+  &lt;/disk&gt;
+ ...
+&lt;/devices&gt;
+</code></pre><p>You could then write code similar to <a href=https://gist.github.com/4012705>the
+following</a> to extract the relevant
+information:</p><pre><code>@load &quot;xml&quot;
+
+XMLSTARTELEM == &quot;disk&quot;  {
+        in_disk=1
+        disk_file=&quot;&quot;
+        disk_target=&quot;&quot;
+}
+
+in_disk == 1 &amp;&amp; XMLSTARTELEM == &quot;source&quot; {
+        disk_file=XMLATTR[&quot;file&quot;]
+}
+
+in_disk == 1 &amp;&amp; XMLSTARTELEM == &quot;target&quot; {
+        disk_target=XMLATTR[&quot;dev&quot;]
+}
+
+XMLENDELEM == &quot;disk&quot;    {
+        in_disk=0
+        print disk_target, disk_file
+}
+</code></pre><p>Given the sample input above, the script will produce the following
+output:</p><pre><code>sda /var/lib/libvirt/images/client.qcow2
+</code></pre><p>The xml extension for gawk populates a number of variables that
+can be used in your scripts:</p><ul><li><code>XMLSTARTELEM</code> marks the start of a new element (and is set to the
+name of that element).</li><li><code>XMLATTR</code> is available when <code>XMLSTARTELEM</code> is set and contains the
+element attributes.</li><li><code>XMLENDELEM</code> marks the end of an element (and is set to the name of
+the element).</li></ul><p>There are other variables available, but with this basic set is
+becomes easy to extract information from XML documents.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

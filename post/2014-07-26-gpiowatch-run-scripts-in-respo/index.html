@@ -1,0 +1,98 @@
+<!doctype html><html lang=en><head><title>gpio-watch: Run scripts in response to GPIO signals :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="For a small project I&amp;rsquo;m working on I needed to attach a few buttons to a Raspberry Pi and have some code execute in response to the button presses.
+Normally I would reach for Python for a simple project like this, but constraints of the project made it necessary to implement something in C with minimal dependencies. I didn&amp;rsquo;t want to write something that was tied closely to my project&amp;hellip;"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="gpio-watch: Run scripts in response to GPIO signals"><meta property="og:description" content="For a small project I&amp;rsquo;m working on I needed to attach a few buttons to a Raspberry Pi and have some code execute in response to the button presses.
+Normally I would reach for Python for a simple project like this, but constraints of the project made it necessary to implement something in C with minimal dependencies. I didn&amp;rsquo;t want to write something that was tied closely to my project&amp;hellip;"><meta property="og:url" content="https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-07-26 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/>gpio-watch: Run scripts in response to GPIO signals</a></h1><div class=post-meta><time class=post-date>2014-07-26 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/raspberrypi/>raspberrypi</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/gpio/>gpio</a>&nbsp;</span><div class=post-content><div><p>For a small project I&rsquo;m working on I needed to attach a few buttons to
+a <a href=http://raspberrypi.org/>Raspberry Pi</a> and have some code execute in response to the
+button presses.</p><p>Normally I would reach for <a href=http://python.org/>Python</a> for a simple project like this,
+but constraints of the project made it necessary to implement
+something in C with minimal dependencies. I didn&rsquo;t want to write
+something that was tied closely to my project&mldr;</p><figure class=left><img src=http://imgs.xkcd.com/comics/the_general_problem.png></figure><p>&mldr;so I ended up writing <a href=https://github.com/larsks/gpio-watch>gpio-watch</a>, a simple tool for connecting
+shell scripts (or any other executable) to GPIO events. There are a
+few ways to interact with GPIO on the Raspberry Pi. For the fastest
+possible performance, you will need to interact directly with the
+underlying hardware using, e.g., something like <a href=http://hertaville.com/2014/07/07/rpimmapgpio/>direct register
+access</a>. Since I was only responding to button presses I opted
+to take advantage of the <a href=https://www.kernel.org/doc/Documentation/gpio/sysfs.txt>GPIO sysfs interface</a>, which exposes
+the GPIO pins via the filesystem.</p><p>To access a GPIO pin using the <code>sysfs</code> interface:</p><ul><li><p>You write the GPIO number to <code>/sys/class/gpio/export</code>. This will
+result in a new directory named <code>gpio&lt;pin></code> appearing in
+<code>/sys/class/gpio</code> (where <code>&lt;pin></code> is the GPIO number you have exported).</p></li><li><p>Inside <code>/sys/class/gpio/gpio&lt;pin></code>, there are a number of files:</p><ul><li><code>direction</code> is used to configure the GPIO as an input (write <code>in</code>)
+or output (write <code>out</code>).</li><li><code>edge</code> is used to control which edge of a signal generates
+interrupts. The options are <code>rising</code>, <code>falling</code>, <code>both</code>, or
+<code>none</code>.</li><li><code>value</code> contains the current value of the GPIO pin.</li></ul></li><li><p>Once you have properly configure a pin, you can monitor the <code>value</code>
+file for events (see below).</p></li></ul><p>We can use the <code>poll()</code> or <code>select()</code> system calls to monitor events
+on <code>/sys/class/gpio/gpio&lt;pin>/value</code>. For example, to wait for a signal
+on GPIO 23 (assuming that we have correctly configured the <code>direction</code>
+and <code>edge</code> values):</p><pre><code>#include &lt;poll.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+
+void poll_pin() {
+  struct pollfd fdlist[1];
+  int fd;
+
+  fd = open(&quot;/sys/class/gpio/gpio23/value&quot;, O_RDONLY);
+  fdlist[0].fd = fd;
+  fdlist[0].events = POLLPRI;
+
+  while (1) {
+    int err;
+    char buf[3];
+
+    err = poll(fdlist, 1, -1);
+    if (-1 == err) {
+      perror(&quot;poll&quot;);
+      return;
+    }
+
+    err = read(fdlist[0].fd, buf, 2);
+    printf(&quot;event on pin 23!\n&quot;);
+  }
+}
+
+int main(int argc, char *argv[]) {
+  poll_pin();
+}
+</code></pre><p>The <code>gpio-watch</code> command wraps this all up in a convenient package
+that lets you do something like this:</p><pre><code>gpio-watch -e rising 18 23 24
+</code></pre><p>The <code>-e rising</code> option means that we are watching for rising signals
+on all three pins. You can also trigger on different parts of the
+signal for each pin:
+gpio-watch 18:rising 23:both 24:falling</p><p>When <code>gpio-watch</code> sees an event on a pin, it looks for
+<code>/etc/gpio-scripts/&lt;pin></code> (e.g., <code>/etc/gpio-scripts/23</code>), and then runs:</p><pre><code>/etc/gpio-scripts/&lt;pin&gt; &lt;pin&gt; &lt;value&gt;
+</code></pre><p>Since the script is passed the pin number as the first argument, you
+can use a single script to handle events on multiple pins (by
+symlinking the script to the appropriate name).</p><h2 id=mechanical-switches>Mechanical switches<a href=#mechanical-switches class=hanchor arialabel=Anchor>&#8983;</a></h2><p>There is some special code in <code>gpio-watch</code> for handling mechanical
+buttons. The <code>switch</code> edge mode&mldr;</p><pre><code>gpio-watch 23:switch
+</code></pre><p>&mldr;enables some simple <a href=https://en.wikipedia.org/wiki/Switch#Contact_bounce>de-bouncing</a> logic. This causes
+<code>gpio-watch</code> to monitor both rising and falling events on this pin,
+but the events scripts will only trigger on the falling edge event,
+which must occur more than <code>DEBOUNCE_INTERVAL</code> after the rising edge
+event. In other words, you must both press and release the button for
+the event to fire, and the debounce logic should avoid firing the
+event multiple times due to contact bounce.</p><p>As an example, assume we have a script <code>/etc/gpio-scripts/23</code> that
+looks like this:</p><pre><code>#!/bin/sh
+
+echo &quot;Something happened! Pin=$1, value=$2&quot;
+</code></pre><p>If I run <code>gpio-watch</code> to monitor the falling signal edge and press a
+button attached to pin 23 three times, I see:</p><pre><code>$ gpio-watch 23:falling
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=1
+Something happened! Pin=23, value=0
+</code></pre><p>Whereas if I use <code>switch</code> mode, I see:</p><pre><code>$ gpio-watch 23:switch
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+</code></pre><h2 id=use-the-source-luke>Use the source, Luke!<a href=#use-the-source-luke class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The source is available <a href=https://github.com/larsks/gpio-watch>on gitub</a>. To get started, clone
+the repository with <code>git</code>:</p><pre><code>$ git clone https://github.com/larsks/gpio-watch.git
+</code></pre><p>And then build the source using <code>make</code>:</p><pre><code>$ cd gpio-watch
+$ make
+cc    -c -o main.o main.c
+cc    -c -o gpio.o gpio.c
+cc    -c -o fileutil.o fileutil.c
+cc    -c -o logging.o logging.c
+cc  -o gpio-watch main.o gpio.o fileutil.o logging.o -lrt
+</code></pre><p>There is basic documentation in <code>README.md</code> in the distribution. If
+you run into any problems, feel free to <a href=https://github.com/larsks/gpio-watch/issues/new>open a new issue</a>.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>vxlan on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/vxlan/</link><description>Recent content in vxlan on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 17 Apr 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/vxlan/rss.xml" rel="self" type="application/rss+xml"/><item><title>Creating a VXLAN overlay network with Open vSwitch</title><link>https://blog.oddbit.com/post/2021-04-17-vm-ovs-vxlan/</link><pubDate>Sat, 17 Apr 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-04-17-vm-ovs-vxlan/</guid><description>In this post, we&amp;rsquo;ll walk through the process of getting virtual machines on two different hosts to communicate over an overlay network created using the support for VXLAN in Open vSwitch (or OVS).
+The test environment For this post, I&amp;rsquo;ll be working with two systems:
+node0.ovs.virt at address 192.168.122.107 node1.ovs.virt at address 192.168.122.174 These hosts are running CentOS 8, although once we get past the package installs the instructions will be similar for other distributions.</description><content>&lt;p>In this post, we&amp;rsquo;ll walk through the process of getting virtual
+machines on two different hosts to communicate over an overlay network
+created using the support for VXLAN in &lt;a href="https://www.openvswitch.org/">Open vSwitch&lt;/a> (or OVS).&lt;/p>
+&lt;h2 id="the-test-environment">The test environment&lt;/h2>
+&lt;p>For this post, I&amp;rsquo;ll be working with two systems:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>node0.ovs.virt&lt;/code> at address 192.168.122.107&lt;/li>
+&lt;li>&lt;code>node1.ovs.virt&lt;/code> at address 192.168.122.174&lt;/li>
+&lt;/ul>
+&lt;p>These hosts are running CentOS 8, although once we get past the
+package installs the instructions will be similar for other
+distributions.&lt;/p>
+&lt;p>While reading through this post, remember that unless otherwise
+specified we&amp;rsquo;re going to be running the indicated commands on &lt;em>both&lt;/em>
+hosts.&lt;/p>
+&lt;h2 id="install-packages">Install packages&lt;/h2>
+&lt;p>Before we can get started configuring things we&amp;rsquo;ll need to install OVS
+and &lt;a href="https://libvirt.org/">libvirt&lt;/a>. While &lt;code>libvirt&lt;/code> is included with the base CentOS
+distribution, for OVS we&amp;rsquo;ll need to add both the &lt;a href="https://fedoraproject.org/wiki/EPEL">EPEL&lt;/a> repository
+as well as a recent CentOS &lt;a href="https://www.openstack.org/">OpenStack&lt;/a> repository (OVS is included
+in the CentOS OpenStack repositories because it is required by
+OpenStack&amp;rsquo;s networking service):&lt;/p>
+&lt;pre tabindex="0">&lt;code>yum -y install epel-release centos-release-openstack-victoria
+&lt;/code>&lt;/pre>&lt;p>With these additional repositories enabled we can now install the
+required packages:&lt;/p>
+&lt;pre tabindex="0">&lt;code>yum -y install \
+libguestfs-tools-c \
+libvirt \
+libvirt-daemon-kvm \
+openvswitch2.15 \
+tcpdump \
+virt-install
+&lt;/code>&lt;/pre>&lt;h2 id="enable-services">Enable services&lt;/h2>
+&lt;p>We need to start both the &lt;code>libvirtd&lt;/code> and &lt;code>openvswitch&lt;/code> services:&lt;/p>
+&lt;pre tabindex="0">&lt;code>systemctl enable --now openvswitch libvirtd
+&lt;/code>&lt;/pre>&lt;p>This command will (a) mark the services to start automatically when
+the system boots and (b) immediately start the service.&lt;/p>
+&lt;h2 id="configure-libvirt">Configure libvirt&lt;/h2>
+&lt;p>When &lt;code>libvirt&lt;/code> is first installed it doesn&amp;rsquo;t have any configured
+storage pools. Let&amp;rsquo;s create one in the default location,
+&lt;code>/var/lib/libvirt/images&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virsh pool-define-as default --type dir --target /var/lib/libvirt/images
+&lt;/code>&lt;/pre>&lt;p>We need to mark the pool active, and we might as well configure it to
+activate automatically next time the system boots:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virsh pool-start default
+virsh pool-autostart default
+&lt;/code>&lt;/pre>&lt;h2 id="configure-open-vswitch">Configure Open vSwitch&lt;/h2>
+&lt;h3 id="create-the-bridge">Create the bridge&lt;/h3>
+&lt;p>With all the prerequisites out of the way we can finally start working
+with Open vSwitch. Our first task is to create the OVS bridge that
+will host our VXLAN tunnels. To create a bridge named &lt;code>br0&lt;/code>, we run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ovs-vsctl add-br br0
+&lt;/code>&lt;/pre>&lt;p>We can inspect the OVS configuration by running &lt;code>ovs-vsctl show&lt;/code>,
+which should output something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>cc1e7217-e393-4e21-97c1-92324d47946d
+Bridge br0
+Port br0
+Interface br0
+type: internal
+ovs_version: &amp;#34;2.15.1&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Let&amp;rsquo;s not forget to mark the interface &amp;ldquo;up&amp;rdquo;:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip link set br0 up
+&lt;/code>&lt;/pre>&lt;h3 id="create-the-vxlan-tunnels">Create the VXLAN tunnels&lt;/h3>
+&lt;p>Up until this point we&amp;rsquo;ve been running identical commands on both
+&lt;code>node0&lt;/code> and &lt;code>node1&lt;/code>. In order to create our VXLAN tunnels, we need to
+provide a remote endpoint for the VXLAN connection, which is going to
+be &amp;ldquo;the other host&amp;rdquo;. On &lt;code>node0&lt;/code>, we run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ovs-vsctl add-port br0 vx_node1 -- set interface vx_node1 \
+type=vxlan options:remote_ip=192.168.122.174
+&lt;/code>&lt;/pre>&lt;p>This creates a VXLAN interface named &lt;code>vx_node1&lt;/code> (named that way
+because the remote endpoint is &lt;code>node1&lt;/code>). The OVS configuration now
+looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>cc1e7217-e393-4e21-97c1-92324d47946d
+Bridge br0
+Port vx_node1
+Interface vx_node1
+type: vxlan
+options: {remote_ip=&amp;#34;192.168.122.174&amp;#34;}
+Port br0
+Interface br0
+type: internal
+ovs_version: &amp;#34;2.15.1&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>On &lt;code>node1&lt;/code> we will run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ovs-vsctl add-port br0 vx_node0 -- set interface vx_node0 \
+type=vxlan options:remote_ip=192.168.122.107
+&lt;/code>&lt;/pre>&lt;p>Which results in:&lt;/p>
+&lt;pre tabindex="0">&lt;code>58451994-e0d1-4bf1-8f91-7253ddf4c016
+Bridge br0
+Port br0
+Interface br0
+type: internal
+Port vx_node0
+Interface vx_node0
+type: vxlan
+options: {remote_ip=&amp;#34;192.168.122.107&amp;#34;}
+ovs_version: &amp;#34;2.15.1&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>At this point, we have a functional overlay network: anything attached
+to &lt;code>br0&lt;/code> on either system will appear to share the same layer 2
+network. Let&amp;rsquo;s take advantage of this to connect a pair of virtual
+machines.&lt;/p>
+&lt;h2 id="create-virtual-machines">Create virtual machines&lt;/h2>
+&lt;h3 id="download-a-base-image">Download a base image&lt;/h3>
+&lt;p>We&amp;rsquo;ll need a base image for our virtual machines. I&amp;rsquo;m going to use the
+CentOS 8 Stream image, which we can download to our storage directory
+like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>curl -L -o /var/lib/libvirt/images/centos-8-stream.qcow2 \
+https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20210210.0.x86_64.qcow2
+&lt;/code>&lt;/pre>&lt;p>We need to make sure &lt;code>libvirt&lt;/code> is aware of the new image:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virsh pool-refresh default
+&lt;/code>&lt;/pre>&lt;p>Lastly, we&amp;rsquo;ll want to set a root password on the image so that we can
+log in to our virtual machines:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virt-customize -a /var/lib/libvirt/images/centos-8-stream.qcow2 \
+--root-password password:secret
+&lt;/code>&lt;/pre>&lt;h3 id="create-the-virtual-machine">Create the virtual machine&lt;/h3>
+&lt;p>We&amp;rsquo;re going to create a pair of virtual machines (one on each host).
+We&amp;rsquo;ll be creating each vm with two network interfaces:&lt;/p>
+&lt;ul>
+&lt;li>One will be attached to the libvirt &lt;code>default&lt;/code> network; this will
+allow us to &lt;code>ssh&lt;/code> into the vm in order to configure things.&lt;/li>
+&lt;li>The second will be attached to the OVS bridge&lt;/li>
+&lt;/ul>
+&lt;p>To create a virtual machine on &lt;code>node0&lt;/code> named &lt;code>vm0.0&lt;/code>, run the
+following command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virt-install \
+-r 3000 \
+--network network=default \
+--network bridge=br0,virtualport.type=openvswitch \
+--os-variant centos8 \
+--disk pool=default,size=10,backing_store=centos-8-stream.qcow2,backing_format=qcow2 \
+--import \
+--noautoconsole \
+-n vm0.0
+&lt;/code>&lt;/pre>&lt;p>The most interesting option in the above command line is probably the
+one used to create the virtual disk:&lt;/p>
+&lt;pre tabindex="0">&lt;code>--disk pool=default,size=10,backing_store=centos-8-stream.qcow2,backing_format=qcow2 \
+&lt;/code>&lt;/pre>&lt;p>This creates a 10GB &amp;ldquo;&lt;a href="https://en.wikipedia.org/wiki/Copy-on-write">copy-on-write&lt;/a>&amp;rdquo; disk that uses
+&lt;code>centos-8-stream.qcow2&lt;/code> as a backing store. That means that reads will
+generally come from the &lt;code>centos-8-stream.qcow2&lt;/code> image, but writes will
+be stored in the new image. This makes it easy for us to quickly
+create multiple virtual machines from the same base image.&lt;/p>
+&lt;p>On &lt;code>node1&lt;/code> we would run a similar command, although here we&amp;rsquo;re naming
+the virtual machine &lt;code>vm1.0&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virt-install \
+-r 3000 \
+--network network=default \
+--network bridge=br0,virtualport.type=openvswitch \
+--os-variant centos8 \
+--disk pool=default,size=10,backing_store=centos-8-stream.qcow2,backing_format=qcow2 \
+--import \
+--noautoconsole \
+-n vm1.0
+&lt;/code>&lt;/pre>&lt;h3 id="configure-networking-for-vm00">Configure networking for vm0.0&lt;/h3>
+&lt;p>On &lt;code>node0&lt;/code>, get the address of the new virtual machine on the default
+network using the &lt;code>virsh domifaddr&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[root@node0 ~]# virsh domifaddr vm0.0
+Name MAC address Protocol Address
+-------------------------------------------------------------------------------
+vnet2 52:54:00:21:6e:4f ipv4 192.168.124.83/24
+&lt;/code>&lt;/pre>&lt;p>Connect to the vm using &lt;code>ssh&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[root@node0 ~]# ssh 192.168.124.83
+root@192.168.124.83&amp;#39;s password:
+Activate the web console with: systemctl enable --now cockpit.socket
+Last login: Sat Apr 17 14:08:17 2021 from 192.168.124.1
+[root@localhost ~]#
+&lt;/code>&lt;/pre>&lt;p>(Recall that the &lt;code>root&lt;/code> password is &lt;code>secret&lt;/code>.)&lt;/p>
+&lt;p>Configure interface &lt;code>eth1&lt;/code> with an address. For this post, we&amp;rsquo;ll use
+the &lt;code>10.0.0.0/24&lt;/code> range for our overlay network. To assign this vm the
+address &lt;code>10.0.0.10&lt;/code>, we can run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip addr add 10.0.0.10/24 dev eth1
+ip link set eth1 up
+&lt;/code>&lt;/pre>&lt;h3 id="configure-networking-for-vm10">Configure networking for vm1.0&lt;/h3>
+&lt;p>We need to repeat the process for &lt;code>vm1.0&lt;/code> on &lt;code>node1&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[root@node1 ~]# virsh domifaddr vm1.0
+Name MAC address Protocol Address
+-------------------------------------------------------------------------------
+vnet0 52:54:00:e9:6e:43 ipv4 192.168.124.69/24
+&lt;/code>&lt;/pre>&lt;p>Connect to the vm using &lt;code>ssh&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[root@node0 ~]# ssh 192.168.124.69
+root@192.168.124.69&amp;#39;s password:
+Activate the web console with: systemctl enable --now cockpit.socket
+Last login: Sat Apr 17 14:08:17 2021 from 192.168.124.1
+[root@localhost ~]#
+&lt;/code>&lt;/pre>&lt;p>We&amp;rsquo;ll use address 10.0.0.11 for this system:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip addr add 10.0.0.11/24 dev eth1
+ip link set eth1 up
+&lt;/code>&lt;/pre>&lt;h3 id="verify-connectivity">Verify connectivity&lt;/h3>
+&lt;p>At this point, our setup is complete. On &lt;code>vm0.0&lt;/code>, we can connect to
+&lt;code>vm1.1&lt;/code> over the overlay network. For example, we can ping the remote
+host:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[root@localhost ~]# ping -c2 10.0.0.11
+PING 10.0.0.11 (10.0.0.11) 56(84) bytes of data.
+64 bytes from 10.0.0.11: icmp_seq=1 ttl=64 time=1.79 ms
+64 bytes from 10.0.0.11: icmp_seq=2 ttl=64 time=0.719 ms
+--- 10.0.0.11 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 0.719/1.252/1.785/0.533 ms
+&lt;/code>&lt;/pre>&lt;p>Or connect to it using &lt;code>ssh&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[root@localhost ~]# ssh 10.0.0.11 uptime
+root@10.0.0.11&amp;#39;s password:
+14:21:33 up 1:18, 1 user, load average: 0.00, 0.00, 0.00
+&lt;/code>&lt;/pre>&lt;p>Using &lt;code>tcpdump&lt;/code>, we can verify that these connections are going over
+the overlay network. Let&amp;rsquo;s watch for VXLAN traffic on &lt;code>node1&lt;/code> by
+running the following command (VXLAN is a UDP protocol running on port
+4789)&lt;/p>
+&lt;pre tabindex="0">&lt;code>tcpdump -i eth0 -n port 4789
+&lt;/code>&lt;/pre>&lt;p>When we run &lt;code>ping -c2 10.0.0.11&lt;/code> on &lt;code>vm0.0&lt;/code>, we see the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>14:23:50.312574 IP 192.168.122.107.52595 &amp;gt; 192.168.122.174.vxlan: VXLAN, flags [I] (0x08), vni 0
+IP 10.0.0.10 &amp;gt; 10.0.0.11: ICMP echo request, id 4915, seq 1, length 64
+14:23:50.314896 IP 192.168.122.174.59510 &amp;gt; 192.168.122.107.vxlan: VXLAN, flags [I] (0x08), vni 0
+IP 10.0.0.11 &amp;gt; 10.0.0.10: ICMP echo reply, id 4915, seq 1, length 64
+14:23:51.314080 IP 192.168.122.107.52595 &amp;gt; 192.168.122.174.vxlan: VXLAN, flags [I] (0x08), vni 0
+IP 10.0.0.10 &amp;gt; 10.0.0.11: ICMP echo request, id 4915, seq 2, length 64
+14:23:51.314259 IP 192.168.122.174.59510 &amp;gt; 192.168.122.107.vxlan: VXLAN, flags [I] (0x08), vni 0
+IP 10.0.0.11 &amp;gt; 10.0.0.10: ICMP echo reply, id 4915, seq 2, length 64
+&lt;/code>&lt;/pre>&lt;p>In the output above, we see that each packet in the transaction
+results in two lines of output from &lt;code>tcpdump&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>14:23:50.312574 IP 192.168.122.107.52595 &amp;gt; 192.168.122.174.vxlan: VXLAN, flags [I] (0x08), vni 0
+IP 10.0.0.10 &amp;gt; 10.0.0.11: ICMP echo request, id 4915, seq 1, length 64
+&lt;/code>&lt;/pre>&lt;p>The first line shows the contents of the VXLAN packet, while the
+second lines shows the data that was encapsulated in the VXLAN packet.&lt;/p>
+&lt;h2 id="thats-all-folks">That&amp;rsquo;s all folks&lt;/h2>
+&lt;p>We&amp;rsquo;ve achieved our goal: we have two virtual machines on two different
+hosts communicating over a VXLAN overlay network. If you were to do
+this &amp;ldquo;for real&amp;rdquo;, you would probably want to make a number of changes:
+for example, the network configuration we&amp;rsquo;ve applied in many cases
+will not persist across a reboot; handling persistent network
+configuration is still very distribution dependent, so I&amp;rsquo;ve left it
+out of this post.&lt;/p></content></item></channel></rss>

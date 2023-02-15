@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>nmcli on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/nmcli/</link><description>Recent content in nmcli on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 16 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/nmcli/rss.xml" rel="self" type="application/rss+xml"/><item><title>Setting up an IPv6 VLAN</title><link>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</link><pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</guid><description>My internet service provider (FIOS) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the Hurricane Electric tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to all systems in my house 1. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN.</description><content>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p>
+&lt;p>Parts of this post are going to be device specific: for example, I&amp;rsquo;m using a Ubiquiti &lt;a href="https://store.ui.com/collections/operator-edgemax-routers/products/edgerouter-x">EdgeRouter X&lt;/a> as my Internet router, so the tunnel setup is going to be specific to that device. The section about setting things up on my Linux desktop will be more generally applicable.&lt;/p>
+&lt;p>There are three major parts to this post:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
+&lt;p>This shows how to set up an IPv6 tunnel and configure an IPv6-only
+VLAN on the EdgeRouter.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
+&lt;p>This is only necessary due to the specifics of the connection between
+my desktop and the router; you can probably skip this.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
+&lt;p>This shows how to set up the IPv6 VLAN interface under Linux using &lt;code>nmcli&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="what-we-know">What we know&lt;/h2>
+&lt;p>When you set up an IPv6 tunnel with hurricane electric, you receive several bits of information. We care in particular about the following (the IPv6 addresses and client IPv4 addresses here have been munged for privacy reasons):&lt;/p>
+&lt;h3 id="ipv6-tunnel-endpoints">IPv6 Tunnel Endpoints&lt;/h3>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>Server IPv4 Address&lt;/td>
+&lt;td>209.51.161.14&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Server IPv6 Address&lt;/td>
+&lt;td>2001:470:1236:1212::1/64&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Client IPv4 Address&lt;/td>
+&lt;td>1.2.3.4&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Client IPv6 Address&lt;/td>
+&lt;td>2001:470:1236:1212::2/64&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="routed-ipv6-prefixes">Routed IPv6 Prefixes&lt;/h3>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>Routed /64&lt;/td>
+&lt;td>2001:470:1237:1212::/64&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>We&amp;rsquo;ll refer back to this information as we configured things later on.&lt;/p>
+&lt;h2 id="configure-the-edgerouter">Configure the EdgeRouter&lt;/h2>
+&lt;h3 id="create-the-tunnel-interface">Create the tunnel interface&lt;/h3>
+&lt;p>The first step in the process is to create a tunnel interface &amp;ndash; that is, an interface that looks like an ordinary network interface, but is in fact encapsulating traffic and sending it to the tunnel broker where it will unpacked and sent on its way.&lt;/p>
+&lt;p>I&amp;rsquo;ll be creating a &lt;a href="https://wiki.linuxfoundation.org/networking/tunneling#sit_tunnels">SIT&lt;/a> tunnel, which is designed to &amp;ldquo;interconnect isolated IPv6 networks&amp;rdquo; over an IPv4 connection.&lt;/p>
+&lt;p>I start by setting the tunnel encapsulation type and assigning an IPv6 address to the tunnel interface. This is the &amp;ldquo;Client IPv6 Address&amp;rdquo; from the earlier table:&lt;/p>
+&lt;pre tabindex="0">&lt;code>set interfaces tunnel tun0 encapsulation sit
+set interfaces tunnel tun0 address 2001:470:1236:1212::2/64
+&lt;/code>&lt;/pre>&lt;p>Next I need to define the local and remote IPv4 endpoints of the tunnel. The remote endpoint is the &amp;ldquo;Server IPv4&amp;rdquo; address. The value &lt;code>0.0.0.0&lt;/code> for the &lt;code>local-ip&lt;/code> option means &amp;ldquo;whichever source address is appropriate for connecting to the given remote address&amp;rdquo;:&lt;/p>
+&lt;pre tabindex="0">&lt;code>set interfaces tunnel tun0 remote-ip 209.51.161.14
+set interfaces tunnel tun0 local-ip 0.0.0.0
+&lt;/code>&lt;/pre>&lt;p>Finally, I associate some firewall rulesets with the interface. This is import because, unlike IPv4, as you assign IPv6 addresses to internal devices they will be &lt;em>directly connected to the internet&lt;/em>. With no firewall rules in place you would find yourself inadvertently exposing services that previously were &amp;ldquo;behind&amp;rdquo; your home router.&lt;/p>
+&lt;pre tabindex="0">&lt;code>set interfaces tunnel tun0 firewall in ipv6-name WANv6_IN
+set interfaces tunnel tun0 firewall local ipv6-name WANv6_LOCAL
+&lt;/code>&lt;/pre>&lt;p>I&amp;rsquo;m using the existing &lt;code>WANv6_IN&lt;/code> and &lt;code>WANv6_LOCAL&lt;/code> rulesets, which by default block all inbound traffic. These correspond to the following &lt;code>ip6tables&lt;/code> chains:&lt;/p>
+&lt;pre tabindex="0">&lt;code>root@ubnt:~# ip6tables -S WANv6_IN
+-N WANv6_IN
+-A WANv6_IN -m comment --comment WANv6_IN-10 -m state --state RELATED,ESTABLISHED -j RETURN
+-A WANv6_IN -m comment --comment WANv6_IN-20 -m state --state INVALID -j DROP
+-A WANv6_IN -m comment --comment &amp;#34;WANv6_IN-10000 default-action drop&amp;#34; -j LOG --log-prefix &amp;#34;[WANv6_IN-default-D]&amp;#34;
+-A WANv6_IN -m comment --comment &amp;#34;WANv6_IN-10000 default-action drop&amp;#34; -j DROP
+root@ubnt:~# ip6tables -S WANv6_LOCAL
+-N WANv6_LOCAL
+-A WANv6_LOCAL -m comment --comment WANv6_LOCAL-10 -m state --state RELATED,ESTABLISHED -j RETURN
+-A WANv6_LOCAL -m comment --comment WANv6_LOCAL-20 -m state --state INVALID -j DROP
+-A WANv6_LOCAL -p ipv6-icmp -m comment --comment WANv6_LOCAL-30 -j RETURN
+-A WANv6_LOCAL -p udp -m comment --comment WANv6_LOCAL-40 -m udp --sport 547 --dport 546 -j RETURN
+-A WANv6_LOCAL -m comment --comment &amp;#34;WANv6_LOCAL-10000 default-action drop&amp;#34; -j LOG --log-prefix &amp;#34;[WANv6_LOCAL-default-D]&amp;#34;
+-A WANv6_LOCAL -m comment --comment &amp;#34;WANv6_LOCAL-10000 default-action drop&amp;#34; -j DROP
+&lt;/code>&lt;/pre>&lt;p>As you can see, both rulesets block all inbound traffic by default unless it is &lt;em>related&lt;/em> to an existing outbound connection.&lt;/p>
+&lt;h3 id="create-a-vlan-interface">Create a vlan interface&lt;/h3>
+&lt;p>I need to create a network interface on the router that will be the default gateway for my local IPv6-only network. From the tunnel broker, I received the CIDR &lt;code>2001:470:1237:1212::/64&lt;/code> for local use, so:&lt;/p>
+&lt;ul>
+&lt;li>I&amp;rsquo;ve decided to split this up into smaller networks (because a /64 has over 18 &lt;em>quintillion&lt;/em> available addresses). I&amp;rsquo;m using &lt;code>/110&lt;/code> networks in this example, which means I will only ever be able to have 262,146 devices on each network (note that the decision to use a smaller subnet impacts your choices for address autoconfiguration; see &lt;a href="https://www.rfc-editor.org/rfc/rfc7421">RFC 7421&lt;/a> for the relevant discussion).&lt;/li>
+&lt;/ul>
+&lt;ul>
+&lt;li>
+&lt;p>I&amp;rsquo;m using the first &lt;code>/110&lt;/code> network for this VLAN, which comprises addresses &lt;code>2001:470:1237:1212::1&lt;/code> through &lt;code>2001:470:1237:1212::3:ffff&lt;/code>. I&amp;rsquo;ll use the first address as the router address.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>I&amp;rsquo;ve arbitrarily decided to use VLAN id 10 for this purpose.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>To create an interface for VLAN id 10 with address &lt;code>2001:470:1237:1212::1/110&lt;/code>, we use the &lt;code>set interfaces ... vif&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>set interfaces switch switch0 vif 10 address 2001:470:1237:1212::1/110
+&lt;/code>&lt;/pre>&lt;h3 id="configure-the-default-ipv6-route">Configure the default IPv6 route&lt;/h3>
+&lt;p>We don&amp;rsquo;t receive &lt;a href="https://en.wikipedia.org/wiki/Neighbor_Discovery_Protocol">router advertisements&lt;/a> over the IPv6 tunnel, which means we need to explicitly configure the IPv6 default route. The default gateway will be the &amp;ldquo;Server IPv6 Address&amp;rdquo; we received from the tunnel broker.&lt;/p>
+&lt;pre tabindex="0">&lt;code>set protocol static route6 ::/0 next-hop 2001:470:1236:1212::1
+&lt;/code>&lt;/pre>&lt;h3 id="enable-router-advertisements">Enable router advertisements&lt;/h3>
+&lt;p>IPv6 systems on our local network will use the &lt;a href="https://en.wikipedia.org/wiki/Neighbor_Discovery_Protocol">neighbor discovery protocol&lt;/a> to discover the default gateway for the network. Support for this service is provided by &lt;a href="https://radvd.litech.org/">RADVD&lt;/a>, and we configure it using the &lt;code>set interfaces ... ipv6 router-advert&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>set interfaces switch switch0 vif 10 ipv6 router-advert send-advert true
+set interfaces switch switch0 vif 10 ipv6 router-advert managed-flag true
+set interfaces switch switch0 vif 10 ipv6 router-advert prefix ::/110
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>managed-flag&lt;/code> setting corresponds to the RADVD &lt;code>AdvManagedFlag&lt;/code> configuration setting, which instructs clients to use DHCPv6 for address autoconfiguration.&lt;/p>
+&lt;h3 id="configure-the-dhcpv6-service">Configure the DHCPv6 service&lt;/h3>
+&lt;p>While in theory it is possible for clients to assign IPv6 addresses without the use of a DHCP server using &lt;a href="https://en.wikipedia.org/wiki/IPv6_address#Stateless_address_autoconfiguration">stateless address autoconfiguration&lt;/a>, this requires that we&amp;rsquo;re using a /64 subnet (see e.g. &lt;a href="https://www.rfc-editor.org/rfc/rfc7421">RFC 7421&lt;/a>). There is no such limitation when using DHCPv6.&lt;/p>
+&lt;pre tabindex="0">&lt;code>set service dhcpv6-server shared-network-name VLAN10 subnet 2001:470:1237:1212::/110 address-range start 2001:470:1237:1212::10 stop 2001:470:1237:1212::3:ffff
+set service dhcpv6-server shared-network-name VLAN10 subnet 2001:470:1237:1212::/110 name-server 2001:470:1237:1212::1
+set service dhcpv6-server shared-network-name VLAN10 subnet 2001:470:1237:1212::/110 domain-search house
+set service dhcpv6-server shared-network-name VLAN10 subnet 2001:470:1237:1212::/110 lease-time default 86400
+&lt;/code>&lt;/pre>&lt;p>Here I&amp;rsquo;m largely setting things up to mirror the configuration of the IPv4 dhcp server for the &lt;code>name-server&lt;/code>, &lt;code>domain-search&lt;/code>, and &lt;code>lease-time&lt;/code> settings. I&amp;rsquo;m letting the DHCPv6 server allocate pretty much the entire network range, with the exception of the first 10 addresses.&lt;/p>
+&lt;h3 id="commit-the-changes">Commit the changes&lt;/h3>
+&lt;p>After making the above changes they need to be activated:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commit
+&lt;/code>&lt;/pre>&lt;h3 id="verify-the-configuration">Verify the configuration&lt;/h3>
+&lt;p>This produces the following interface configuration for &lt;code>tun0&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>13: tun0@NONE: &amp;lt;POINTOPOINT,NOARP,UP,LOWER_UP&amp;gt; mtu 1480 qdisc noqueue state UNKNOWN group default qlen 1000
+link/sit 0.0.0.0 peer 209.51.161.14
+inet6 2001:470:1236:1212::2/64 scope global
+valid_lft forever preferred_lft forever
+inet6 fe80::c0a8:101/64 scope link
+valid_lft forever preferred_lft forever
+inet6 fe80::6c07:49c7/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>&lt;p>And for &lt;code>switch0.10&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ubnt@ubnt:~$ ip addr show switch0.10
+14: switch0.10@switch0: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state UP group default qlen 1000
+link/ether 78:8a:20:bb:05:db brd ff:ff:ff:ff:ff:ff
+inet6 2001:470:1237:1212::1/110 scope global
+valid_lft forever preferred_lft forever
+inet6 fe80::7a8a:20ff:febb:5db/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>&lt;p>And the following route configuration:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ubnt@ubnt:~$ ip -6 route | grep -v fe80
+2001:470:1236:1212::/64 dev tun0 proto kernel metric 256 pref medium
+2001:470:1237:1212::/110 dev switch0.10 proto kernel metric 256 pref medium
+default via 2001:470:1236:1212::1 dev tun0 proto zebra metric 1024 pref medium
+&lt;/code>&lt;/pre>&lt;p>We can confirm things are properly configured by accessing a remote service that reports our ip address:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ubnt@ubnt:~$ curl https://api64.ipify.org
+2001:470:1236:1212::2
+&lt;/code>&lt;/pre>&lt;h2 id="configure-the-switch">Configure the switch&lt;/h2>
+&lt;p>In my home network, devices in my office connect to a switch, and the switch connects back to the router. I need to configure the switch (an older Netgear M4100-D12G) to pass the VLAN on to the desktop.&lt;/p>
+&lt;h3 id="add-vlan-10-to-the-vlan-database-with-name-ipv6net0">Add vlan 10 to the vlan database with name &lt;code>ipv6net0&lt;/code>&lt;/h3>
+&lt;p>I start by defining the VLAN in the VLAN database:&lt;/p>
+&lt;pre tabindex="0">&lt;code>vlan database
+vlan 10
+vlan name 10 ipv6net0
+exit
+&lt;/code>&lt;/pre>&lt;h3 id="configure-vlan-10-as-a-tagged-member-of-ports-1-10">Configure vlan 10 as a tagged member of ports 1-10&lt;/h3>
+&lt;p>Next, I configure the switch to pass VLAN 10 as a tagged VLAN on all switch interfaces:&lt;/p>
+&lt;pre tabindex="0">&lt;code>configure
+interface 0/1-0/10
+vlan participation include 10
+vlan tagging 10
+exit
+exit
+&lt;/code>&lt;/pre>&lt;h2 id="configure-the-desktop">Configure the desktop&lt;/h2>
+&lt;p>With the above configuration in place, traffic on VLAN 10 will arrive on my Linux desktop (which is connected to the switch we configured in the previous step). I can use &lt;a href="https://developer-old.gnome.org/NetworkManager/stable/nmcli.html">&lt;code>nmcli&lt;/code>&lt;/a>, the &lt;a href="https://networkmanager.dev/">NetworkManager&lt;/a> CLI, to add a VLAN interface (I&amp;rsquo;m using &lt;a href="https://getfedora.org/">Fedora&lt;/a> 37, which uses NetworkManager to manage network interface configuration; other distributions may have different tooling).&lt;/p>
+&lt;p>The following command will create a &lt;em>connection&lt;/em> named &lt;code>vlan10&lt;/code>. Bringing up the connection will create an interface named &lt;code>vlan10&lt;/code>, configured to receive traffic on VLAN 10 arriving on &lt;code>eth0&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>nmcli con add type vlan con-name vlan10 ifname vlan10 dev eth0 id 10 ipv6.method auto
+nmcli con up vlan10
+&lt;/code>&lt;/pre>&lt;p>This produces the following interface configuration:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ ip addr show vlan10
+7972: vlan10@eth0: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state UP group default qlen 1000
+link/ether 2c:f0:5d:c9:12:a9 brd ff:ff:ff:ff:ff:ff
+inet6 2001:470:1237:1212::2:c19a/128 scope global dynamic noprefixroute
+valid_lft 85860sec preferred_lft 53460sec
+inet6 fe80::ced8:1750:d67c:2ead/64 scope link noprefixroute
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>&lt;p>And the following route configuration:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ ip -6 route show | grep vlan10
+2001:470:1237:1212::2:c19a dev vlan10 proto kernel metric 404 pref medium
+2001:470:1237:1212::/110 dev vlan10 proto ra metric 404 pref medium
+fe80::/64 dev vlan10 proto kernel metric 1024 pref medium
+default via fe80::7a8a:20ff:febb:5db dev vlan10 proto ra metric 404 pref medium
+&lt;/code>&lt;/pre>&lt;p>We can confirm things are properly configured by accessing a remote service that reports our ip address:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ curl https://api64.ipify.org
+2001:470:1237:1212::2:c19a
+&lt;/code>&lt;/pre>&lt;p>Note that unlike access using IPv4, the address visible here is the address assigned to our local interface. There is no NAT happening at the router.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>Some services (Netflix is a notable example) block access over the IPv6 tunnels because it breaks their geolocation process and prevents them from determining your country of origin. I don&amp;rsquo;t want to break things for other folks in my house just because I want to play with IPv6.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></content></item><item><title>Configuring Open vSwitch with nmcli</title><link>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</link><pubDate>Sat, 15 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</guid><description>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy /etc/sysconfig/network-scripts scripts or rolling my own set of services. These are my notes in case I ever have to do this again.</description><content>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p>
+&lt;p>First, we need the openvswitch plugin for NetworkManager:&lt;/p>
+&lt;pre tabindex="0">&lt;code>yum install NetworkManager-ovs
+&lt;/code>&lt;/pre>&lt;p>Without the plugin, &lt;code>nmcli&lt;/code> will happily accept all your configuration commands, but you&amp;rsquo;ll get an error when you try to bring an interface up.&lt;/p>
+&lt;h2 id="target-configuration">Target configuration&lt;/h2>
+&lt;p>This is what I want when we&amp;rsquo;re done:&lt;/p>
+&lt;pre tabindex="0">&lt;code>1e668de8-c2ac-4dd7-9824-95e1cade31ce
+Bridge br-house
+Port &amp;#34;vlan1&amp;#34;
+tag: 1
+Interface &amp;#34;vlan1&amp;#34;
+type: internal
+Port &amp;#34;vlan102&amp;#34;
+tag: 102
+Interface &amp;#34;vlan102&amp;#34;
+type: internal
+Port br-house
+Interface br-house
+type: internal
+Port &amp;#34;eth0&amp;#34;
+Interface &amp;#34;eth0&amp;#34;
+type: system
+Port &amp;#34;vlan101&amp;#34;
+tag: 101
+Interface &amp;#34;vlan101&amp;#34;
+type: internal
+ovs_version: &amp;#34;2.12.0&amp;#34;
+&lt;/code>&lt;/pre>&lt;h2 id="nmcli-commands">NMCLI commands&lt;/h2>
+&lt;p>To create the ovs bridge:&lt;/p>
+&lt;pre tabindex="0">&lt;code>nmcli c add type ovs-bridge conn.interface br-house con-name br-house
+nmcli c add type ovs-port conn.interface br-house master br-house con-name ovs-port-br-house
+nmcli c add type ovs-interface slave-type ovs-port conn.interface br-house master ovs-port-br-house con-name ovs-if-br-house
+&lt;/code>&lt;/pre>&lt;p>Unlike &lt;code>ovs-vsctl&lt;/code>, creating the bridge won&amp;rsquo;t automatically create an interface for you. The two additional commands above get us an actual interface named &lt;code>br-house&lt;/code> (configured using DHCP, because we didn&amp;rsquo;t explicitly set &lt;code>ipv4.method&lt;/code> on the interface).&lt;/p>
+&lt;p>Next, we add &lt;code>eth0&lt;/code> to the bridge:&lt;/p>
+&lt;pre tabindex="0">&lt;code>nmcli c add type ovs-port conn.interface eth0 master br-house con-name ovs-port-eth0
+nmcli c add type ethernet conn.interface eth0 master ovs-port-eth0 con-name ovs-if-eth0
+&lt;/code>&lt;/pre>&lt;p>And finally, we create some ports to expose specific vlans:&lt;/p>
+&lt;pre tabindex="0">&lt;code>nmcli c add type ovs-port conn.interface vlan1 master br-house ovs-port.tag 1 con-name ovs-port-vlan1
+nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan1 master ovs-port-vlan1 con-name ovs-if-vlan1 ipv4.method static ipv4.address 192.168.7.1/24
+nmcli c add type ovs-port conn.interface vlan101 master br-house ovs-port.tag 101 con-name ovs-port-vlan101
+nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan101 master ovs-port-vlan101 con-name ovs-if-vlan101 ipv4.method static ipv4.address 192.168.11.1/24
+nmcli c add type ovs-port conn.interface vlan102 master br-house ovs-port.tag 102 con-name ovs-port-vlan102
+nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan102 master ovs-port-vlan102 con-name ovs-if-vlan102 ipv4.method static ipv4.address 192.168.13.1/24
+&lt;/code>&lt;/pre></content></item></channel></rss>

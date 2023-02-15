@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>gpg on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/gpg/</link><description>Recent content in gpg on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/gpg/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using KeyOxide</title><link>https://blog.oddbit.com/post/2022-11-13-using-keyoxide/</link><pubDate>Sun, 13 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-13-using-keyoxide/</guid><description>In today&amp;rsquo;s post, we look at KeyOxide, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.
+We&amp;rsquo;re going to look at the following high-level tasks:
+Create a GPG key
+Publish the GPG key</description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
+&lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;a href="#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="#step-3-add-a-claim">Use the GPG key to assert claims on online resources&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;h2 id="step-1-create-a-gpg-keypair">Step 1: Create a GPG keypair&lt;/h2>
+&lt;p>If you already have a keypair, skip on to &amp;ldquo;&lt;a href="#step-2-publish-your-key">Step 2: Publish your key&lt;/a>&amp;rdquo;.&lt;/p>
+&lt;p>The first thing you need to do is set up a GPG&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> keypair and publish it to a keyserver (or a &lt;a href="https://wiki.gnupg.org/WKD">WKD endpoint&lt;/a>). There are many guides out there that step you through the process (for example, GitHub&amp;rsquo;s guide on &lt;a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key">Generating a new GPG key&lt;/a>), but if you&amp;rsquo;re in a hurry and not particularly picky, read on.&lt;/p>
+&lt;p>This assumes that you&amp;rsquo;re using a recent version of GPG; at the time of this writing, the current GPG release is 2.3.8, but these instructions seem to work at least with version 2.2.27.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Generate a new keypair using the &lt;code>--quick-gen-key&lt;/code> option:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --batch --quick-gen-key &amp;lt;your email address&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>This will use the GPG defaults for the key algorithm (varies by version) and expiration time (the key never expires&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>When prompted, enter a secure passphrase.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>GPG will create a keypair for you; you can view it after the fact by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg -qk &amp;lt;your email address&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>You should see something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>pub ed25519 2022-11-13 [SC] [expires: 2024-11-12]
+EC03DFAC71DB3205EC19BAB1404E03D044EE706B
+uid [ultimate] testuser@example.com
+sub cv25519 2022-11-13 [E]
+&lt;/code>&lt;/pre>&lt;p>In the above output, &lt;code>F79CE5D41D93C2C0E97F9A63C4178440F81E4261&lt;/code> is the &lt;em>key fingerprint&lt;/em>. We&amp;rsquo;re going to need this later.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Now you have created a GPG keypair!&lt;/p>
+&lt;h2 id="step-2-publish-your-key">Step 2: Publish your key&lt;/h2>
+&lt;p>If you&amp;rsquo;ve already published your key at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a> or at a &lt;a href="https://wiki.gnupg.org/WKD">WKD&lt;/a> endpoint, skip on to &amp;ldquo;&lt;a href="#step-3-add-a-claim">Step 3: Add a claim&lt;/a>&amp;rdquo;.&lt;/p>
+&lt;p>In order for KeyOxide to find your GPG key, it needs to be published at a known location. There are two choices:&lt;/p>
+&lt;ul>
+&lt;li>Publishing your key at the public keyserver at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a>.&lt;/li>
+&lt;li>Publishing your key using a &lt;a href="https://wiki.gnupg.org/WKD">WKD&lt;/a> service&lt;/li>
+&lt;/ul>
+&lt;p>In this post, we&amp;rsquo;re only going to consider the first option.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Export your public key to a file using gpg&amp;rsquo;s &lt;code>--export&lt;/code> option:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --export -a &amp;lt;your email address&amp;gt; &amp;gt; mykey.asc
+&lt;/code>&lt;/pre>&lt;p>This will create a file &lt;code>mykey.asc&lt;/code> in your current directory that looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>-----BEGIN PGP PUBLIC KEY BLOCK-----
+[...a bunch of base64 encoded text...]
+-----END PGP PUBLIC KEY BLOCK-----
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Go to &lt;a href="https://keys.openpgp.org/upload">https://keys.openpgp.org/upload&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Select the key export you just created, and select &amp;ldquo;upload&amp;rdquo;.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>When prompted on the next page, select &amp;ldquo;Send Verification Email&amp;rdquo;. Your key won&amp;rsquo;t discoverable until you have received and responded to the verification email.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>When you receive the email, select the verification link.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Now your key has been published! You can verify this by going to &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a> and searching for your email address.&lt;/p>
+&lt;h2 id="step-3-add-a-claim">Step 3: Add a claim&lt;/h2>
+&lt;p>You assert ownership of an online resource through a three step process:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Mark the online resource with your GPG key fingerprint. How you do this depends on the type of resource you&amp;rsquo;re claiming; e.g., for GitHub you create a gist with specific content, while for claiming a DNS domain you create a &lt;code>TXT&lt;/code> record.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Add a notation to your GPG key with a reference to the claim created in the previous step.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Update your published key.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>In this post we&amp;rsquo;re going to look at two specific examples; for other services, see the &amp;ldquo;Service providers&amp;rdquo; section of the &lt;a href="https://docs.keyoxide.org/">KeyOxide documentation&lt;/a>.&lt;/p>
+&lt;p>In order to follow any of the following instructions, you&amp;rsquo;re going to need to know your &lt;em>key fingerprint&lt;/em>. When you show your public key by running &lt;code>gpg -k&lt;/code>, you key fingerprint is the long hexadecimal string on the line following the line that starts with &lt;code>pub &lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ gpg -qk testuser@example.com
+pub ed25519 2022-11-13 [SC] [expires: 2024-11-12]
+EC03DFAC71DB3205EC19BAB1404E03D044EE706B &amp;lt;--- THIS LINE HERE
+uid [ultimate] testuser@example.com
+sub cv25519 2022-11-13 [E]
+&lt;/code>&lt;/pre>&lt;h3 id="add-a-claim-to-your-gpg-key">Add a claim to your GPG key&lt;/h3>
+&lt;p>This is a set of common instructions that we&amp;rsquo;ll use every time we need to add a claim to our GPG key.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Edit your GPG key using the &lt;code>--edit-key&lt;/code> option:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --edit-key &amp;lt;your email address&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>This will drop you into the GPG interactive key editor.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Select a user id on which to operate using the &lt;code>uid&lt;/code> command. If you created your key following the instructions earlier in this post, then you only have a single user id:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg&amp;gt; uid 1
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Add an annotation to the key using the &lt;code>notation&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg&amp;gt; notation
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>When prompted, enter the notation (the format of the notation depends on the service you&amp;rsquo;re claiming; see below for details). For example, if we&amp;rsquo;re asserting a Mastodon identity at hachyderm.io, we would enter:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Enter the notation: proof@ariadne.id=https://hachyderm.io/@testuser
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Save your changes with the &lt;code>save&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg&amp;gt; save
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol>
+&lt;h3 id="update-your-published-key">Update your published key&lt;/h3>
+&lt;p>After adding an annotation to your key locally, you need to publish those changes. One way of doing this is simply following the &lt;a href="#step-2-publish-your-key">instructions for initially uploading your public key&lt;/a>:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Export the key to a file:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --export -a &amp;lt;your email address&amp;gt; &amp;gt; mykey.asc
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Upload your key to &lt;a href="https://keys.openpgp.org/upload">https://keys.openpgp.org/upload&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>You won&amp;rsquo;t have to re-verify your key.&lt;/p>
+&lt;p>Alternately, you can configure gpg so that you can publish your key from the command line. Create or edit &lt;code>$HOME/.gnupg/gpg.conf&lt;/code> and add the following line:&lt;/p>
+&lt;pre tabindex="0">&lt;code>keyserver hkps://keys.openpgp.org
+&lt;/code>&lt;/pre>&lt;p>Now every time you need to update the published version of your key:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Upload your public key using the &lt;code>--send-keys&lt;/code> option along with your key fingerprint, e.g:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --send-keys EC03DFAC71DB3205EC19BAB1404E03D044EE706B
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol>
+&lt;h3 id="claiming-a-mastodon-identity">Claiming a Mastodon identity&lt;/h3>
+&lt;ol>
+&lt;li>
+&lt;p>On your favorite Mastodon server, go to your profile and select &amp;ldquo;Edit profile&amp;rdquo;.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Look for the &amp;ldquo;Profile metadata section&amp;rdquo;; this allows you to associate four bits of metadata with your Mastodon profile. Assuming that you still have a slot free, give it a name (it could be anything, I went with &amp;ldquo;Keyoxide claim&amp;rdquo;), and for the value enter:&lt;/p>
+&lt;pre tabindex="0">&lt;code>openpgp4fpr:&amp;lt;your key fingerprint&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>E.g., given the &lt;code>gpg -k&lt;/code> output shown above, I would enter:&lt;/p>
+&lt;pre tabindex="0">&lt;code>openpgp4fpr:EC03DFAC71DB3205EC19BAB1404E03D044EE706B
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>Click &amp;ldquo;Save Changes&amp;rdquo;&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Now, &lt;a href="#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://&amp;lt;your mastodon server&amp;gt;/@&amp;lt;your mastodon username&lt;/code>. I am @larsks@hachyderm.io, so I would enter:&lt;/p>
+&lt;pre tabindex="0">&lt;code>proof@ariadne.id=https://hachyderm.io/@larsks
+&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="#update-your-published-key">update your published key&lt;/a>.&lt;/p>
+&lt;h3 id="claiming-a-github-identity">Claiming a Github identity&lt;/h3>
+&lt;ol>
+&lt;li>
+&lt;p>Create a &lt;a href="https://gist.github.com">new gist&lt;/a> (it can be either secret or public).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>In your gist, name the filename &lt;code>openpgp.md&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Set the content of that file to:&lt;/p>
+&lt;pre tabindex="0">&lt;code>openpgp4fpr:&amp;lt;your key fingerprint&amp;gt;
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ol>
+&lt;p>Now, &lt;a href="#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://gist.github.com/larsks/&amp;lt;gist id&amp;gt;&lt;/code>. You can see my claim at &lt;a href="https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7">https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7&lt;/a>; the notation I added to my key is:&lt;/p>
+&lt;pre tabindex="0">&lt;code>proof@ariadne.id=https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7
+&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="#update-your-published-key">update your published key&lt;/a>.&lt;/p>
+&lt;h2 id="step-4-view-your-claims">Step 4: View your claims&lt;/h2>
+&lt;p>You&amp;rsquo;ll note that none of the previous steps required interacting with &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>. That&amp;rsquo;s because KeyOxide doesn&amp;rsquo;t actually store any of your data: it just provides a mechanism for visualizing and verifying claims.&lt;/p>
+&lt;p>You can look up an identity by email address or by GPG key fingerprint.&lt;/p>
+&lt;p>To look up an identity using an email address:&lt;/p>
+&lt;ol>
+&lt;li>Go to &lt;code>https://keyoxide.org/&amp;lt;email address&lt;/code>. For example, to find my identity, visit &lt;a href="https://keyoxide.org/lars@oddbit.com">https://keyoxide.org/lars@oddbit.com&lt;/a>.&lt;/li>
+&lt;/ol>
+&lt;p>To look up an identity by key fingerprint:&lt;/p>
+&lt;ol>
+&lt;li>Go to &lt;code>https://keyoxide.org/&amp;lt;fingerprint&amp;gt;&lt;/code>. For example, to find my identity, visit &lt;a href="https://keyoxide.org/3e70a502bb5255b6bb8e86be362d63a80853d4cf">https://keyoxide.org/3e70a502bb5255b6bb8e86be362d63a80853d4cf&lt;/a>.&lt;/li>
+&lt;/ol>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>The pedantic among you will already be writing to me about how PGP is the standard and GPG is an implementation of that standard, but I&amp;rsquo;m going to stick with this nomenclature for the sake of simplicity.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>For some thoughts on key expiration, see &lt;a href="https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security">this question&lt;/a> on the Information Security StackExchange.&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></content></item><item><title>Getting started with KSOPS</title><link>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</link><pubDate>Tue, 09 Mar 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</guid><description>Kustomize is a tool for assembling Kubernetes manifests from a collection of files. We&amp;rsquo;re making extensive use of Kustomize in the operate-first project. In order to keep secrets stored in our configuration repositories, we&amp;rsquo;re using the KSOPS plugin, which enables Kustomize to use sops to encrypt/files using GPG.
+In this post, I&amp;rsquo;d like to walk through the steps necessary to get everything up and running.
+Set up GPG We encrypt files using GPG, so the first step is making sure that you have a GPG keypair and that your public key is published where other people can find it.</description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
+&lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
+configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
+enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
+&lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
+everything up and running.&lt;/p>
+&lt;h2 id="set-up-gpg">Set up GPG&lt;/h2>
+&lt;p>We encrypt files using GPG, so the first step is making sure that you
+have a GPG keypair and that your public key is published where other
+people can find it.&lt;/p>
+&lt;h3 id="install-gpg">Install GPG&lt;/h3>
+&lt;p>GPG will be pre-installed on most Linux distributions. You can check
+if it&amp;rsquo;s installed by running e.g. &lt;code>gpg --version&lt;/code>. If it&amp;rsquo;s not
+installed, you will need to figure out how to install it for your
+operating system.&lt;/p>
+&lt;h3 id="create-a-key">Create a key&lt;/h3>
+&lt;p>Run the following command to create a new GPG keypair:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --full-generate-key
+&lt;/code>&lt;/pre>&lt;p>This will step you through a series of prompts. First, select a key
+type. You can just press &lt;code>&amp;lt;RETURN&amp;gt;&lt;/code> for the default:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg (GnuPG) 2.2.25; Copyright (C) 2020 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Please select what kind of key you want:
+(1) RSA and RSA (default)
+(2) DSA and Elgamal
+(3) DSA (sign only)
+(4) RSA (sign only)
+(14) Existing key from card
+Your selection?
+&lt;/code>&lt;/pre>&lt;p>Next, select a key size. The default is fine:&lt;/p>
+&lt;pre tabindex="0">&lt;code>RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (3072)
+Requested keysize is 3072 bits
+&lt;/code>&lt;/pre>&lt;p>You will next need to select an expiration date for your key. The
+default is &amp;ldquo;key does not expire&amp;rdquo;, which is a fine choice for our
+purposes. If you&amp;rsquo;re interested in understanding this value in more
+detail, the following articles are worth reading:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386">Does OpenPGP key expiration add to security?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.g-loaded.eu/2010/11/01/change-expiration-date-gpg-key/">How to change the expiration date of a GPG key&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Setting an expiration date will require that you periodically update
+the expiration date (or generate a new key).&lt;/p>
+&lt;pre tabindex="0">&lt;code>Please specify how long the key should be valid.
+0 = key does not expire
+&amp;lt;n&amp;gt; = key expires in n days
+&amp;lt;n&amp;gt;w = key expires in n weeks
+&amp;lt;n&amp;gt;m = key expires in n months
+&amp;lt;n&amp;gt;y = key expires in n years
+Key is valid for? (0)
+Key does not expire at all
+Is this correct? (y/N) y
+&lt;/code>&lt;/pre>&lt;p>Now you will need to enter your identity, which consists of your name,
+your email address, and a comment (which is generally left blank).
+Note that you&amp;rsquo;ll need to enter &lt;code>o&lt;/code> for &lt;code>okay&lt;/code> to continue from this
+prompt.&lt;/p>
+&lt;pre tabindex="0">&lt;code>GnuPG needs to construct a user ID to identify your key.
+Real name: Your Name
+Email address: you@example.com
+Comment:
+You selected this USER-ID:
+&amp;#34;Your Name &amp;lt;you@example.com&amp;gt;&amp;#34;
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
+&lt;/code>&lt;/pre>&lt;p>Lastly, you need to enter a password. In most environments, GPG will
+open a new window asking you for a passphrase. After you&amp;rsquo;ve entered and
+confirmed the passphrase, you should see your key information on the
+console:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg: key 02E34E3304C8ADEB marked as ultimately trusted
+gpg: revocation certificate stored as &amp;#39;/home/lars/tmp/gpgtmp/openpgp-revocs.d/9A4EB5B1F34B3041572937C002E34E3304C8ADEB.rev&amp;#39;
+public and secret key created and signed.
+pub rsa3072 2021-03-11 [SC]
+9A4EB5B1F34B3041572937C002E34E3304C8ADEB
+uid Your Name &amp;lt;you@example.com&amp;gt;
+sub rsa3072 2021-03-11 [E]
+&lt;/code>&lt;/pre>&lt;h3 id="publish-your-key">Publish your key&lt;/h3>
+&lt;p>You need to publish your GPG key so that others can find it. You&amp;rsquo;ll
+need your key id, which you can get by running &lt;code>gpg -k --fingerprint&lt;/code>
+like this (using your email address rather than mine):&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ gpg -k --fingerprint lars@oddbit.com
+&lt;/code>&lt;/pre>&lt;p>The output will look like the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>pub rsa2048/0x362D63A80853D4CF 2013-06-21 [SC]
+Key fingerprint = 3E70 A502 BB52 55B6 BB8E 86BE 362D 63A8 0853 D4CF
+uid [ultimate] Lars Kellogg-Stedman &amp;lt;lars@oddbit.com&amp;gt;
+uid [ultimate] keybase.io/larsks &amp;lt;larsks@keybase.io&amp;gt;
+sub rsa2048/0x042DF6CF74E4B84C 2013-06-21 [S] [expires: 2023-07-01]
+sub rsa2048/0x426D9382DFD6A7A9 2013-06-21 [E]
+sub rsa2048/0xEE1A8B9F9369CC85 2013-06-21 [A]
+&lt;/code>&lt;/pre>&lt;p>Look for the &lt;code>Key fingerprint&lt;/code> line, you want the value after the &lt;code>=&lt;/code>.
+Use this to publish your key to &lt;code>keys.openpgp.org&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --keyserver keys.opengpg.org \
+--send-keys &amp;#39;3E70 A502 BB52 55B6 BB8E 86BE 362D 63A8 0853 D4CF&amp;#39;
+&lt;/code>&lt;/pre>&lt;p>You will shortly receive an email to the address in your key asking
+you to approve it. Once you have approved the key, it will be
+published on &lt;a href="https://keys.openpgp.org">https://keys.openpgp.org&lt;/a> and people will be able to look
+it up by address or key id. For example, you can find my public key
+at &lt;a href="https://keys.openpgp.org/vks/v1/by-fingerprint/3E70A502BB5255B6BB8E86BE362D63A80853D4CF">https://keys.openpgp.org/vks/v1/by-fingerprint/3E70A502BB5255B6BB8E86BE362D63A80853D4CF&lt;/a>.&lt;/p>
+&lt;h2 id="installing-the-tools">Installing the Tools&lt;/h2>
+&lt;p>In this section, we&amp;rsquo;ll get all the necessary tools installed on your
+system in order to interact with a repository using Kustomize and
+KSOPS.&lt;/p>
+&lt;h3 id="install-kustomize">Install Kustomize&lt;/h3>
+&lt;p>Pre-compiled binaries of Kustomize are published &lt;a href="https://github.com/kubernetes-sigs/kustomize/releases">on
+GitHub&lt;/a>. To install the command, navigate to the current
+release (&lt;a href="https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.5">v4.0.5&lt;/a> as of this writing) and download the appropriate
+tarball for your system. E.g, for an x86-64 Linux environment, you
+would grab &lt;a href="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.0.5/kustomize_v4.0.5_linux_amd64.tar.gz">kustomize_v4.0.5_linux_amd64.tar.gz&lt;/a>.&lt;/p>
+&lt;p>The tarball contains a single file. You need to extract this file and
+place it somwhere in your &lt;code>$PATH&lt;/code>. For example, if you use your
+&lt;code>$HOME/bin&lt;/code> directory, you could run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>tar -C ~/bin -xf kustomize_v4.0.5_linux_amd64.tar.gz
+&lt;/code>&lt;/pre>&lt;p>Or to install into &lt;code>/usr/local/bin&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sudo tar -C /usr/local/bin -xf kustomize_v4.0.5_linux_amd64.tar.gz
+&lt;/code>&lt;/pre>&lt;p>Run &lt;code>kustomize&lt;/code> with no arguments to verify the command has been
+installed correctly.&lt;/p>
+&lt;h3 id="install-sops">Install sops&lt;/h3>
+&lt;p>The KSOPS plugin relies on the &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> command, so we need to install
+that first. Binary releases are published on GitHub, and the current
+release is &lt;a href="https://github.com/mozilla/sops/releases/tag/v3.6.1">v3.6.1&lt;/a>.&lt;/p>
+&lt;p>Instead of a tarball, the project publishes the raw binary as well as
+packages for a couple of different Linux distributions. For
+consistency with the rest of this post we&amp;rsquo;re going to grab the &lt;a href="https://github.com/mozilla/sops/releases/download/v3.6.1/sops-v3.6.1.linux">raw
+binary&lt;/a>. We can install that into &lt;code>$HOME/bin&lt;/code> like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>curl -o ~/bin/sops https://github.com/mozilla/sops/releases/download/v3.6.1/sops-v3.6.1.linux
+chmod 755 ~/bin/sops
+&lt;/code>&lt;/pre>&lt;h3 id="install-ksops">Install KSOPS&lt;/h3>
+&lt;p>KSOPS is a Kustomize plugin. The &lt;code>kustomize&lt;/code> command looks for plugins
+in subdirectories of &lt;code>$HOME/.config/kustomize/plugin&lt;/code>. Directories are
+named after an API and plugin name. In the case of KSOPS, &lt;code>kustomize&lt;/code>
+will be looking for a plugin named &lt;code>ksops&lt;/code> in the
+&lt;code>$HOME/.config/kustomize/plugin/viaduct.ai/v1/ksops/&lt;/code> directory.&lt;/p>
+&lt;p>The current release of KSOPS is &lt;a href="https://github.com/viaduct-ai/kustomize-sops/releases/tag/v2.4.0">v2.4.0&lt;/a>, which is published as a
+tarball. We&amp;rsquo;ll start by downloading
+&lt;a href="https://github.com/viaduct-ai/kustomize-sops/releases/download/v2.4.0/ksops_2.4.0_Linux_x86_64.tar.gz">ksops_2.4.0_Linux_x86_64.tar.gz&lt;/a>, which contains the following
+files:&lt;/p>
+&lt;pre tabindex="0">&lt;code>LICENSE
+README.md
+ksops
+&lt;/code>&lt;/pre>&lt;p>To extract the &lt;code>ksops&lt;/code> command to &lt;code>$HOME/bin&lt;/code>, you can run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>mkdir -p ~/.config/kustomize/plugin/viaduct.ai/v1/ksops/
+tar -C ~/.config/kustomize/plugin/viaduct.ai/v1/ksops -xf ksops_2.4.0_Linux_x86_64.tar.gz ksops
+&lt;/code>&lt;/pre>&lt;h2 id="test-it-out">Test it out&lt;/h2>
+&lt;p>Let&amp;rsquo;s create a simple Kustomize project to make sure everything is
+installed and functioning.&lt;/p>
+&lt;p>Start by creating a new directory and changing into it:&lt;/p>
+&lt;pre tabindex="0">&lt;code>mkdir kustomize-test
+cd kustomize-test
+&lt;/code>&lt;/pre>&lt;p>Create a &lt;code>kustomization.yaml&lt;/code> file that looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>generators:
+- secret-generator.yaml
+&lt;/code>&lt;/pre>&lt;p>Put the following content in &lt;code>secret-generator.yaml&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>---
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+name: secret-generator
+files:
+- example-secret.enc.yaml
+&lt;/code>&lt;/pre>&lt;p>This instructs Kustomize to use the KSOPS plugin to generate content
+from the file &lt;code>example-secret.enc.yaml&lt;/code>.&lt;/p>
+&lt;p>Configure &lt;code>sops&lt;/code> to use your GPG key by default by creating a
+&lt;code>.sops.yaml&lt;/code> (note the leading dot) similar to the following (you&amp;rsquo;ll
+need to put your GPG key fingerprint in the right place):&lt;/p>
+&lt;pre tabindex="0">&lt;code>creation_rules:
+- encrypted_regex: &amp;#34;^(users|data|stringData)$&amp;#34;
+pgp: &amp;lt;YOUR KEY FINGERPRINT HERE&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>encrypted_regex&lt;/code> line tells &lt;code>sops&lt;/code> which attributes in your YAML
+files should be encrypted. The &lt;code>pgp&lt;/code> line is a (comma delimited) list
+of keys to which data will be encrypted.&lt;/p>
+&lt;p>Now, edit the file &lt;code>example-secret.enc.yaml&lt;/code> using the &lt;code>sops&lt;/code> command.
+Run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sops example-secret.enc.yaml
+&lt;/code>&lt;/pre>&lt;p>This will open up an editor with some default content. Replace the
+content with the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Secret
+metadata:
+name: example-secret
+type: Opaque
+stringData:
+message: this is a test
+&lt;/code>&lt;/pre>&lt;p>Save the file and exit your editor. Now examine the file; you will see
+that it contains a mix of encrypted and unencrypted content. When
+encrypted with my private key, it looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ cat example-secret.enc.yaml
+{
+&amp;#34;data&amp;#34;: &amp;#34;ENC[AES256_GCM,data:wZvEylsvhfU29nfFW1PbGqyk82x8+Vm/3p2Y89B8a1A26wa5iUTr1hEjDYrQIGQq4rvDyK4Bevxb/PrTzdOoTrYIhaerEWk13g9UrteLoaW0FpfGv9bqk0c12OwTrzS+5qCW2mIlfzQpMH5+7xxeruUXO7w=,iv:H4i1/Znp6WXrMmmP9YVkz+xKOX0XBH7kPFaa36DtTxs=,tag:bZhSzkM74wqayo7McV/VNQ==,type:str]&amp;#34;,
+&amp;#34;sops&amp;#34;: {
+&amp;#34;kms&amp;#34;: null,
+&amp;#34;gcp_kms&amp;#34;: null,
+&amp;#34;azure_kv&amp;#34;: null,
+&amp;#34;hc_vault&amp;#34;: null,
+&amp;#34;lastmodified&amp;#34;: &amp;#34;2021-03-12T03:11:46Z&amp;#34;,
+&amp;#34;mac&amp;#34;: &amp;#34;ENC[AES256_GCM,data:2NrsF6iLA3zHeupD314Clg/WyBA8mwCn5SHHI5P9tsOt6472Tevdamv6ARD+xqfrSVWz+Wy4PtWPoeqZrFJwnL/qCR4sdjt/CRzLmcBistUeAnlqoWIwbtMxBqaFg9GxTd7f5q0iHr9QNWGSVV3JMeZZ1jeWyeQohAPpPufsuPQ=,iv:FJvZz8SV+xsy4MC1W9z1Vn0s4Dzw9Gya4v+rSpwZLrw=,tag:pfW8r5856c7qetCNgXMyeA==,type:str]&amp;#34;,
+&amp;#34;pgp&amp;#34;: [
+{
+&amp;#34;created_at&amp;#34;: &amp;#34;2021-03-12T03:11:45Z&amp;#34;,
+&amp;#34;enc&amp;#34;: &amp;#34;-----BEGIN PGP MESSAGE-----\n\nwcBMA0Jtk4Lf1qepAQgAGKwk6zDMPUYbUscky07v/7r3fsws3pTVRMgpEdhTra6x\nDxiMaLnjTKJi9fsB7sQuh/PTGWhXGuHtHg0YBtxRkuZY0Kl6xKXTXGBIBhI/Ahgw\n4BSz/rE7gbz1h6X4EFml3e1NeUTvGntA3HjY0o42YN9uwsi9wvMbiR4OLQfwY1gG\np9/v57KJx5ipEKSgt+81KwzOhuW79ttXd2Tvi9rjuAfvmLBU9q/YKMT8miuNhjet\nktNwXNJNpglHJta431YUhPZ6q41LpgvQPMX4bIZm7i7NuR470njYLQPe7xiGqqeT\nBcuF7KkNXGcDu9/RnIyxK4W5Bo9NEa06TqUGTHLEENLgAeSzHdQdUwx/pLLD6OPa\nv/U34YJU4JngqOGqTuDu4orgwLDg++XysBwVsmFp1t/nHvTkwj57wAuxJ4/It/9l\narvRHlCx6uA05IXukmCTvYMPRV3kY/81B+biHcka7uFUOQA=\n=x+7S\n-----END PGP MESSAGE-----&amp;#34;,
+&amp;#34;fp&amp;#34;: &amp;#34;3E70A502BB5255B6BB8E86BE362D63A80853D4CF&amp;#34;
+}
+],
+&amp;#34;encrypted_regex&amp;#34;: &amp;#34;^(users|data|stringData)$&amp;#34;,
+&amp;#34;version&amp;#34;: &amp;#34;3.6.1&amp;#34;
+}
+}
+&lt;/code>&lt;/pre>&lt;p>Finally, attempt to render the project with Kustomize by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>kustomize build --enable-alpha-plugins
+&lt;/code>&lt;/pre>&lt;p>This should produce on stdout the unencrypted content of your secret:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Secret
+metadata:
+name: example-secret
+type: Opaque
+stringData:
+message: this is a test
+&lt;/code>&lt;/pre></content></item><item><title>A note about running gpgv</title><link>https://blog.oddbit.com/post/2020-10-05-a-note-about-running-gpgv/</link><pubDate>Mon, 05 Oct 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-10-05-a-note-about-running-gpgv/</guid><description>I found the following error from gpgv to be a little opaque:
+gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39; gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error gpgv: Can&amp;#39;t check signature: No public key It turns out that&amp;rsquo;s gpg-speak for &amp;ldquo;your trustedkeys.kbx keyring doesn&amp;rsquo;t exist&amp;rdquo;. That took longer to figure out than I care to admit. To get a key from your regular public keyring into your trusted keyring, you can run something like the following:</description><content>&lt;p>I found the following error from &lt;code>gpgv&lt;/code> to be a little opaque:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39;
+gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error
+gpgv: Can&amp;#39;t check signature: No public key
+&lt;/code>&lt;/pre>&lt;p>It turns out that&amp;rsquo;s gpg-speak for &amp;ldquo;your &lt;code>trustedkeys.kbx&lt;/code> keyring doesn&amp;rsquo;t
+exist&amp;rdquo;. That took longer to figure out than I care to admit. To get a key
+from your regular public keyring into your trusted keyring, you can run
+something like the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --export -a lars@oddbit.com |
+gpg --no-default-keyring --keyring ~/.gnupg/trustedkeys.kbx --import
+&lt;/code>&lt;/pre>&lt;p>After which &lt;code>gpgv&lt;/code> works as expected:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ echo hello world | gpg -s -u lars@oddbit.com | gpgv
+gpgv: Signature made Mon 05 Oct 2020 07:44:22 PM EDT
+gpgv: using RSA key FDE8364F7FEA3848EF7AD3A6042DF6CF74E4B84C
+gpgv: issuer &amp;#34;lars@oddbit.com&amp;#34;
+gpgv: Good signature from &amp;#34;Lars Kellogg-Stedman &amp;lt;lars@oddbit.com&amp;gt;&amp;#34;
+gpgv: aka &amp;#34;keybase.io/larsks &amp;lt;larsks@keybase.io&amp;gt;&amp;#34;
+&lt;/code>&lt;/pre></content></item></channel></rss>

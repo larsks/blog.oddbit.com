@@ -1,0 +1,60 @@
+<!doctype html><html lang=en><head><title>Did Arch Linux eat your KVM? :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="A recent update to Arch Linux replaced the qemu-kvm package with an updated version of qemu. A side effect of this change is that the qemu-kvm binary is no longer available, and any libvirt guests on your system utilizing that binary will no longer operate. As is typical with Arch, there is no announcement about this incompatible change, and queries to #archlinux will be met with the knowledge, grace and decorum you would expect of that channel:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Did Arch Linux eat your KVM?"><meta property="og:description" content="A recent update to Arch Linux replaced the qemu-kvm package with an updated version of qemu. A side effect of this change is that the qemu-kvm binary is no longer available, and any libvirt guests on your system utilizing that binary will no longer operate. As is typical with Arch, there is no announcement about this incompatible change, and queries to #archlinux will be met with the knowledge, grace and decorum you would expect of that channel:"><meta property="og:url" content="https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-04-08 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/>Did Arch Linux eat your KVM?</a></h1><div class=post-meta><time class=post-date>2013-04-08 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/archlinux/>archlinux</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/virtualization/>virtualization</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kvm/>kvm</a>&nbsp;</span><div class=post-content><div><p>A recent update to <a href=https://www.archlinux.org/>Arch Linux</a> replaced the <code>qemu-kvm</code> package with
+an updated version of <code>qemu</code>. A side effect of this change is that
+the <code>qemu-kvm</code> binary is no longer available, and any <code>libvirt</code> guests
+on your system utilizing that binary will no longer operate. As is
+typical with Arch, there is no announcement about this incompatible
+change, and queries to <code>#archlinux</code> will be met with the knowledge,
+grace and decorum you would expect of that channel:</p><pre><code>2013-04-08T18:00 &lt; gtmanfred&gt; USE --enable-kvm for fucks sake
+2013-04-08T18:00 &lt; gtmanfred&gt; DO I HAVE TO SAY IT AGAIN?
+</code></pre><p>The emulator binary is hardcoded into your domain in the <code>&lt;emulator></code>
+emulator, and typically looks something like this:</p><pre><code>&lt;emulator&gt;/usr/bin/qemu-kvm&lt;/emulator&gt;
+</code></pre><p>In order to get your guests working again after the upgrade you&rsquo;ll
+need to replace this path with an appropriate selection from one of
+the other binaries provided by the <code>qemu</code> package, which include
+<code>qemu-system-i386</code> and <code>qemu-system-x86_64</code>. You&rsquo;ll want to select
+the one appropriate for your <em>guest</em> architecture. You can do this
+manually running <code>virsh edit</code> for each affected guest, but if you have
+more than a couple that rapidly becomes annoying.</p><p>We can use <a href=https://en.wikipedia.org/wiki/XSLT>XSLT</a> to write a transformation that will set the
+<code>&lt;emulator></code> to an appropriate value, and we can set things up to run
+this automatically across all of our guests. The following stylesheet
+will replace the <code>&lt;emulator></code> tag with a path to an appropriate <code>qemu</code> (by
+extracting the <code>arch</code> attribute of the <code>domain/os/type</code> element:</p><pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+  &lt;!-- copy all elements verbatim... --&gt;
+  &lt;xsl:template match=&quot;@*|node()&quot;&gt;
+    &lt;xsl:copy&gt;
+      &lt;xsl:apply-templates select=&quot;@*|node()&quot;/&gt;
+    &lt;/xsl:copy&gt;
+  &lt;/xsl:template&gt;
+
+  &lt;!-- ...except for the 'emulator' element. --&gt;
+  &lt;xsl:template match=&quot;emulator&quot;&gt;
+    &lt;emulator&gt;/usr/bin/qemu-system-&lt;xsl:value-of select=&quot;/*/os/type/@arch&quot;/&gt;&lt;/emulator&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</code></pre><p>We&rsquo;re going to apply this to all of our (inactive) guests via the
+<code>virsh edit</code> subcommand. This command runs an editor (selected based
+on your <code>VISUAL</code> or <code>EDITOR</code> environment variables) on your domain
+XML. We need to create an &ldquo;editor&rdquo; that will apply the above
+transformation to its input file. Something like this will work:</p><pre><code>#!/bin/sh
+
+tmpfile=$(mktemp &quot;$1.patched.XXXXXX&quot;)
+xsltproc -o &quot;$tmpfile&quot; patch-emulator.xsl &quot;$1&quot;
+mv &quot;$tmpfile&quot; &quot;$1&quot;
+</code></pre><p>Assuming the above script has been saved as &ldquo;patch-emulator.sh&rdquo; (and
+made executable), we can run this across all of our inactive guests
+like this:</p><pre><code>#!/bin/sh
+
+VISUAL=./patch-emulator.sh
+export VISUAL
+
+virsh list --inactive --name | while read vm; do
+        [ &quot;$vm&quot; ] || continue
+        virsh edit $vm
+done
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

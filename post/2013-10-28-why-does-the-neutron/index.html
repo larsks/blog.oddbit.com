@@ -1,0 +1,44 @@
+<!doctype html><html lang=en><head><title>Why does the Neutron documentation recommend three interfaces? :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="The documentation for configuring Neutron recommends that a network controller has three physical interfaces:
+Before you start, set up a machine to be a dedicated network node. Dedicated network nodes should have the following NICs: the management NIC (called MGMT_INTERFACE), the data NIC (called DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).
+People occasionally ask, &amp;ldquo;why three interfaces? What if I only have two?&amp;rdquo;, so I wanted to provide an extended answer that might help people understand what the interfaces are for and what trade-offs are involved in using fewer interfaces."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Why does the Neutron documentation recommend three interfaces?"><meta property="og:description" content="The documentation for configuring Neutron recommends that a network controller has three physical interfaces:
+Before you start, set up a machine to be a dedicated network node. Dedicated network nodes should have the following NICs: the management NIC (called MGMT_INTERFACE), the data NIC (called DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).
+People occasionally ask, &amp;ldquo;why three interfaces? What if I only have two?&amp;rdquo;, so I wanted to provide an extended answer that might help people understand what the interfaces are for and what trade-offs are involved in using fewer interfaces."><meta property="og:url" content="https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-10-28 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/>Why does the Neutron documentation recommend three interfaces?</a></h1><div class=post-meta><time class=post-date>2013-10-28 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/neutron/>neutron</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;</span><div class=post-content><div><p>The <a href=http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html>documentation for configuring Neutron</a> recommends
+that a network controller has three physical interfaces:</p><blockquote><p>Before you start, set up a machine to be a dedicated network node.
+Dedicated network nodes should have the following NICs: the
+management NIC (called MGMT_INTERFACE), the data NIC (called
+DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).</p></blockquote><p>People occasionally ask, &ldquo;why three interfaces? What if I only have
+two?&rdquo;, so I wanted to provide an extended answer that might help
+people understand what the interfaces are for and what trade-offs are
+involved in using fewer interfaces.</p><p>The <code>MGMT_INTERFACE</code> is used for communication between nodes. This
+can include traffic from services to the messaging server (<code>qpid</code>,
+<code>rabbitmq</code>, etc), traffic between nova and neutron, connections to the
+database, and other traffic used to manage your OpenStack environment.</p><p>The <code>DATA_INTERFACE</code> is used for instance traffic&mldr;that is, traffic
+generated by or inbound to instances running in your OpenStack
+environment. If you are using GRE or VXLAN tunnels your tunnel
+endpoints will be associated with this interface.</p><p>The <code>EXTERNAL_INTERFACE</code> is used to provide public access to your
+instances. The network attached to this interface is generally open
+to external traffic, and ip addresses are managed by the floating-ip
+functionality in Neutron or Nova.</p><ul><li><p>You want your <code>MGMT_INTERFACE</code> seperate from your <code>DATA_INTERFACE</code>
+in order to avoid accidentally granting management access to your
+OpenStack hosts to your tenants. A typical OpenStack environment
+may not use authentication in all cases, and a tenant host with
+access to the management network could intentionally or accidentally
+cause problems.</p></li><li><p>You want your <code>EXTERNAL_INTERFACE</code> separate from your
+<code>DATA_INTERFACE</code> because your network controller <em>must</em> be acting as
+a router between these two interfaces in order for the netfilter
+<code>PREROUTING</code> and <code>POSTROUTING</code> rules to activate. These rules are
+used to map floating ip addresses to internal addresses via <code>SNAT</code>
+and <code>DNAT</code> rules, which only work packets traverse the <code>FORWARD</code>
+chain.</p></li><li><p>You want your <code>MGMT_INTERFACE</code> separate from your
+<code>EXTERNAL_INTERFACE</code> because they have dramatically different access
+requirements. Your <code>MGMT_INTERFACE</code> should typically only be
+available to other hosts in your OpenStack deployment, while your
+<code>EXTERNAL_INTERFACE</code> will generally require much broader access.</p></li></ul><p>If you are deploying a proof-of-concept (POC) deployment to which you
+are not actually providing public access, you can elect to not have an
+<code>EXTERNAL_INTERFACE</code>. Rather than adding this device to <code>br-ex</code>, you
+will set up outbound NAT rules so that &ldquo;external&rdquo; traffic from your
+instances will masquerade using the primary ip address of your network
+controller.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>pacemaker on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/pacemaker/</link><description>Recent content in pacemaker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 24 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/pacemaker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>If a picture is worth a thousand words, then code that generates pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that produces dot output from Pacemaker start and colocation constraints:
+https://github.com/larsks/pacemaker-tools/
+You can pass this output to graphviz to create visualizations of your Pacemaker resource constraints.
+The graph-constraints.py script in that repository consumes the output of cibadmin -Q and can produce output for either start constraints (-S, the default) or colocation constraints (-C).</description><content>&lt;p>If a picture is worth a thousand words, then code that generates
+pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that
+produces &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> output from Pacemaker start and colocation
+constraints:&lt;/p>
+&lt;p>&lt;a href="https://github.com/larsks/pacemaker-tools/">https://github.com/larsks/pacemaker-tools/&lt;/a>&lt;/p>
+&lt;p>You can pass this output to &lt;a href="http://www.graphviz.org/">graphviz&lt;/a> to create visualizations of
+your Pacemaker resource constraints.&lt;/p>
+&lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
+output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
+constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p>
+&lt;p>Given a document like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.xml">this&lt;/a>, if you run:&lt;/p>
+&lt;pre>&lt;code>cibadmin -Q |
+python graph-constraints.py -o cib.svg
+&lt;/code>&lt;/pre>
+&lt;p>You get a graph like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.svg">this&lt;/a>:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="https://blog.oddbit.com/assets/2015/02/24/cib.svg" />
+&lt;/figure>
+&lt;p>Nodes are colored by their tag (so, &lt;code>primitive&lt;/code>, &lt;code>clone&lt;/code>, etc).&lt;/p></content></item><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>I&amp;rsquo;ve recently spent some time working with Pacemaker, and ended up with an interesting collection of XPath snippets that I am publishing here for your use and/or amusement.
+Check if there are any inactive resources pcs status xml | xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp; echo &amp;quot;There are inactive resources&amp;quot; This selects any resource (//resource) in the output of pcs status xml that has the attribute active set to false. If there are no matches to this query, xmllint exits with an error code.</description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
+with an interesting collection of &lt;a href="http://www.w3.org/TR/xpath/">XPath&lt;/a> snippets that I am publishing
+here for your use and/or amusement.&lt;/p>
+&lt;h2 id="check-if-there-are-any-inactive-resources">Check if there are any inactive resources&lt;/h2>
+&lt;pre>&lt;code>pcs status xml |
+xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp;
+echo &amp;quot;There are inactive resources&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>This selects &lt;em>any&lt;/em> resource (&lt;code>//resource&lt;/code>) in the output of &lt;code>pcs status xml&lt;/code> that has the attribute &lt;code>active&lt;/code> set to &lt;code>false&lt;/code>. If there
+are no matches to this query, &lt;code>xmllint&lt;/code> exits with an error code.&lt;/p>
+&lt;h2 id="get-a-list-of-inactive-resources">Get a list of inactive resources&lt;/h2>
+&lt;pre>&lt;code>pcs status xml |
+xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]/@id' - |
+tr ' ' '\n' |
+cut -f2 -d'&amp;quot;'
+&lt;/code>&lt;/pre>
+&lt;p>This uses the same xpath query as the previous snippet, but here we
+then extract the &lt;code>id&lt;/code> attribute of the matches and then print out all
+the resulting ids, one per line.&lt;/p>
+&lt;h2 id="check-if-there-are-no-inactive-resources">Check if there are &lt;em>no&lt;/em> inactive resources&lt;/h2>
+&lt;pre>&lt;code>! pcs status xml |
+xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;amp;&amp;amp;
+echo &amp;quot;There are no inactive resources&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>This is the opposite of our earlier snippet, and demonstrates the use
+of &lt;code>!&lt;/code> in a shell script to negate the success/failure of a shell
+pipeline.&lt;/p>
+&lt;h2 id="check-top-level-resources">Check top-level resources&lt;/h2>
+&lt;pre>&lt;code>tmpfile=$(mktemp xmlXXXXXX)
+trap &amp;quot;rm -f $tmpfile&amp;quot; EXIT
+pcs status xml &amp;gt; $tmpfile
+xmllint --xpath '/crm_mon/resources/*/@id' $tmpfile |
+tr ' ' '\n'| cut -f2 -d'&amp;quot;' |
+while read id; do
+[ &amp;quot;$id&amp;quot; ] || continue
+if ! xmllint --xpath &amp;quot;
+/crm_mon/resources/*[@id='$id' and @active='true']|
+/crm_mon/resources/*[@id='$id']/*[@active='true']&amp;quot; \
+$tmpfile &amp;gt; /dev/null 2&amp;gt;&amp;amp;1; then
+echo &amp;quot;$id: no active resources&amp;quot; &amp;gt;&amp;amp;2
+exit 1
+fi
+done
+&lt;/code>&lt;/pre>
+&lt;p>This snippet checks that each top-level resource or resource container
+(clone, resource group, etc.) has at least one active resources.
+First we extract the &lt;code>id&lt;/code> attribute from the just the top-level
+contents of &lt;code>/cr_mon/resources&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>/crm_mon/resources/*/@id
+&lt;/code>&lt;/pre>
+&lt;p>And then we iterate over the extracted ids, and for each one, we check
+if either (a) a resource with that id is active, or (b) if any child
+of a resource with that id is active:&lt;/p>
+&lt;pre>&lt;code>/crm_mon/resources/*[@id='$id' and @active='true']|
+/crm_mon/resources/*[@id='$id']/*[@active='true']
+&lt;/code>&lt;/pre>
+&lt;h1 id="wait-for-all-resources-to-become-inactive">Wait for all resources to become inactive&lt;/h1>
+&lt;pre>&lt;code>pcs set property stop-all-resources=true
+while pcs status xml |
+xmllint --xpath '//resource[@active=&amp;quot;true&amp;quot;]' -; do
+sleep 1
+done
+&lt;/code>&lt;/pre>
+&lt;p>This is a good way to programatically wait for Pacemaker to finish
+responding to setting &lt;code>stop-all-resources=true&lt;/code>.&lt;/p>
+&lt;h1 id="get-a-list-of-all-top-level-resources">Get a list of all top-level resources&lt;/h1>
+&lt;pre>&lt;code>cibadmin -Q |
+xmllint --xpath '/cib/configuration/resources/*/@id' - |
+tr ' ' '\n' |
+cut -f2 -d'&amp;quot;'
+&lt;/code>&lt;/pre>
+&lt;p>This generates a list of the ids of &amp;ldquo;top-level&amp;rdquo; resources (either
+standalone resources, or resource containers such as groups or
+clones).&lt;/p>
+&lt;h1 id="wait-for-all-members-of-a-resource-container-to-become-active">Wait for all members of a resource container to become active&lt;/h1>
+&lt;pre>&lt;code>id='neutron-scale-clone'
+while pcs status xml |
+xmllint --xpath &amp;quot;//clone[@id='$id']/resource[@active='false']&amp;quot; -; do
+sleep 1
+done
+&lt;/code>&lt;/pre>
+&lt;p>This waits until all children of the specified resource id become
+active.&lt;/p></content></item></channel></rss>

@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>raspberrypi on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/raspberrypi/</link><description>Recent content in raspberrypi on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 19 Jan 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/raspberrypi/rss.xml" rel="self" type="application/rss+xml"/><item><title>PiPower: A Raspberry Pi UPS</title><link>https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/</link><pubDate>Sat, 19 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/</guid><description>I have a Raspberry Pi running RetroPie hooked up to a television. It&amp;rsquo;s powered from a USB port on the TV, which is convenient, but it means that whenever we shut off the TV we&amp;rsquo;re pulling the plug on the Pi. While there haven&amp;rsquo;t been any problems so far, this is a classic recipe for filesystem problems or data loss at some point. I started looking into UPS options to alleviate this issue.</description><content>
+&lt;figure class="left" >
+&lt;img src="pipower-top.jpg" />
+&lt;/figure>
+&lt;p>I have a Raspberry Pi running &lt;a href="https://retropie.org.uk/">RetroPie&lt;/a> hooked up to a television. It&amp;rsquo;s powered from a USB port on the TV, which is convenient, but it means that whenever we shut off the TV we&amp;rsquo;re pulling the plug on the Pi. While there haven&amp;rsquo;t been any problems so far, this is a classic recipe for filesystem problems or data loss at some point. I started looking into UPS options to alleviate this issue. I wanted something with the following features:&lt;/p>
+&lt;ul>
+&lt;li>Notify the Pi when external power is removed so that the Pi can shut down cleanly.&lt;/li>
+&lt;li>Power off the Pi after the Pi has shut down.&lt;/li>
+&lt;li>Boot the Pi when external power is restored.&lt;/li>
+&lt;/ul>
+&lt;p>There are several Pi UPS solutions out there, but most of them are designed for a different purpose: they will run your Pi from battery for as long as possible, and will notify your Pi when the battery level goes low. That&amp;rsquo;s great if you want a portable device, but isn&amp;rsquo;t the right solution for my situation. One notable exception is the &lt;a href="https://juice4halt.com/">juice4halt&lt;/a> product, which is a super-capacitor based unit that does pretty much exactly when I want. Unfortunately, it is somewhat pricey.&lt;/p>
+&lt;p>While looking at various solutions, I found the Adafruit &lt;a href="https://www.adafruit.com/product/2465">PowerBoost 1000c&lt;/a>. When external power is available, this device will charge a LIPO battery and provide power to your Pi at the same time. When external power is removed, this device will power your Pi from the battery. By itself it doesn&amp;rsquo;t have any facilities for communicating with your Pi, but it does provide several control lines which suggested some interesting possibilities.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="powerboost1000c.png" />
+&lt;/figure>
+&lt;p>Getting the Powerboost talking to the Pi seemed like a good job for a small microcontroller. I happen to have a few &lt;a href="https://www.microchip.com/wwwproducts/en/ATtiny85">attiny85&lt;/a>s kicking about, so I decided to use one of those.&lt;/p>
+&lt;h2 id="code">Code&lt;/h2>
+&lt;p>You can find all the code used in this project in &lt;a href="https://github.com/larsks/pipower">the GitHub repository&lt;/a>. The code is written in C, and can be compiled using &lt;code>avr-gcc&lt;/code>. It requires &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>.&lt;/p>
+&lt;h2 id="theory-of-operation">Theory of operation&lt;/h2>
+&lt;p>When everything first boots up, the microcontroller checks the &lt;code>USB&lt;/code> signal from the PowerBoost to see if external power is available. The &lt;code>USB&lt;/code> line must remain high for 1 second before it is considered valid (it turns out that the &lt;code>USB&lt;/code> can go high momentarily when things first come on, so this avoids erroneously powering up the Pi when external power isn&amp;rsquo;t available).&lt;/p>
+&lt;p>If power is available, the controller brings the &lt;code>EN&lt;/code> line high, which causes the PowerBoost to start supplying power to the Pi. The controller will wait for up to 30 seconds for the &lt;code>BOOT&lt;/code> line to go low. The Pi boots up, and the &lt;code>pipower-up&lt;/code> service (see below) brings the &lt;code>BOOT&lt;/code> line low to indicate that it has successfully booted. If the &lt;code>BOOT&lt;/code> line does not go low within 30 seconds, the controller assumes the Pi has failed to boot and disconnects the power, then enters the lower-power idle mode.&lt;/p>
+&lt;p>If you shut down the Pi manually, the &lt;code>pipower-up&lt;/code> service will set the &lt;code>BOOT&lt;/code> line high late in the shutdown sequence to indicate that the Pi is shutting down. The microcontroller will wait an additional 30 seconds and will then turn off power to the Pi. If the &lt;code>BOOT&lt;/code> line goes low again during this time (e.g, if you rebooted the Pi instead of shutting it down), the microcontroller will cancel the shutdown.&lt;/p>
+&lt;p>If while the Pi is running you press the power button on the board, this will set the &lt;code>SHUTDOWN&lt;/code> line high. The &lt;code>pipower-down&lt;/code> service will respond to this signal by starting a clean shut down. The controller will wait up to 30 seconds for the Pi to set the &lt;code>BOOT&lt;/code> line high, at which point it will wait another 30 seconds before removing power.&lt;/p>
+&lt;p>If while the Pi is running external power is removed, the microcontroller will set the &lt;code>SHUTDOWN&lt;/code> line high, and will follow the same logic as if you had pressed the power button.&lt;/p>
+&lt;p>If the microcontroller is in the idle state and external power is available, you can press the power button to boot the Pi. If external power is not available, then applying external power will cause the Pi to boot.&lt;/p>
+&lt;p>At any point, a long press (two seconds ore more) of the power button will immediately remove power from the Pi and place the controller in the idle state.&lt;/p>
+&lt;h2 id="notes-on-the-code">Notes on the code&lt;/h2>
+&lt;p>I initially started writing the code using the Arduino IDE, but I decided to switch to &lt;code>avr-gcc&lt;/code> early on because I found that easier to work with. Since various aspects of the code require tracking the passage of time, the first thing I had to do was implement a version of the &lt;code>millis()&lt;/code> function. You can see my implementation in &lt;a href="https://github.com/larsks/pipower/blob/master/millis.c">millis.c&lt;/a>. This uses &lt;code>TIMER0&lt;/code> on the attiny85 with a divider of 64 (&lt;code>TCCR0B = 3&amp;lt;&amp;lt;CS00&lt;/code>), since that should allow the code to work with processor running at 16Mhz.&lt;/p>
+&lt;p>I wrote debouncing code for the power button using the mechanism described by Elliot Williams in &amp;ldquo;&lt;a href="https://hackaday.com/2015/12/10/embed-with-elliot-debounce-your-noisy-buttons-part-ii/">Debounce your Noisy Buttons, Part II&lt;/a>&amp;rdquo;. I wrote an object-oriented implementation that you can find in &lt;a href="https://github.com/larsks/pipower/blob/master/button.c">button.c&lt;/a>.&lt;/p>
+&lt;p>Most of the implementation logic can be found in the state machine implemented as a &lt;code>switch&lt;/code> statement in &lt;a href="https://github.com/larsks/pipower/blob/master/pipower.c#L125-L245">lines 125-254 of pipower.c&lt;/a>.&lt;/p>
+&lt;p>I have documented the code using &lt;a href="http://www.doxygen.nl/">Doxygen&lt;/a>. If you have Doxygen installed, you can &lt;code>cd docs&lt;/code> and run &lt;code>make&lt;/code> to create the code documentation.&lt;/p>
+&lt;h2 id="pins">pins&lt;/h2>
+&lt;p>The attiny85 only has 5 available pins (6, if you&amp;rsquo;re either very confident or have a high voltage programmer available). I ended up setting things up like this:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>PB0&lt;/code> - connected to a momentary-contact switch&lt;/li>
+&lt;li>&lt;code>PB1&lt;/code> - connected to &lt;code>USB&lt;/code> signal from the powerboost&lt;/li>
+&lt;li>&lt;code>PB2&lt;/code> - connected to the &lt;code>EN&lt;/code> signal to the powerboost&lt;/li>
+&lt;li>&lt;code>PB3&lt;/code> - connected to the &lt;code>SHUTDOWN&lt;/code> signal to the Pi&lt;/li>
+&lt;li>&lt;code>PB4&lt;/code> - connected to the &lt;code>BOOT&lt;/code> signal from the Pi&lt;/li>
+&lt;li>&lt;code>VCC&lt;/code> - connected to the &lt;code>Vs&lt;/code> output from the powerboost&lt;/li>
+&lt;/ul>
+&lt;p>I am intentionally not using the low battery (&lt;code>LBO&lt;/code>) signal, since I&amp;rsquo;m not trying to run the Pi off the battery for an extended period of time. If I build or acquire a high voltage programmer, I might wire &lt;code>LBO&lt;/code> to &lt;code>PB5&lt;/code>, or just connect the &lt;code>BAT&lt;/code> signal and use &lt;code>PB5&lt;/code> as an analog Pin, and trigger a shutdown on a low-battery condition as well.&lt;/p>
+&lt;h2 id="systemd-units">systemd units&lt;/h2>
+&lt;p>The only software required on the Raspberry Pi is &lt;a href="http://wiringpi.com/">wiringPi&lt;/a>, a library and toolset for manipulating GPIO on your Raspberry Pi, and the following &lt;a href="https://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd.unit.html">units&lt;/a>. If you are building this yourself and disagree with my pin selections, you can create the file &lt;code>/etc/default/pipower&lt;/code> and set one or both of &lt;code>PIN_SHUTDOWN&lt;/code> and &lt;code>PIN_BOOT&lt;/code> to BCM GPIO pins of your choice.&lt;/p>
+&lt;h3 id="pipower-up">pipower-up&lt;/h3>
+&lt;p>At boot, the &lt;code>pipower-up&lt;/code> service configures &lt;code>PIN_BOOT&lt;/code> (defaults to BCM GPIO 4) as an output and then brings it low. This notifies the code running on the attiny85 that the Pi has successfully booted. When the Pi shuts down, the unit sets &lt;code>PIN_BOOT&lt;/code> high, which notifies the controller that the Pi is about to shut down.&lt;/p>
+&lt;p>This service is designed to run early in the boot process and late in the shutdown process.&lt;/p>
+&lt;pre>&lt;code>[Unit]
+Description=[pipower] Assert BOOT signal
+DefaultDependencies=no
+After=final.target systemd-journald.service
+[Service]
+Type=oneshot
+Environment=PIN_BOOT=4
+EnvironmentFile=-/etc/default/pipower
+RemainAfterExit=true
+ExecStartPre=/usr/bin/gpio -g mode $PIN_BOOT output
+ExecStart=/usr/bin/gpio -g write $PIN_BOOT 0
+ExecStopPost=/bin/sh -c &amp;quot;test -f /run/pipower/inhibit || /usr/bin/gpio -g write $PIN_BOOT 1&amp;quot;
+[Install]
+WantedBy=multi-user.target
+&lt;/code>&lt;/pre>
+&lt;h3 id="pipower-down">pipower-down&lt;/h3>
+&lt;p>At boot, the &lt;code>pipower-down&lt;/code> service configures &lt;code>PIN_SHUTDOWN&lt;/code> (defaults to BCM GPIO 17) as an input w/ the pulldown resistor enabled. It then uses the &lt;code>gpio&lt;/code> command to wait for a rising interrupt on &lt;code>PIN_SHUTDOWN&lt;/code>; when it receives one, it calls &lt;code>systemctl poweroff&lt;/code> to cleanly shut down the system.&lt;/p>
+&lt;pre>&lt;code>[Unit]
+Description=[pipower] Monitor SHUTDOWN signal
+[Service]
+Type=simple
+Environment=PIN_SHUTDOWN=17
+EnvironmentFile=-/etc/default/pipower
+ExecStartPre=/usr/bin/gpio -g mode $PIN_SHUTDOWN input
+ExecStartPre=/usr/bin/gpio -g mode $PIN_SHUTDOWN down
+ExecStart=/usr/bin/gpio -g wfi $PIN_SHUTDOWN rising
+ExecStopPost=/bin/sh -c &amp;quot;test -f /run/pipower/inhibit || /bin/systemctl poweroff&amp;quot;
+[Install]
+WantedBy=multi-user.target
+&lt;/code>&lt;/pre>
+&lt;h2 id="caveats">Caveats&lt;/h2>
+&lt;p>The PowerBoost 1000c does not provide adequate power for a Raspberry Pi 3B+. It seems to be just adequate for a Pi 2B.&lt;/p>
+&lt;p>If you stop either of the systemd units, your Pi will either shutdown (if you &lt;code>systemctl stop pipower-down&lt;/code>) or will simply lose power (if you &lt;code>systemctl stop pipower-up&lt;/code>). You can inhibit the &lt;code>ExecStop*&lt;/code> actions of both units by creating the file &lt;code>/run/pipower/inhibit&lt;/code>.&lt;/p>
+&lt;h2 id="todo">TODO&lt;/h2>
+&lt;p>With a few more pins available &amp;ndash; maybe an &lt;a href="https://www.microchip.com/wwwproducts/en/ATtiny84">attiny84&lt;/a> &amp;ndash; it might be fun to provide battery voltage and current measurements to the Pi via an i2c interface. I would probably also add a status LED to show the current state of the controller code.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="pipower-eth-left.jpg" />
+&lt;/figure>
+&lt;figure class="left" >
+&lt;img src="pipower-eth-right.jpg" />
+&lt;/figure></content></item><item><title>Systemd unit for managing USB gadgets</title><link>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</guid><description>The Pi Zero (and Zero W) have support for acting as a USB gadget: that means that they can be configured to act as a USB device &amp;ndash; like a serial port, an ethernet interface, a mass storage device, etc.
+There are two different ways of configuring this support. The first only allows you to configure a single type of gadget at a time, and boils down to:
+Enable the dwc2 overlay in /boot/config.</description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+that means that they can be configured to act as a USB device &amp;ndash; like
+a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
+&lt;p>There are two different ways of configuring this support. The first
+only allows you to configure a single type of gadget at a time, and
+boils down to:&lt;/p>
+&lt;ol>
+&lt;li>Enable the dwc2 overlay in &lt;code>/boot/config.txt&lt;/code>&lt;/li>
+&lt;li>Reboot.&lt;/li>
+&lt;li>&lt;code>modprobe g_serial&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>This process is more fully documented &lt;a href="https://learn.adafruit.com/turning-your-raspberry-pi-zero-into-a-usb-gadget/overview">here&lt;/a>.&lt;/p>
+&lt;p>The second mechanism makes use of the &lt;code>libcomposite&lt;/code> driver to create
+multifunction gadgets. The manual procedure is documented in &lt;a href="https://www.kernel.org/doc/Documentation/usb/gadget_configfs.txt">the
+kernel documentation&lt;/a>. While it&amp;rsquo;s a useful feature, the
+configuration process requires several steps and if you only do it
+infrequently it can be easy to forget.&lt;/p>
+&lt;p>In order to make this easier for me to manage, I&amp;rsquo;ve wrapped the
+process up in a &lt;a href="https://fedoramagazine.org/systemd-template-unit-files/">systemd template unit&lt;/a> that takes care of the
+various steps necessary to both create and remove a multifunction USB
+gadget.&lt;/p>
+&lt;p>Once installed, creating a gadget that offers both a serial interface
+and a network interface is as simple as:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Create a file &lt;code>/etc/gadget/g0.conf&lt;/code> containing:&lt;/p>
+&lt;pre>&lt;code> USB_FUNCTIONS=&amp;quot;rndis.usb0 acm.usb0&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Run &lt;code>systemctl start usb-gadget@g0&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>You can remove the gadget by running &lt;code>systemctl stop usb-gadget@g0&lt;/code>.
+As with any systemd service, you can mark the unit to start
+automatically when your system boots by running &lt;code>systemctl enable usb-gadget@g0&lt;/code>.&lt;/p>
+&lt;p>The &lt;a href="https://github.com/larsks/systemd-usb-gadget">systemd-usb-gadget&lt;/a> project can be found at:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/systemd-usb-gadget">https://github.com/larsks/systemd-usb-gadget&lt;/a>&lt;/li>
+&lt;/ul></content></item><item><title>Configuring a static address for wlan0 on Raspbian Stretch</title><link>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</link><pubDate>Thu, 14 Jun 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</guid><description>Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
+First, disable dhcpcd and wpa_supplicant.
+systemctl disable --now dhdpcd wpa_supplicant You will need a wpa_supplicant configuration for wlan0 in /etc/wpa_supplicant/wpa_supplicant-wlan0.conf.
+If you already have an appropriate configuration in /etc/wpa_supplicant/wpa_supplicant.conf, you can just symlink the file:
+cd /etc/wpa_supplicant ln -s wpa_supplicant.</description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+manage both dynamic and static interface configuration. If you would
+prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
+instead, follow these steps.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>First, disable &lt;code>dhcpcd&lt;/code> and &lt;code>wpa_supplicant&lt;/code>.&lt;/p>
+&lt;pre>&lt;code> systemctl disable --now dhdpcd wpa_supplicant
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>You will need a &lt;code>wpa_supplicant&lt;/code> configuration for &lt;code>wlan0&lt;/code> in
+&lt;code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf&lt;/code>.&lt;/p>
+&lt;p>If you already have an appropriate configuration in
+&lt;code>/etc/wpa_supplicant/wpa_supplicant.conf&lt;/code>, you can just symlink the
+file:&lt;/p>
+&lt;pre>&lt;code> cd /etc/wpa_supplicant
+ln -s wpa_supplicant.conf wpa_supplicant-wlan0.conf
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Enable the &lt;code>wpa_supplicant&lt;/code> service for &lt;code>wlan0&lt;/code>:&lt;/p>
+&lt;pre>&lt;code> systemctl enable --now wpa_supplicant@wlan0
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Create an appropriate configuration in
+&lt;code>/etc/network/interfaces.d/wlan0&lt;/code>. For example:&lt;/p>
+&lt;pre>&lt;code> allow-hotplug wlan0
+iface wlan0 inet static
+address 192.168.2.100
+netmask 255.255.255.0
+iface wlan0 inet6 static
+address 2607:f0d0:2001:000a:0000:0000:0000:0010
+netmask 64
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Reboot to make sure everything comes up as expected. With the
+above configuration, after rebooting you should see:&lt;/p>
+&lt;pre>&lt;code> root@raspberrypi:~# ip addr show wlan0
+3: wlan0: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc mq state UP group default qlen 1000
+link/ether 00:e1:b0:67:98:67 brd ff:ff:ff:ff:ff:ff
+inet 192.168.2.100/24 brd 192.168.2.255 scope global wlan0
+valid_lft forever preferred_lft forever
+inet6 2607:f0d0:2001:a::10/64 scope global
+valid_lft forever preferred_lft forever
+inet6 fe80::2e1:b0ff:fe67:9867/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ol></content></item><item><title>Some notes on PWM on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2017-09-26-some-notes-on-pwm-on-the-raspb/</link><pubDate>Tue, 26 Sep 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-09-26-some-notes-on-pwm-on-the-raspb/</guid><description>I was recently working on a project in which I wanted to drive a simple piezo buzzer attached to a GPIO pin on a Raspberry Pi. I was already using the RPi.GPIO module in my project so that seemed like a logical place to start, but I ran into a few issues.
+You drive a piezo buzzer by generating a PWM signal with the appropriate frequency. The RPi.GPIO module implements PWM via software, which is tricky on a non-realtime system.</description><content>&lt;p>I was recently working on a project in which I wanted to drive a
+simple &lt;a href="https://www.adafruit.com/product/160">piezo buzzer&lt;/a> attached to a GPIO pin on a Raspberry Pi. I
+was already using the &lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a> module in my project so that seemed
+like a logical place to start, but I ran into a few issues.&lt;/p>
+&lt;p>You drive a piezo buzzer by generating a &lt;a href="https://learn.sparkfun.com/tutorials/pulse-width-modulation">PWM&lt;/a> signal with the
+appropriate frequency. The &lt;code>RPi.GPIO&lt;/code> module implements PWM via
+software, which is tricky on a non-realtime system. It&amp;rsquo;s difficult to
+get the timing completely accurate, which results in sounds that are a
+little wobbly at best. Since I&amp;rsquo;m simply generating tones with a
+buzzer (rather than, say, controlling a servo) this is mostly just an
+annoyance.&lt;/p>
+&lt;p>The second more significant problem is that the &lt;code>RPi.GPIO&lt;/code> seems to be
+buggy. After driving the buzzer a few times, my application would
+invariable crash with a segmentation fault:&lt;/p>
+&lt;pre>&lt;code>Program terminated with signal SIGSEGV, Segmentation fault.
+#0 0x764cbc54 in output_gpio () from /usr/lib/python3/dist-packages/RPi/_GPIO.cpython-35m-arm-linux-gnueabihf.so
+(gdb) bt
+#0 0x764dac54 in output_gpio () from /usr/lib/python3/dist-packages/RPi/_GPIO.cpython-35m-arm-linux-gnueabihf.so
+#1 0x764dc9bc in pwm_thread () from /usr/lib/python3/dist-packages/RPi/_GPIO.cpython-35m-arm-linux-gnueabihf.so
+#2 0x00001000 in ?? ()
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+(gdb)
+&lt;/code>&lt;/pre>
+&lt;p>At this point, I started looking for alternatives. One option would
+be to implement my own software PWM solution in my Python code, but
+that would suffer from the same timing issues as the &lt;code>RPi.GPIO&lt;/code>
+implementation. I knew that the Raspberry Pi has support for hardware
+PWM, so I went looking for information on how to make use of that
+feature.&lt;/p>
+&lt;p>I found &lt;a href="http://www.jumpnowtek.com/rpi/Using-the-Raspberry-Pi-Hardware-PWM-timers.html">this article&lt;/a> which describes how to enable &lt;a href="https://www.kernel.org/doc/Documentation/pwm.txt">kernel
+support for hardware PWM&lt;/a>. You can read the article for details, but if
+you have a Raspberry Pi 3 running kernel 4.9 or later, the answer
+boils down to:&lt;/p>
+&lt;ul>
+&lt;li>Edit &lt;code>/boot/config.txt&lt;/code>.&lt;/li>
+&lt;li>Add the line &lt;code>dtoverlay=pwm-2chan&lt;/code>&lt;/li>
+&lt;li>Save the file.&lt;/li>
+&lt;li>Reboot.&lt;/li>
+&lt;/ul>
+&lt;p>After rebooting your Pi and you will have access to hardware PWM on (BCM) pins
+18 and 19. You will find a new &lt;code>sysfs&lt;/code> directory
+&lt;code>/sys/class/pwm/pwmchip0&lt;/code>, which operates much like the &lt;a href="https://www.kernel.org/doc/Documentation/gpio/sysfs.txt">sysfs support
+for gpio&lt;/a>: there is a special file &lt;code>export&lt;/code> that you use to gain
+access to PWN pins. To access pin 18:&lt;/p>
+&lt;pre>&lt;code>echo 0 &amp;gt; export
+&lt;/code>&lt;/pre>
+&lt;p>To access pin 19:&lt;/p>
+&lt;pre>&lt;code>echo 1 &amp;gt; export
+&lt;/code>&lt;/pre>
+&lt;p>Running the above will result in two new directories appearing,
+&lt;code>/sys/class/pwm/pwmchip0/pwm0&lt;/code> and &lt;code>/sys/class/pwm/pwmchip0/pwm1&lt;/code>.
+Each of these directories contains special files for controlling the
+PWM output. Of interest in this case are:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>duty_cycle&lt;/code> - set the duty cycle of the PWM signal.&lt;/li>
+&lt;li>&lt;code>enable&lt;/code> - enable (write a &lt;code>1&lt;/code>) or disable (write a &lt;code>0&lt;/code>) PWM output.&lt;/li>
+&lt;li>&lt;code>period&lt;/code> - set the period of the PWM signal.&lt;/li>
+&lt;/ul>
+&lt;p>Both &lt;code>duty_cycle&lt;/code> and &lt;code>period&lt;/code> expect values in nanoseconds. So, for
+example, to emit a 440Hz tone, you first need to calculate the period
+for that frequency:&lt;/p>
+&lt;pre>&lt;code>period = 1 / frequency = 1 / 440 = (approx) .00227272 seconds
+&lt;/code>&lt;/pre>
+&lt;p>Then convert that into nanoseconds:&lt;/p>
+&lt;pre>&lt;code>period = .00227272 * 1e+9 = 2272720
+&lt;/code>&lt;/pre>
+&lt;p>For a 50% duty cycle, just dive that number by 2:&lt;/p>
+&lt;pre>&lt;code>duty_cycle = 2272720 / 2 = 1136360
+&lt;/code>&lt;/pre>
+&lt;p>Now, echo those values to the appropriate &lt;code>sysfs&lt;/code> files:&lt;/p>
+&lt;pre>&lt;code>echo $period &amp;gt; /sys/class/pwm/pwmchip0/pwm1/period
+echo $duty_cycle &amp;gt; /sys/class/pwm/pwmchip0/pwm1/duty_cycle
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll want to set &lt;code>period&lt;/code> first. The value of &lt;code>duty_cycle&lt;/code> must
+always be lower than &lt;code>period&lt;/code>, so if you try setting &lt;code>duty_cycle&lt;/code>
+first it&amp;rsquo;s possible you will get an error.&lt;/p>
+&lt;p>To actually generate the tone, you need to enable the output:&lt;/p>
+&lt;pre>&lt;code>echo 1 &amp;gt; /sys/class/pwm/pwmchip0/pwm1/enable
+&lt;/code>&lt;/pre>
+&lt;p>This all works great, but there is one problem: you need to be &lt;code>root&lt;/code>
+to perform any of the above operations. This matches the default
+behavior of the GPIO subsystem, but in that case there are standard
+&lt;a href="https://www.freedesktop.org/software/systemd/man/udev.html">udev&lt;/a> rules that take care of granting permission to members of the
+&lt;code>gpio&lt;/code> group. I was hoping to use the same solution for PWM. There
+is a set of udev rules proposed at
+&lt;a href="https://github.com/raspberrypi/linux/issues/1983">https://github.com/raspberrypi/linux/issues/1983&lt;/a>, but due to a
+&lt;a href="https://www.spinics.net/lists/linux-pwm/msg06081.html">kernel issue&lt;/a>, no udev events are sent when exporting pins so the
+rules have no impact on permissions in the &lt;code>pwm0&lt;/code> and &lt;code>pwm1&lt;/code>
+directories.&lt;/p>
+&lt;p>Until the necessary patch has merged, I&amp;rsquo;ve worked around this issue by
+creating a systemd unit that takes care of exporting the pins and
+setting permissions correctly. The unit is very simple:&lt;/p>
+&lt;pre>&lt;code>[Unit]
+Description=Configure PWM permissions
+Before=myapp.service
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rpi-configure-pwm
+[Install]
+WantedBy=multi-user.target
+&lt;/code>&lt;/pre>
+&lt;p>And the corresponding script is:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+PWM=/sys/class/pwm/pwmchip0
+echo 0 &amp;gt; ${PWM}/export
+echo 1 &amp;gt; ${PWM}/export
+chown -R root:gpio $PWM/*
+chmod -R g+rwX $PWM/*
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>Before=myapp.service&lt;/code> in the unit file ensures that this unit
+will run before my application starts up. To use the above, drop the
+unit file into &lt;code>/etc/systemd/system/rpi-configure-pwm.service&lt;/code>, and
+drop the script into &lt;code>/usr/bin/rpi-configure-pwm&lt;/code>. Don&amp;rsquo;t forget to
+&lt;code>systemctl enable rpi-configure-pwm&lt;/code>.&lt;/p></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>systemd-nspawn has been called &amp;ldquo;chroot on steroids&amp;rdquo;, but if you think of it as Docker with a slightly different target you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers on your host, and has a variety of options for configuring the containerized environment through the use of private networking, bind mounts, capability controls, and a variety of other facilities that give you flexible container management.
+There are many different ways in which it can be used.</description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
+you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
+on your host, and has a variety of options for configuring the
+containerized environment through the use of private networking, bind
+mounts, capability controls, and a variety of other facilities that
+give you flexible container management.&lt;/p>
+&lt;p>There are many different ways in which it can be used. I&amp;rsquo;m going to
+focus on one that&amp;rsquo;s a bit of a corner use case that I find
+particularly interesting. In this article we&amp;rsquo;re going to explore how
+we can use &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> to spawn lightweight containers for
+architectures other than that of our host system.&lt;/p>
+&lt;h2 id="why-systemd-nspawn">Why systemd-nspawn?&lt;/h2>
+&lt;p>While everything described in this article could be accomplished
+through the use of &lt;code>chroot&lt;/code> and a chunk of additional configuration,
+using &lt;code>systemd-nspawn&lt;/code> makes it much easier. For example,
+&lt;code>systemd-nspawn&lt;/code> takes care of making virtual filesystems like
+&lt;code>/proc&lt;/code>, &lt;code>/sys&lt;/code>, and a minimal &lt;code>/dev&lt;/code> available inside the container
+(without which some programs simply won&amp;rsquo;t work). And of course
+&lt;code>systemd-nspawn&lt;/code> takes care of cleaning up these mounts when the
+container exits. For a simple container, this:&lt;/p>
+&lt;pre>&lt;code># systemd-nspawn -D /mnt /some/command
+&lt;/code>&lt;/pre>
+&lt;p>Is roughly equivalent to:&lt;/p>
+&lt;pre>&lt;code># mount -o bind /proc /mnt/proc
+# mount -o bind /sys /mnt/sys
+# mount -t tmpfs tmpfs /mnt/run
+# mount -t tmpfs tmpfs /mnt/dev
+# ...populate /mnt/dev here...
+# chroot /mnt /some/command
+# umount /mnt/dev
+# umount /mnt/run
+# umount /mnt/sys
+# umount /mnt/proc
+&lt;/code>&lt;/pre>
+&lt;p>&lt;code>systemd-nspawn&lt;/code> does all of this for us, and does much of it via
+private mount namespaces so that the temporary filesystems aren&amp;rsquo;t
+visible from the host.&lt;/p>
+&lt;h2 id="in-which-we-perform-magic">In which we perform magic&lt;/h2>
+&lt;p>Linux allows you to run binaries intended for other architectures
+via the &lt;a href="https://www.kernel.org/doc/Documentation/binfmt_misc.txt">binfmt-misc&lt;/a> subsystem, which allows you to use bits at the
+beginning of a file to match against an appropriate interpreter. This
+can be used, for example, to make Java binaries directly executable.
+We&amp;rsquo;re going to use this technique to accomplish the following:&lt;/p>
+&lt;ul>
+&lt;li>Teach our system how to run Raspberry Pi ARM binaries, and&lt;/li>
+&lt;li>Allow us to spawn a &lt;code>systemd-nspawn&lt;/code> container into a Raspberry Pi
+filesystem.&lt;/li>
+&lt;/ul>
+&lt;p>When a &lt;code>systemd&lt;/code>-based system boots, the &lt;a href="https://www.freedesktop.org/software/systemd/man/binfmt.d.html">systemd-binfmt&lt;/a> service
+(if it&amp;rsquo;s enabled) will automatically register configurations found in
+&lt;code>/etc/binfmt.d&lt;/code> or &lt;code>/usr/lib/binfmt.d&lt;/code>. You can set these up by hand,
+of course, but we&amp;rsquo;re going to take the easy route and install the
+&lt;code>qemu-user-static&lt;/code> package, which includes both the necessary &lt;code>binfmt.d&lt;/code>
+configuration files as well as the associated emulators:&lt;/p>
+&lt;pre>&lt;code># dnf -y install qemu-user-static
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>qemu-user-static&lt;/code> package on my system has installed, among other files,
+&lt;code>/usr/lib/binfmt.d/qemu-arm.conf&lt;/code>, which looks like this:&lt;/p>
+&lt;pre>&lt;code>:qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:
+&lt;/code>&lt;/pre>
+&lt;p>This gets registered with &lt;code>/proc/sys/fs/binfmt_misc/register&lt;/code> and
+informs the kernel that there is a new binfmt called &lt;code>qemu-arm&lt;/code>, and
+that files that contain the specified byte pattern in the header
+should be handled with &lt;code>/usr/bin/qemu-arm-static&lt;/code>.&lt;/p>
+&lt;p>With all this set up, we can mount a Raspberry Pi filesystem (I&amp;rsquo;m
+starting with &lt;a href="https://minibianpi.wordpress.com/">minibian&lt;/a>)&amp;hellip;&lt;/p>
+&lt;pre>&lt;code># tar xf 2015-11-12-jessie-minibian.tar.gz
+# losetup -fP --show 2015-11-12-jessie-minibian.img
+/dev/loop1
+# mount /dev/loop1p2 /mnt
+# mount /dev/loop1p1 /mnt/boot
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and then start up a process in it:&lt;/p>
+&lt;pre>&lt;code># systemd-nspawn -D /mnt
+Spawning container mnt on /mnt.
+Press ^] three times within 1s to kill container.
+root@mnt:~#
+&lt;/code>&lt;/pre>
+&lt;p>And there we are! We&amp;rsquo;re now running a shell inside a container
+running an ARM userspace. We can modify the image by installing or
+udpating packages or making any other necessary configuration changes:&lt;/p>
+&lt;pre>&lt;code>root@mnt:/# apt-get install raspberrypi-bootloader
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+libraspberrypi-bin libraspberrypi0
+The following packages will be upgraded:
+libraspberrypi-bin libraspberrypi0 raspberrypi-bootloader
+3 upgraded, 0 newly installed, 0 to remove and 34 not upgraded.
+Need to get 32.5 MB of archives.
+After this operation, 827 kB of additional disk space will be used.
+Do you want to continue? [Y/n]
+&lt;/code>&lt;/pre>
+&lt;p>When we&amp;rsquo;re done, we exit our container:&lt;/p>
+&lt;pre>&lt;code>root#mnt:/# exit
+&lt;/code>&lt;/pre>
+&lt;p>Unmount the directory:o&lt;/p>
+&lt;pre>&lt;code># umount /mnt
+&lt;/code>&lt;/pre>
+&lt;p>And finally clean up the loopback device:&lt;/p>
+&lt;pre>&lt;code># losetup -d /dev/loop1
+&lt;/code>&lt;/pre>
+&lt;p>Now we have an updated image file that we can write to an SD card and
+use to boot our Raspberry Pi.&lt;/p>
+&lt;p>&lt;strong>NB&lt;/strong> You&amp;rsquo;ll note that in this document I&amp;rsquo;m mounting &lt;code>loop1p2&lt;/code> on &lt;code>/&lt;/code>
+and &lt;code>loop1p1&lt;/code> on &lt;code>/boot&lt;/code>. You obviously don&amp;rsquo;t need &lt;code>/boot&lt;/code> in your
+container in order for things to run, but you will regret not mounting
+it if you happen to install an updated kernel package, which needs to
+populate &lt;code>/boot&lt;/code> with the new kernel image.&lt;/p>
+&lt;h2 id="bonus-growing-the-image">Bonus: growing the image&lt;/h2>
+&lt;p>The stock &lt;a href="https://minibianpi.wordpress.com/">minibian&lt;/a> image doesn&amp;rsquo;t have much free space on it; this
+is intentional, and in general you&amp;rsquo;re expected to grow the root
+partition and resize the filesystem after booting on your Pi.
+However, if we&amp;rsquo;re going to use the above process to pre-configure our
+image, there&amp;rsquo;s a good chance we&amp;rsquo;ll need more space immediately. We
+start by growing the size of the image file itself; you can that with
+&lt;code>qemu-img&lt;/code>, like this:&lt;/p>
+&lt;pre>&lt;code># qemu-img resize 2015-11-12-jessie-minibian.img 2G
+&lt;/code>&lt;/pre>
+&lt;p>Or by using &lt;code>truncate&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># truncate -s 2G 2015-11-12-jessie-minibian.img
+&lt;/code>&lt;/pre>
+&lt;p>Or by using &lt;code>dd&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># dd of=2015-11-12-jessie-minibian.img if=/dev/zero \
+count=0 bs=1G seek=2
+&lt;/code>&lt;/pre>
+&lt;p>Once the file has been extended, we need to grow the corresponding
+partition. Assuming that you have a recent version of &lt;code>util-linux&lt;/code>
+(where &amp;ldquo;recent&amp;rdquo; means &amp;ldquo;at least &lt;a href="http://karelzak.blogspot.com/2015/05/resize-by-sfdisk.html">v2.26.2&lt;/a>) installed, this is easy:&lt;/p>
+&lt;pre>&lt;code># echo &amp;quot;, +&amp;quot; | sfdisk -N 2 2015-11-12-jessie-minibian.img
+&lt;/code>&lt;/pre>
+&lt;p>And lastly, we need to grow the filesystem. This requires
+attaching the image to a loop device:&lt;/p>
+&lt;pre>&lt;code># losetup -fP --show 2015-11-12-jessie-minibian.img
+/dev/loop1
+&lt;/code>&lt;/pre>
+&lt;p>And then:&lt;/p>
+&lt;pre>&lt;code># e2fsck -f /dev/loop1p2
+# resize2fs /dev/loop1p2
+&lt;/code>&lt;/pre>
+&lt;p>Now when we mount the filesystem:&lt;/p>
+&lt;pre>&lt;code># mount /dev/loop1p2 /mnt
+# mount /dev/loop1p1 /mnt/boot
+&lt;/code>&lt;/pre>
+&lt;p>We see that there is more space available:&lt;/p>
+&lt;pre>&lt;code># df -h /mnt
+Filesystem Size Used Avail Use% Mounted on
+/dev/loop1p2 1.9G 432M 1.4G 24% /mnt
+&lt;/code>&lt;/pre>
+&lt;h2 id="bonus-static-qemu-arm-binaries">Bonus: Static qemu-arm binaries&lt;/h2>
+&lt;p>Earlier we saw that it was necessary to mount &lt;code>/lib64&lt;/code> into my
+Raspberry Pi container because the &lt;code>qemu-arm&lt;/code> binary was dynamically
+linked. You can acquire statically built versions of the QEMU
+binaries from the Debian project, e.g., &lt;a href="https://packages.debian.org/sid/amd64/qemu-user-static/download">here&lt;/a>:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://packages.debian.org/sid/amd64/qemu-user-static/download">https://packages.debian.org/sid/amd64/qemu-user-static/download&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Then unpack the &lt;code>.deb&lt;/code> file and extract the &lt;code>qemu-arm-static&lt;/code> binary:&lt;/p>
+&lt;pre>&lt;code>$ ar xv qemu-user-static_2.5+dfsg-5_amd64.deb
+x - debian-binary
+x - control.tar.gz
+x - data.tar.xz
+$ tar xf data.tar.xz ./usr/bin/qemu-arm-static
+&lt;/code>&lt;/pre>
+&lt;p>And copy it into place:&lt;/p>
+&lt;pre>&lt;code># cp qemu-arm-static /usr/bin/qemu-arm
+&lt;/code>&lt;/pre>
+&lt;p>And now our earlier command will work without further modification:&lt;/p>
+&lt;pre>&lt;code># systemd-nspawn -q --bind /usr/bin/qemu-arm -D /mnt /bin/bash
+root@mnt:/#
+&lt;/code>&lt;/pre></content></item><item><title>gpio-watch: Run scripts in response to GPIO signals</title><link>https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/</link><pubDate>Sat, 26 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/</guid><description>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to a Raspberry Pi and have some code execute in response to the button presses.
+Normally I would reach for Python for a simple project like this, but constraints of the project made it necessary to implement something in C with minimal dependencies. I didn&amp;rsquo;t want to write something that was tied closely to my project&amp;hellip;</description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
+a &lt;a href="http://raspberrypi.org/">Raspberry Pi&lt;/a> and have some code execute in response to the
+button presses.&lt;/p>
+&lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
+but constraints of the project made it necessary to implement
+something in C with minimal dependencies. I didn&amp;rsquo;t want to write
+something that was tied closely to my project&amp;hellip;&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;figure class="left" >
+&lt;img src="http://imgs.xkcd.com/comics/the_general_problem.png" />
+&lt;/figure>
+&lt;p>&amp;hellip;so I ended up writing &lt;a href="https://github.com/larsks/gpio-watch">gpio-watch&lt;/a>, a simple tool for connecting
+shell scripts (or any other executable) to GPIO events. There are a
+few ways to interact with GPIO on the Raspberry Pi. For the fastest
+possible performance, you will need to interact directly with the
+underlying hardware using, e.g., something like &lt;a href="http://hertaville.com/2014/07/07/rpimmapgpio/">direct register
+access&lt;/a>. Since I was only responding to button presses I opted
+to take advantage of the &lt;a href="https://www.kernel.org/doc/Documentation/gpio/sysfs.txt">GPIO sysfs interface&lt;/a>, which exposes
+the GPIO pins via the filesystem.&lt;/p>
+&lt;p>To access a GPIO pin using the &lt;code>sysfs&lt;/code> interface:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>You write the GPIO number to &lt;code>/sys/class/gpio/export&lt;/code>. This will
+result in a new directory named &lt;code>gpio&amp;lt;pin&amp;gt;&lt;/code> appearing in
+&lt;code>/sys/class/gpio&lt;/code> (where &lt;code>&amp;lt;pin&amp;gt;&lt;/code> is the GPIO number you have exported).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Inside &lt;code>/sys/class/gpio/gpio&amp;lt;pin&amp;gt;&lt;/code>, there are a number of files:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>direction&lt;/code> is used to configure the GPIO as an input (write &lt;code>in&lt;/code>)
+or output (write &lt;code>out&lt;/code>).&lt;/li>
+&lt;li>&lt;code>edge&lt;/code> is used to control which edge of a signal generates
+interrupts. The options are &lt;code>rising&lt;/code>, &lt;code>falling&lt;/code>, &lt;code>both&lt;/code>, or
+&lt;code>none&lt;/code>.&lt;/li>
+&lt;li>&lt;code>value&lt;/code> contains the current value of the GPIO pin.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>Once you have properly configure a pin, you can monitor the &lt;code>value&lt;/code>
+file for events (see below).&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>We can use the &lt;code>poll()&lt;/code> or &lt;code>select()&lt;/code> system calls to monitor events
+on &lt;code>/sys/class/gpio/gpio&amp;lt;pin&amp;gt;/value&lt;/code>. For example, to wait for a signal
+on GPIO 23 (assuming that we have correctly configured the &lt;code>direction&lt;/code>
+and &lt;code>edge&lt;/code> values):&lt;/p>
+&lt;pre>&lt;code>#include &amp;lt;poll.h&amp;gt;
+#include &amp;lt;fcntl.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+void poll_pin() {
+struct pollfd fdlist[1];
+int fd;
+fd = open(&amp;quot;/sys/class/gpio/gpio23/value&amp;quot;, O_RDONLY);
+fdlist[0].fd = fd;
+fdlist[0].events = POLLPRI;
+while (1) {
+int err;
+char buf[3];
+err = poll(fdlist, 1, -1);
+if (-1 == err) {
+perror(&amp;quot;poll&amp;quot;);
+return;
+}
+err = read(fdlist[0].fd, buf, 2);
+printf(&amp;quot;event on pin 23!\n&amp;quot;);
+}
+}
+int main(int argc, char *argv[]) {
+poll_pin();
+}
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>gpio-watch&lt;/code> command wraps this all up in a convenient package
+that lets you do something like this:&lt;/p>
+&lt;pre>&lt;code>gpio-watch -e rising 18 23 24
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>-e rising&lt;/code> option means that we are watching for rising signals
+on all three pins. You can also trigger on different parts of the
+signal for each pin:
+gpio-watch 18:rising 23:both 24:falling&lt;/p>
+&lt;p>When &lt;code>gpio-watch&lt;/code> sees an event on a pin, it looks for
+&lt;code>/etc/gpio-scripts/&amp;lt;pin&amp;gt;&lt;/code> (e.g., &lt;code>/etc/gpio-scripts/23&lt;/code>), and then runs:&lt;/p>
+&lt;pre>&lt;code>/etc/gpio-scripts/&amp;lt;pin&amp;gt; &amp;lt;pin&amp;gt; &amp;lt;value&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;p>Since the script is passed the pin number as the first argument, you
+can use a single script to handle events on multiple pins (by
+symlinking the script to the appropriate name).&lt;/p>
+&lt;h2 id="mechanical-switches">Mechanical switches&lt;/h2>
+&lt;p>There is some special code in &lt;code>gpio-watch&lt;/code> for handling mechanical
+buttons. The &lt;code>switch&lt;/code> edge mode&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>gpio-watch 23:switch
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;enables some simple &lt;a href="https://en.wikipedia.org/wiki/Switch#Contact_bounce">de-bouncing&lt;/a> logic. This causes
+&lt;code>gpio-watch&lt;/code> to monitor both rising and falling events on this pin,
+but the events scripts will only trigger on the falling edge event,
+which must occur more than &lt;code>DEBOUNCE_INTERVAL&lt;/code> after the rising edge
+event. In other words, you must both press and release the button for
+the event to fire, and the debounce logic should avoid firing the
+event multiple times due to contact bounce.&lt;/p>
+&lt;p>As an example, assume we have a script &lt;code>/etc/gpio-scripts/23&lt;/code> that
+looks like this:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+echo &amp;quot;Something happened! Pin=$1, value=$2&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>If I run &lt;code>gpio-watch&lt;/code> to monitor the falling signal edge and press a
+button attached to pin 23 three times, I see:&lt;/p>
+&lt;pre>&lt;code>$ gpio-watch 23:falling
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=1
+Something happened! Pin=23, value=0
+&lt;/code>&lt;/pre>
+&lt;p>Whereas if I use &lt;code>switch&lt;/code> mode, I see:&lt;/p>
+&lt;pre>&lt;code>$ gpio-watch 23:switch
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+Something happened! Pin=23, value=0
+&lt;/code>&lt;/pre>
+&lt;h2 id="use-the-source-luke">Use the source, Luke!&lt;/h2>
+&lt;p>The source is available &lt;a href="https://github.com/larsks/gpio-watch">on gitub&lt;/a>. To get started, clone
+the repository with &lt;code>git&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ git clone https://github.com/larsks/gpio-watch.git
+&lt;/code>&lt;/pre>
+&lt;p>And then build the source using &lt;code>make&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ cd gpio-watch
+$ make
+cc -c -o main.o main.c
+cc -c -o gpio.o gpio.c
+cc -c -o fileutil.o fileutil.c
+cc -c -o logging.o logging.c
+cc -o gpio-watch main.o gpio.o fileutil.o logging.o -lrt
+&lt;/code>&lt;/pre>
+&lt;p>There is basic documentation in &lt;code>README.md&lt;/code> in the distribution. If
+you run into any problems, feel free to &lt;a href="https://github.com/larsks/gpio-watch/issues/new">open a new issue&lt;/a>.&lt;/p></content></item><item><title>Interrupts on the PiFace</title><link>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</link><pubDate>Mon, 05 Aug 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</guid><description>I recently acquired both a Raspberry Pi and a PiFace IO board. I had a rough time finding examples of how to read the input ports via interrupts (rather than periodically polling for values), especially for the newer versions of the PiFace python libraries.
+After a little research, here&amp;rsquo;s some simple code that will print out pin names as you press the input buttons. Button 3 will cause the code to exit:</description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+I had a rough time finding examples of how to read the input ports via
+interrupts (rather than periodically polling for values), especially
+for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
+&lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
+will print out pin names as you press the input buttons. Button 3
+will cause the code to exit:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/python
+import pifacecommon.core
+import pifacecommon.interrupts
+import os
+import time
+quit = False
+def print_flag(event):
+print 'You pressed button', event.pin_num, '.'
+def stop_listening(event):
+global quit
+quit = True
+pifacecommon.core.init()
+# GPIOB is the input ports, including the four buttons.
+port = pifacecommon.core.GPIOB
+listener = pifacecommon.interrupts.PortEventListener(port)
+# set up listeners for all buttons
+listener.register(0, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(1, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(2, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(3, pifacecommon.interrupts.IODIR_ON, stop_listening)
+# Start listening for events. This spawns a new thread.
+listener.activate()
+# Hang around until someone presses button 3.
+while not quit:
+time.sleep(1)
+print 'you pressed button 3 (quitting)'
+listener.deactivate()
+&lt;/code>&lt;/pre></content></item><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>I&amp;rsquo;ve set up my Raspberry Pi to communicate with my Arduino via I2C. The Raspberry Pi is a 3.3v device and the Arduino is a 5v device. While in general this means that you need to use a level converter when connecting the two devices, you don&amp;rsquo;t need to use a level converter when connecting the Arduino to the Raspberry Pi via I2C.
+The design of the I2C bus is such that the only device driving a voltage on the bus is the master (in this case, the Raspberry Pi), via pull-up resistors.</description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
+device. While in general this means that you need to use a level
+converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
+level converter when connecting the Arduino to the Raspberry Pi via
+I2C.&lt;/strong>&lt;/p>
+&lt;p>The design of the I2C bus is such that the only device driving a
+voltage on the bus is the master (in this case, the Raspberry Pi), via
+pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
+the Pi, which is perfectly safe for the Arduino (and compatible with
+it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
+bus low by connecting it to ground. In other words, slave devices
+&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
+never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
+mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
+Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p>
+&lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
+Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
+&lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
+(&lt;code>SCL&lt;/code>):&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>For information about other boards and about the Arduino I2C API, see
+the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
+RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses.</description><content>&lt;p>There are several Python libraries out there for interacting with the
+&lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>
+&lt;li>The &lt;a href="https://github.com/WiringPi/WiringPi-Python">WiringPi&lt;/a> bindings for Python, and&lt;/li>
+&lt;li>The &lt;a href="https://github.com/quick2wire/quick2wire-python-api">Quick2Wire&lt;/a> Python API (which depends on Python 3)&lt;/li>
+&lt;/ul>
+&lt;p>All of them are reasonably easy to use, but the Quick2Wire API
+provides a uniquely useful feature: &lt;code>epoll&lt;/code>-enabled GPIO interrupts.
+This makes it trivial to write code that efficiently waits for and
+responds to things like button presses.&lt;/p>
+&lt;p>The following simple example waits for a button press attached to
+&lt;code>GPIO1&lt;/code> (but refer to the chart in &lt;a href="https://projects.drogon.net/raspberry-pi/wiringpi/pins/">this document&lt;/a> to see
+exactly what that means; this is pin 12 on a Raspberry Pi v2 board)
+and lights an LED attached to &lt;code>GPIO0&lt;/code> when the button is pressed:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/env python3
+import select
+from quick2wire.gpio import pins, In, Out, Rising, Falling, Both
+button1 = pins.pin(0, direction=In, interrupt=Both)
+led = pins.pin(1, direction=Out)
+with button1,led:
+epoll = select.epoll()
+epoll.register(button1, select.EPOLLIN|select.EPOLLET)
+while True:
+events = epoll.poll()
+for fileno, event in events:
+if fileno == button1.fileno():
+print('BUTTON 1!', button1.value)
+led.value = button1.value
+&lt;/code>&lt;/pre>
+&lt;p>There is also a &lt;code>Selector&lt;/code> class that makes the &lt;code>epoll&lt;/code> interface a
+little easier to use. The following code is equivalent to the above
+&lt;code>epoll&lt;/code> example:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/env python3
+from quick2wire.gpio import pins, In, Out, Both
+from quick2wire.selector import Selector
+button1 = pins.pin(0, direction=In, interrupt=Both)
+led = pins.pin(1, direction=Out)
+with button1, led, Selector(1) as selector:
+selector.add(button1)
+while True:
+selector.wait()
+if selector.ready == button1:
+print('BUTTON 1!', button1.value)
+led.value = button1.value
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>selector&lt;/code> module includes a &lt;code>Timer&lt;/code> class that lets you add
+one-shot or repeating timers to a &lt;code>Selector&lt;/code>. The following example
+will light the LED for one second after the button is pressed, unless
+the button is pressed again, in which case the LED will go out
+immediately:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/env python3
+from quick2wire.gpio import pins, In, Out, Both
+from quick2wire.selector import Selector, Timer
+button1 = pins.pin(0, direction=In, interrupt=Both)
+led = pins.pin(1, direction=Out)
+active = False
+with button1, led, \
+Selector(1) as selector, \
+Timer(offset=2) as timer:
+selector.add(button1)
+selector.add(timer)
+while True:
+selector.wait()
+if selector.ready == button1:
+print('BUTTON 1!', button1.value, active)
+if button1.value:
+if active:
+active = False
+led.value = 0
+timer.stop()
+else:
+active = True
+led.value = 1
+timer.start()
+if selector.ready == timer:
+if active:
+active = False
+led.value = 0
+&lt;/code>&lt;/pre>
+&lt;p>All of these examples rely on Python&amp;rsquo;s &lt;a href="http://docs.python.org/3/reference/compound_stmts.html#the-with-statement">with statement&lt;/a>. If you&amp;rsquo;re
+unfamiliar with &lt;code>with&lt;/code>, you can find more information &lt;a href="http://docs.python.org/3/reference/compound_stmts.html#the-with-statement">here&lt;/a>.&lt;/p></content></item></channel></rss>

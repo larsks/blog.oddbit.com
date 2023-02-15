@@ -1,0 +1,80 @@
+<!doctype html><html lang=en><head><title>Kerberos authenticated queries to Active Directory :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="There are many guides out there to help you configure your Linux system as an LDAP and Kerberos client to an Active Directory server. Most of these guides solve the problem of authentication by embedding a username and password into a configuration file somewhere on your system. While this works, it presents some problems:
+If you use a common account for authentication from all of your Linux systems, a compromise on one system means updating the configuration of all of your systems."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2010-06-29-linux-kerberos-ad/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Kerberos authenticated queries to Active Directory"><meta property="og:description" content="There are many guides out there to help you configure your Linux system as an LDAP and Kerberos client to an Active Directory server. Most of these guides solve the problem of authentication by embedding a username and password into a configuration file somewhere on your system. While this works, it presents some problems:
+If you use a common account for authentication from all of your Linux systems, a compromise on one system means updating the configuration of all of your systems."><meta property="og:url" content="https://blog.oddbit.com/post/2010-06-29-linux-kerberos-ad/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2010-06-29 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2010-06-29-linux-kerberos-ad/>Kerberos authenticated queries to Active Directory</a></h1><div class=post-meta><time class=post-date>2010-06-29 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ldap/>ldap</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/active_directory/>active_directory</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kerberos/>kerberos</a>&nbsp;</span><div class=post-content><div><p>There are many guides out there to help you configure your Linux system as an LDAP and Kerberos client to an Active Directory server. Most of these guides solve the problem of authentication by embedding a username and password into a configuration file somewhere on your system. While this works, it presents some problems:</p><ul><li>If you use a common account for authentication from all of your Linux systems, a compromise on one system means updating the configuration of all of your systems.</li><li>If you don&rsquo;t want to use a common account, you need to provision a new account for each computer&mldr;</li><li>&mldr;which is silly, because if you join the system to Active Directory there is already a computer object associated with the system that can be used for authentication.</li></ul><p>This document describes how to configure a Linux system such that queries
+generated by <a href=http://www.padl.com/OSS/nss_ldap.html>nss_ldap</a> will use either the current user&rsquo;s Kerberos
+credentials, or, for the root user, credentials stored in a Kerberos
+credentials cache.</p><ul><li><p>Your Linux system must have a valid <code>keytab</code> file.</p><p>A <code>keytab</code> is a file containing pairs of Kerberos principals and encrypted keys.</p><p>Joining Active Directory using Samba&rsquo;s <code>net ads join</code> will create the
+necessary keytab. It is also possible to create the keytab on your Windows
+domain controller and install it on your Linux systems. Instructions for
+doing this are beyond the scope of this document.</p></li><li><p>Host objects in Active Directory must have a <code>userPrincipalName</code> attribute.</p><p>For example:</p><pre><code>$ ldapsearch cn=dottiness userPrincipalName
+dn: CN=DOTTINESS,CN=Computers,dc=example,dc=com
+userPrincipalName: host/dottiness.example.com@EXAMPLE.COM
+</code></pre><p>Active Directory <em>does not</em> automatically create a <code>userPrincipalName</code> when a new host object is provisioned. You will either need to provide this value manually or develop an automated process that will populate this field when provisioning new host objects.</p></li></ul><p>Kerberos credentials have a maximum usable lifetime. The cached credentials
+used for root queries by <code>nss_ldap</code> must be refreshed periodically in order to
+function.</p><p>You will need to install a crontab (e.g., in <code>/etc/cron.d</code>) that looks something
+like this:</p><pre><code>PATH=/bin:/usr/bin:/usr/kerberos/bin
+@reboot root kinit -k -c /var/run/ldap_cc &gt; /dev/null 2&gt;&amp;1
+@hourly root kinit -k -c /var/run/ldap_cc &gt; /dev/null 2&gt;&amp;1
+</code></pre><p>This periodically reauthenticates to your domain controller used the cached
+principal in the system keytab (<code>/etc/krb5.keytab</code>) and caches the credentials in
+<code>/var/run/ldap_cc</code>.</p><p>You will need something similar to the following in <code>/etc/ldap.conf</code>:</p><pre><code># This is your domain controller.
+uri ldap://dc1.example.com
+base dc=example,dc=com
+scope one
+referrals no
+timelimit 120
+bind_timelimit 120
+idle_timelimit 3600
+ldap_version 3
+
+# Authenticate using SASL for user and root queries.
+use_sasl on
+rootuse_sasl on
+
+# Use SASL's gssapi (Kerberos) mechanism.
+sasl_mech gssapi
+
+# Use these cached credentials for root.
+krb5_ccname /var/run/ldap_cc
+
+nss_base_group ou=groups,dc=example,dc=com
+nss_base_passwd ou=people,dc=example,dc=com
+nss_initgroups_ignoreusers root,ldap,named,avahi,haldaemon,dbus,radvd,tomcat,radiusd,news,mailman,nscd,gdm,polkituser
+
+# These are common mappings for working with Active Directory.
+nss_map_attribute uid sAMAccountName
+nss_map_attribute uniqueMember member
+nss_map_objectclass posixAccount user
+nss_map_objectclass posixGroup group
+nss_map_objectclass shadowAccount user
+
+pam_login_attribute sAMAccountName
+pam_member_attribute member
+pam_password ad
+pam_password_prohibit_message Please visit http://password.example.com to change your password.
+
+pam_filter objectclass=User
+</code></pre><p>The <code>use_sasl on</code> directive configures <code>nss_ldap</code> to use the Kerberos credentials
+for the current user when looking up user/group/etc information. The
+<code>rootuse_sasl on</code> attribute does the same thing for processes running as <code>root</code>.</p><p>Note that this configuration sets scope <code>one</code>, which means that <code>nss_ldap</code> <em>will
+not</em> recurse down a directory tree. This is a performance optimization, not a
+requirement.</p><h2 id=as-an-unprivileged-user>As an unprivileged user<a href=#as-an-unprivileged-user class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Before acquiring Kerberos credentials:</p><pre><code>$ getent passwd lars
+(times out)
+</code></pre><p>Authenticate to Kerberos:</p><pre><code>$ kinit
+Password for lars@EXAMPLE.COM:
+</code></pre><p>With valid credentials:</p><pre><code>$ getent passwd lars
+lars:*:500:500:lars:\\emc00.example.com\staff\l\lars\windows:
+</code></pre><h2 id=as-root>As root<a href=#as-root class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Before acquiring Kerberos credentials:</p><pre><code># getent passwd lars
+(times out)
+</code></pre><p>Update credentials cache from system keytab:</p><pre><code># kinit -k
+</code></pre><p>With valid credentials:</p><pre><code># getent passwd lars
+lars:*:500:500:lars:\\emc00.example.com\staff\l\lars\windows:
+</code></pre><p>This configuration makes the operation of <code>nss_ldap</code> dependent on valid Kerberos
+credentials. If a user remains logged in after her Kerberos credentials have
+expired, she will experience degraded behavior, since many name lookup
+operations will timeout. Similarly, local system accounts that do not have
+valid Kerberos credentials will experience similar behavior (and will thus only
+be able to see local users and groups).</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

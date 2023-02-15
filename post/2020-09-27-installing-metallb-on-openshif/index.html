@@ -1,0 +1,113 @@
+<!doctype html><html lang=en><head><title>Installing metallb on OpenShift with Kustomize :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Out of the box, OpenShift (4.x) on bare metal doesn&amp;rsquo;t come with any integrated load balancer support (when installed in a cloud environment, OpenShift typically makes use of the load balancing features available from the cloud provider). Fortunately, there are third party solutions available that are designed to work in bare metal environments. MetalLB is a popular choice, but requires some minor fiddling to get it to run properly on OpenShift."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Installing metallb on OpenShift with Kustomize"><meta property="og:description" content="Out of the box, OpenShift (4.x) on bare metal doesn&amp;rsquo;t come with any integrated load balancer support (when installed in a cloud environment, OpenShift typically makes use of the load balancing features available from the cloud provider). Fortunately, there are third party solutions available that are designed to work in bare metal environments. MetalLB is a popular choice, but requires some minor fiddling to get it to run properly on OpenShift."><meta property="og:url" content="https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2020-09-27 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/>Installing metallb on OpenShift with Kustomize</a></h1><div class=post-meta><time class=post-date>2020-09-27 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openshift/>openshift</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kustomize/>kustomize</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/metallb/>metallb</a>&nbsp;</span><div class=post-content><div><p>Out of the box, OpenShift (4.x) on bare metal doesn&rsquo;t come with any
+integrated load balancer support (when installed in a cloud environment,
+OpenShift typically makes use of the load balancing features available from
+the cloud provider). Fortunately, there are third party solutions available
+that are designed to work in bare metal environments. <a href=https://metallb.universe.tf/>MetalLB</a> is a
+popular choice, but requires some minor fiddling to get it to run properly
+on OpenShift.</p><p>If you read through the <a href=https://metallb.universe.tf/installation/>installation instructions</a>, you will see <a href=https://metallb.universe.tf/installation/clouds/#metallb-on-openshift-ocp>this
+note</a> about installation on OpenShift:</p><blockquote><p>To run MetalLB on Openshift, two changes are required: changing the pod
+UIDs, and granting MetalLB additional networking privileges.</p><p>Pods get UIDs automatically assigned based on an OpenShift-managed UID
+range, so you have to remove the hardcoded unprivileged UID from the
+MetalLB manifests. You can do this by removing the
+spec.template.spec.securityContext.runAsUser field from both the
+controller Deployment and the speaker DaemonSet.</p><p>Additionally, you have to grant the speaker DaemonSet elevated
+privileges, so that it can do the raw networking required to make
+LoadBalancers work. You can do this with:</p></blockquote><p>The docs here suggest some manual changes you can make, but it&rsquo;s possible
+to get everything installed correctly using <a href=https://github.com/kubernetes-sigs/kustomize>Kustomize</a> (which makes
+sense especially given that the MetalLB docs already include instructions
+<a href=https://metallb.universe.tf/installation/#installation-with-kustomize>on using Kustomize</a>).</p><p>A vanilla installation of MetalLB with Kustomize uses a <code>kustomization.yml</code>
+file that looks like this:</p><pre tabindex=0><code>namespace: metallb-system
+
+resources:
+  - github.com/metallb/metallb//manifests?ref=v0.9.3
+  - configmap.yml
+  - secret.yml
+</code></pre><p>(Where <code>configmap.yml</code> and <code>secret.yml</code> are files you create locally
+containing, respectively, the MetalLB configuration and a secret used to
+authenticate cluster members.)</p><h2 id=fixing-the-security-context>Fixing the security context<a href=#fixing-the-security-context class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In order to remove the <code>runAsUser</code> directive form the template
+<code>securityContext</code> setting, we can use the <a href=https://kubectl.docs.kubernetes.io/pages/reference/kustomize.html#patchesstrategicmerge>patchesStrategicMerge</a>
+feature. In our <code>kustomization.yml</code> file we add:</p><pre tabindex=0><code>patches:
+  - |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: controller
+        namespace: metallb-system
+      spec:
+        template:
+          spec:
+            securityContext:
+              $patch: replace
+              runAsNonRoot: true
+</code></pre><p>This instructs <code>kustomize</code> to replace the contents of the <code>securityContext</code>
+key with the value included in the patch (without the <code>$patch: replace</code>
+directive, the default behavior is to merge the contents, which in this
+situation would effectively be a no-op).</p><p>We can accomplish the same thing using <a href=https://tools.ietf.org/html/rfc6902>jsonpatch</a> syntax. In this case,
+we would write:</p><pre tabindex=0><code>patches:
+  - target:
+      kind: Deployment
+      name: controller
+      namespace: metallb-system
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/securityContext/runAsUser
+</code></pre><p>With either solution, the final output includes a <code>securityContext</code> setting
+that looks like this:</p><pre tabindex=0><code>spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+</code></pre><h2 id=granting-elevated-privileges>Granting elevated privileges<a href=#granting-elevated-privileges class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The MetaLB docs suggest running:</p><pre tabindex=0><code>oc adm policy add-scc-to-user privileged -n metallb-system -z speaker
+</code></pre><p>But we can configure the same privilege level by setting up an appropriate
+role binding as part of our Kustomize manifests.</p><p>First, we create an <code>allow-privileged</code> cluster role by adding the following
+manifest in <code>clusterrole.yml</code>:</p><pre tabindex=0><code>---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: allow-privileged
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+</code></pre><p>Then we bind the <code>speaker</code> service account to the <code>allow-privileged</code> role
+by adding a <code>ClusterRoleBinding</code> in <code>rolebinding.yml</code>:</p><pre tabindex=0><code>---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metallb-allow-privileged
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: allow-privileged
+subjects:
+  - kind: ServiceAccount
+    name: speaker
+    namespace: metallb-system
+</code></pre><p>You will need to add these new manifests to your <code>kustomization.yml</code>, which
+should now look like:</p><pre tabindex=0><code>namespace: metallb-system
+
+resources:
+  - github.com/metallb/metallb//manifests?ref=v0.9.3
+  - configmap.yml
+  - secret.yml
+  - clusterole.yml
+  - rolebinding.yml
+
+patches:
+  - target:
+      kind: Deployment
+      name: controller
+      namespace: metallb-system
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/securityContext/runAsUser
+</code></pre><h2 id=conclusion>Conclusion<a href=#conclusion class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The changes described here will result in a successful MetalLB deployment
+into your OpenShift environment.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

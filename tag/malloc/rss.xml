@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>malloc on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/malloc/</link><description>Recent content in malloc on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 28 Jan 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/malloc/rss.xml" rel="self" type="application/rss+xml"/><item><title>AVR micro-optimization: Losing malloc</title><link>https://blog.oddbit.com/post/2019-01-28-losing-malloc/</link><pubDate>Mon, 28 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-28-losing-malloc/</guid><description>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?
+When I write OO-style code in C, I usually start with something like the following, in which I use malloc() to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:
+Button *button_new(uint8_t pin, uint8_t poll_freq) { Button *button = (Button *)malloc(sizeof(Button)); // do some initialization stuff return button; } And when initially writing pipower, that&amp;rsquo;s exactly what I did.</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
+&lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
+Button *button = (Button *)malloc(sizeof(Button));
+// do some initialization stuff
+return button;
+}
+&lt;/code>&lt;/pre>
+&lt;p>And when initially writing &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">pipower&lt;/a>, that&amp;rsquo;s exactly what I did. But while thinking about it after the fact, I realized the following:&lt;/p>
+&lt;ul>
+&lt;li>I&amp;rsquo;m designing for a fixed piece of hardware. I have a fixed number of inputs; I don&amp;rsquo;t actually need to create new &lt;code>Button&lt;/code> variables dynamically at runtime.&lt;/li>
+&lt;li>The ATtiny85 only has 8KB of memory. Do I really need the overhead of &lt;code>malloc()&lt;/code>?&lt;/li>
+&lt;/ul>
+&lt;p>The answer, of course, is that no, I don&amp;rsquo;t, so I rewrote the code so that it only has statically allocated structures. This reduced the size of the resulting binary from this:&lt;/p>
+&lt;pre>&lt;code>AVR Memory Usage
+----------------
+Device: attiny85
+Program: 3916 bytes (47.8% Full)
+(.text + .data + .bootloader)
+Data: 35 bytes (6.8% Full)
+(.data + .bss + .noinit)
+&lt;/code>&lt;/pre>
+&lt;p>To this:&lt;/p>
+&lt;pre>&lt;code>AVR Memory Usage
+----------------
+Device: attiny85
+Program: 3146 bytes (38.4% Full)
+(.text + .data + .bootloader)
+Data: 29 bytes (5.7% Full)
+(.data + .bss + .noinit)
+&lt;/code>&lt;/pre>
+&lt;p>That&amp;rsquo;s a savings of just under 800 bytes, which on the one hand doesn&amp;rsquo;t seem like it a lot&amp;hellip;but on the other hand saves 10% of the available memory!&lt;/p>
+&lt;h2 id="debugging-caveat">Debugging caveat&lt;/h2>
+&lt;p>If you remove &lt;code>malloc()&lt;/code> from your code and then try to debug it with &lt;code>gdb&lt;/code>, you may find yourself staring at the following error:&lt;/p>
+&lt;pre>&lt;code>evaluation of this expression requires the program to have a function &amp;quot;malloc&amp;quot;.
+&lt;/code>&lt;/pre>
+&lt;p>This will happen if you ask &lt;code>gdb&lt;/code> to do something that requires allocating memory for e.g., a string buffer. The solution is to ensure that &lt;code>malloc()&lt;/code> is linked into your code when you build for debugging. I use something like the following:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#ifdef DEBUG
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">__attribute__&lt;/span>((&lt;span style="color:#a6e22e">optimize&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;O0&amp;#34;&lt;/span>)))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">_force_malloc&lt;/span>() {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">malloc&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>__attribute__((optimize(&amp;quot;O0&amp;quot;)))&lt;/code> directive disables all optimizations for this function, which should prevent gcc from optimizing out the reference to &lt;code>malloc()&lt;/code>.&lt;/p></content></item></channel></rss>

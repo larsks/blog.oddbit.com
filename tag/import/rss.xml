@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>import on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/import/</link><description>Recent content in import on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 06 Aug 2010 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/import/rss.xml" rel="self" type="application/rss+xml"/><item><title>Importing vCard contacts into an LG 420G</title><link>https://blog.oddbit.com/post/2010-08-06-importing-vcard-contacts-into-/</link><pubDate>Fri, 06 Aug 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-08-06-importing-vcard-contacts-into-/</guid><description>Alix recently acquired an LG 420G from TracFone. She was interested in getting all of her contacts onto the phone, which at first seemed like a simple task &amp;ndash; transfer a vCard (.vcf) file to the phone via Bluetooth, and the phone would import all the contacts. This turned out to be a great idea in theory, but in practice there was a fatal flaw &amp;ndash; while the phone did indeed import the contacts, it only imported names and the occasional note or email address.</description><content>&lt;p>Alix recently acquired an LG 420G from &lt;a href="http://www.tracfone.com/">TracFone&lt;/a>. She was interested in getting all of her contacts onto the phone, which at first seemed like a simple task &amp;ndash; transfer a vCard (.vcf) file to the phone via Bluetooth, and the phone would import all the contacts. This turned out to be a great idea in theory, but in practice there was a fatal flaw &amp;ndash; while the phone did indeed import the contacts, it only imported names and the occasional note or email address. There were no phone numbers.&lt;/p>
+&lt;p>Thus began the long investigation to find out exactly what the phone expected the contacts to look like.&lt;/p>
+&lt;h1 id="eol-format">EOL format&lt;/h1>
+&lt;p>The LG 420G needs DOS end-of-line (CRLF), otherwise it won&amp;rsquo;t recognize more than a single contact in your file. There are a number of ways to convert EOL style in a text document; I used the unix2dos tool.&lt;/p>
+&lt;h1 id="phone-number-labels">Phone number labels&lt;/h1>
+&lt;p>In our source vCard files, telephone numbers were typically listed with one qualifier, like this:&lt;/p>
+&lt;pre>&lt;code>TEL;WORK:555-555-5555
+TEL;HOME:555-555-5555
+TEL;CELL:555-555-5555
+&lt;/code>&lt;/pre>
+&lt;p>I created new contact entry on the phone and sent it back to my computer, and found that the telephone numbers were labelled with two qualifiers (and a character set identifier), like this:&lt;/p>
+&lt;pre>&lt;code>TEL;HOME;CELL;CHARSET=UTF-8:1111111111
+TEL;WORK;VOICE;CHARSET=UTF-8:2222222222
+TEL;HOME;VOICE;CHARSET=UTF-8:3333333333
+&lt;/code>&lt;/pre>
+&lt;p>So, the first thing we needed to do was to transform the phone number entries in our original list into the format expected by the 420G. I extracted a list of all the unique phone number labels, like this:&lt;/p>
+&lt;pre>&lt;code>grep TEL contacts.vcf | cut -f1 -d: | sort -u
+&lt;/code>&lt;/pre>
+&lt;p>Which resulted in this list:&lt;/p>
+&lt;pre>&lt;code>TEL;CELL
+TEL;HOME
+TEL;HOME;PREF
+TEL;PAGER
+TEL;PREF
+TEL;PREF;CELL
+TEL;PREF;FAX
+TEL;WORK
+TEL;WORK;PREF
+&lt;/code>&lt;/pre>
+&lt;p>I used this to generate the following sed script:&lt;/p>
+&lt;pre>&lt;code>s/TEL;HOME;PREF/TEL;HOME;VOICE/
+t
+s/TEL;HOME/TEL;HOME;VOICE/
+t
+s/TEL;CELL/TEL;HOME;CELL/
+t
+s/TEL;WORK;PREF/TEL;WORK;VOICE/
+t
+s/TEL;PREF;CELL/TEL;WORK;CELL/
+t
+s/TEL;PREF;FAX/TEL;WORK;FAX/
+t
+s/TEL;WORK/TEL;WORK;VOICE/
+t
+s/TEL;PREF/TEL;WORK;VOICE/
+t
+s/TEL;PAGER/TEL;WORK;PAGER/
+t
+&lt;/code>&lt;/pre>
+&lt;p>Running this over all the contacts gives us the following list of distinct labels:&lt;/p>
+&lt;pre>&lt;code>TEL;HOME;CELL
+TEL;HOME;VOICE
+TEL;WORK;CELL
+TEL;WORK;FAX
+TEL;WORK;PAGER
+TEL;WORK;VOICE
+&lt;/code>&lt;/pre>
+&lt;h1 id="no-dashes-in-phone-numbers-really-lg">No dashes in phone numbers (really, LG?)&lt;/h1>
+&lt;p>It turns out that the 420G does not accept anything other than digits in phone numbers. So, after processing the labels with the above sed script we fix up the data with the following awk script:&lt;/p>
+&lt;pre>&lt;code># Set input and output field separators to &amp;quot;:&amp;quot;.
+BEGIN {
+FS=&amp;quot;:&amp;quot;
+OFS=&amp;quot;:&amp;quot;
+}
+# Remove anything not a digit from the phone number.
+/TEL;/ {
+gsub(&amp;quot;[^0-9]&amp;quot;, &amp;quot;&amp;quot;, $2)
+}
+{
+print
+}
+&lt;/code>&lt;/pre>
+&lt;h1 id="and-were-off">And we&amp;rsquo;re off!&lt;/h1>
+&lt;p>With these transformations in place, the LG 420G was able to successfully import the contacts. I automated the whole process with the following Makefile:&lt;/p>
+&lt;pre>&lt;code>SED = gsed
+AWK = awk
+FILTERS = \
+fix-tel-labels.sed \
+remove-non-digits.awk
+all: all-contacts-filtered.vcf
+all-contacts-filtered.vcf: all-contacts-orig.vcf $(FILTERS)
+$(SED) -f fix-tel-labels.sed $&amp;lt; | \
+$(AWK) -f remove-non-digits.awk | \
+unix2dos &amp;gt; $@
+&lt;/code>&lt;/pre></content></item></channel></rss>

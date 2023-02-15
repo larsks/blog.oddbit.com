@@ -1,0 +1,82 @@
+<!doctype html><html lang=en><head><title>Sockets on OpenShift :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="In this article, a followup to my previous post regarding long-poll servers and Python, we investigate the code changes that were necessary to make the code work when deployed on OpenShift.
+In the previous post, we implemented IO polling to watch for client disconnects at the same time we were waiting for messages on a message bus:
+poll = zmq.Poller() poll.register(subsock, zmq.POLLIN) poll.register(rfile, zmq.POLLIN) events = dict(poll.poll()) . . . If you were to try this at home, you would find that everything worked as described&amp;hellip;but if you were to deploy the same code to OpenShift, you would find that the problem we were trying to solve (the server holding file descriptors open after a client disconnected) would still exist."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Sockets on OpenShift"><meta property="og:description" content="In this article, a followup to my previous post regarding long-poll servers and Python, we investigate the code changes that were necessary to make the code work when deployed on OpenShift.
+In the previous post, we implemented IO polling to watch for client disconnects at the same time we were waiting for messages on a message bus:
+poll = zmq.Poller() poll.register(subsock, zmq.POLLIN) poll.register(rfile, zmq.POLLIN) events = dict(poll.poll()) . . . If you were to try this at home, you would find that everything worked as described&amp;hellip;but if you were to deploy the same code to OpenShift, you would find that the problem we were trying to solve (the server holding file descriptors open after a client disconnected) would still exist."><meta property="og:url" content="https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-11-23 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/>Sockets on OpenShift</a></h1><div class=post-meta><time class=post-date>2013-11-23 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openshift/>openshift</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/javascript/>javascript</a>&nbsp;</span><div class=post-content><div><p>In this article, a followup to my <a href=https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/>previous post</a> regarding
+long-poll servers and Python, we investigate the code changes that
+were necessary to make the code work when deployed on OpenShift.</p><p>In the previous post, we implemented IO polling to watch for client
+disconnects at the same time we were waiting for messages on a message
+bus:</p><pre><code>poll = zmq.Poller()
+poll.register(subsock, zmq.POLLIN)
+poll.register(rfile, zmq.POLLIN)
+
+events = dict(poll.poll())
+
+.
+.
+.
+</code></pre><p>If you were to try this at home, you would find that everything worked
+as described&mldr;but if you were to deploy the same code to OpenShift,
+you would find that the problem we were trying to solve (the server
+holding file descriptors open after a client disconnected) would still
+exist.</p><p>So, what&rsquo;s going on here? I spent a chunk of time trying to figure
+this out myself. I finally found <a href=https://www.openshift.com/blogs/paas-websockets>this post</a> by
+Marak Jelen discussing issues with <a href=http://en.wikipedia.org/wiki/WebSocket>websockets</a> in OpenShift, which
+says, among other things:</p><blockquote><p>For OpenShift as a PaaS provider, WebSockets were a big challenge.
+The routing layer that sits between the user&rsquo;s browser and your
+application must be able to route and handle WebSockets. OpenShift
+uses Apache as a reverse proxy server and a main component to route
+requests throughout the platform. However, Apache&rsquo;s mod_proxy has
+been problematic with WebSockets, so OpenShift implemented a new
+Node.js based routing layer that provides scalability and the
+possibility to expand features provided to our users.</p></blockquote><p>In order to work around these problems, an alternate <a href=http://nodejs.org/>Node.js</a> based
+front-end has been deployed on port 8000. So if your application is
+normally available at <code>http://myapplication-myname.rhcloud.com</code>, you
+can also access it at <code>http://myapplication-myname.rhcloud.com:8000</code>.</p><p>Not unexpectedly, it seems that the same things that can cause
+difficulties with WebSockets connections can also interfere with the
+operation of a long-poll server. The root of the problem is that your
+service running on OpenShift never receives notifications of client
+disconnects. You can see this by opening up a connection to your
+service. Assuming that you&rsquo;ve deployed the <a href=https://github.com/larsks/pubsub_example/>pubsub example</a>, you
+can run something like this:</p><pre><code>$ curl http://myapplication-myname.rhcloud.com/sub
+</code></pre><p>Leave the connection open and <a href=https://www.openshift.com/developers/remote-access>log in to your OpenShift
+instance</a>. Run <code>netstat</code> to see the existing connection:</p><pre><code>$ netstat -tan |
+  grep $OPENSHIFT_PYTHON_IP |
+  grep $OPENSHIFT_PYTHON_PORT |
+  grep ESTABLISHED
+tcp        0      0 127.6.26.1:15368            127.6.26.1:8080             ESTABLISHED 
+tcp        0      0 127.6.26.1:8080             127.6.26.1:15368            ESTABLISHED 
+</code></pre><p>Now close your client, and re-run the <code>netstat</code> command on your
+OpenShift instance. You will find that the client connection from
+the front-end proxies to your server is still active. Because the
+server never receives any notification that the client has closed the
+connection, no amount of <code>select</code> or <code>poll</code> or anything else will
+solve this problem.</p><p>Now, try the same experiment using port 8000. That is, run:</p><pre><code>$ curl http://myapplication-myname.rhcloud.com:8000/sub
+</code></pre><p>Verify that when you close your client, the connection is long evident
+in your server. This means that we need to modify our JavaScript code
+to poll using port 8000, which is why in <a href=https://github.com/larsks/pubsub_example/blob/master/static/pubsub.js>pubsub.js</a> you will find
+the following:</p><pre><code>if (using_openshift) {
+        poll_url = location.protocol + &quot;//&quot; + location.hostname + &quot;:8000/sub&quot;;
+} else {
+        poll_url = &quot;/sub&quot;;
+}
+</code></pre><h2 id=but-wait-theres-more>But wait, there&rsquo;s more!<a href=#but-wait-theres-more class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If you were to deploy the above code with no other changes, you would
+find a mysterious problem: even though your JavaScript console would
+show that your code was successfully polling the server, your client
+would never update. This is because by introducing an alternate port
+number to the poll operation you are now running afoul of your
+brower&rsquo;s <a href=http://en.wikipedia.org/wiki/Same-origin_policy>same origin policy</a>, a security policy that restricts
+JavaScript in your browser from interacting with sites other than the
+one from which the script was loaded.</p><p>The <a href=http://en.wikipedia.org/wiki/Cross-origin_resource_sharing>CORS</a> standard introduces a mechanism to work around this
+restriction. An HTTP response can contain additional access control
+headers that instruct your browser to permit access to the resource from
+a select set of other origins. The header is called
+<code>Access-Control-Alliow-Origin</code>, and you will find it in the <a href=https://github.com/larsks/pubsub_example/>pubsub
+example</a> in <a href=https://github.com/larsks/pubsub_example/blob/master/pubsub.py>pubsub.py</a>:</p><pre><code>    if using_openshift:
+        bottle.response.headers['Access-Control-Allow-Origin'] = '*'
+</code></pre><p>With this header in place, your JavaScript can poll your
+OpenShift-hosted application on port 8000 and everything will work as
+expected&mldr;</p><p>&mldr;barring bugs in my code, which, if discovered, should be reported
+<a href=https://github.com/larsks/pubsub_example/issues>here</a>.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

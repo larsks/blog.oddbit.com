@@ -1,0 +1,150 @@
+<!doctype html><html lang=en><head><title>Writing Ansible filter plugins :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I often see questions from people who are attemping to perform complex text transformations in their Ansible playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone asked a question on Stack Overflow in which they were attempting to convert the output of the keytool command into a list of dictionaries. The output of the keytool -list -v command looks something like this:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Writing Ansible filter plugins"><meta property="og:description" content="I often see questions from people who are attemping to perform complex text transformations in their Ansible playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone asked a question on Stack Overflow in which they were attempting to convert the output of the keytool command into a list of dictionaries. The output of the keytool -list -v command looks something like this:"><meta property="og:url" content="https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2019-04-25 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/>Writing Ansible filter plugins</a></h1><div class=post-meta><time class=post-date>2019-04-25 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/python/>python</a>&nbsp;</span><div class=post-content><div><p>I often see questions from people who are attemping to perform complex text transformations in their <a href=https://www.ansible.com/>Ansible</a> playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone <a href=https://stackoverflow.com/questions/55853384/ansible-build-list-dictionary-with-from-list-of-strings/55854394>asked a question</a> on Stack Overflow in which they were attempting to convert the output of the <a href=https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html>keytool</a> command into a list of dictionaries. The output of the <code>keytool -list -v</code> command looks something like this:</p><pre tabindex=0><code>Keystore type: PKCS12
+Keystore provider: SUN
+
+Your keystore contains 2 entries
+
+Alias name: alias2
+Creation date: Apr 25, 2019
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Alice McHacker, OU=Unknown, O=Example Corp, L=Boston, ST=MA, C=US
+Issuer: CN=Alice McHacker, OU=Unknown, O=Example Corp, L=Boston, ST=MA, C=US
+Serial number: 5c017636
+Valid from: Thu Apr 25 23:22:37 EDT 2019 until: Wed Jul 24 23:22:37 EDT 2019
+Certificate fingerprints:
+	 SHA1: FB:AC:36:08:F6:3C:C0:CF:E1:D7:E6:7D:2F:31:BF:BE:5A:C8:7A:C6
+	 SHA256: 73:F1:EC:61:6B:63:93:F5:BE:78:23:A1:79:14:7D:F0:A3:9A:D8:22:99:6B:38:0F:D6:38:AA:93:B5:58:8E:E0
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions: 
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 17 D4 A3 54 E4 0C DB CC   00 3E 1C 4D 74 B4 DE 55  ...T.....&gt;.Mt..U
+0010: D6 C9 CB 21                                        ...!
+]
+]
+
+
+
+*******************************************
+*******************************************
+
+
+Alias name: alias1
+Creation date: Apr 25, 2019
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Mallory Root, OU=Unknown, O=Example Corp, L=New York, ST=NY, C=US
+Issuer: CN=Mallory Root, OU=Unknown, O=Example Corp, L=New York, ST=NY, C=US
+Serial number: 2617e8fb
+Valid from: Thu Apr 25 23:22:59 EDT 2019 until: Wed Jul 24 23:22:59 EDT 2019
+Certificate fingerprints:
+	 SHA1: DD:83:42:F3:AD:EB:DC:66:50:DA:7D:D7:59:32:9B:31:0C:E0:90:B9
+	 SHA256: D9:3E:42:47:A1:DB:2F:00:46:F7:58:54:30:D1:83:F5:DD:C6:5D:8B:8B:6B:94:4A:34:B0:0D:D8:6F:7A:6E:B6
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions: 
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 98 53 CF EF 77 36 02 4D   63 83 D7 4F 06 EF 09 CA  .S..w6.Mc..O....
+0010: 41 92 6D 92                                        A.m.
+]
+]
+
+
+
+*******************************************
+*******************************************
+</code></pre><p>That&rsquo;s a mess. We&rsquo;d like to extract specific information about the keys in the keystore; specifically:</p><ul><li>The owner</li><li>The issuer</li><li>The creation date</li><li>The valid from/valid until dates</li></ul><p>There are a few ways of approaching this problem (for example, one could have your playbook call out to <code>awk</code> to parse the <code>keytool</code> output and generate JSON data for Ansible to consume), but a more robust, flexible, and often simpler way of dealing with something like this is to write a custom filter plugin in Python.</p><h2 id=what-is-a-filter-plugin>What is a filter plugin?<a href=#what-is-a-filter-plugin class=hanchor arialabel=Anchor>&#8983;</a></h2><p>A filter plugin defines one or more Python functions that can be used in Jinja2 templating expressions (using the <code>|</code> filter operator). A filter function receives one mandatory argument (the value to the left of the <code>|</code>) and zero or more additional positional and/or keyword arguments, performs some transformation on the input data, and returns the result.</p><p>For example, there is a <code>unique</code> filter, which takes a list and returns a new list consisting of only unique values. If we had a list of names and wanted to eliminiate duplicates, we might use something like this:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#f92672>set_fact</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>unique_names</span>: <span style=color:#e6db74>&#34;{{ [&#39;alice&#39;, &#39;bob&#39;, &#39;alice&#39;, &#39;mallory&#39;, &#39;bob&#39;, &#39;mallory&#39;]|unique }}&#34;</span> 
+</span></span></code></pre></div><p>That would set <code>unique_names</code> to the list <code>['alice', 'bob', 'mallory']</code>.</p><h2 id=how-do-you-write-a-filter-plugin>How do you write a filter plugin?<a href=#how-do-you-write-a-filter-plugin class=hanchor arialabel=Anchor>&#8983;</a></h2><p>A filter plugin doesn&rsquo;t require much. You&rsquo;ll need to create a Python module that defines a <code>FilterModule</code> class, and that class must have a method named <code>filters</code> that will return a dictionary that maps filter names to callables implementing the filter. For example, if we want a filter named <code>upper</code> that would transform a string to upper-case, we could write:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>FilterModule</span>(object):
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filters</span>(self):
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>return</span> {<span style=color:#e6db74>&#39;upper&#39;</span>: <span style=color:#66d9ef>lambda</span> x: x<span style=color:#f92672>.</span>upper()}
+</span></span></code></pre></div><p>If we wanted implement a version of the <code>unique</code> filter, it might look like this:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filter_unique</span>(things):
+</span></span><span style=display:flex><span>  seen <span style=color:#f92672>=</span> set()
+</span></span><span style=display:flex><span>  unique_things <span style=color:#f92672>=</span> []
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>for</span> thing <span style=color:#f92672>in</span> things:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> thing <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> seen:
+</span></span><span style=display:flex><span>      seen<span style=color:#f92672>.</span>add(thing)
+</span></span><span style=display:flex><span>      unique_things<span style=color:#f92672>.</span>append(thing)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>return</span> unique_things
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>FilterModule</span>(object):
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filters</span>(self):
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>return</span> {<span style=color:#e6db74>&#39;unique&#39;</span>: filter_unique}
+</span></span></code></pre></div><p>We need to put the new module in a directory named <code>filter_plugins</code> that is adjacent to our playbook. If we were to place the <code>upper</code> filter module in, say, <code>filter_plugins/upper.py</code>, we could then add a task like this to our playbook:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#f92672>debug</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>msg</span>: <span style=color:#e6db74>&#34;{{ &#39;this is a test&#39;|upper }}&#34;</span>
+</span></span></code></pre></div><p>And get this output:</p><pre tabindex=0><code>TASK [debug] **********************************************************************************
+ok: [localhost] =&gt; {
+    &#34;msg&#34;: &#34;THIS IS A TEST&#34;
+}
+</code></pre><h2 id=parsing-keytool-output>Parsing keytool output<a href=#parsing-keytool-output class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Our <code>keytool</code> filter is only a little bit more complicated:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#75715e>#!/usr/bin/python</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filter_keys_to_list</span>(v):
+</span></span><span style=display:flex><span>    key_list <span style=color:#f92672>=</span> []
+</span></span><span style=display:flex><span>    key <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>    found_start <span style=color:#f92672>=</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e># iterate over lines of output from keytool</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> line <span style=color:#f92672>in</span> v<span style=color:#f92672>.</span>splitlines():
+</span></span><span style=display:flex><span>        <span style=color:#75715e># Discard any lines that don&#39;t look like &#34;key: value&#34; lines</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#e6db74>&#39;: &#39;</span> <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> line:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>continue</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># Look for &#34;Alias name&#34; at the beginning of a line to identify</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># the start of a new key.</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> line<span style=color:#f92672>.</span>startswith(<span style=color:#e6db74>&#39;Alias name&#39;</span>):
+</span></span><span style=display:flex><span>            found_start <span style=color:#f92672>=</span> <span style=color:#66d9ef>True</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e># If we have already collected data on a key, append that to</span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e># the list of keys.</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> key:
+</span></span><span style=display:flex><span>                key_list<span style=color:#f92672>.</span>append(key)
+</span></span><span style=display:flex><span>                key <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># Read the next line if we haven&#39;t found the start of a key</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># yet.</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> found_start:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>continue</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># Split fields and values into dictionary items.</span>
+</span></span><span style=display:flex><span>        field, value <span style=color:#f92672>=</span> line<span style=color:#f92672>.</span>split(<span style=color:#e6db74>&#39;: &#39;</span>, <span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> field <span style=color:#f92672>in</span> [<span style=color:#e6db74>&#39;Alias name&#39;</span>, <span style=color:#e6db74>&#39;Owner&#39;</span>, <span style=color:#e6db74>&#39;Issuer&#39;</span>, <span style=color:#e6db74>&#39;Creation date&#39;</span>]:
+</span></span><span style=display:flex><span>            key[field] <span style=color:#f92672>=</span> value
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>elif</span> field <span style=color:#f92672>==</span> <span style=color:#e6db74>&#39;Valid from&#39;</span>:
+</span></span><span style=display:flex><span>            key[<span style=color:#e6db74>&#39;Valid from&#39;</span>], key[<span style=color:#e6db74>&#39;Valid until&#39;</span>] <span style=color:#f92672>=</span> value<span style=color:#f92672>.</span>split(<span style=color:#e6db74>&#39; until: &#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e># Append the final key.</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> key:
+</span></span><span style=display:flex><span>        key_list<span style=color:#f92672>.</span>append(key)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> key_list
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>FilterModule</span>(object):
+</span></span><span style=display:flex><span>    filter_map <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#39;keys_to_list&#39;</span>: filter_keys_to_list,
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>filters</span>(self):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>filter_map
+</span></span></code></pre></div><p>The logic here is fairly simple:</p><ul><li>Iterate over the lines in the output from <code>keytool</code>.</li><li>Look for &ldquo;Alias name&rdquo; at the beginning of a line to identify
+the start of key data.</li><li>Split lines on <code>:</code> into field names and values.</li><li>Assemble a dictionary from selected fields.</li><li>Append the dictionary to a list and repeat.</li></ul><p>Using it makes for a clear and simple playbook:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#f92672>set_fact</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>key_list</span>: <span style=color:#e6db74>&#34;{{ keytool.stdout|keys_to_list }}&#34;</span>
+</span></span></code></pre></div><h2 id=more-information>More information<a href=#more-information class=hanchor arialabel=Anchor>&#8983;</a></h2><ul><li><a href=https://github.com/larsks/blog-2019-04-25-filter-plugins>Playbook and filter plugin referenced in this article</a></li><li><a href=https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html>Ansible &ldquo;Filters&rdquo; documentation</a></li><li><a href=https://github.com/ansible/ansible/tree/devel/lib/ansible/plugins/filter>Existing filter plugins in Ansible</a></li></ul></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

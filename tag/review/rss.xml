@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>review on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/review/</link><description>Recent content in review on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 07 Jun 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/review/rss.xml" rel="self" type="application/rss+xml"/><item><title>Grove Beginner Kit for Arduino (part 2): First look</title><link>https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/</link><pubDate>Sun, 07 Jun 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/</guid><description>The folks at Seeed Studio were kind enough to send me a Grove Beginner Kit for Arduino for review. That&amp;rsquo;s a mouthful of a name for a compact little kit!
+The Grove Beginner Kit for Arduino (henceforth &amp;ldquo;the Kit&amp;rdquo;, because ain&amp;rsquo;t nobody got time to type that out more than a few times in a single article) is about 8.5 x 5 x 1 inches. Closed, you could fit two of them on a piece of 8.</description><content>&lt;p>The folks at &lt;a href="https://seeedstudio.com">Seeed Studio&lt;/a> were kind enough to send me a &lt;a href="https://www.seeedstudio.com/Grove-Beginner-Kit-for-Arduino-p-4549.html">Grove
+Beginner Kit for Arduino&lt;/a> for review. That&amp;rsquo;s a mouthful of a name
+for a compact little kit!&lt;/p>
+&lt;p>The Grove Beginner Kit for Arduino (henceforth &amp;ldquo;the Kit&amp;rdquo;, because ain&amp;rsquo;t
+nobody got time to type that out more than a few times in a single
+article) is about 8.5 x 5 x 1 inches. Closed, you could fit two of
+them on a piece of 8.5x11 paper with a little room leftover.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-closed.jpg" />
+&lt;/figure>
+&lt;p>Opening the top of the box, we see the board itself. The kit is targeted
+straight at the STEM market, and as we&amp;rsquo;ll in the following paragraphs there are
+a number of features that make it particularly appropriate for this niche.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-open.jpg" />
+&lt;/figure>
+&lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
+the &lt;a href="#sensors">Sensors&lt;/a> and &lt;a href="#inputoutput">Input/Output&lt;/a> sections,
+below, for an overview). To make it easy to get started, everything
+you see is pre-wired (via traces on the PCB) to the microcontroller.
+That means you don&amp;rsquo;t need soldering or connection cables to use
+anything on the board.&lt;/p>
+&lt;p>Every sensor also has a &lt;a href="https://wiki.seeedstudio.com/Grove_System/">Grove&lt;/a> connector on it, and the main board
+&amp;ndash; in addition to Arduino-compatible headers &amp;ndash; has 12 Grove
+connectors. The individual sensor boards are designed so that you can
+cut them off the PCB and use them on their own. If you open the
+left-hand side of the kit, you&amp;rsquo;ll find a collection of six Grove
+connection cables if you choose to go this route.&lt;/p>
+&lt;p>Using the Grove connectors makes it very easy to add additional
+sensors to your projects (it looks like there are about &lt;a href="https://www.seeedstudio.com/category/Sensor-for-Grove-c-24.html.">150 sensor
+modules available&lt;/a> in the Seeed Studio store).&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-lh.jpg" />
+&lt;/figure>
+&lt;p>The right-hand side of the case contains a micro USB cable for power
+and for connecting the kit to your computer for programming using the
+Arduino IDE.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-rh.jpg" />
+&lt;/figure>
+&lt;!-- raw HTML omitted -->
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="sensors">Sensors&lt;/h2>
+&lt;p>The Kit ships with a variety of sensors. In addition to simple light
+and sound sensors, the kit also has:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>DHT11 Temperature and Humidity Sensor&lt;/p>
+&lt;p>The &lt;a href="DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
+DHT11 can measure temperature from 0-50 °C with an accuracy of ±2 °C,
+and humidity from 20-80% with an accuracy of ±5% (the DHT22, in
+comparison, has a slightly wider ranger for both temperature and
+humidity, and substantially better accuracy).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>BMP280 Air Pressure Sensor&lt;/p>
+&lt;p>The &lt;a href="Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
+above sea level, with a relative accuracy of ±1 m (that&amp;rsquo;s 300-1100 hPa
+with a relative accuracy of ±0.12 hPa). &amp;ldquo;Relative
+accuracy&amp;rdquo; means that it&amp;rsquo;s good at detecting pressure &lt;em>changes&lt;/em>, but
+it&amp;rsquo;s less accurate if your goal is to read the absolute air pressure
+(the accuracy in that case is ±1 hPa, or roughly ±8 m).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>LIS3DHTR 3-Axis Accelerometer&lt;/p>
+&lt;p>The &lt;a href="LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
+is capable of measuring accelerations with output data rates from 1
+Hz to 5.3 kHz.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="inputoutput">Input/Output&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>OLED Display&lt;/p>
+&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
+the SSD1315 chip. You can see this display in action &lt;a href="#video">at the bottom
+of this post&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>LED&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Buzzer&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Button&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Potentiometer&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="lcd-demo">LCD Demo&lt;/h2>
+&lt;p>In the next couple of weeks I hope to do something more interesting
+with this board, but as a first step I thought it would be fun to
+scroll something across the LCD screen. I slapped the following code
+together after reading the &lt;a href="https://github.com/olikraus/u8g2/wiki/u8g2reference">u8g2 docs&lt;/a> for a couple of minutes, so I
+can guarantee that it&amp;rsquo;s not optimal, but it&amp;rsquo;s a start:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;Arduino.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;U8g2lib.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#ifdef U8X8_HAVE_HW_SPI
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;SPI.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#ifdef U8X8_HAVE_HW_I2C
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;Wire.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>U8G2_SSD1306_128X64_NONAME_F_SW_I2C &lt;span style="color:#a6e22e">u8g2&lt;/span>(U8G2_R2, &lt;span style="color:#75715e">/* clock=*/&lt;/span> SCL, &lt;span style="color:#75715e">/* data=*/&lt;/span> SDA, &lt;span style="color:#75715e">/* reset=*/&lt;/span> U8X8_PIN_NONE);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">char&lt;/span> &lt;span style="color:#f92672">*&lt;/span>text &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;blog.oddbit.com&amp;#34;&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">setup&lt;/span>(&lt;span style="color:#66d9ef">void&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">setBusClock&lt;/span>(&lt;span style="color:#ae81ff">4000000&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">begin&lt;/span>();
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">setFontMode&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">loop&lt;/span>(&lt;span style="color:#66d9ef">void&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">u8g2_uint_t&lt;/span> x;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">firstPage&lt;/span>();
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">do&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">setFont&lt;/span>(u8g2_font_luBIS18_tf);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">drawStr&lt;/span>(x, &lt;span style="color:#ae81ff">40&lt;/span>, text);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> x &lt;span style="color:#f92672">-=&lt;/span> &lt;span style="color:#ae81ff">10&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> } &lt;span style="color:#66d9ef">while&lt;/span> (u8g2.&lt;span style="color:#a6e22e">nextPage&lt;/span>());
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;!-- raw HTML omitted --></content></item><item><title>Fring: How not to handle registration</title><link>https://blog.oddbit.com/post/2010-01-24-fring-how-not-to-handle-regist/</link><pubDate>Sun, 24 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-24-fring-how-not-to-handle-regist/</guid><description>I thought I&amp;rsquo;d give Fring a try after seeing some favorable reviews on other sites. If you haven&amp;rsquo;t previously heard of Fring, the following blurb from their website might be helpful:
+Using your handset&amp;rsquo;s internet connection, you can interact with friends on all your favourite social networks including Skype, MSN Messenger, Google Talk, ICQ, SIP, Twitter, Yahoo! and AIM. You can listen to music with your Last.fm friends, check out what each other are up to on Facebook, receive alerts of new Google Mail and tailor make your very own fring by adding more cool experiences from fringAdd-ons</description><content>&lt;p>I thought I&amp;rsquo;d give Fring a try after seeing some favorable reviews on other sites. If you haven&amp;rsquo;t previously heard of Fring, the following blurb from their website might be helpful:&lt;/p>
+&lt;blockquote>
+&lt;p>Using your handset&amp;rsquo;s internet connection, you can interact with friends on all your favourite social networks including Skype, MSN Messenger, Google Talk, ICQ, SIP, Twitter, Yahoo! and AIM. You can listen to music with your Last.fm friends, check out what each other are up to on Facebook, receive alerts of new Google Mail and tailor make your very own fring by adding more cool experiences from fringAdd-ons&lt;/p>
+&lt;/blockquote>
+&lt;p>Sounds great, right? To use any of these services, you need a Fring account. When you first launch the Fring application on your Android phone, it will prompt you to either provide your existing credentials or set up a new account.&lt;/p>
+&lt;p>I haven&amp;rsquo;t previously used Fring so I needed to set up a new acount. I selected a username, alias, and password, provided my email, and then clicked on &amp;ldquo;Register&amp;rdquo;, and Fring said:&lt;/p>
+&lt;blockquote>
+&lt;p>Password contains invalid characters.&lt;/p>
+&lt;/blockquote>
+&lt;p>What, that&amp;rsquo;s it? How about a few hints? Or better yet, how about you tell me what your stupid password requirements are before you complain about them? Seriously, guys, have you hired monkeys to handle your authentication mechanisms? Or have you simply decided to ignore decades of best practices concerning password selection? I have some suggestions for you:&lt;/p>
+&lt;ul>
+&lt;li>If you have password character class limitations, state them up front.&lt;/li>
+&lt;li>Don&amp;rsquo;t have character class limitations. Let me type whatever the heck I want.&lt;/li>
+&lt;li>Don&amp;rsquo;t set weird arbitrary limits on maximum password lengths. Storage is not that expensive.&lt;/li>
+&lt;li>Adjust complexity requirements with the length of my password. A 20 character password is secure even if it only contains letters.&lt;/li>
+&lt;/ul>
+&lt;p>Fring is the current winner of the &amp;ldquo;shortest lifetime on my phone&amp;rdquo; award, and because it was so bad it doesn&amp;rsquo;t even get a QR code. Bad app. Not for you.&lt;/p>
+&lt;p>&lt;strong>Edit&lt;/strong>: Removed punctuation from my password. Now Fring tells me, &amp;ldquo;Password too long.&amp;rdquo; Ha!&lt;/p></content></item></channel></rss>

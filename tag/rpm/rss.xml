@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>rpm on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/rpm/</link><description>Recent content in rpm on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 26 Jul 2011 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/rpm/rss.xml" rel="self" type="application/rss+xml"/><item><title>Fixing RPM with evil magic</title><link>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</link><pubDate>Tue, 26 Jul 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</guid><description>Fixing rpmsign with evil magic At my office we are developing a deployment mechanism for RPM packages. The general workflow looks like this:
+You build a source rpm on your own machine. You sign the rpm with your GPG key. You submit the source RPM to our buildserver. The buildserver validates your signature and then builds the package. The buildserver signs the package using a master signing key. The last step in that sequence represents a problem, because the rpmsign command will always, always prompt for a password and read the response from /dev/tty.</description><content>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
+&lt;p>At my office we are developing a deployment mechanism for RPM packages. The
+general workflow looks like this:&lt;/p>
+&lt;ul>
+&lt;li>You build a source rpm on your own machine.&lt;/li>
+&lt;li>You sign the rpm with your GPG key.&lt;/li>
+&lt;li>You submit the source RPM to our buildserver.&lt;/li>
+&lt;li>The buildserver validates your signature and then builds the package.&lt;/li>
+&lt;li>The buildserver signs the package using a master signing key.&lt;/li>
+&lt;/ul>
+&lt;p>The last step in that sequence represents a problem, because the &lt;code>rpmsign&lt;/code>
+command will always, always prompt for a password and read the response from
+&lt;code>/dev/tty&lt;/code>. This means that (a) you can&amp;rsquo;t easily provide the password on stdin,
+and (b) you can&amp;rsquo;t fix the problem using a passwordless key.&lt;/p>
+&lt;p>Other people have &lt;a href="http://jrmonk-techzine.blogspot.com/2010/06/how-to-sign-rpm-files-in-batch-mode.html">solved this problem using expect&lt;/a>, but I&amp;rsquo;ve opted for
+another solution which in some ways seems cleaner and in others seems like a
+terrible idea: function interposition using &lt;code>LD_PRELOAD&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>rpmsign&lt;/code> command prompts for (and reads) a password using the &lt;code>getpass()&lt;/code>
+function call. If you look at the &lt;code>getpass(3)&lt;/code> man page, you&amp;rsquo;ll see that the
+function is defined like this:&lt;/p>
+&lt;pre>&lt;code>#include &amp;lt;unistd.h&amp;gt;
+char *getpass( const char *prompt);
+&lt;/code>&lt;/pre>
+&lt;p>So we start with the following short block of C code:&lt;/p>
+&lt;pre>&lt;code>#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+char *getpass( const char *prompt) {
+printf(&amp;quot;I ATE YOUR PASSPHRASE.n&amp;quot;);
+return &amp;quot;&amp;quot;;
+}
+&lt;/code>&lt;/pre>
+&lt;p>This &amp;ndash; when properly loaded &amp;ndash; will replace the standard C library &lt;code>getpass()&lt;/code> function with our own version, which simply returns an empty string. This of course means we&amp;rsquo;ll be using a passwordless key, but you could obviously have our replacement function return an actual password instead of an empty string. I would argue that by doing so you would not substantially increase the security of your solution.&lt;/p>
+&lt;p>Next we create a shared library:&lt;/p>
+&lt;pre>&lt;code>$ cc -fPIC -g -c -o getpass.o getpass.c
+$ ld -shared -o getpass.so getpass.o
+&lt;/code>&lt;/pre>
+&lt;p>And now we perform our magic:&lt;/p>
+&lt;pre>&lt;code>$ LD_PRELOAD=$(pwd)/getpass.so rpmsign --addsign some.src.rpm
+I ATE YOUR PASSPHRASE.
+Pass phrase is good.
+&lt;/code>&lt;/pre>
+&lt;p>And &lt;em>voila&lt;/em>! A solution for operating &lt;code>rpmsign&lt;/code> in batch mode.&lt;/p></content></item></channel></rss>

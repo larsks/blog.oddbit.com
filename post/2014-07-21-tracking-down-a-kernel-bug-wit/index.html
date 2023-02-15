@@ -1,0 +1,382 @@
+<!doctype html><html lang=en><head><title>Tracking down a kernel bug with git bisect :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
+$ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
+Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Tracking down a kernel bug with git bisect"><meta property="og:description" content="After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
+$ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
+Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3."><meta property="og:url" content="https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-07-21 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/>Tracking down a kernel bug with git bisect</a></h1><div class=post-meta><time class=post-date>2014-07-21 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kernel/>kernel</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/git/>git</a>&nbsp;</span><div class=post-content><div><p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+started running into a problem (<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345</a>) with my <a href=https://www.docker.com/>Docker</a>
+containers. Operations such as <code>su</code> or <code>runuser</code> would fail with the
+singularly unhelpful <code>System error</code> message:</p><pre><code>$ docker run -ti fedora /bin/bash
+bash-4.2# su -c 'uptime'
+su: System error
+</code></pre><p>Hooking up something (like, say, <code>socat unix-listen:/dev/log -</code>) to
+<code>/dev/log</code> revealed that the system was logging:</p><pre><code>Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted
+</code></pre><p>Downgrading the kernel to 3.14 immediately resolved the problem,
+suggesting that this was at least partly a kernel issue. This seemed
+like a great opportunity to play with the <a href=http://git-scm.com/docs/git-bisect>git bisect</a> command,
+which uses a binary search to find which commit introduced a
+particular problem.</p><p>Unfortunately, between the version I knew to work correctly (3.14) and
+the version I knew to have a problem (3.15) there were close to 15,000
+commits, which seemed like a large space to search by hand.</p><p>Fortunately, <code>git bisect</code> can be easily automated via <code>git bisect run</code>
+subcommand, which after checking out a commit will run a script to
+determine if the current commit is &ldquo;good&rdquo; or &ldquo;bad&rdquo;. So all I have to
+do is write a script&mldr;that&rsquo;s not so bad!</p><figure class=left><img src=ha-ha.jpg></figure><p>It actually ended up being somewhat tricky.</p><h2 id=testing-kernels-is-hard>Testing kernels is hard<a href=#testing-kernels-is-hard class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In order to test for this problem, I would need to use arbitrary
+kernels generated during the <code>git bisect</code> operation to boot a system
+functional enough to run docker, and then run docker and somehow
+communicate the result of that test back to the build environment.</p><p>I started with the <a href=http://fedoraproject.org/get-fedora#clouds>Fedora 20 cloud image</a>, which is nice and
+small but still the same platform as my laptop on which I was
+experiencing the problem. I would need to correct a few things before
+moving forward:</p><p>The Fedora cloud images (a) do not support password authentication and
+(b) expect a datasource to be available to <a href=http://cloudinit.readthedocs.org/en/latest/>cloud-init</a> (without
+which you get errors on the console and potentially a delay waiting
+for the <code>login:</code> prompt), so prior to using the image in this test I
+made some changes by mounting it locally:</p><pre><code># modprobe nbd max_part=8
+# qemu-nbd -c /dev/nbd0 Fedora-x86_64-20-20140407-sda.qcow2
+# mount /dev/nbd0p1 /mnt
+# systemd-nspawn -D /mnt
+</code></pre><p>And then:</p><ul><li>I set a password for the <code>root</code> account and</li><li>I removed the <code>cloud-init</code> package.</li></ul><p>For this test I would be using the <code>qemu-system-x86_64</code> command
+directly, rather than working through <code>libvirt</code> (<code>qemu</code> has options
+for convenient debugging with <code>gdb</code>, and is also able to access the
+filesystem as the calling <code>uid</code> whereas <code>libvirt</code> is typically running
+as another user).</p><p>I would need to perform an initial <code>docker pull</code> in the image, which
+meant I was going to need a functioning network, so first I had to set
+up a network environment for qemu.</p><h3 id=network-configuration>Network configuration<a href=#network-configuration class=hanchor arialabel=Anchor>&#8983;</a></h3><p>I created a bridge interface named <code>qemu0</code> to be used by <code>qemu</code>. I added
+to <code>/etc/sysconfig/network-scripts/ifcfg-qemu0</code> the following:</p><pre><code>DEVICE=qemu0
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+STP=no
+NAME=&quot;Bridge qemu0&quot;
+IPADDR=192.168.210.1
+NETMASK=255.255.255.0
+</code></pre><p>This is largely equivalent to the following, but persists after reboot:</p><pre><code>brctl addbr qemu0
+ip addr add 192.168.210.1/24 dev qemu0
+ip link set qemu0 up
+</code></pre><p>I created a <a href=https://www.kernel.org/doc/Documentation/networking/tuntap.txt>tap</a> interface named <code>linux0</code>:</p><pre><code>ip tuntap add dev linux0 mode tap user lars
+</code></pre><p>And added it to the bridge:</p><pre><code>brctl addif qemu0 linux0
+</code></pre><p>I also started up <code>dnsmasq</code> process listening on <code>qemu0</code> to provide
+DNS lookup and DHCP service to qemu instances attached to this bridge.
+The <code>dnsmasq</code> configuration looked like this:</p><pre><code>listen-address=192.168.210.1
+bind-interfaces
+dhcp-range=192.168.210.10,192.168.210.254
+</code></pre><h3 id=running-qemu>Running qemu<a href=#running-qemu class=hanchor arialabel=Anchor>&#8983;</a></h3><p>With the network environment set up, I needed to figure out an
+appropriate qemu command line. This is what I finally ended up with,
+in a script called <code>boot-kernel</code>:</p><pre><code>#!/bin/sh
+
+qemu-system-x86_64 -m 1024M \
+  -drive file=fedora.img,if=virtio \
+  -append &quot;console=hvc0 root=/dev/vda1 selinux=0 $BOOT_ARGS&quot; \
+  -initrd initrd.img \
+  -kernel arch/x86_64/boot/bzImage \
+  -machine accel=kvm \
+  -netdev tap,id=net0,ifname=linux0,script=no,downscript=no \
+  -device virtio-net,netdev=net0,mac=52:54:00:c0:ff:ee \
+  -chardev stdio,id=stdio,mux=on \
+  -device virtio-serial-pci \
+  -device virtconsole,chardev=stdio \
+  -mon chardev=stdio \
+  -fsdev local,id=fs0,path=$PWD,security_model=none \
+  -device virtio-9p-pci,fsdev=fs0,mount_tag=kernel_src \
+  -display none \
+  $QEMU_ARGS
+</code></pre><p>These lines set up the networking:</p><pre><code>  -netdev tap,id=net0,ifname=linux0,script=no,downscript=no \
+  -device virtio-net,netdev=net0,mac=52:54:00:c0:ff:ee \
+</code></pre><p>These lines set up console on <code>stdin</code>/<code>stdout</code> and multiplex the
+console with the qemu monitor:</p><pre><code>  -chardev stdio,id=stdio,mux=on \
+  -device virtio-serial-pci \
+  -device virtconsole,chardev=stdio \
+  -mon chardev=stdio \
+</code></pre><p>These lines set up access to the current working directory as a <code>9p</code>
+filesystem:</p><pre><code>  -fsdev local,id=fs0,path=$PWD,security_model=none \
+  -device virtio-9p-pci,fsdev=fs0,mount_tag=kernel_src \
+</code></pre><p>Within the qemu instance, this lets me access my working directory with:</p><pre><code>mount -t 9p kernel_src /mnt
+</code></pre><p>The <code>$BOOT_ARGS</code> and <code>$QEMU_ARGS</code> in the script allow me to modify the
+behavior of the script by setting environment variables when calling
+it, like this:</p><pre><code>QEMU_ARGS=&quot;-s&quot; sh boot-kernel
+</code></pre><h3 id=first-boot>First boot<a href=#first-boot class=hanchor arialabel=Anchor>&#8983;</a></h3><p>I tried to boot the image using my existing kernel and initrd from
+<code>/boot</code>, and ran into a problem:</p><pre><code>[  184.060756] dracut-initqueue[218]: Warning: Could not boot.
+[  184.062855] dracut-initqueue[218]: Warning: /dev/ssd/root does not exist
+         Starting Dracut Emergency Shell...
+Warning: /dev/ssd/root does not exist
+
+Generating &quot;/run/initramfs/rdsosreport.txt&quot;
+
+Entering emergency mode. Exit the shell to continue.
+</code></pre><p>The what now? <code>/dev/ssd/root</code> is the root device for my host system,
+but wasn&rsquo;t anywhere in the kernel command line I used when booting
+qemu. It turns out that this was embedded in the initrd image in
+<code>/etc/cmdline.d/90lvm.conf</code>. After removing that file from the
+image&mldr;</p><pre><code># mkdir initrd
+# cd initrd
+# zcat /boot/initramfs-3.15.6-200.fc20.x86_64.img | cpio -id
+# rm -rf etc/cmdline.d
+# find . -print | cpio -o -Hcrc | gzip &gt; ../initrd.img
+</code></pre><p>&mldr;I was able to boot successfully and log in.</p><h3 id=i-bet-you-thought-we-were-done>I bet you thought we were done!<a href=#i-bet-you-thought-we-were-done class=hanchor arialabel=Anchor>&#8983;</a></h3><p>Modern systems are heavily modular. Without access to a module tree
+matching the kernel, I would be unable to successfully boot the
+system, let alone use Docker. Looking at which modules were loaded
+when I ran <code>docker</code> with the above image, I set up a custom kernel
+configuration that would permit me to boot and run docker without
+requiring any loadable modules. This would allow me to use the same
+image for each kernel without needing to re-populate it with modules
+each time I built a kernel.</p><p>The kernel configuration I ended up with is available <a href=/assets/2014/07/21/kernel-config.txt>here</a>.</p><h3 id=testing-docker>Testing docker<a href=#testing-docker class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The last step in this process is putting together something that tests
+<code>docker</code> and exposes the result of that test to the build environment.
+I added the following script to the image as <code>/root/docker-test</code>:</p><pre><code>#!/bin/sh
+
+grep NO_DOCKER_TEST /proc/cmdline &amp;&amp; exit 0
+
+if [ -d /mnt/test_result ]; then
+docker run --rm -i fedora sh -c 'su -c true &amp;&amp; echo OKAY || echo FAILED' \
+  &gt; /mnt/test_result/stdout \
+  2&gt; /mnt/test_result/stderr
+poweroff
+fi
+</code></pre><p>This relies on the following entry in <code>/etc/fstab</code>:</p><pre><code>kernel_src /mnt 9p defaults 0 0
+</code></pre><p>That mounts the build directory as a <code>9p</code> filesystem on <code>/mnt</code>. This
+allows us to write out test results to, e.g.,
+<code>/mnt/test_result/stdout</code> and have that appear in the <code>test_result</code>
+directory inside the kernel source.</p><p>This script is run at the end of the boot process via an entry in
+<code>/etc/rc.d/rc.local</code>:</p><pre><code>#!/bin/sh
+
+sh /root/docker-test
+</code></pre><p>Running the <code>boot-kernel</code> script without additional configuration will
+cause the image to boot up, run the docker test, and then exit.</p><h2 id=running-git-bisect>Running git-bisect<a href=#running-git-bisect class=hanchor arialabel=Anchor>&#8983;</a></h2><p>At this point we have just about everything we need to start running
+<code>git bisect</code>. For the initial run, I&rsquo;m going to use git tag <code>v3.14</code>
+as the &ldquo;known good&rdquo; commit and <code>v3.15</code> as the &ldquo;known bad&rdquo; commit, so
+we start <code>git bisect</code> like this:</p><pre><code>$ git bisect start v3.15 v3.14
+</code></pre><p>Then we run <code>git bisect run sh bisect-test</code>, where <code>bisect-test</code> is
+the following shell script:</p><pre><code>#!/bin/sh
+
+# Rebuild the kernel
+make olddefconfig
+make -j8
+
+# Clear out old test results and run the test
+rm -f test_result/{stdout,stderr}
+sh boot-kernel
+
+# Report results to git-bisect
+if grep OKAY test_result/stdout; then
+  exit 0
+else
+  exit 1
+fi
+</code></pre><p>&mldr;and then we go out for a cup of coffee or something, because that&rsquo;s
+going to take a while.</p><h2 id=keep-digging-watson>Keep digging, Watson<a href=#keep-digging-watson class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The initial run of <code>git bisect</code> narrowed the change down to the
+<a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=b7d3622">following commit</a>:</p><pre><code>commit b7d3622a39fde7658170b7f3cf6c6889bb8db30d
+Merge: f3411cb d8ec26d
+Author: Eric Paris &lt;eparis@redhat.com&gt;
+Date:   Fri Mar 7 11:41:32 2014 -0500
+
+    Merge tag 'v3.13' into for-3.15
+    
+    Linux 3.13
+    
+    Conflicts:
+        include/net/xfrm.h
+    
+    Simple merge where v3.13 removed 'extern' from definitions and the audit
+    tree did s/u32/unsigned int/ to the same definitions.
+</code></pre><p>As you can see (from the <code>Merge:</code> header), this is a merge commit, in
+which an entire set of changes was joined into the <code>master</code> branch.
+So while this commit is technically the first commit in which this
+problem appears in the <code>master</code> branch&mldr;it is not actually the commit
+that introduced the problem.</p><p>I was in luck, though, because looking at the history for the left
+side of this branch (starting with <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb</a>) showed a series of
+patches to the audit subsystem:</p><pre><code>$ git log --oneline f3411cb
+f3411cb audit: whitespace fix in kernel-parameters.txt
+8626877 audit: fix location of __net_initdata for audit_net_ops
+4f06632 audit: remove pr_info for every network namespace
+262fd3a audit: Modify a set of system calls in audit class definitions
+3e1d0bb audit: Convert int limit uses to u32
+d957f7b audit: Use more current logging style
+b8dbc32 audit: Use hex_byte_pack_upper
+06bdadd audit: correct a type mismatch in audit_syscall_exit()
+1ce319f audit: reorder AUDIT_TTY_SET arguments
+0e23bac audit: rework AUDIT_TTY_SET to only grab spin_lock once
+3f0c5fa audit: remove needless switch in AUDIT_SET
+70249a9 audit: use define's for audit version
+</code></pre><p>&mldr;etc.</p><p>I picked as a starting point the merge commit previous to <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb</a>:</p><pre><code>$ git log --merges -1
+commit fc582aef7dcc27a7120cf232c1e76c569c7b6eab
+Merge: 9175c9d 5e01dc7
+Author: Eric Paris &lt;eparis@redhat.com&gt;
+Date:   Fri Nov 22 18:57:08 2013 -0500
+
+    Merge tag 'v3.12'
+    
+    Linux 3.12
+    
+    Conflicts:
+        fs/exec.c
+</code></pre><p>And ran <code>git bisect</code> again from <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=fc582ae">that commit</a> through to <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f3411cb">f3411cb</a>:</p><pre><code>$ git bisect start f3411cb fc582ae
+$ git bisect run sh bisect-test
+</code></pre><p>Which ultimately ended up with <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">this commit</a>:</p><pre><code>33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb is the first bad commit
+commit 33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb
+Author: Richard Guy Briggs &lt;rgb@redhat.com&gt;
+Date:   Tue Jul 16 13:18:45 2013 -0400
+
+    audit: listen in all network namespaces
+    
+    Convert audit from only listening in init_net to use register_pernet_subsys()
+    to dynamically manage the netlink socket list.
+    
+    Signed-off-by: Richard Guy Briggs &lt;rgb@redhat.com&gt;
+    Signed-off-by: Eric Paris &lt;eparis@redhat.com&gt;
+</code></pre><p>Running <code>git bisect log</code> shows us what revisions were checked as part
+of this process:</p><pre><code># bad: [f3411cb2b2e396a41ed3a439863f028db7140a34] audit: whitespace fix in kernel-parameters.txt
+# good: [fc582aef7dcc27a7120cf232c1e76c569c7b6eab] Merge tag 'v3.12'
+git bisect start 'f3411cb' 'fc582ae'
+# bad: [ff235f51a138fc61e1a22dcb8b072d9c78c2a8cc] audit: Added exe field to audit core dump signal log
+git bisect bad ff235f51a138fc61e1a22dcb8b072d9c78c2a8cc
+# bad: [51cc83f024ee51de9da70c17e01ec6de524f5906] audit: add audit_backlog_wait_time configuration option
+git bisect bad 51cc83f024ee51de9da70c17e01ec6de524f5906
+# bad: [ae887e0bdcddb9d7acd8f1eb7b7795b438aa4950] audit: make use of remaining sleep time from wait_for_auditd
+git bisect bad ae887e0bdcddb9d7acd8f1eb7b7795b438aa4950
+# good: [2f2ad1013322c8f6c40fc6dafdbd32442fa730ad] audit: restore order of tty and ses fields in log output
+git bisect good 2f2ad1013322c8f6c40fc6dafdbd32442fa730ad
+# bad: [e789e561a50de0aaa8c695662d97aaa5eac9d55f] audit: reset audit backlog wait time after error recovery
+git bisect bad e789e561a50de0aaa8c695662d97aaa5eac9d55f
+# bad: [33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb] audit: listen in all network namespaces
+git bisect bad 33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb
+# first bad commit: [33faba7fa7f2288d2f8aaea95958b2c97bf9ebfb] audit: listen in all network namespaces
+</code></pre><p>The commit found by <code>git bisect</code> seems like a reasonable candidate;
+it&rsquo;s a patch against the audit subsystem and has something to do with
+namespaces, which are central to Docker&rsquo;s proper operation.</p><h2 id=debugging-the-problem>Debugging the problem<a href=#debugging-the-problem class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We can boot the kernel built from 33faba7 with the <code>boot-kernel</code>
+script, adding the <code>-s</code> argument to qemu to start a <code>gdbserver</code> on
+port <code>1234</code>:</p><pre><code>sh BOOT_ARGS=NO_DOCKER_TEST QEMU_ARGS=&quot;-s&quot; boot-kernel
+</code></pre><blockquote><p>A caveat about attaching to qemu with gdb: qemu has a <code>-S</code> option
+that will cause the virtual machine to halt at startup, such that
+you can attach before it starts booting and &ndash; in theory &ndash; set
+breakpoints in the early boot process. In practice this doesn&rsquo;t
+work well at all (possibly because the vm switches from 32- to
+64-bit operation during the boot process, which makes gdb unhappy).
+You&rsquo;re better off attaching after the kernel has booted.</p></blockquote><p>In another window, we attach <code>gdb</code> to the running <code>qemu</code> process:</p><pre><code>$ gdb vmlinux
+Reading symbols from vmlinux...done.
+(gdb) target remote :1234
+Remote debugging using :1234
+native_safe_halt () at /home/lars/src/linux/arch/x86/include/asm/irqflags.h:50
+50	}
+(gdb) 
+</code></pre><p>I know we&rsquo;re getting the <code>EPERM</code> in response to sending audit
+messages. Looking through the code in <code>kernel/audit.c</code>, the
+<code>audit_receive_msg</code> seems like a reasonable place to start poking
+about. At the beginning of <code>audit_receive_msg</code>, I see the following
+code:</p><pre><code>err = audit_netlink_ok(skb, msg_type);
+if (err)
+  return err;
+</code></pre><p>So let&rsquo;s set a breakpoint there if <code>audit_netlink_ok()</code> returns an
+error:</p><pre><code>(gdb) br kernel/audit.c:752 if (err != 0)
+</code></pre><p>And let our qemu process continue running:</p><pre><code>(gdb) continue
+Continuing.
+</code></pre><p>Inside the qemu instance I start docker:</p><pre><code>-bash-4.2# docker run -it fedora /bin/su -c uptime
+</code></pre><p>And eventually <code>gdb</code> hits the breakpoint:</p><pre><code>Breakpoint 1, audit_receive_msg (nlh=0xffff88003819a400, 
+    skb=0xffff880038044300) at kernel/audit.c:752
+752		if (err)
+</code></pre><p>If I look at the value of <code>err</code> at this point:</p><pre><code>(gdb) print err
+$1 = -1
+</code></pre><p>That it is, in fact, <code>-EPERM</code>, which suggests we&rsquo;re on the right
+track. Taking a closer look at <code>audit_netlink_ok()</code>, it&rsquo;s obvious
+that there are only three places where it can return <code>-EPERM</code>. I
+tried setting some breakpoint in this function but they weren&rsquo;t
+working correctly, probably due to to optimizations performed when
+compiling the kernel. So instead of <code>gdb</code>, in this step we just add a
+bunch of <code>pr_err()</code> statements to print out debugging information on
+the console:</p><pre><code>if ((current_user_ns() != &amp;init_user_ns) ||
+    (task_active_pid_ns(current) != &amp;init_pid_ns)) {
+  pr_err(&quot;currnet_user_ns() check failed\n&quot;);
+  return -EPERM;
+}
+.
+.
+.
+case AUDIT_MAKE_EQUIV:
+  if (!capable(CAP_AUDIT_CONTROL)) {
+    pr_err(&quot;CAP_AUDIT_CONTROL check failed\n&quot;);
+    err = -EPERM;
+  }
+  break;
+case AUDIT_USER:
+.
+.
+.
+case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+  if (!capable(CAP_AUDIT_WRITE)) {
+    pr_err(&quot;CAP_AUDIT_WRITE check failed\n&quot;);
+    err = -EPERM;
+  }
+  break;
+</code></pre><p>With these in place, if I run the <code>docker</code> command again I see:</p><pre><code>[   12.239860] currnet_user_ns() check failed
+su: System error
+</code></pre><p>It looks like we&rsquo;ve found out where it&rsquo;s failing! Of course, we&rsquo;re
+checking code right now that is several commits behind v3.15, so let&rsquo;s
+take a look the same function in the 3.15 release:</p><pre><code>$ git checkout v3.15
+</code></pre><p>Looking at <code>audit_netlink_ok</code> in <code>kernel/audit.c</code>, it looks as if that
+initial check has changed:</p><pre><code>    /* Only support initial user namespace for now. */
+    /*
+     * We return ECONNREFUSED because it tricks userspace into thinking
+     * that audit was not configured into the kernel.  Lots of users
+     * configure their PAM stack (because that's what the distro does)
+     * to reject login if unable to send messages to audit.  If we return
+     * ECONNREFUSED the PAM stack thinks the kernel does not have audit
+     * configured in and will let login proceed.  If we return EPERM
+     * userspace will reject all logins.  This should be removed when we
+     * support non init namespaces!!
+     */
+    if (current_user_ns() != &amp;init_user_ns)
+            return -ECONNREFUSED;
+</code></pre><p>So let&rsquo;s insert our print statements into this version of the code and
+see if we get the same behavior:</p><pre><code>if (current_user_ns() != &amp;init_user_ns) {
+  pr_err(&quot;current_user-ns() check failed\n&quot;);
+  return -ECONNREFUSED;
+}
+.
+.
+.
+case AUDIT_MAKE_EQUIV:
+  /* Only support auditd and auditctl in initial pid namespace
+   * for now. */
+  if ((task_active_pid_ns(current) != &amp;init_pid_ns)) {
+    pr_err(&quot;init_pid_ns check failed\n&quot;);
+    return -EPERM;
+  }
+
+  if (!netlink_capable(skb, CAP_AUDIT_CONTROL)) {
+    pr_err(&quot;CAP_AUDIT_CONTROL check failed\n&quot;);
+    err = -EPERM;
+  }
+  break;
+.
+.
+.
+case AUDIT_USER:
+case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+  if (!netlink_capable(skb, CAP_AUDIT_WRITE)) {
+    pr_err(&quot;CAP_AUDIT_WRITE check failed\n&quot;);
+    err = -EPERM;
+  }
+  break;
+</code></pre><p>Running the v3.15 kernel, I see:</p><pre><code>[   26.273992] audit: CAP_AUDIT_WRITE check failed
+su: System error
+</code></pre><p>So it looks like the intial failure in <code>audit_netlink_ok()</code> was fixed,
+but we&rsquo;re stilling failing the <code>CAP_AUDIT_WRITE</code> check.</p><h3 id=summary>Summary<a href=#summary class=hanchor arialabel=Anchor>&#8983;</a></h3><p>What&rsquo;s going on here?</p><p>Prior to <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7</a>, audit messages were only accepted in the main
+network namespace. Inside other network namespaces, processes sending
+audit messages would simply receive <code>ECONNREFUSED</code>. For example, this
+is the result of using <code>strace</code> on that <code>docker run</code> command in a
+pre-<a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7</a> kernel:</p><pre><code>539   sendto(3, &quot;...authentication acct=\&quot;root\&quot; exe=\&quot;/usr/bin/su\&quot; hostname=? a&quot;...,
+      112, 0, {sa_family=AF_NETLINK, pid=0, groups=00000000}, 12) = -1 ECONNREFUSED (Connection refused)
+</code></pre><p>With <a href="https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=33faba7">33faba7</a>, audit messages are now accepted inside network
+namespaces. This means that instead of simply getting <code>ECONNREFUSED</code>,
+messages must pass the kernel capability check. I spoke with some of
+the audit subsystem maintainers (including Richard Guy Briggs, the
+author of this patch series), and the general consensus is that &ldquo;if
+you want to write audit messages you need <code>CAP_AUDIT_WRITE</code>&rdquo;.</p><p>So while this patch did change the behavior of the kernel from the
+perspective of container tools such as Docker, the fix needs to be in
+the tool creating the namespaces.</p><h2 id=results>Results<a href=#results class=hanchor arialabel=Anchor>&#8983;</a></h2><p>This issue was reported against Fedora in <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345</a> and <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1119849">BZ
+1119849</a>. This issue was also reported against Docker in <a href=https://github.com/dotcloud/docker/issues/6345>GHI 6345</a>
+and <a href=https://github.com/dotcloud/docker/issues/7123>GHI 7123</a>.</p><p>This problem has been corrected upstream in
+<a href=https://github.com/dotcloud/docker/pull/7179 class=pull-request>#7179</a>
+.</p><p>Package <a href=https://admin.fedoraproject.org/updates/FEDORA-2014-8877/docker-io-1.0.0-9.fc20>docker-io-1.0.0-9.fc20</a>, which includes
+the above fix, is now available for Fedora 20 (and Fedora 19).</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>security on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/security/</link><description>Recent content in security on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 19 Oct 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/security/rss.xml" rel="self" type="application/rss+xml"/><item><title>Integrating Bitwarden with Ansible</title><link>https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/</guid><description>Bitwarden is a password management service (like LastPass or 1Password). It&amp;rsquo;s unique in that it is built entirely on open source software. In addition to the the web UI and mobile apps that you would expect, Bitwarden also provides a command-line tool for interacting with the your password store.
+At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password sharing and management solution that was better than dropping files into directories on remote hosts or sharing things over Slack.</description><content>&lt;p>&lt;a href="https://bitwarden.com">Bitwarden&lt;/a> is a password management service (like &lt;a href="https://www.lastpass.com/">LastPass&lt;/a> or
+&lt;a href="https://1password.com/">1Password&lt;/a>). It&amp;rsquo;s unique in that it is built entirely on open
+source software. In addition to the the web UI and mobile apps that
+you would expect, Bitwarden also provides a &lt;a href="https://help.bitwarden.com/article/cli/">command-line tool&lt;/a> for
+interacting with the your password store.&lt;/p>
+&lt;p>At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password
+sharing and management solution that was better than dropping files
+into directories on remote hosts or sharing things over Slack. At
+the same time, we are also thinking about bringing more automation to
+our operational environment, possibly by making more extensive use of
+&lt;a href="https://ansible.com">Ansible&lt;/a>. It looked like all the pieces were available to use
+Bitwarden as a credential storage mechanism for Ansible playbooks, so
+I set out to write a lookup plugin to implement the integration&amp;hellip;&lt;/p>
+&lt;p>&amp;hellip;only to find that I was not the first person to have this idea;
+Matt Stofko &lt;a href="https://github.com/c0sco/ansible-modules-bitwarden/">beat me to it&lt;/a>. While it worked, the directory
+structure of Matt&amp;rsquo;s repository made it difficult to integrate into an
+existing Ansible project. It was also missing some convenience
+features I wanted to see, so I have submitted
+&lt;a href="https://github.com/c0sco/ansible-modules-bitwarden/pull/1" class="pull-request">#1&lt;/a>
+that
+makes several changes to the module.&lt;/p>
+&lt;p>You can find my fork of the Bitwarden lookup plugin at
+&lt;a href="https://github.com/larsks/ansible-modules-bitwarden">https://github.com/larsks/ansible-modules-bitwarden&lt;/a>.&lt;/p>
+&lt;h2 id="make-it-installable">Make it installable&lt;/h2>
+&lt;p>By re-arranging the repository to following the standard Ansible role
+structure, it is now possible to install it either a submodule of your
+own git repository, or to install it using the &lt;code>ansible-galaxy&lt;/code> tool:&lt;/p>
+&lt;pre>&lt;code>ansible-galaxy install git+https://github.com/larsks/ansible-modules-bitwarden
+&lt;/code>&lt;/pre>
+&lt;p>This command would place the role in &lt;code>$HOME/.ansible/roles&lt;/code>, where it
+will be available to any playbooks you run on your system.&lt;/p>
+&lt;h2 id="add-explicit-support-for-custom-fields">Add explicit support for custom fields&lt;/h2>
+&lt;p>While it was possible to access custom fields by fetching the complete
+JSON representation of an item in Bitwarden and then querying the
+resulting document, it wasn&amp;rsquo;t particularly graceful. I&amp;rsquo;ve added
+explicit support for looking up custom fields. Whereas the normal
+lookup will the specific keys that Bitwarden supports in the &lt;code>bw get&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>lookup('bitwarden', 'Google', field=username)
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;adding &lt;code>custom_field=True&lt;/code> causes the lookup to be performed against
+the list of custom fields:&lt;/p>
+&lt;pre>&lt;code>lookup('bitwarden', 'Google', field=mycustomfield, custom_field=true)
+&lt;/code>&lt;/pre>
+&lt;h2 id="add-support-for-the-sync-operation">Add support for the sync operation&lt;/h2>
+&lt;p>The Bitwarden CLI operates by keeping a local cache of your
+credentials. This means that if you have just modified an item through
+the web ui (or mobile app), you may still be querying stale data when
+querying Bitwarden through the CLI. The &lt;code>bw sync&lt;/code> command refreshes
+the local cache.&lt;/p>
+&lt;p>You can add &lt;code>sync=true&lt;/code> to the lookup to have Ansible run &lt;code>bw sync&lt;/code>
+before querying Bitwarden for data:&lt;/p>
+&lt;pre>&lt;code>lookup('bitwarden', 'Google', field=username, sync=true)
+&lt;/code>&lt;/pre>
+&lt;h2 id="using-the-lookup-module-in-practice">Using the lookup module in practice&lt;/h2>
+&lt;p>We&amp;rsquo;re using &lt;a href="https://docs.openstack.org/tripleo-docs/latest/">TripleO&lt;/a> to deploy OpenStack. TripleO requires as input
+to the deployment process a number of parameters, including various
+credentials. For example, to set the password that will be assigned
+to the Keystone admin user, one would pass in a file that looks
+something like:&lt;/p>
+&lt;pre>&lt;code>---
+parameter_defaults:
+AdminPassword: &amp;quot;secret.password.goes.here&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Because our deployment configuration is public, we don&amp;rsquo;t want to store
+credentials there. We&amp;rsquo;ve been copying around a credentials file that
+lives outside the repository, but that&amp;rsquo;s not a great solution.&lt;/p>
+&lt;p>Using the Bitwarden lookup module, we can replace the above with:&lt;/p>
+&lt;pre>&lt;code>---
+parameter_defaults:
+AdminPassword: &amp;quot;{{ lookup('bitwarden', 'keystone admin') }}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>With this change, we can use Ansible to query Bitwarden to get the
+Keystone admin password and generate as output a file with the
+passwords included.&lt;/p>
+&lt;p>Using the custom field support, we can include metadata associated
+with a credential in the same place as the credential itself. To
+configure access to a remote Ceph installation, we need to provide a
+client key and cluster id. By putting the cluster id in a custom
+field, we can do something like this:&lt;/p>
+&lt;pre>&lt;code>CephClientKey: &amp;quot;{{ lookup('bitwarden', 'ceph client key') }}&amp;quot;
+CephClusterFSID: &amp;quot;{{ ((lookup('bitwarden', 'ceph client key', field='clusterid', custom_field=true) }}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;h2 id="an-example-playbook">An example playbook&lt;/h2>
+&lt;p>Before you can run a playbook making use of the Bitwarden lookup
+module, you need to &lt;a href="https://help.bitwarden.com/article/cli/#download--install">install&lt;/a> the Bitwarden CLI. This is as simple
+as grabbing an appropriate binary and dropping it somewhere in
+your &lt;code>$PATH&lt;/code>. I&amp;rsquo;ve been doing this:&lt;/p>
+&lt;pre>&lt;code>$ curl -L 'https://vault.bitwarden.com/download/?app=cli&amp;amp;platform=linux' |
+funzip &amp;gt; $HOME/bin/bw
+$ chmod 755 $HOME/bin/bw
+&lt;/code>&lt;/pre>
+&lt;p>For the following example, assume that we have a template named
+&lt;code>no-passwords-here.yml&lt;/code> matching the earlier example:&lt;/p>
+&lt;pre>&lt;code>---
+parameter_defaults:
+AdminPassword: &amp;quot;{{ lookup('bitwarden', 'keystone admin') }}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>We can generate a version of the file named &lt;code>yes-passwords-here.yml&lt;/code>
+that includes the actual passwords by running the following playbook:&lt;/p>
+&lt;pre>&lt;code>---
+- hosts: localhost
+# we need to include the role in order to make the lookup plugin
+# available.
+roles:
+- ansible-modules-bitwarden
+tasks:
+- name: inject passwords into a file
+template:
+src: ./no-passwords-here.yml
+dest: ./yes-passwords-here.yml
+&lt;/code>&lt;/pre>
+&lt;p>To actually run the playbook, we need to be authenticated to Bitwarden
+first. That means:&lt;/p>
+&lt;ol>
+&lt;li>Run &lt;code>bw login&lt;/code> (or &lt;code>bw unlock&lt;/code>) to log in and get a session key.&lt;/li>
+&lt;li>Set the &lt;code>BW_SESSION&lt;/code> environment variable to this value.&lt;/li>
+&lt;li>Run the playbook.&lt;/li>
+&lt;/ol>
+&lt;p>The above tasks would look something like this:&lt;/p>
+&lt;pre>&lt;code>bash$ bw login
+? Email address: lars@redhat.com
+? Master password: [hidden]
+You are logged in!
+To unlock your vault, set your session key to the `BW_SESSION`
+environment variable. ex:
+$ export BW_SESSION=&amp;quot;...&amp;quot;
+[...]
+bash$ export BW_SESSION=&amp;quot;...&amp;quot;
+bash$ ansible-playbook inject-passwords.yml
+&lt;/code>&lt;/pre></content></item></channel></rss>

@@ -1,0 +1,116 @@
+<!doctype html><html lang=en><head><title>Building Docker images with Puppet :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I like Docker, but I&amp;rsquo;m not a huge fan of using shell scripts for complex system configuration&amp;hellip;and Dockerfiles are basically giant shell scripts.
+I was curious whether or not it would be possible to use Puppet during the docker build process. As a test case, I used the ssh module included in the openstack-puppet-modules package.
+I started with a manifest like this (in puppet/node.pp):
+class { 'ssh': } And a Dockerfile like this:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Building Docker images with Puppet"><meta property="og:description" content="I like Docker, but I&amp;rsquo;m not a huge fan of using shell scripts for complex system configuration&amp;hellip;and Dockerfiles are basically giant shell scripts.
+I was curious whether or not it would be possible to use Puppet during the docker build process. As a test case, I used the ssh module included in the openstack-puppet-modules package.
+I started with a manifest like this (in puppet/node.pp):
+class { 'ssh': } And a Dockerfile like this:"><meta property="og:url" content="https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-10-22 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/>Building Docker images with Puppet</a></h1><div class=post-meta><time class=post-date>2014-10-22 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/puppet/>puppet</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;</span><div class=post-content><div><p>I like <a href=http://docker.com/>Docker</a>, but I&rsquo;m not a huge fan of using shell scripts for
+complex system configuration&mldr;and Dockerfiles are basically giant
+shell scripts.</p><p>I was curious whether or not it would be possible to use Puppet during
+the <code>docker build</code> process. As a test case, I used the
+<a href=https://github.com/saz/puppet-ssh>ssh</a> module included in the openstack-puppet-modules package.</p><p>I started with a manifest like this (in <code>puppet/node.pp</code>):</p><pre><code>class { 'ssh': }
+</code></pre><p>And a Dockerfile like this:</p><pre><code>FROM larsks/rdo-puppet-base
+
+COPY puppet /puppet
+RUN cd /puppet; puppet apply \
+  --modulepath /usr/share/openstack-puppet/modules \
+  node.pp
+</code></pre><p>The <code>larsks/rdo-puppet-base</code> module includes &ldquo;puppet&rdquo; and all the Puppet
+modules required by RDO (installed in
+<code>/usr/share/openstack-puppet/modules</code>).</p><p>Running <code>docker build</code> with this <code>Dockerfile</code> results in:</p><pre><code>Error: Could not run: Could not retrieve facts for
+a9cde05eb735.example.com: no address for
+a9cde05eb735.example.com
+</code></pre><p>Puppet is trying to determine the FQDN of the container, and is then
+trying to determine the canonical ip address of the container. This is
+never going to work, absent some mechanism that automatically
+registers DNS entries when you boot containers (e.g., <a href=https://github.com/crosbymichael/skydock>skydock</a>).</p><p>The obvious way to fix this would be to modify <code>/etc/hosts</code> and add
+the calculated fqdn to the entry for <code>localhost</code>, but <code>/etc/hosts</code>
+inside Docker containers is read-only.</p><p>Since Puppet is using Facter to get information about the host, I
+looked into whether or not it would be possible (and convenient) to
+override Facter generated facts. It turns out that it <a href=http://www.puppetcookbook.com/posts/override-a-facter-fact.html>is relatively
+easy</a>; just set <code>FACTER_&lt;fact_name></code> in the environment.
+For example:</p><pre><code>FACTER_fqdn=localhost
+</code></pre><p>I modified the Dockerfile to look like this:</p><pre><code>FROM larsks/rdo-puppet-base
+
+COPY puppet /puppet
+RUN cd /puppet; FACTER_fqdn=localhost puppet apply \
+  --modulepath=/usr/share/openstack-puppet/modules \
+  node.pp
+</code></pre><p>Running this yields:</p><pre><code>Error: Could not start Service[sshd]: Execution of '/sbin/service
+  sshd start' returned 1: Redirecting to /bin/systemctl start  sshd.service
+Failed to get D-Bus connection: No connection to service manager.
+Wrapped exception:
+Execution of '/sbin/service sshd start' returned 1: Redirecting to
+  /bin/systemctl start  sshd.service
+Failed to get D-Bus connection: No connection to service manager.
+</code></pre><p>This is happening because the Puppet module is trying to manipulate
+the corresponding service resource, but there is no service manager
+(e.g., &ldquo;systemd&rdquo; or &ldquo;upstart&rdquo;, etc) inside the container.</p><p>Some modules provide a module parameter to disable service management,
+but that solution isn&rsquo;t available in this module. Instead, I created
+a &ldquo;dummy&rdquo; service provider. The &ldquo;code&rdquo; (or lack thereof) looks like
+this:</p><pre><code>Puppet::Type.type(:service).provide :dummy, :parent =&gt; :base do
+  desc &quot;Dummy service provider&quot;
+
+  def startcmd
+      true;
+  end
+
+  def stopcmd
+      true;
+  end
+
+  def restartcmd
+    true
+  end
+
+  def statuscmd
+    true
+  end
+end
+</code></pre><p>I dropped this into a <code>dummy_service</code> puppet module with the
+following structure:</p><pre><code>dummy_service/
+  lib/
+    puppet/
+      provider/
+        service/
+          dummy.rb
+</code></pre><p>I installed the whole thing into <code>/usr/share/puppet/modules</code> in the
+base image (<code>larsks/rdo-puppet-base</code>) by adding the following to the
+relevant <code>Dockerfile</code>:</p><pre><code>COPY dummy_service /usr/share/puppet/modules/dummy_service
+</code></pre><p>I modified the <code>Dockerfile</code> for my ssh image to look like this:</p><pre><code>FROM larsks/rdo-puppet-base
+
+COPY puppet /puppet
+RUN cd /puppet; \
+  FACTER_fqdn=localhost \
+  puppet apply \
+    --modulepath=/usr/share/openstack-puppet/modules:/usr/share/puppet/modules \
+    node.pp
+</code></pre><p>And finally I modified <code>node.pp</code> to look like this:</p><pre><code>Service {
+  provider =&gt; dummy,
+}
+
+class { 'ssh': }
+</code></pre><p>This sets the default <code>provider</code> for <code>service</code> resources to <code>dummy</code>.</p><p>With these changes, the <code>docker build</code> operation completes
+successfully:</p><pre><code>Sending build context to Docker daemon 49.15 kB
+Sending build context to Docker daemon 
+Step 0 : FROM larsks/rdo-puppet-base
+ ---&gt; 2554b6fb47bb
+Step 1 : COPY puppet /puppet
+ ---&gt; Using cache
+ ---&gt; bf867271fd0f
+Step 2 : RUN cd /puppet; 	FACTER_fqdn=localhost 	puppet apply 		--modulepath=/usr/share/openstack-puppet/modules:/usr/share/puppet/modules 		node.pp
+ ---&gt; Running in 91b08a7a0ff5
+Notice: Compiled catalog for c6f07ae86c40.redhat.com in environment production in 0.58 seconds
+Notice: /Stage[main]/Ssh::Server::Install/Package[openssh-server]/ensure: created
+Notice: /Stage[main]/Ssh::Client::Config/File[/etc/ssh/ssh_config]/content: content changed '{md5}e233b9bb27ac15b968d8016d7be7d7ce' to '{md5}34815c31785be0c717f766e8d2c8d4d7'
+Notice: Finished catalog run in 47.61 seconds
+ ---&gt; e830e6adce26
+Removing intermediate container 91b08a7a0ff5
+Successfully built e830e6adce26
+</code></pre><p>Obviously, in order to turn this into a functional module you would
+need to add an appropriate <code>CMD</code> or <code>ENTRYPOINT</code> script to make it
+generate host keys and start <code>sshd</code>, but I think this successfully
+demonstrates what is necessary to make a stock Puppet module run
+as part of the <code>docker build</code> process.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

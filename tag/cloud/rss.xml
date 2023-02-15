@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>cloud on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/cloud/</link><description>Recent content in cloud on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 10 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/cloud/rss.xml" rel="self" type="application/rss+xml"/><item><title>Investigating connection timeouts in a Kubernetes application</title><link>https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/</link><pubDate>Sat, 10 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/</guid><description>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause.</description><content>&lt;p>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause. Absent a solid reproducer of the behavior in question, we looked at other aspects of our infrastructure:&lt;/p>
+&lt;ul>
+&lt;li>Networking seemed fine (we weren&amp;rsquo;t able to find any evidence of interface errors, packet loss, or bandwidth issues)&lt;/li>
+&lt;li>Storage in most of our cloud environments is provided by remote Ceph clusters. In addition to not seeing any evidence of network problems in general, we weren&amp;rsquo;t able to demonstrate specific problems with our storage, either (we did spot some performance variation between our Ceph clusters that may be worth investigating in the future, but it wasn&amp;rsquo;t the sort that would cause the problems we&amp;rsquo;re seeing)&lt;/li>
+&lt;li>My own attempts to reproduce the behavior using &lt;a href="https://dev.mysql.com/doc/refman/8.0/en/mysqlslap.html">mysqlslap&lt;/a> did not demonstrate any problems, even though we were driving a far larger number of connections and queries/second in the benchmarks than we were in the application.&lt;/li>
+&lt;/ul>
+&lt;p>What was going on?&lt;/p>
+&lt;p>I was finally able to get my hands on container images, deployment manifests, and instructions to reproduce the problem this past Friday. After working through some initial errors that weren&amp;rsquo;t the errors we were looking for (insert Jedi hand gesture here), I was able to see the behavior in practice. In a section of code that makes a number of connections to the database, we were seeing:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Failed to create databases:
+Command returned non-zero value &amp;#39;1&amp;#39;: ERROR 2003 (HY000): Can&amp;#39;t connect to MySQL server on &amp;#39;mariadb&amp;#39; (110)
+#0 /usr/share/xdmod/classes/CCR/DB/MySQLHelper.php(521): CCR\DB\MySQLHelper::staticExecuteCommand(Array)
+#1 /usr/share/xdmod/classes/CCR/DB/MySQLHelper.php(332): CCR\DB\MySQLHelper::staticExecuteStatement(&amp;#39;mariadb&amp;#39;, &amp;#39;3306&amp;#39;, &amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, NULL, &amp;#39;SELECT SCHEMA_N...&amp;#39;)
+#2 /usr/share/xdmod/classes/OpenXdmod/Shared/DatabaseHelper.php(65): CCR\DB\MySQLHelper::databaseExists(&amp;#39;mariadb&amp;#39;, &amp;#39;3306&amp;#39;, &amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, &amp;#39;mod_logger&amp;#39;)
+#3 /usr/share/xdmod/classes/OpenXdmod/Setup/DatabaseSetupItem.php(39): OpenXdmod\Shared\DatabaseHelper::createDatabases(&amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, Array, Array, Object(OpenXdmod\Setup\Console))
+#4 /usr/share/xdmod/classes/OpenXdmod/Setup/DatabaseSetup.php(109): OpenXdmod\Setup\DatabaseSetupItem-&amp;gt;createDatabases(&amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, Array, Array)
+#5 /usr/share/xdmod/classes/OpenXdmod/Setup/Menu.php(69): OpenXdmod\Setup\DatabaseSetup-&amp;gt;handle()
+#6 /usr/bin/xdmod-setup(37): OpenXdmod\Setup\Menu-&amp;gt;display()
+#7 /usr/bin/xdmod-setup(22): main()
+#8 {main}
+&lt;/code>&lt;/pre>&lt;p>Where &lt;code>110&lt;/code> is &lt;code>ETIMEDOUT&lt;/code>, &amp;ldquo;Connection timed out&amp;rdquo;.&lt;/p>
+&lt;p>The application consists of two &lt;a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployment&lt;/a> resources, one that manages a MariaDB pod and another that manages the application itself. There are also the usual suspects, such as &lt;a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">PersistentVolumeClaims&lt;/a> for the database backing store, etc, and a &lt;a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service&lt;/a> to allow the application to access the database.&lt;/p>
+&lt;p>While looking at this problem, I attempted to look at the logs for the application by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>kubectl logs deploy/moc-xdmod
+&lt;/code>&lt;/pre>&lt;p>But to my surprise, I found myself looking at the logs for the MariaDB container instead&amp;hellip;which provided me just about all the information I needed about the problem.&lt;/p>
+&lt;h2 id="how-do-deployments-work">How do Deployments work?&lt;/h2>
+&lt;p>To understand what&amp;rsquo;s going on, let&amp;rsquo;s first take a closer look at a Deployment manifest. The basic framework is something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: example
+spec:
+selector:
+matchLabels:
+app: example
+strategy:
+type: Recreate
+template:
+metadata:
+labels:
+app: example
+spec:
+containers:
+- name: example
+image: docker.io/alpine:latest
+command:
+- sleep
+- inf
+&lt;/code>&lt;/pre>&lt;p>There are labels in three places in this manifest:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>The Deployment itself has labels in the &lt;code>metadata&lt;/code> section.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>There are labels in &lt;code>spec.template.metadata&lt;/code> that will be applied to Pods spawned by the Deployment.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>There are labels in &lt;code>spec.selector&lt;/code> which, in the words of [the documentation]:&lt;/p>
+&lt;blockquote>
+&lt;p>defines how the Deployment finds which Pods to manage&lt;/p>
+&lt;/blockquote>
+&lt;/li>
+&lt;/ol>
+&lt;p>It&amp;rsquo;s not spelled out explicitly anywhere, but the &lt;code>spec.selector&lt;/code> field is also used to identify to which pods to attach when using the Deployment name in a command like &lt;code>kubectl logs&lt;/code>: that is, given the above manifest, running &lt;code>kubectl logs deploy/example&lt;/code> would look for pods that have label &lt;code>app&lt;/code> set to &lt;code>example&lt;/code>.&lt;/p>
+&lt;p>With this in mind, let&amp;rsquo;s take a look at how our application manifests are being deployed. Like most of our applications, this is deployed using &lt;a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/">Kustomize&lt;/a>. The &lt;code>kustomization.yaml&lt;/code> file for the application manifests looked like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commonLabels:
+app: xdmod
+resources:
+- svc-mariadb.yaml
+- deployment-mariadb.yaml
+- deployment-xdmod.yaml
+&lt;/code>&lt;/pre>&lt;p>That &lt;code>commonLabels&lt;/code> statement will apply the label &lt;code>app: xdmod&lt;/code> to all of the resources managed by the &lt;code>kustomization.yaml&lt;/code> file. The Deployments looked like this:&lt;/p>
+&lt;p>For MariaDB:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: mariadb
+spec:
+selector:
+matchLabels:
+app: mariadb
+template:
+metadata:
+labels:
+app: mariadb
+&lt;/code>&lt;/pre>&lt;p>For the application experience connection problems:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: moc-xdmod
+spec:
+selector:
+matchLabels:
+app: xdmod
+template:
+metadata:
+labels:
+app: xdmod
+&lt;/code>&lt;/pre>&lt;p>The problem here is that when these are processed by &lt;code>kustomize&lt;/code>, the &lt;code>app&lt;/code> label hardcoded in the manifests will be replaced by the &lt;code>app&lt;/code> label defined in the &lt;code>commonLabels&lt;/code> section of &lt;code>kustomization.yaml&lt;/code>. When we run &lt;code>kustomize build&lt;/code> on these manifests, we will have as output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+labels:
+app: xdmod
+name: mariadb
+spec:
+selector:
+matchLabels:
+app: xdmod
+template:
+metadata:
+labels:
+app: xdmod
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+labels:
+app: xdmod
+name: moc-xdmod
+spec:
+selector:
+matchLabels:
+app: xdmod
+template:
+metadata:
+labels:
+app: xdmod
+&lt;/code>&lt;/pre>&lt;p>In other words, all of our pods will have the same labels (because the &lt;code>spec.template.metadata.labels&lt;/code> section is identical in both Deployments). When I run &lt;code>kubectl logs deploy/moc-xdmod&lt;/code>, I&amp;rsquo;m just getting whatever the first match is for a query that is effectively the same as &lt;code>kubectl get pod -l app=xdmod&lt;/code>.&lt;/p>
+&lt;p>So, that&amp;rsquo;s what was going on with the &lt;code>kubectl logs&lt;/code> command.&lt;/p>
+&lt;h2 id="how-do-services-work">How do services work?&lt;/h2>
+&lt;p>A Service manifest in Kubernetes looks something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Service
+metadata:
+name: mariadb
+spec:
+selector:
+app: mariadb
+ports:
+- protocol: TCP
+port: 3306
+targetPort: 3306
+&lt;/code>&lt;/pre>&lt;p>Here, &lt;code>spec.selector&lt;/code> has a function very similar to what it had in a &lt;code>Deployment&lt;/code>: it selects pods to which the Service will direct traffic. From &lt;a href="https://kubernetes.io/docs/concepts/services-networking/service/">the documentation&lt;/a>, we know that a Service proxy will select a backend either in a round-robin fashion (using the legacy user-space proxy) or in a random fashion (using the iptables proxy) (there is also an &lt;a href="http://www.linuxvirtualserver.org/software/ipvs.html">IPVS&lt;/a> proxy mode, but that&amp;rsquo;s not available in our environment).&lt;/p>
+&lt;p>Given what we know from the previous section about Deployments, you can probably see what&amp;rsquo;s going on here:&lt;/p>
+&lt;ol>
+&lt;li>There are multiple pods with identical labels that are providing distinct services&lt;/li>
+&lt;li>For each incoming connection, the service proxy selects a Pod based on the labels in the service&amp;rsquo;s &lt;code>spec.selector&lt;/code>.&lt;/li>
+&lt;li>With only two pods involved, there&amp;rsquo;s a 50% chance that traffic targeting our MariaDB instance will in fact be directed to the application pod, which will simply drop the traffic (because it&amp;rsquo;s not listening on the appropriate port).&lt;/li>
+&lt;/ol>
+&lt;p>We can see the impact of this behavior by running a simple loop that attempts to connect to MariaDB and run a query:&lt;/p>
+&lt;pre tabindex="0">&lt;code>while :; do
+_start=$SECONDS
+echo -n &amp;#34;$(date +%T) &amp;#34;
+timeout 10 mysql -h mariadb -uroot -ppass -e &amp;#39;select 1&amp;#39; &amp;gt; /dev/null &amp;amp;&amp;amp; echo -n OKAY || echo -n FAILED
+echo &amp;#34; $(( SECONDS - _start))&amp;#34;
+sleep 1
+done
+&lt;/code>&lt;/pre>&lt;p>Which outputs:&lt;/p>
+&lt;pre tabindex="0">&lt;code>01:41:30 OKAY 1
+01:41:32 OKAY 0
+01:41:33 OKAY 1
+01:41:35 OKAY 0
+01:41:36 OKAY 3
+01:41:40 OKAY 1
+01:41:42 OKAY 0
+01:41:43 OKAY 3
+01:41:47 OKAY 3
+01:41:51 OKAY 4
+01:41:56 OKAY 1
+01:41:58 OKAY 1
+01:42:00 FAILED 10
+01:42:10 OKAY 0
+01:42:11 OKAY 0
+&lt;/code>&lt;/pre>&lt;p>Here we can see that connection time is highly variable, and we occasionally hit the 10 second timeout imposed by the &lt;code>timeout&lt;/code> call.&lt;/p>
+&lt;h2 id="solving-the-problem">Solving the problem&lt;/h2>
+&lt;p>In order to resolve this behavior, we want to ensure (a) that Pods managed by a Deployment are uniquely identified by their labels and that (b) &lt;code>spec.selector&lt;/code> for both Deployments and Services will only select the appropriate Pods. We can do this with a few simple changes.&lt;/p>
+&lt;p>It&amp;rsquo;s useful to apply some labels consistently across all of the resource we generate, so we&amp;rsquo;ll keep the existing &lt;code>commonLabels&lt;/code> section of our &lt;code>kustomization.yaml&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commonLabels:
+app: xdmod
+&lt;/code>&lt;/pre>&lt;p>But then in each Deployment we&amp;rsquo;ll add a &lt;code>component&lt;/code> label identifying the specific service, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: mariadb
+labels:
+component: mariadb
+spec:
+selector:
+matchLabels:
+component: mariadb
+template:
+metadata:
+labels:
+component: mariadb
+&lt;/code>&lt;/pre>&lt;p>When we generate the final manifest with &lt;code>kustomize&lt;/code>, we end up with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+labels:
+app: xdmod
+component: mariadb
+name: mariadb
+spec:
+selector:
+matchLabels:
+app: xdmod
+component: mariadb
+template:
+metadata:
+labels:
+app: xdmod
+component: mariadb
+&lt;/code>&lt;/pre>&lt;p>In the above output, you can see that &lt;code>kustomize&lt;/code> has combined the &lt;code>commonLabel&lt;/code> definition with the labels configured individually in the manifests. With this change, &lt;code>spec.selector&lt;/code> will now select only the pod in which MariaDB is running.&lt;/p>
+&lt;p>We&amp;rsquo;ll similarly modify the Service manifest to look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Service
+metadata:
+name: mariadb
+spec:
+selector:
+component: mariadb
+ports:
+- protocol: TCP
+port: 3306
+targetPort: 3306
+&lt;/code>&lt;/pre>&lt;p>Resulting in a generated manifest that looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Service
+metadata:
+labels:
+app: xdmod
+name: mariadb
+spec:
+ports:
+- port: 3306
+protocol: TCP
+targetPort: 3306
+selector:
+app: xdmod
+component: mariadb
+&lt;/code>&lt;/pre>&lt;p>Which, as with the Deployment, will now select only the correct pods.&lt;/p>
+&lt;p>With these changes in place, if we re-run the test loop I presented earlier, we see as output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>01:57:27 OKAY 0
+01:57:28 OKAY 0
+01:57:29 OKAY 0
+01:57:30 OKAY 0
+01:57:31 OKAY 0
+01:57:32 OKAY 0
+01:57:33 OKAY 0
+01:57:34 OKAY 0
+01:57:35 OKAY 0
+01:57:36 OKAY 0
+01:57:37 OKAY 0
+01:57:38 OKAY 0
+01:57:39 OKAY 0
+01:57:40 OKAY 0
+&lt;/code>&lt;/pre>&lt;p>There is no variability in connection time, and there are no timeouts.&lt;/p></content></item></channel></rss>

@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>ldap on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/ldap/</link><description>Recent content in ldap on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 22 Jul 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/ldap/rss.xml" rel="self" type="application/rss+xml"/><item><title>Generating a memberOf attribute for posixGroups</title><link>https://blog.oddbit.com/post/2013-07-22-generating-a-membero/</link><pubDate>Mon, 22 Jul 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-07-22-generating-a-membero/</guid><description>This showed up on #openstack earlier today:
+2013-07-22T13:56:10 &amp;lt;m0zes&amp;gt; hello, all. I am looking to setup keystone with an ldap backend. I need to filter users based on group membership, in this case a non-rfc2307 posixGroup. This means that memberOf doesn't show up, and that the memberUid in the group is not a dn. any thoughts on how to accomplish this? It turns out that this is a not uncommon question, so I spent some time today working out a solution using the dynlist overlay for OpenLDAP.</description><content>&lt;p>This showed up on &lt;a href="https://wiki.openstack.org/wiki/IRC">#openstack&lt;/a> earlier today:&lt;/p>
+&lt;pre>&lt;code>2013-07-22T13:56:10 &amp;lt;m0zes&amp;gt; hello, all. I am looking to
+setup keystone with an ldap backend. I need to filter
+users based on group membership, in this case a
+non-rfc2307 posixGroup. This means that memberOf doesn't
+show up, and that the memberUid in the group is not a
+dn. any thoughts on how to accomplish this?
+&lt;/code>&lt;/pre>
+&lt;p>It turns out that this is a not uncommon question, so I spent some
+time today working out a solution using the &lt;a href="http://www.openldap.org/faq/data/cache/1209.html">dynlist&lt;/a> overlay for
+&lt;a href="http://www.openldap.org/">OpenLDAP&lt;/a>.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>The LDIF data presented in this article can be found &lt;a href="https://github.com/larsks/blog-openldap-dynlist">on github&lt;/a>.&lt;/p>
+&lt;h2 id="assumptions">Assumptions&lt;/h2>
+&lt;p>I&amp;rsquo;m assuming that you have a traditional &lt;code>posixGroup&lt;/code> that looks
+something like this:&lt;/p>
+&lt;pre>&lt;code>dn: cn=lars,ou=groups,dc=oddbit,dc=com
+objectClass: posixGroup
+cn: lars
+gidNumber: 1000
+memberUid: lars
+&lt;/code>&lt;/pre>
+&lt;p>That is, members are recorded in the &lt;code>memberUid&lt;/code> attribute which
+corresponds to the &lt;code>uidNumber&lt;/code> attribute of a user object.&lt;/p>
+&lt;h2 id="loading-the-dynlist-module">Loading the dynlist module&lt;/h2>
+&lt;p>This solution makes use of the &lt;code>dynlist&lt;/code> dynamic overlay, so you&amp;rsquo;ll
+first need to make sure that module is loaded. Most modern OpenLDAP
+deployments make use of the new &lt;code>slapd.d&lt;/code> configuration directory,
+which means you&amp;rsquo;ll modify your configuration by loading the following
+LDIF file:&lt;/p>
+&lt;pre>&lt;code>dn: cn=modules,cn=config
+objectClass: olcModuleList
+cn: modules
+olcModuleLoad: dynlist
+&lt;/code>&lt;/pre>
+&lt;p>You would load this into your running instance with something like the
+following:&lt;/p>
+&lt;pre>&lt;code># ldapadd -Y EXTERNAL -H ldapi://%2fvar%2frun%2fldapi -f dynlist.ldif
+&lt;/code>&lt;/pre>
+&lt;p>This makes certain assumptions about how your permissions are
+configured (in particular, it assumes that your server is configured
+to permit administrative access to system UID 0 when accessing the
+&lt;code>ldapi&lt;/code> socket).&lt;/p>
+&lt;p>If you already have a &lt;code>cn=modules{0},cn=config&lt;/code> object, you&amp;rsquo;ll need to
+modify instead using the following:&lt;/p>
+&lt;pre>&lt;code>dn: cn=modules,cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: dynlist
+&lt;/code>&lt;/pre>
+&lt;p>And use &lt;code>ldapmodify&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># ldapmodify -Y EXTERNAL -H ldapi://%2fvar%2frun%2fldapi -f dynlist.ldif
+&lt;/code>&lt;/pre>
+&lt;h2 id="schema-modifications">Schema modifications&lt;/h2>
+&lt;p>In an ideal world, we would be able to make our solution populate the
+standard &lt;code>memberOf&lt;/code> attribute. Unfortunately, this is an
+&amp;ldquo;operational&amp;rdquo; attribute in OpenLDAP, which means we can&amp;rsquo;t make it
+available to a user class&amp;hellip;so, we&amp;rsquo;re going to define (a) a new
+&lt;code>attributeType&lt;/code> that is largely identical to the &lt;code>memberOf&lt;/code> attribute,
+and (b) a new auxiliary object class that allows the new attribute.&lt;/p>
+&lt;pre>&lt;code>dn: cn=oddbit,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: oddbit
+olcAttributeTypes: ( 1.3.6.1.4.1.24441.1.1.1
+NAME 'obMemberOf'
+DESC 'Distinguished name of a group of which the object is a member'
+EQUALITY distinguishedNameMatch
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+olcObjectClasses: ( 1.3.6.1.4.1.24441.2.1.1
+NAME 'obPerson' DESC 'oddbit.com person'
+AUXILIARY MAY ( obMemberOf ) )
+&lt;/code>&lt;/pre>
+&lt;p>This gives us the &lt;code>obMemberOf&lt;/code> attribute and the &lt;code>obPerson&lt;/code> object
+class. &lt;strong>NOTE&lt;/strong>: the OIDs I&amp;rsquo;m using here are using my own
+IANA-assigned OID prefix. You should replace &lt;code>1.3.6.1.4.1.24441&lt;/code> with
+your own OID prefix. If you don&amp;rsquo;t have one (and you&amp;rsquo;re sure your
+organization doesn&amp;rsquo;t already have one), you can &lt;a href="http://pen.iana.org/pen/PenApplication.page">register&lt;/a> for your
+own.&lt;/p>
+&lt;h2 id="defining-a-dynamic-list">Defining a dynamic list&lt;/h2>
+&lt;p>We&amp;rsquo;re going to configure the &lt;code>dynlist&lt;/code> overlay so that when it sees an
+&lt;code>obPerson&lt;/code> object, it will use the &lt;code>labeledURI&lt;/code> attribute of that
+object to generate a list of &lt;code>obMemberOf&lt;/code> attributes containing the
+distinguished names of the groups of which the user is a member.
+We&amp;rsquo;ll load the following LDIF file into our server:&lt;/p>
+&lt;pre>&lt;code>dn: olcOverlay=dynlist,olcDatabase={2}hdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcDynamicList
+olcOverlay: dynlist
+olcDlAttrSet: obPerson labeledURI obMemberOf
+&lt;/code>&lt;/pre>
+&lt;p>Note that the distinguished name for this entry depends on the DN of
+the database which you are configuring, so you&amp;rsquo;ll need to modify the
+&lt;code>olcDatabase=&lt;/code> component in the DN.&lt;/p>
+&lt;h2 id="setting-user-attributes">Setting user attributes&lt;/h2>
+&lt;p>With the above configuration in place, we can now add the necessary
+&lt;code>labeledURI&lt;/code> attribute to a user and see what happens. For our
+purposes, this attribute needs to contain an LDAP URI that returns the
+groups of which the user is a member. Assuming a user like this:&lt;/p>
+&lt;pre>&lt;code>dn: cn=user1,ou=people,dc=oddbit,dc=com
+objectClass: posixAccount
+objectClass: inetOrgPerson
+cn: user1
+sn: testuser
+uid: user1
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user1
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;ll need to add the following:&lt;/p>
+&lt;pre>&lt;code>labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;amp;(
+objectclass=posixgroup)(memberuid=user1))
+&lt;/code>&lt;/pre>
+&lt;p>You could do this with the following LDIF file and &lt;code>ldapmodify&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>dn: cn=user1,ou=people,dc=oddbit,dc=com
+changetype: modify
+add: labeledURI
+labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;amp;(
+objectclass=posixgroup)(memberuid=user1))
+&lt;/code>&lt;/pre>
+&lt;h2 id="testing-things-out">Testing things out&lt;/h2>
+&lt;p>Assuming we have the following groups:&lt;/p>
+&lt;pre>&lt;code>dn: cn=user1,ou=groups,dc=oddbit,dc=com
+objectClass: posixGroup
+cn: user1
+gidNumber: 1001
+memberUid: lars
+memberUid: user1
+dn: cn=staff,ou=groups,dc=oddbit,dc=com
+objectClass: posixGroup
+cn: staff
+gidNumber: 2000
+memberUid: user1
+&lt;/code>&lt;/pre>
+&lt;p>If we look up the &lt;code>user1&lt;/code> user:&lt;/p>
+&lt;pre>&lt;code># ldapsearch -Y EXTERNAL -H ldapi://%2fvar%2frun%2fldapi -b \
+ou=people,dc=oddbit,dc=com cn=user1
+&lt;/code>&lt;/pre>
+&lt;p>We should see &lt;code>obMemberOf&lt;/code> attributes in the result:&lt;/p>
+&lt;pre>&lt;code>dn: cn=user1,ou=people,dc=oddbit,dc=com
+cn: user1
+sn: testuser
+uid: user1
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user1
+labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;amp;(objectclass=posixgroup)
+(memberuid=user1))
+objectClass: inetOrgPerson
+objectClass: oddPerson
+objectClass: posixAccount
+obmemberof: cn=user1,ou=groups,dc=oddbit,dc=com
+obmemberof: cn=staff,ou=groups,dc=oddbit,dc=com
+&lt;/code>&lt;/pre>
+&lt;h2 id="caveats">Caveats&lt;/h2>
+&lt;p>Note that this solution requires searching through all of your group
+entries every time you look up a user object. Given a sufficiently
+large directory this may not be an optimal solution.&lt;/p></content></item><item><title>Kerberos authenticated queries to Active Directory</title><link>https://blog.oddbit.com/post/2010-06-29-linux-kerberos-ad/</link><pubDate>Tue, 29 Jun 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-06-29-linux-kerberos-ad/</guid><description>There are many guides out there to help you configure your Linux system as an LDAP and Kerberos client to an Active Directory server. Most of these guides solve the problem of authentication by embedding a username and password into a configuration file somewhere on your system. While this works, it presents some problems:
+If you use a common account for authentication from all of your Linux systems, a compromise on one system means updating the configuration of all of your systems.</description><content>&lt;p>There are many guides out there to help you configure your Linux system as an LDAP and Kerberos client to an Active Directory server. Most of these guides solve the problem of authentication by embedding a username and password into a configuration file somewhere on your system. While this works, it presents some problems:&lt;/p>
+&lt;ul>
+&lt;li>If you use a common account for authentication from all of your Linux systems, a compromise on one system means updating the configuration of all of your systems.&lt;/li>
+&lt;li>If you don&amp;rsquo;t want to use a common account, you need to provision a new account for each computer&amp;hellip;&lt;/li>
+&lt;li>&amp;hellip;which is silly, because if you join the system to Active Directory there is already a computer object associated with the system that can be used for authentication.&lt;/li>
+&lt;/ul>
+&lt;p>This document describes how to configure a Linux system such that queries
+generated by &lt;a href="http://www.padl.com/OSS/nss_ldap.html">nss_ldap&lt;/a> will use either the current user&amp;rsquo;s Kerberos
+credentials, or, for the root user, credentials stored in a Kerberos
+credentials cache.&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Your Linux system must have a valid &lt;code>keytab&lt;/code> file.&lt;/p>
+&lt;p>A &lt;code>keytab&lt;/code> is a file containing pairs of Kerberos principals and encrypted keys.&lt;/p>
+&lt;p>Joining Active Directory using Samba&amp;rsquo;s &lt;code>net ads join&lt;/code> will create the
+necessary keytab. It is also possible to create the keytab on your Windows
+domain controller and install it on your Linux systems. Instructions for
+doing this are beyond the scope of this document.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Host objects in Active Directory must have a &lt;code>userPrincipalName&lt;/code> attribute.&lt;/p>
+&lt;p>For example:&lt;/p>
+&lt;pre>&lt;code>$ ldapsearch cn=dottiness userPrincipalName
+dn: CN=DOTTINESS,CN=Computers,dc=example,dc=com
+userPrincipalName: host/dottiness.example.com@EXAMPLE.COM
+&lt;/code>&lt;/pre>
+&lt;p>Active Directory &lt;em>does not&lt;/em> automatically create a &lt;code>userPrincipalName&lt;/code> when a new host object is provisioned. You will either need to provide this value manually or develop an automated process that will populate this field when provisioning new host objects.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>Kerberos credentials have a maximum usable lifetime. The cached credentials
+used for root queries by &lt;code>nss_ldap&lt;/code> must be refreshed periodically in order to
+function.&lt;/p>
+&lt;p>You will need to install a crontab (e.g., in &lt;code>/etc/cron.d&lt;/code>) that looks something
+like this:&lt;/p>
+&lt;pre>&lt;code>PATH=/bin:/usr/bin:/usr/kerberos/bin
+@reboot root kinit -k -c /var/run/ldap_cc &amp;gt; /dev/null 2&amp;gt;&amp;amp;1
+@hourly root kinit -k -c /var/run/ldap_cc &amp;gt; /dev/null 2&amp;gt;&amp;amp;1
+&lt;/code>&lt;/pre>
+&lt;p>This periodically reauthenticates to your domain controller used the cached
+principal in the system keytab (&lt;code>/etc/krb5.keytab&lt;/code>) and caches the credentials in
+&lt;code>/var/run/ldap_cc&lt;/code>.&lt;/p>
+&lt;p>You will need something similar to the following in &lt;code>/etc/ldap.conf&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># This is your domain controller.
+uri ldap://dc1.example.com
+base dc=example,dc=com
+scope one
+referrals no
+timelimit 120
+bind_timelimit 120
+idle_timelimit 3600
+ldap_version 3
+# Authenticate using SASL for user and root queries.
+use_sasl on
+rootuse_sasl on
+# Use SASL's gssapi (Kerberos) mechanism.
+sasl_mech gssapi
+# Use these cached credentials for root.
+krb5_ccname /var/run/ldap_cc
+nss_base_group ou=groups,dc=example,dc=com
+nss_base_passwd ou=people,dc=example,dc=com
+nss_initgroups_ignoreusers root,ldap,named,avahi,haldaemon,dbus,radvd,tomcat,radiusd,news,mailman,nscd,gdm,polkituser
+# These are common mappings for working with Active Directory.
+nss_map_attribute uid sAMAccountName
+nss_map_attribute uniqueMember member
+nss_map_objectclass posixAccount user
+nss_map_objectclass posixGroup group
+nss_map_objectclass shadowAccount user
+pam_login_attribute sAMAccountName
+pam_member_attribute member
+pam_password ad
+pam_password_prohibit_message Please visit http://password.example.com to change your password.
+pam_filter objectclass=User
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>use_sasl on&lt;/code> directive configures &lt;code>nss_ldap&lt;/code> to use the Kerberos credentials
+for the current user when looking up user/group/etc information. The
+&lt;code>rootuse_sasl on&lt;/code> attribute does the same thing for processes running as &lt;code>root&lt;/code>.&lt;/p>
+&lt;p>Note that this configuration sets scope &lt;code>one&lt;/code>, which means that &lt;code>nss_ldap&lt;/code> &lt;em>will
+not&lt;/em> recurse down a directory tree. This is a performance optimization, not a
+requirement.&lt;/p>
+&lt;h2 id="as-an-unprivileged-user">As an unprivileged user&lt;/h2>
+&lt;p>Before acquiring Kerberos credentials:&lt;/p>
+&lt;pre>&lt;code>$ getent passwd lars
+(times out)
+&lt;/code>&lt;/pre>
+&lt;p>Authenticate to Kerberos:&lt;/p>
+&lt;pre>&lt;code>$ kinit
+Password for lars@EXAMPLE.COM:
+&lt;/code>&lt;/pre>
+&lt;p>With valid credentials:&lt;/p>
+&lt;pre>&lt;code>$ getent passwd lars
+lars:*:500:500:lars:\\emc00.example.com\staff\l\lars\windows:
+&lt;/code>&lt;/pre>
+&lt;h2 id="as-root">As root&lt;/h2>
+&lt;p>Before acquiring Kerberos credentials:&lt;/p>
+&lt;pre>&lt;code># getent passwd lars
+(times out)
+&lt;/code>&lt;/pre>
+&lt;p>Update credentials cache from system keytab:&lt;/p>
+&lt;pre>&lt;code># kinit -k
+&lt;/code>&lt;/pre>
+&lt;p>With valid credentials:&lt;/p>
+&lt;pre>&lt;code># getent passwd lars
+lars:*:500:500:lars:\\emc00.example.com\staff\l\lars\windows:
+&lt;/code>&lt;/pre>
+&lt;p>This configuration makes the operation of &lt;code>nss_ldap&lt;/code> dependent on valid Kerberos
+credentials. If a user remains logged in after her Kerberos credentials have
+expired, she will experience degraded behavior, since many name lookup
+operations will timeout. Similarly, local system accounts that do not have
+valid Kerberos credentials will experience similar behavior (and will thus only
+be able to see local users and groups).&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;!-- raw HTML omitted --></content></item><item><title>LDAP redundancy through proxy servers</title><link>https://blog.oddbit.com/post/2010-02-24-ldap-redundancy-through-proxy-/</link><pubDate>Wed, 24 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-24-ldap-redundancy-through-proxy-/</guid><description>Problem 1: Failover The problem Many applications only allow you to configure a single LDAP server. This can lead to unnecessary service outages if your directory service infrastructure is highly available (e.g., you are running Active Directory) and your application cannot take advantage of this fact.
+A solution We can provide a level of redundancy by passing the LDAP connections through a load balancing proxy. While this makes the proxy a single point of failure, it is (a) a very simple tool and thus less prone to complex failure modes, (b) running on the same host as the web application, and (c) is completely under our control.</description><content>&lt;h1 id="problem-1-failover">Problem 1: Failover&lt;/h1>
+&lt;h2 id="the-problem">The problem&lt;/h2>
+&lt;p>Many applications only allow you to configure a single LDAP server. This can lead to unnecessary service outages if your directory service infrastructure is highly available (e.g., you are running Active Directory) and your application cannot take advantage of this fact.&lt;/p>
+&lt;h2 id="a-solution">A solution&lt;/h2>
+&lt;p>We can provide a level of redundancy by passing the LDAP connections through a load balancing proxy. While this makes the proxy a single point of failure, it is (a) a very simple tool and thus less prone to complex failure modes, (b) running on the same host as the web application, and (c) is completely under our control.&lt;/p>
+&lt;p>For this example, I will use &lt;a href="http://www.inlab.de/balance.html">Balance&lt;/a>, a simple TCP load balancer from &lt;a href="http://www.inlab.de/">Inlab Software GmbH&lt;/a>. There are packages available for most major Linux distributions, including &lt;a href="http://fedoraproject.org/">Fedora&lt;/a> and &lt;a href="http://www.centos.org/">CentOS&lt;/a>.&lt;/p>
+&lt;p>Balance is configured completely on the command line. To provide round-robin access to a suite of three directory servers running LDAP over SSL, you might use the following command line:&lt;/p>
+&lt;pre>&lt;code>balance -b 127.0.0.1 636 10.1.1.1 10.1.1.2
+&lt;/code>&lt;/pre>
+&lt;p>Using balance&amp;rsquo;s terminology, this creates one &lt;em>group&lt;/em> of two &lt;em>channels&lt;/em>. Balance will round-robin among the channels in this group. Note that here and in subsequent examples we are binding the proxy to the loopback interface so that it is only available to applications running on the same host.&lt;/p>
+&lt;p>If you would prefer to preferentially send all the requests to the first server, and only use the second server if the first is unavailable, you could use a configuration like this:&lt;/p>
+&lt;pre>&lt;code>balance -b 127.0.0.1 636 10.1.1.1 \! 10.1.1.2
+&lt;/code>&lt;/pre>
+&lt;p>While you can run balance from a standard init (/etc/rc.d/&amp;hellip;) script, I prefer to use a service manager such as &lt;a href="http://smarden.org/runit/">runit&lt;/a> which takes care of restarting the service if it should exit unexpectedly. You could achieve the same thing in a slightly less flexible fashion by putting your balance command line in /etc/inittab. In either case you need to add the -f option to the command line, which causes balance to stay in the foreground.&lt;/p>
+&lt;h1 id="problem-2-debugging-ldap-over-ssl">Problem 2: Debugging LDAP over SSL&lt;/h1>
+&lt;h2 id="the-problem-1">The problem&lt;/h2>
+&lt;p>It is convenient to use a packet tracer such as &lt;a href="http://www.wireshark.org/">Wireshark&lt;/a> to debug LDAP protocol errors. This is often more informative than the debugging information that will be available to you on the client side, and may be more useful than server side debugging in many cases, even supposing that you have administrative access to the directory servers.&lt;/p>
+&lt;h2 id="a-solution-1">A solution&lt;/h2>
+&lt;p>You can use &lt;a href="http://www.stunnel.org/">Stunnel&lt;/a>, a general purpose SSL proxy tool, to intercept unencrypted client connections on the local machine and then forward them over an SSL channel to a remote server. This makes the unencrypted LDAP traffic available on the loopback interface while still ensuring that it is encrypted on the wire.&lt;/p>
+&lt;p>Stunnel can operate both as an SSL server and as an SSL client. In this case, we will be running it in client mode, connecting to a remote SSL server (or to the proxy configured in our previous example). Stunnel is configured by means of a simple INI-style configuration file. To achieve the goals of this example we might put the following configuration in a file (say, stunnel.conf):&lt;/p>
+&lt;pre>&lt;code>[ldap]
+accept = 127.0.0.1:389
+client = yes
+connect = localhost:636
+&lt;/code>&lt;/pre>
+&lt;p>We would run stunnel like this:&lt;/p>
+&lt;pre>&lt;code>stunnel /path/to/stunnel.conf
+&lt;/code>&lt;/pre>
+&lt;p>Again, I would run this under the control of a service supervisor. To keep stunnel in the foreground we would add the following to the global section of the configuration file (i.e., before the &lt;code>[ldap]&lt;/code> section marker):&lt;/p>
+&lt;pre>&lt;code>foreground = yes
+&lt;/code>&lt;/pre>
+&lt;p>With both of these solutions in place, we have achieved the following:&lt;/p>
+&lt;ul>
+&lt;li>High availability.&lt;/li>
+&lt;/ul>
+&lt;p>Our application will transparently make use of multiple directory servers. If a server fails, our application will continue to operate.&lt;/p>
+&lt;ul>
+&lt;li>Security&lt;/li>
+&lt;/ul>
+&lt;p>Our traffic is encrypted on the wire, regardless of whether the application has support for LDAP over SSL.&lt;/p>
+&lt;ul>
+&lt;li>Visibility&lt;/li>
+&lt;/ul>
+&lt;p>We are free to examine unencrypted traffic with a packet sniffer running on the local host.&lt;/p></content></item><item><title>Merging directories with OpenLDAP's Meta backend</title><link>https://blog.oddbit.com/post/2010-02-16-merging-directories-with-openl/</link><pubDate>Tue, 16 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-16-merging-directories-with-openl/</guid><description>This document provides an example of using OpenLDAP&amp;rsquo;s meta backend to provide a unified view of two distinct LDAP directory trees. I was frustrated by the lack of simple examples available when I went looking for information on this topic, so this is my attempt to make life easier for the next person looking to do the same thing.
+The particular use case that motiviated my interest in this topic was the need to configure web applications to (a) authenticate against an existing Active Directory server while (b) also allowing new accounts to be provisioned quickly and without granting any access in the AD environment.</description><content>&lt;p>This document provides an example of using OpenLDAP&amp;rsquo;s meta backend to provide a unified view of two distinct LDAP directory trees. I was frustrated by the lack of simple examples available when I went looking for information on this topic, so this is my attempt to make life easier for the next person looking to do the same thing.&lt;/p>
+&lt;p>The particular use case that motiviated my interest in this topic was the need to configure web applications to (a) authenticate against an existing Active Directory server while (b) also allowing new accounts to be provisioned quickly and without granting any access in the AD environment. A complicating factor is that the group managing the AD server(s) was not the group implementing the web applications.&lt;/p>
+&lt;h1 id="assumptions">Assumptions&lt;/h1>
+&lt;p>I&amp;rsquo;m making several assumptions while writing this document:&lt;/p>
+&lt;ul>
+&lt;li>You have root access on your system and are able to modify files in /etc/openldap and elsewhere on the filesystem.&lt;/li>
+&lt;li>You are somewhat familiar with LDAP.&lt;/li>
+&lt;li>You are somewhat familiar with OpenLDAP.&lt;/li>
+&lt;/ul>
+&lt;h1 id="set-up-backend-directories">Set up backend directories&lt;/h1>
+&lt;h2 id="configure-slapd">Configure slapd&lt;/h2>
+&lt;p>We&amp;rsquo;ll first create two &amp;ldquo;backend&amp;rdquo; LDAP directories. These will represent the directories you&amp;rsquo;re trying to merge. For the purposes of this example we&amp;rsquo;ll use the ldif backend, which stores data in LDIF format on the filesystem. This is great for testing (it&amp;rsquo;s simple and easy to understand), but not so great for performance.&lt;/p>
+&lt;p>We define one backend like this in /etc/openldap/slapd-be-1.conf:&lt;/p>
+&lt;pre>&lt;code>database ldif
+suffix &amp;quot;ou=backend1&amp;quot;
+directory &amp;quot;/var/lib/ldap/backend1&amp;quot;
+rootdn &amp;quot;cn=ldif-admin,ou=backend1&amp;quot;
+rootpw &amp;quot;LDIF&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>And a second backend like this in /etc/openldap/slapd-be-2.conf:&lt;/p>
+&lt;pre>&lt;code>database ldif
+suffix &amp;quot;ou=backend2&amp;quot;
+directory &amp;quot;/var/lib/ldap/backend2&amp;quot;
+rootdn &amp;quot;cn=ldif-admin,ou=backend2&amp;quot;
+rootpw &amp;quot;LDIF&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Now, we need to load these configs into the main slapd configuration file. Open slapd.conf, and look for the following comment:&lt;/p>
+&lt;pre>&lt;code>#######################################################################
+# ldbm and/or bdb database definitions
+#######################################################################
+&lt;/code>&lt;/pre>
+&lt;p>Remove anything below this comment and then add the following lines:&lt;/p>
+&lt;pre>&lt;code>include /etc/openldap/slapd-be-1.conf
+include /etc/openldap/slapd-be-2.conf
+&lt;/code>&lt;/pre>
+&lt;h2 id="start-up-slapd">Start up slapd&lt;/h2>
+&lt;p>Start up your LDAP service:&lt;/p>
+&lt;pre>&lt;code># slapd -f slapd.conf -h ldap://localhost/
+&lt;/code>&lt;/pre>
+&lt;p>And check to make sure it&amp;rsquo;s running:&lt;/p>
+&lt;pre>&lt;code># ps -fe | grep slapd
+root 15087 1 0 22:48 ? 00:00:00 slapd -f slapd.conf -h ldap://localhost/
+&lt;/code>&lt;/pre>
+&lt;h2 id="populate-backends-with-sample-data">Populate backends with sample data&lt;/h2>
+&lt;p>We need to populate the directories with something to query.&lt;/p>
+&lt;p>Put this in backend1.ldif:&lt;/p>
+&lt;pre>&lt;code>dn: ou=backend1
+objectClass: top
+objectClass: organizationalUnit
+ou: backend1
+dn: ou=people,ou=backend1
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+dn: cn=user1,ou=people,ou=backend1
+objectClass: inetOrgPerson
+cn: user1
+givenName: user1
+sn: Somebodyson
+mail: user1@example.com
+&lt;/code>&lt;/pre>
+&lt;p>And this in backend2.ldif:&lt;/p>
+&lt;pre>&lt;code>dn: ou=backend2
+objectClass: top
+objectClass: organizationalUnit
+ou: backend2
+dn: ou=people,ou=backend2
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+dn: cn=user2,ou=people,ou=backend2
+objectClass: inetOrgPerson
+cn: user2
+givenName: user2
+sn: Somebodyson
+mail: user2@example.com
+&lt;/code>&lt;/pre>
+&lt;p>And then load the data into the backends:&lt;/p>
+&lt;pre>&lt;code>ldapadd -x -H ldap://localhost -D cn=ldif-admin,ou=backend1 \
+-w LDIF -f backend1.ldif
+&lt;/code>&lt;/pre>
+&lt;p>And:&lt;/p>
+&lt;pre>&lt;code>ldapadd -x -H ldap://localhost -D cn=ldif-admin,ou=backend2 \
+-w LDIF -f backend2.ldif
+&lt;/code>&lt;/pre>
+&lt;p>You can verify that the data loaded correctly by issuing a query to the backends. E.g.:&lt;/p>
+&lt;pre>&lt;code>ldapsearch -x -H ldap://localhost -b ou=backend1 -LLL
+&lt;/code>&lt;/pre>
+&lt;p>This should give you something that looks very much like the contents of backend1.ldif. You can do the same thing for backend2.&lt;/p>
+&lt;h1 id="set-up-meta-database">Set up meta database&lt;/h1>
+&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP+2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
+&lt;p>Put the following into a file called slapd-frontend.conf (we&amp;rsquo;ll discuss the details in moment):&lt;/p>
+&lt;pre>&lt;code>database meta
+suffix &amp;quot;dc=example,dc=com&amp;quot;
+uri &amp;quot;ldap://localhost/ou=backend1,dc=example,dc=com&amp;quot;
+suffixmassage &amp;quot;ou=backend1,dc=example,dc=com&amp;quot; &amp;quot;ou=backend1&amp;quot;
+uri &amp;quot;ldap://localhost/ou=backend2,dc=example,dc=com&amp;quot;
+suffixmassage &amp;quot;ou=backend2,dc=example,dc=com&amp;quot; &amp;quot;ou=backend2&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>And then add to slapd.conf:&lt;/p>
+&lt;pre>&lt;code>include /etc/openldap/slapd-frontend.conf
+&lt;/code>&lt;/pre>
+&lt;p>Restart slapd. Let&amp;rsquo;s do a quick search to see exactly what we&amp;rsquo;ve accomplished:&lt;/p>
+&lt;pre>&lt;code>$ ldapsearch -x -H 'ldap://localhost/' \
+-b dc=example,dc=com objectclass=inetOrgPerson -LLL
+dn: cn=user1,ou=people,ou=backend1,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: user1
+givenName: user1
+sn: Somebodyson
+mail: user1@example.com
+dn: cn=user2,ou=people,ou=backend2,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: user2
+givenName: user2
+sn: Somebodyson
+mail: user2@example.com
+&lt;/code>&lt;/pre>
+&lt;p>As you can see from the output above, a single query is now returning results from both backends, merged into the dc=example,dc=com hierarchy.&lt;/p>
+&lt;h2 id="a-closer-look">A closer look&lt;/h2>
+&lt;p>Let&amp;rsquo;s take a closer look at the meta backend configuration.&lt;/p>
+&lt;pre>&lt;code>database meta
+suffix &amp;quot;dc=example,dc=com&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>The database statement begins a new database definition. The suffix statement identifies the namespace that will be served by this particular database.&lt;/p>
+&lt;p>Here is the proxy for backend1 (the entry for backend2 is virtually identical):&lt;/p>
+&lt;pre>&lt;code>uri &amp;quot;ldap://localhost/ou=backend1,dc=example,dc=com&amp;quot;
+suffixmassage &amp;quot;ou=backend1,dc=example,dc=com&amp;quot; &amp;quot;ou=backend1&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP+2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
+&lt;p>The suffixmassage statement performs simple rewriting on distinguished names. It directs &lt;em>slapd&lt;/em> to replace ou=backend1,dc=example,dc=com with ou=backend1 when communicating with the backend directory (and vice-versa).&lt;/p>
+&lt;p>You can perform simple rewriting of attribute and object classes with the map statement. For example, if backend1 used a sAMAccountName attribute and our application was expecting a uid attribute, we could add this after the suffixmassage statement:&lt;/p>
+&lt;pre>&lt;code>map attribute uid sAMAccountName
+&lt;/code>&lt;/pre>
+&lt;h1 id="conclusion">Conclusion&lt;/h1>
+&lt;p>The sample configuration files, data, and code referenced in this post are available online in &lt;a href="http://github.com/larsks/OpenLDAP-Metadirectory-Example">a github repository&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;a href="http://github.com/larsks/OpenLDAP-Metadirectory-Example">http://github.com/larsks/OpenLDAP-Metadirectory-Example&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>I hope you&amp;rsquo;ve found this post useful, or at least informative. If you have any comments or questions regarding this post, please log them as issues on GitHub. This will make them easier for me to track.&lt;/p></content></item></channel></rss>

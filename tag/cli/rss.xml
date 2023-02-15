@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>cli on blog.oddbit.com</title><link>https://blog.oddbit.com/tag/cli/</link><description>Recent content in cli on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 23 Sep 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tag/cli/rss.xml" rel="self" type="application/rss+xml"/><item><title>Stupid command line tricks: Quickly share screen captures</title><link>https://blog.oddbit.com/post/2014-09-23-stupid-cli-quickly-share-scree/</link><pubDate>Tue, 23 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-23-stupid-cli-quickly-share-scree/</guid><description>Sometimes you want to quickly share a screenshot with someone. Here&amp;rsquo;s my favorite mechanism, which assumes you have installed both curl and the ImageMagick suite.
+$ import png:- | curl -T- -s chunk.io http://chunk.io/f/76ea98ea081748e19de4507fde3c2c65 When you run this command, you cursor will change into crosshairs. Click on a window, and this will grab a png image of that window and send it to chunk.io using curl.
+You&amp;rsquo;ll get back a URL that you can use to share the image with people.</description><content>&lt;p>Sometimes you want to quickly share a screenshot with someone. Here&amp;rsquo;s
+my favorite mechanism, which assumes you have installed both &lt;code>curl&lt;/code>
+and the &lt;a href="http://www.imagemagick.org/">ImageMagick&lt;/a> suite.&lt;/p>
+&lt;pre>&lt;code>$ import png:- | curl -T- -s chunk.io
+http://chunk.io/f/76ea98ea081748e19de4507fde3c2c65
+&lt;/code>&lt;/pre>
+&lt;p>When you run this command, you cursor will change into crosshairs.
+Click on a window, and this will grab a png image of that window and
+send it to &lt;a href="http://chunk.io/">chunk.io&lt;/a> using curl.&lt;/p>
+&lt;p>You&amp;rsquo;ll get back a URL that you can use to share the image with people.&lt;/p></content></item></channel></rss>

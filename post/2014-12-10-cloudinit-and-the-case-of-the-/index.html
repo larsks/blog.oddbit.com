@@ -1,0 +1,73 @@
+<!doctype html><html lang=en><head><title>Cloud-init and the case of the changing hostname :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Setting the stage I ran into a problem earlier this week deploying RDO Icehouse under RHEL 6. My target systems were a set of libvirt guests deployed from the RHEL 6 KVM guest image, which includes cloud-init in order to support automatic configuration in cloud environments. I take advantage of this when using libvirt by attaching a configuration drive so that I can pass in ssh keys and a user-data script."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Cloud-init and the case of the changing hostname"><meta property="og:description" content="Setting the stage I ran into a problem earlier this week deploying RDO Icehouse under RHEL 6. My target systems were a set of libvirt guests deployed from the RHEL 6 KVM guest image, which includes cloud-init in order to support automatic configuration in cloud environments. I take advantage of this when using libvirt by attaching a configuration drive so that I can pass in ssh keys and a user-data script."><meta property="og:url" content="https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-12-10 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/>Cloud-init and the case of the changing hostname</a></h1><div class=post-meta><time class=post-date>2014-12-10 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/rdo/>rdo</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/neutron/>neutron</a>&nbsp;</span><div class=post-content><div><h2 id=setting-the-stage>Setting the stage<a href=#setting-the-stage class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I ran into a problem earlier this week deploying RDO Icehouse under
+RHEL 6. My target systems were a set of libvirt guests deployed from
+the RHEL 6 KVM guest image, which includes <a href=https://cloudinit.readthedocs.org/en/latest/>cloud-init</a> in order to
+support automatic configuration in cloud environments. I take
+advantage of this when using <code>libvirt</code> by attaching a configuration
+drive so that I can pass in ssh keys and a <code>user-data</code> script.</p><p>Once the systems were up, I used <a href=https://wiki.openstack.org/wiki/Packstack>packstack</a> to deploy OpenStack
+onto a single controller and two compute nodes, and at the conclusion
+of the <code>packstack</code> run everything was functioning correctly. Running
+<code>neutron agent-list</code> showed all agents in good order:</p><pre><code>+--------------------------------------+--------------------+------------+-------+----------------+
+| id                                   | agent_type         | host       | alive | admin_state_up |
++--------------------------------------+--------------------+------------+-------+----------------+
+| 0d51d200-d902-4e05-847a-858b69c03088 | DHCP agent         | controller | :-)   | True           |
+| 192f76e9-a816-4bd9-8a90-a263a1d54031 | Open vSwitch agent | compute-0  | :-)   | True           |
+| 3d97d7ba-1b1f-43f8-9582-f860fbfe50df | Open vSwitch agent | controller | :-)   | True           |
+| 54d387a6-dca1-4ace-8c1b-7788fb0bc090 | Metadata agent     | controller | :-)   | True           |
+| 92fc83bf-0995-43c3-92d1-70002c734604 | L3 agent           | controller | :-)   | True           |
+| e06575c2-43b3-4691-80bc-454f501debfe | Open vSwitch agent | compute-1  | :-)   | True           |
++--------------------------------------+--------------------+------------+-------+----------------+
+</code></pre><h2 id=a-problem-rears-its-ugly-head>A problem rears its ugly head<a href=#a-problem-rears-its-ugly-head class=hanchor arialabel=Anchor>&#8983;</a></h2><p>After rebooting the system, I found that I was missing an expected
+Neutron router namespace. Specifically, given:</p><pre><code># neutron router-list
++--------------------------------------+---------+-----------------------------------------------------------------------------+
+| id                                   | name    | external_gateway_info                                                       |
++--------------------------------------+---------+-----------------------------------------------------------------------------+
+| e83eec10-0de2-4bfa-8e58-c1bcbe702f51 | router1 | {&quot;network_id&quot;: &quot;b53a9ecd-01fc-4bee-b20d-8fbe0cd2e010&quot;, &quot;enable_snat&quot;: true} |
++--------------------------------------+---------+-----------------------------------------------------------------------------+
+</code></pre><p>I expected to see:</p><pre><code># ip netns
+qrouter-e83eec10-0de2-4bfa-8e58-c1bcbe702f51
+</code></pre><p>But the <code>qrouter</code> namespace was missing.</p><p>The output of <code>neutron agent-list</code> shed some light on the problem:</p><pre><code>+--------------------------------------+--------------------+------------------------+-------+----------------+
+| id                                   | agent_type         | host                   | alive | admin_state_up |
++--------------------------------------+--------------------+------------------------+-------+----------------+
+| 0832e8f3-61f9-49cf-b49c-886cc94d3d28 | Metadata agent     | controller.localdomain | :-)   | True           |
+| 0d51d200-d902-4e05-847a-858b69c03088 | DHCP agent         | controller             | xxx   | True           |
+| 192f76e9-a816-4bd9-8a90-a263a1d54031 | Open vSwitch agent | compute-0              | :-)   | True           |
+| 3be34828-ca8d-4638-9b3a-4e2f688a9ca9 | L3 agent           | controller.localdomain | :-)   | True           |
+| 3d97d7ba-1b1f-43f8-9582-f860fbfe50df | Open vSwitch agent | controller             | xxx   | True           |
+| 54d387a6-dca1-4ace-8c1b-7788fb0bc090 | Metadata agent     | controller             | xxx   | True           |
+| 87b53741-f28b-4582-9ea8-6062ab9962e9 | Open vSwitch agent | controller.localdomain | :-)   | True           |
+| 92fc83bf-0995-43c3-92d1-70002c734604 | L3 agent           | controller             | xxx   | True           |
+| e06575c2-43b3-4691-80bc-454f501debfe | Open vSwitch agent | compute-1              | :-)   | True           |
+| e327b7f9-c9ce-49f8-89c1-b699d9f7d253 | DHCP agent         | controller.localdomain | :-)   | True           |
++--------------------------------------+--------------------+------------------------+-------+----------------+
+</code></pre><p>There were two sets of Neutron agents registered using different
+hostnames &ndash; one set using the short name of the host, and the other
+set using the fully qualified hostname.</p><h2 id=whats-up-with-that>What&rsquo;s up with that?<a href=#whats-up-with-that class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In the <code>cc_set_hostname.py</code> module, <code>cloud-init</code> performs the
+following operation:</p><pre><code>(hostname, fqdn) = util.get_hostname_fqdn(cfg, cloud)
+try:
+    log.debug(&quot;Setting the hostname to %s (%s)&quot;, fqdn, hostname)
+    cloud.distro.set_hostname(hostname, fqdn)
+except Exception:
+    util.logexc(log, &quot;Failed to set the hostname to %s (%s)&quot;, fqdn,
+                hostname)
+    raise
+</code></pre><p>It starts by retrieving the hostname (both the qualified and
+unqualified version) from the cloud environment, and then calls
+<code>cloud.distro.set_hostname(hostname, fqdn)</code>. This ends up calling:</p><pre><code>def set_hostname(self, hostname, fqdn=None):
+    writeable_hostname = self._select_hostname(hostname, fqdn)
+    self._write_hostname(writeable_hostname, self.hostname_conf_fn)
+    self._apply_hostname(hostname)
+</code></pre><p>Where, on a RHEL system, <code>_select_hostname</code> is:</p><pre><code>def _select_hostname(self, hostname, fqdn):
+    # See: http://bit.ly/TwitgL
+    # Should be fqdn if we can use it
+    if fqdn:
+        return fqdn
+    return hostname
+</code></pre><p>So:</p><ul><li><code>cloud-init</code> sets <code>writeable_hostname</code> to the fully qualified name
+of the system (assuming it is available).</li><li><code>cloud-init</code> writes the fully qualified hostname to <code>/etc/sysconfig/network</code>.</li><li><code>cloud-init</code> sets the hostname to the <em>unqualified</em> hostname</li></ul><p>The result is that your system will probably have a different hostname
+after your first reboot, which throws off Neutron.</p><h2 id=and-they-all-lived-happily-ever-after>And they all lived happily ever after?<a href=#and-they-all-lived-happily-ever-after class=hanchor arialabel=Anchor>&#8983;</a></h2><p>It turns out this bug was reported upstream back in October of 2013 as
+<a href=https://bugs.launchpad.net/cloud-init/+bug/1246485>bug 1246485</a>, and while there are patches available the bug has
+been marked as &ldquo;low&rdquo; priority and has been fixed. There are patches
+attached to the bug report that purport to fix the problem.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>
