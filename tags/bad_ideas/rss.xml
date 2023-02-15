@@ -6,7 +6,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img src="repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -16,7 +16,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img src="repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -28,7 +28,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img src="repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Fixing RPM with evil magic</title><link>https://blog.oddbit.com/posts/fixing-rpm-with-evil-magic/</link><pubDate>Tue, 26 Jul 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/fixing-rpm-with-evil-magic/</guid><description>Fixing rpmsign with evil magic At my office we are developing a deployment mechanism for RPM packages. The general workflow looks like this:
 You build a source rpm on your own machine. You sign the rpm with your GPG key. You submit the source RPM to our buildserver. The buildserver validates your signature and then builds the package. The buildserver signs the package using a master signing key. The last step in that sequence represents a problem, because the rpmsign command will always, always prompt for a password and read the response from /dev/tty.</description><content>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
 &lt;p>At my office we are developing a deployment mechanism for RPM packages. The

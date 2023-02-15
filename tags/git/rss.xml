@@ -641,7 +641,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img src="repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -651,7 +651,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img src="repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -663,7 +663,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img src="repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/posts/tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/tracking-down-a-kernel-bug-wit/</guid><description>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
 $ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
 Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3.</description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I

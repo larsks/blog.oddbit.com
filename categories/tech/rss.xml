@@ -13293,7 +13293,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img src="repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -13303,7 +13303,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img src="repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -13315,7 +13315,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2015/04/10/repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img src="repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/posts/booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/booting-cloud-images-with-libv/</guid><description>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed for use in cloud environments like OpenStack and AWS. These images are usually differentiated by (a) being relatively small, and (b) running cloud-init at boot to perform initial system configuration tasks using metadata provided by the cloud environment.
 Because of their small size and support for automatic configuration (including such useful tasks as provisioning ssh keys), these images are attractive for use outside of a cloud environment.</description><content>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
 for use in cloud environments like OpenStack and AWS. These images
@@ -22670,7 +22670,7 @@ the firewall the connection was never successfully established&amp;hellip;and af
 seconds (the default &amp;ldquo;embryonic connection timeout&amp;rdquo;) the connection gets
 dropped by the firewall. The diagram below illustrates exactly what was
 happening:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2012/07/30/asymmetric-routing.png" alt="assymetric routing">&lt;/p>
+&lt;p>&lt;img src="asymmetric-routing.png" alt="assymetric routing">&lt;/p>
 &lt;p>There are various ways of correcting this situation:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -22815,7 +22815,7 @@ What it does As I detailed in my previous post, the Envoy sends data to Enphase 
 &lt;p>In addition to extracting the XML data, the proxy also logs the complete contents (headers and message content) of the request and the reply to files.&lt;/p>
 &lt;h2 id="how-it-works">How it works&lt;/h2>
 &lt;p>Out of the box, your Envoy configures itself automatically using DHCP. Possibly, you&amp;rsquo;ve configured it statically. In either case, it will typically be configured to connect via your default gateway &amp;ndash; generally, your home router, cable modem, etc. In order to intercept the communication between the Envoy and Enphase, we insert another server between the Envoy and your network gateway. In the foollowing diagram, the dotted line represents the original communication path, while the solid lines represent the new communication path:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/02/22/envoy-capture.png" alt="envoy communication">&lt;/p>
+&lt;p>&lt;img src="envoy-capture.png" alt="envoy communication">&lt;/p>
 &lt;p>The intermediate system &amp;ndash; which we&amp;rsquo;ll call the interceptor &amp;ndash; will use a few tricks to redirect traffic destined for Enphase to the local proxy (which will log the data locally and then forward it on to Enphase).&lt;/p>
 &lt;h2 id="assumptions">Assumptions&lt;/h2>
 &lt;p>For the purposes of this article, we&amp;rsquo;ll assume that your Envoy is at address 192.168.1.100, and the address of the interceptor is 192.168.1.200.&lt;/p>

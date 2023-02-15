@@ -7471,7 +7471,7 @@ the firewall the connection was never successfully established&amp;hellip;and af
 seconds (the default &amp;ldquo;embryonic connection timeout&amp;rdquo;) the connection gets
 dropped by the firewall. The diagram below illustrates exactly what was
 happening:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2012/07/30/asymmetric-routing.png" alt="assymetric routing">&lt;/p>
+&lt;p>&lt;img src="asymmetric-routing.png" alt="assymetric routing">&lt;/p>
 &lt;p>There are various ways of correcting this situation:&lt;/p>
 &lt;ul>
 &lt;li>
