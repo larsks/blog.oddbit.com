@@ -22,14 +22,18 @@ en:
         name: "/posts"
         url: "/posts"
         weight: 3
+      - identifier: "tags"
+        name: "/tags"
+        url: "/tags"
+        weight: 4
       - identifier: "archive"
         name: "/archive"
         url: "/archive"
-        weight: 4
+        weight: 5
       - identifier: "feed"
         name: "/feed"
         url: "/rss.xml"
-        weight: 5
+        weight: 6
       - identifier: "github"
         name: "→Github"
         url: "https://github.com/larsks"
