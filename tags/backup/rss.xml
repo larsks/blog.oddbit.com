@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>backup on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/backup/</link><description>Recent content in backup on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 22 May 2011 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/backup/rss.xml" rel="self" type="application/rss+xml"/><item><title>Installing CrashPlan under FreeBSD 8</title><link>https://blog.oddbit.com/posts/installing-crashplan-under-fre/</link><pubDate>Sun, 22 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/installing-crashplan-under-fre/</guid><description>This articles describes how I got CrashPlan running on my FreeBSD 8(-STABLE) system. These instructions by Kim Scarborough were my starting point, but as these were for FreeBSD 7 there were some additional steps necessary to get things working.
+Install Java I had originally thought that it might be possible to run the CrashPlan client &amp;ldquo;natively&amp;rdquo; under FreeBSD. CrashPlan is a Java application, so this seemed like a possible solution. Unfortunately, Java under FreeBSD 8 seems to be a lost cause.</description><content>&lt;p>This articles describes how I got &lt;a href="http://crashplan.com/">CrashPlan&lt;/a> running on my FreeBSD 8(-STABLE) system. &lt;a href="http://kim.scarborough.chicago.il.us/do/nerd/tips/crashplan">These instructions&lt;/a> by Kim Scarborough were my starting point, but as these were for FreeBSD 7 there were some additional steps necessary to get things working.&lt;/p>
+&lt;h1 id="install-java">Install Java&lt;/h1>
+&lt;p>I had originally thought that it might be possible to run the CrashPlan client &amp;ldquo;natively&amp;rdquo; under FreeBSD. CrashPlan is a Java application, so this seemed like a possible solution. Unfortunately, Java under FreeBSD 8 seems to be a lost cause. I finally gave up and just installed Java under Linux.&lt;/p>
+&lt;h2 id="set-up-your-linux-compatability-environment">Set up your Linux compatability environment&lt;/h2>
+&lt;p>The simplest way to do this is to follow the instructions in the &lt;a href="http://www.freebsd.org/doc/handbook/linuxemu-lbc-install.html">FreeBSD Handbook&lt;/a>. This will get you a Fedora 10 based Linux userspace, which should be more than sufficient. I&amp;rsquo;m using a CentOS 5.6 userspace, but for what we&amp;rsquo;re doing it shouldn&amp;rsquo;t matter, modulo some minor differences in paths.&lt;/p>
+&lt;p>Note that Linux software running in this environment will have a modified view of your filesystem. In particular, /etc will map to /compat/linux/etc, and ZFS filesystems with non-default mountpoints seem to behave oddly (they are accessible, but not necessarily visible before you access them). This may require some workarounds in CrashPlan, depending on what you&amp;rsquo;re trying to back up.&lt;/p>
+&lt;h2 id="install-java-jre">Install Java JRE&lt;/h2>
+&lt;p>I installed a compatible Java environment from the CentOS package repository:&lt;/p>
+&lt;pre>&lt;code># chroot /compat/linux bash
+bash-3.2# yum install java-1.6.0-openjdk
+bash-3.2# exit
+&lt;/code>&lt;/pre>
+&lt;h1 id="install-crashplan">Install CrashPlan&lt;/h1>
+&lt;h2 id="install-the-crashplan-software">Install the CrashPlan software&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>Download &lt;a href="http://www.crashplan.com/consumer/download.html?os=Linux">CrashPlan for Linux&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Unpack the archive (named something like CrashPlan_3.0.3_Linux.tgz)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Change to the CrashPlan-install directory.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Run the following commands:&lt;/p>
+&lt;h1 id="export-pathcompatlinuxusrlibjvmjre-160-openjdkbinpath">export PATH=/compat/linux/usr/lib/jvm/jre-1.6.0-openjdk/bin:$PATH&lt;/h1>
+&lt;h1 id="compatlinuxbinbash-installsh">/compat/linux/bin/bash install.sh&lt;/h1>
+&lt;/li>
+&lt;li>
+&lt;p>Install CrashPlan into /usr/local. When prompted for where to locate init scripts (&amp;ldquo;What directory contains your SYSV init scripts?&amp;rdquo; and &amp;ldquo;What directory contains your runlevel init links?&amp;rdquo;), enter /tmp (because the installed init scripts aren&amp;rsquo;t ideal for your FreeBSD environment &amp;ndash; we&amp;rsquo;ll install our own later on).&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="fix-java">Fix Java&lt;/h2>
+&lt;p>The Linux runtime provided by the FreeBSD Linux compatability layer does not include all of the features of recent Linux kernels. In particular, it is missing the epoll* syscalls, which will cause Java to die with a &lt;em>Function not implemented&lt;/em> error. The workaround for this is documented in the &lt;a href="http://wiki.freebsd.org/linux-kernel">linux-kernel&lt;/a> page on the &lt;a href="http://wiki.freebsd.org/">FreeBSD wiki&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>If you run an application in the linux java which wants to use the linux epoll functions (you should see &amp;ldquo;not implemented&amp;rdquo; messages in dmesg), you can start java with the argument -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="install-an-rc-script">Install an rc script&lt;/h2>
+&lt;p>Place the following script into /usr/local/etc/rc.d/crashplan:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+#
+# PROVIDE: crashplan
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+. /etc/rc.subr
+name=&amp;quot;crashplan&amp;quot;
+rcvar=`set_rcvar`
+start_cmd=crashplan_start
+stop_cmd=crashplan_stop
+crashplan_start () {
+/compat/linux/bin/bash /usr/local/crashplan/bin/CrashPlanEngine start
+}
+crashplan_stop () {
+/compat/linux/bin/bash /usr/local/crashplan/bin/CrashPlanEngine stop
+}
+load_rc_config $name
+run_rc_command &amp;quot;$1&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>And then add:&lt;/p>
+&lt;pre>&lt;code>crashplan_enable=&amp;quot;YES&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>To /etc/rc.conf (or /etc/rc.conf.local).&lt;/p>
+&lt;h2 id="start-crashplan">Start CrashPlan&lt;/h2>
+&lt;p>Run:&lt;/p>
+&lt;pre>&lt;code>/usr/local/etc/rc.d/crashplan start
+&lt;/code>&lt;/pre>
+&lt;p>Wait a moment, then run:&lt;/p>
+&lt;pre>&lt;code>/compat/linux/bin/bash /usr/local/crashplan/bin/CrashPlanEngine status
+&lt;/code>&lt;/pre>
+&lt;p>This should verify that CrashPlan is running.&lt;/p>
+&lt;h1 id="connect-crashplan-client">Connect CrashPlan client&lt;/h1>
+&lt;p>Follow the instructions provided by CrashPlan for &lt;a href="http://stgsupport.crashplan.com/doku.php/how_to/configure_a_headless_client">connecting to a headless CrashPlan desktop&lt;/a>.&lt;/p></content></item></channel></rss>

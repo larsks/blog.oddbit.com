@@ -1,0 +1,40 @@
+<!doctype html><html lang=en><head><title>Generating random passwords in PowerShell :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I was looking for PowerShell solutions for generating a random password (in order to set the Administrator password on a Windows instance provisioned in OpenStack), and found several solutions using the GeneratePassword method of System.Web.Security.Membership (documentation here), along the lines of this:
+Function New-RandomComplexPassword ($length=8) { $Assembly = Add-Type -AssemblyName System.Web $password = [System.Web.Security.Membership]::GeneratePassword($length,2) return $password } While this works, I was unhappy with the generated passwords: they were difficult to type or transcribe because they make heavy use of punctuation."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/powershell-random-passwords/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Generating random passwords in PowerShell"><meta property="og:description" content="I was looking for PowerShell solutions for generating a random password (in order to set the Administrator password on a Windows instance provisioned in OpenStack), and found several solutions using the GeneratePassword method of System.Web.Security.Membership (documentation here), along the lines of this:
+Function New-RandomComplexPassword ($length=8) { $Assembly = Add-Type -AssemblyName System.Web $password = [System.Web.Security.Membership]::GeneratePassword($length,2) return $password } While this works, I was unhappy with the generated passwords: they were difficult to type or transcribe because they make heavy use of punctuation."><meta property="og:url" content="https://blog.oddbit.com/posts/powershell-random-passwords/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2012-11-04 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/powershell-random-passwords/>Generating random passwords in PowerShell</a></h1><div class=post-meta><time class=post-date>2012-11-04 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/powershell/>powershell</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/windows/>windows</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/passwords/>passwords</a>&nbsp;</span><div class=post-content><div><p>I was looking for PowerShell solutions for generating a random password (in
+order to set the Administrator password on a Windows instance provisioned in
+<a href=http://www.openstack.org/>OpenStack</a>), and found several solutions using the GeneratePassword method
+of <code>System.Web.Security.Membership</code> (documentation <a href=http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx>here</a>),
+along the lines of <a href=https://gist.github.com/4011878>this</a>:</p><pre><code>Function New-RandomComplexPassword ($length=8)
+{
+    $Assembly = Add-Type -AssemblyName System.Web
+    $password = [System.Web.Security.Membership]::GeneratePassword($length,2)
+    return $password
+}
+</code></pre><p>While this works, I was unhappy with the generated passwords: they
+were difficult to type or transcribe because they make heavy use of
+punctuation. For example:</p><ul><li><code>(O;RK_wx(IcD;&lt;V</code></li><li><code>+3N)lkU5r)nHiL#</code></li></ul><p>These looks more like line noise (remember that? No? Get off my
+lawn&mldr;) than anything else and feel very unnatural to type.</p><p>I was looking for longer strings consisting primarily of letters and
+digits. Thanks to Hey, Scripting Guy I learned about the Get-Random
+and ForEach-Object methods (and the % alias for the latter), and ended
+up with <a href=https://gist.github.com/4011916>the following</a>:</p><pre><code># Generate a random password
+# Usage: random-password &lt;length&gt;
+Function random-password ($length = 15)
+{
+    $punc = 46..46
+    $digits = 48..57
+    $letters = 65..90 + 97..122
+     
+    # Thanks to
+    # https://blogs.technet.com/b/heyscriptingguy/archive/2012/01/07/use-pow
+    $password = get-random -count $length `
+        -input ($punc + $digits + $letters) |
+            % -begin { $aa = $null } `
+            -process {$aa += [char]$_} `
+            -end {$aa}
+     
+    return $password
+}
+</code></pre><p>This generates strings of letters and digits (and &ldquo;.&rdquo;) that look something like:</p><ul><li><code>2JQ0bW7VMqcm4UB</code></li><li><code>V4DObnQl0vJX1wC</code></li></ul><p>I&rsquo;m a lot happier with this.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

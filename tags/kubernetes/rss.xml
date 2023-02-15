@@ -1,0 +1,1880 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>kubernetes on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/kubernetes/</link><description>Recent content in kubernetes on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 10 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/kubernetes/rss.xml" rel="self" type="application/rss+xml"/><item><title>Investigating connection timeouts in a Kubernetes application</title><link>https://blog.oddbit.com/posts/kubernetes-labels/</link><pubDate>Sat, 10 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/kubernetes-labels/</guid><description>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause.</description><content>&lt;p>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause. Absent a solid reproducer of the behavior in question, we looked at other aspects of our infrastructure:&lt;/p>
+&lt;ul>
+&lt;li>Networking seemed fine (we weren&amp;rsquo;t able to find any evidence of interface errors, packet loss, or bandwidth issues)&lt;/li>
+&lt;li>Storage in most of our cloud environments is provided by remote Ceph clusters. In addition to not seeing any evidence of network problems in general, we weren&amp;rsquo;t able to demonstrate specific problems with our storage, either (we did spot some performance variation between our Ceph clusters that may be worth investigating in the future, but it wasn&amp;rsquo;t the sort that would cause the problems we&amp;rsquo;re seeing)&lt;/li>
+&lt;li>My own attempts to reproduce the behavior using &lt;a href="https://dev.mysql.com/doc/refman/8.0/en/mysqlslap.html">mysqlslap&lt;/a> did not demonstrate any problems, even though we were driving a far larger number of connections and queries/second in the benchmarks than we were in the application.&lt;/li>
+&lt;/ul>
+&lt;p>What was going on?&lt;/p>
+&lt;p>I was finally able to get my hands on container images, deployment manifests, and instructions to reproduce the problem this past Friday. After working through some initial errors that weren&amp;rsquo;t the errors we were looking for (insert Jedi hand gesture here), I was able to see the behavior in practice. In a section of code that makes a number of connections to the database, we were seeing:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Failed to create databases:
+Command returned non-zero value &amp;#39;1&amp;#39;: ERROR 2003 (HY000): Can&amp;#39;t connect to MySQL server on &amp;#39;mariadb&amp;#39; (110)
+#0 /usr/share/xdmod/classes/CCR/DB/MySQLHelper.php(521): CCR\DB\MySQLHelper::staticExecuteCommand(Array)
+#1 /usr/share/xdmod/classes/CCR/DB/MySQLHelper.php(332): CCR\DB\MySQLHelper::staticExecuteStatement(&amp;#39;mariadb&amp;#39;, &amp;#39;3306&amp;#39;, &amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, NULL, &amp;#39;SELECT SCHEMA_N...&amp;#39;)
+#2 /usr/share/xdmod/classes/OpenXdmod/Shared/DatabaseHelper.php(65): CCR\DB\MySQLHelper::databaseExists(&amp;#39;mariadb&amp;#39;, &amp;#39;3306&amp;#39;, &amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, &amp;#39;mod_logger&amp;#39;)
+#3 /usr/share/xdmod/classes/OpenXdmod/Setup/DatabaseSetupItem.php(39): OpenXdmod\Shared\DatabaseHelper::createDatabases(&amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, Array, Array, Object(OpenXdmod\Setup\Console))
+#4 /usr/share/xdmod/classes/OpenXdmod/Setup/DatabaseSetup.php(109): OpenXdmod\Setup\DatabaseSetupItem-&amp;gt;createDatabases(&amp;#39;root&amp;#39;, &amp;#39;pass&amp;#39;, Array, Array)
+#5 /usr/share/xdmod/classes/OpenXdmod/Setup/Menu.php(69): OpenXdmod\Setup\DatabaseSetup-&amp;gt;handle()
+#6 /usr/bin/xdmod-setup(37): OpenXdmod\Setup\Menu-&amp;gt;display()
+#7 /usr/bin/xdmod-setup(22): main()
+#8 {main}
+&lt;/code>&lt;/pre>&lt;p>Where &lt;code>110&lt;/code> is &lt;code>ETIMEDOUT&lt;/code>, &amp;ldquo;Connection timed out&amp;rdquo;.&lt;/p>
+&lt;p>The application consists of two &lt;a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployment&lt;/a> resources, one that manages a MariaDB pod and another that manages the application itself. There are also the usual suspects, such as &lt;a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">PersistentVolumeClaims&lt;/a> for the database backing store, etc, and a &lt;a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service&lt;/a> to allow the application to access the database.&lt;/p>
+&lt;p>While looking at this problem, I attempted to look at the logs for the application by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>kubectl logs deploy/moc-xdmod
+&lt;/code>&lt;/pre>&lt;p>But to my surprise, I found myself looking at the logs for the MariaDB container instead&amp;hellip;which provided me just about all the information I needed about the problem.&lt;/p>
+&lt;h2 id="how-do-deployments-work">How do Deployments work?&lt;/h2>
+&lt;p>To understand what&amp;rsquo;s going on, let&amp;rsquo;s first take a closer look at a Deployment manifest. The basic framework is something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: example
+spec:
+selector:
+matchLabels:
+app: example
+strategy:
+type: Recreate
+template:
+metadata:
+labels:
+app: example
+spec:
+containers:
+- name: example
+image: docker.io/alpine:latest
+command:
+- sleep
+- inf
+&lt;/code>&lt;/pre>&lt;p>There are labels in three places in this manifest:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>The Deployment itself has labels in the &lt;code>metadata&lt;/code> section.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>There are labels in &lt;code>spec.template.metadata&lt;/code> that will be applied to Pods spawned by the Deployment.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>There are labels in &lt;code>spec.selector&lt;/code> which, in the words of [the documentation]:&lt;/p>
+&lt;blockquote>
+&lt;p>defines how the Deployment finds which Pods to manage&lt;/p>
+&lt;/blockquote>
+&lt;/li>
+&lt;/ol>
+&lt;p>It&amp;rsquo;s not spelled out explicitly anywhere, but the &lt;code>spec.selector&lt;/code> field is also used to identify to which pods to attach when using the Deployment name in a command like &lt;code>kubectl logs&lt;/code>: that is, given the above manifest, running &lt;code>kubectl logs deploy/example&lt;/code> would look for pods that have label &lt;code>app&lt;/code> set to &lt;code>example&lt;/code>.&lt;/p>
+&lt;p>With this in mind, let&amp;rsquo;s take a look at how our application manifests are being deployed. Like most of our applications, this is deployed using &lt;a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/">Kustomize&lt;/a>. The &lt;code>kustomization.yaml&lt;/code> file for the application manifests looked like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commonLabels:
+app: xdmod
+resources:
+- svc-mariadb.yaml
+- deployment-mariadb.yaml
+- deployment-xdmod.yaml
+&lt;/code>&lt;/pre>&lt;p>That &lt;code>commonLabels&lt;/code> statement will apply the label &lt;code>app: xdmod&lt;/code> to all of the resources managed by the &lt;code>kustomization.yaml&lt;/code> file. The Deployments looked like this:&lt;/p>
+&lt;p>For MariaDB:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: mariadb
+spec:
+selector:
+matchLabels:
+app: mariadb
+template:
+metadata:
+labels:
+app: mariadb
+&lt;/code>&lt;/pre>&lt;p>For the application experience connection problems:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: moc-xdmod
+spec:
+selector:
+matchLabels:
+app: xdmod
+template:
+metadata:
+labels:
+app: xdmod
+&lt;/code>&lt;/pre>&lt;p>The problem here is that when these are processed by &lt;code>kustomize&lt;/code>, the &lt;code>app&lt;/code> label hardcoded in the manifests will be replaced by the &lt;code>app&lt;/code> label defined in the &lt;code>commonLabels&lt;/code> section of &lt;code>kustomization.yaml&lt;/code>. When we run &lt;code>kustomize build&lt;/code> on these manifests, we will have as output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+labels:
+app: xdmod
+name: mariadb
+spec:
+selector:
+matchLabels:
+app: xdmod
+template:
+metadata:
+labels:
+app: xdmod
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+labels:
+app: xdmod
+name: moc-xdmod
+spec:
+selector:
+matchLabels:
+app: xdmod
+template:
+metadata:
+labels:
+app: xdmod
+&lt;/code>&lt;/pre>&lt;p>In other words, all of our pods will have the same labels (because the &lt;code>spec.template.metadata.labels&lt;/code> section is identical in both Deployments). When I run &lt;code>kubectl logs deploy/moc-xdmod&lt;/code>, I&amp;rsquo;m just getting whatever the first match is for a query that is effectively the same as &lt;code>kubectl get pod -l app=xdmod&lt;/code>.&lt;/p>
+&lt;p>So, that&amp;rsquo;s what was going on with the &lt;code>kubectl logs&lt;/code> command.&lt;/p>
+&lt;h2 id="how-do-services-work">How do services work?&lt;/h2>
+&lt;p>A Service manifest in Kubernetes looks something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Service
+metadata:
+name: mariadb
+spec:
+selector:
+app: mariadb
+ports:
+- protocol: TCP
+port: 3306
+targetPort: 3306
+&lt;/code>&lt;/pre>&lt;p>Here, &lt;code>spec.selector&lt;/code> has a function very similar to what it had in a &lt;code>Deployment&lt;/code>: it selects pods to which the Service will direct traffic. From &lt;a href="https://kubernetes.io/docs/concepts/services-networking/service/">the documentation&lt;/a>, we know that a Service proxy will select a backend either in a round-robin fashion (using the legacy user-space proxy) or in a random fashion (using the iptables proxy) (there is also an &lt;a href="http://www.linuxvirtualserver.org/software/ipvs.html">IPVS&lt;/a> proxy mode, but that&amp;rsquo;s not available in our environment).&lt;/p>
+&lt;p>Given what we know from the previous section about Deployments, you can probably see what&amp;rsquo;s going on here:&lt;/p>
+&lt;ol>
+&lt;li>There are multiple pods with identical labels that are providing distinct services&lt;/li>
+&lt;li>For each incoming connection, the service proxy selects a Pod based on the labels in the service&amp;rsquo;s &lt;code>spec.selector&lt;/code>.&lt;/li>
+&lt;li>With only two pods involved, there&amp;rsquo;s a 50% chance that traffic targeting our MariaDB instance will in fact be directed to the application pod, which will simply drop the traffic (because it&amp;rsquo;s not listening on the appropriate port).&lt;/li>
+&lt;/ol>
+&lt;p>We can see the impact of this behavior by running a simple loop that attempts to connect to MariaDB and run a query:&lt;/p>
+&lt;pre tabindex="0">&lt;code>while :; do
+_start=$SECONDS
+echo -n &amp;#34;$(date +%T) &amp;#34;
+timeout 10 mysql -h mariadb -uroot -ppass -e &amp;#39;select 1&amp;#39; &amp;gt; /dev/null &amp;amp;&amp;amp; echo -n OKAY || echo -n FAILED
+echo &amp;#34; $(( SECONDS - _start))&amp;#34;
+sleep 1
+done
+&lt;/code>&lt;/pre>&lt;p>Which outputs:&lt;/p>
+&lt;pre tabindex="0">&lt;code>01:41:30 OKAY 1
+01:41:32 OKAY 0
+01:41:33 OKAY 1
+01:41:35 OKAY 0
+01:41:36 OKAY 3
+01:41:40 OKAY 1
+01:41:42 OKAY 0
+01:41:43 OKAY 3
+01:41:47 OKAY 3
+01:41:51 OKAY 4
+01:41:56 OKAY 1
+01:41:58 OKAY 1
+01:42:00 FAILED 10
+01:42:10 OKAY 0
+01:42:11 OKAY 0
+&lt;/code>&lt;/pre>&lt;p>Here we can see that connection time is highly variable, and we occasionally hit the 10 second timeout imposed by the &lt;code>timeout&lt;/code> call.&lt;/p>
+&lt;h2 id="solving-the-problem">Solving the problem&lt;/h2>
+&lt;p>In order to resolve this behavior, we want to ensure (a) that Pods managed by a Deployment are uniquely identified by their labels and that (b) &lt;code>spec.selector&lt;/code> for both Deployments and Services will only select the appropriate Pods. We can do this with a few simple changes.&lt;/p>
+&lt;p>It&amp;rsquo;s useful to apply some labels consistently across all of the resource we generate, so we&amp;rsquo;ll keep the existing &lt;code>commonLabels&lt;/code> section of our &lt;code>kustomization.yaml&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>commonLabels:
+app: xdmod
+&lt;/code>&lt;/pre>&lt;p>But then in each Deployment we&amp;rsquo;ll add a &lt;code>component&lt;/code> label identifying the specific service, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: mariadb
+labels:
+component: mariadb
+spec:
+selector:
+matchLabels:
+component: mariadb
+template:
+metadata:
+labels:
+component: mariadb
+&lt;/code>&lt;/pre>&lt;p>When we generate the final manifest with &lt;code>kustomize&lt;/code>, we end up with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+labels:
+app: xdmod
+component: mariadb
+name: mariadb
+spec:
+selector:
+matchLabels:
+app: xdmod
+component: mariadb
+template:
+metadata:
+labels:
+app: xdmod
+component: mariadb
+&lt;/code>&lt;/pre>&lt;p>In the above output, you can see that &lt;code>kustomize&lt;/code> has combined the &lt;code>commonLabel&lt;/code> definition with the labels configured individually in the manifests. With this change, &lt;code>spec.selector&lt;/code> will now select only the pod in which MariaDB is running.&lt;/p>
+&lt;p>We&amp;rsquo;ll similarly modify the Service manifest to look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Service
+metadata:
+name: mariadb
+spec:
+selector:
+component: mariadb
+ports:
+- protocol: TCP
+port: 3306
+targetPort: 3306
+&lt;/code>&lt;/pre>&lt;p>Resulting in a generated manifest that looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Service
+metadata:
+labels:
+app: xdmod
+name: mariadb
+spec:
+ports:
+- port: 3306
+protocol: TCP
+targetPort: 3306
+selector:
+app: xdmod
+component: mariadb
+&lt;/code>&lt;/pre>&lt;p>Which, as with the Deployment, will now select only the correct pods.&lt;/p>
+&lt;p>With these changes in place, if we re-run the test loop I presented earlier, we see as output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>01:57:27 OKAY 0
+01:57:28 OKAY 0
+01:57:29 OKAY 0
+01:57:30 OKAY 0
+01:57:31 OKAY 0
+01:57:32 OKAY 0
+01:57:33 OKAY 0
+01:57:34 OKAY 0
+01:57:35 OKAY 0
+01:57:36 OKAY 0
+01:57:37 OKAY 0
+01:57:38 OKAY 0
+01:57:39 OKAY 0
+01:57:40 OKAY 0
+&lt;/code>&lt;/pre>&lt;p>There is no variability in connection time, and there are no timeouts.&lt;/p></content></item><item><title>Kubernetes External Secrets</title><link>https://blog.oddbit.com/posts/kubernetes-external-secrets/</link><pubDate>Fri, 03 Sep 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/kubernetes-external-secrets/</guid><description>At $JOB we maintain the configuration for our OpenShift clusters in a public git repository. Changes in the git repository are applied automatically using ArgoCD and Kustomize. This works great, but the public nature of the repository means we need to find a secure solution for managing secrets (such as passwords and other credentials necessary for authenticating to external services). In particular, we need a solution that permits our public repository to be the source of truth for our cluster configuration, without compromising our credentials.</description><content>&lt;p>At &lt;em>$JOB&lt;/em> we maintain the configuration for our OpenShift clusters in a public git repository. Changes in the git repository are applied automatically using &lt;a href="https://argo-cd.readthedocs.io/en/stable/">ArgoCD&lt;/a> and &lt;a href="https://kustomize.io/">Kustomize&lt;/a>. This works great, but the public nature of the repository means we need to find a secure solution for managing secrets (such as passwords and other credentials necessary for authenticating to external services). In particular, we need a solution that permits our public repository to be the source of truth for our cluster configuration, without compromising our credentials.&lt;/p>
+&lt;h2 id="rejected-options">Rejected options&lt;/h2>
+&lt;p>We initially looked at including secrets directly in the repository through the use of the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin for Kustomize, which uses &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt secrets with GPG keys. There are some advantages to this arrangement:&lt;/p>
+&lt;ul>
+&lt;li>It doesn&amp;rsquo;t require any backend service&lt;/li>
+&lt;li>It&amp;rsquo;s easy to control read access to secrets in the repository by encrypting them to different recipients.&lt;/li>
+&lt;/ul>
+&lt;p>There were some minor disadvantages:&lt;/p>
+&lt;ul>
+&lt;li>We can&amp;rsquo;t install ArgoCD via the operator because we need a customized image that includes KSOPS, so we have to maintain our own ArgoCD image.&lt;/li>
+&lt;/ul>
+&lt;p>And there was one major problem:&lt;/p>
+&lt;ul>
+&lt;li>Using GPG-encrypted secrets in a git repository makes it effectively impossible to recover from a key compromise.&lt;/li>
+&lt;/ul>
+&lt;p>One a private key is compromised, anyone with access to that key and the git repository will be able to decrypt data in historical commits, even if we re-encrypt all the data with a new key.&lt;/p>
+&lt;p>Because of these security implications we decided we would need a different solution (it&amp;rsquo;s worth noting here that Bitnami &lt;a href="https://github.com/bitnami-labs/sealed-secrets">Sealed Secrets&lt;/a> suffers from effectively the same problem).&lt;/p>
+&lt;h2 id="our-current-solution">Our current solution&lt;/h2>
+&lt;p>We&amp;rsquo;ve selected a solution that uses the &lt;a href="https://github.com/external-secrets/kubernetes-external-secrets">External Secrets&lt;/a> project in concert with the AWS &lt;a href="https://aws.amazon.com/secrets-manager/">SecretsManager&lt;/a> service.&lt;/p>
+&lt;h3 id="kubernetes-external-secrets">Kubernetes external secrets&lt;/h3>
+&lt;p>The &lt;a href="https://github.com/external-secrets/kubernetes-external-secrets">External Secrets&lt;/a> project allows one to store secrets in an external secrets store, such as AWS &lt;a href="https://aws.amazon.com/secrets-manager/">SecretsManager&lt;/a>, Hashicorp &lt;a href="https://www.vaultproject.io/">Vault&lt;/a>, and others &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. The manifests that get pushed into your OpenShift cluster contain only pointers (called &lt;code>ExternalSecrets&lt;/code>) to those secrets; the external secrets controller running on the cluster uses the information contained in the &lt;code>ExternalSecret&lt;/code> in combination with stored credentials to fetch the secret from your chosen backend and realize the actual &lt;code>Secret&lt;/code> resource. An external secret manifest referring to a secret named &lt;code>mysceret&lt;/code> stored in AWS SecretsManager would look something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: &amp;#34;kubernetes-client.io/v1&amp;#34;
+kind: ExternalSecret
+metadata:
+name: example-secret
+spec:
+backendType: secretsManager
+data:
+- key: mysecret
+name: mysecretvalue
+&lt;/code>&lt;/pre>&lt;p>This model means that no encrypted data is ever stored in the git repository, which resolves the main problem we had with the solutions mentioned earlier.&lt;/p>
+&lt;p>External Secrets can be installed into your Kubernetes environment using Helm, or you can use &lt;code>helm template&lt;/code> to generate manifests locally and apply them using Kustomize or some other tool (this is the route we took).&lt;/p>
+&lt;h3 id="aws-secretsmanager-service">AWS SecretsManager Service&lt;/h3>
+&lt;p>AWS &lt;a href="https://aws.amazon.com/secrets-manager/">SecretsManager&lt;/a> is a service for storing and managing secrets and making them accessible via an API. Using SecretsManager we have very granular control over who can view or modify secrets; this allows us, for example, to create cluster-specific secret readers that can only read secrets intended for a specific cluster (e.g. preventing our development environment from accidentally using production secrets).&lt;/p>
+&lt;p>SecretsManager provides automatic versioning of secrets to prevent loss of data if you inadvertently change a secret while still requiring the old value.&lt;/p>
+&lt;p>We can create secrets through the AWS SecretsManager console, or we can use the &lt;a href="https://aws.amazon.com/cli/">AWS CLI&lt;/a>, which looks something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>aws secretsmanager create-secret \
+--name mysecretname \
+--secret-string mysecretvalue
+&lt;/code>&lt;/pre>&lt;h3 id="two-great-tastes-that-taste-great-together">Two great tastes that taste great together&lt;/h3>
+&lt;p>This combination solves a number of our problems:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Because we&amp;rsquo;re not storing actual secrets in the repository, we don&amp;rsquo;t need to worry about encrypting anything.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Because we&amp;rsquo;re not managing encrypted data, replacing secrets is much easier.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>There&amp;rsquo;s a robust mechanism for controlling access to secrets.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>This solution offers a separation of concern that simply wasn&amp;rsquo;t possible with the KSOPS model: someone can maintain secrets without having to know anything about Kubernetes manifests, and someone can work on the repository without needing to know any secrets.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="creating-external-secrets">Creating external secrets&lt;/h2>
+&lt;p>In its simplest form, an &lt;code>ExternalSecret&lt;/code> resource maps values from specific named secrets in the backend to keys in a &lt;code>Secret&lt;/code> resource. For example, if we wanted to create a &lt;code>Secret&lt;/code> in OpenShift with the username and password for an external service, we could create to separate secrets in SecretsManager. One for the username:&lt;/p>
+&lt;pre tabindex="0">&lt;code>aws secretsmanager create-secret \
+--name cluster/cluster1/example-secret-username \
+--secret-string foo
+&lt;/code>&lt;/pre>&lt;p>And one for the password:&lt;/p>
+&lt;pre tabindex="0">&lt;code>aws secretsmanager create-secret \
+--name cluster/cluster1/example-secret-password \
+--secret-string bar \
+--tags Key=cluster,Value=cluster1
+&lt;/code>&lt;/pre>&lt;p>And then create an &lt;code>ExternalSecret&lt;/code> manifest like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: &amp;#34;kubernetes-client.io/v1&amp;#34;
+kind: ExternalSecret
+metadata:
+name: example-secret
+spec:
+backendType: secretsManager
+data:
+- key: cluster/cluster1/example-secret-username
+name: username
+- key: cluster/cluster1/example-secret-password
+name: password
+&lt;/code>&lt;/pre>&lt;p>This instructs the External Secrets controller to create an &lt;code>Opaque&lt;/code> secret named &lt;code>example-secret&lt;/code> from data in AWS SecretsManager. The value of the &lt;code>username&lt;/code> key will come from the secret named &lt;code>cluster/cluster1/example-secret-username&lt;/code>, and similarly for &lt;code>password&lt;/code>. The resulting &lt;code>Secret&lt;/code> resource will look something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Secret
+metadata:
+name: example-secret
+type: Opaque
+data:
+password: YmFy
+username: Zm9v
+&lt;/code>&lt;/pre>&lt;h3 id="templates-for-structured-data">Templates for structured data&lt;/h3>
+&lt;p>In the previous example, we created two separate secrets in SecretsManager for storing a username and password. It might be more convenient if we could store both credentials in a single secret. Thanks to the &lt;a href="https://github.com/external-secrets/kubernetes-external-secrets#templating">templating&lt;/a> support in External Secrets, we can do that!&lt;/p>
+&lt;p>Let&amp;rsquo;s redo the previous example, but instead of using two separate secrets, we&amp;rsquo;ll create a single secret named &lt;code>cluster/cluster1/example-secret&lt;/code> in which the secret value is a JSON document containing both the username and password:&lt;/p>
+&lt;pre tabindex="0">&lt;code>aws secretsmanager create-secret \
+--name cluster/cluster1/example-secret \
+--secret-string &amp;#39;{&amp;#34;username&amp;#34;: &amp;#34;foo&amp;#34;, &amp;#34;password&amp;#34;: &amp;#34;bar&amp;#34;}&amp;#39;
+&lt;/code>&lt;/pre>&lt;p>NB: The &lt;a href="https://github.com/jpmens/jo">jo&lt;/a> utility is a neat little utility for generating JSON from the command line; using that we could write the above like this&amp;hellip;&lt;/p>
+&lt;pre tabindex="0">&lt;code>aws secretsmanager create-secret \
+--name cluster/cluster1/example-secret \
+--secret-string $(jo username=foo password=bar)
+&lt;/code>&lt;/pre>&lt;p>&amp;hellip;which makes it easier to write JSON without missing a quote, closing bracket, etc.&lt;/p>
+&lt;p>We can extract these values into the appropriate keys by adding a &lt;code>template&lt;/code> section to our &lt;code>ExternalSecret&lt;/code>, and using the &lt;code>JSON.parse&lt;/code> template function, like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: &amp;#34;kubernetes-client.io/v1&amp;#34;
+kind: ExternalSecret
+metadata:
+name: example-secret
+namespace: sandbox
+spec:
+backendType: secretsManager
+data:
+- key: cluster/cluster1/example-secret
+name: creds
+template:
+stringData:
+username: &amp;#34;&amp;lt;%= JSON.parse(data.creds).username %&amp;gt;&amp;#34;
+password: &amp;#34;&amp;lt;%= JSON.parse(data.creds).password %&amp;gt;&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>The result secret will look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Secret
+metadata:
+name: example-secret
+type: Opaque
+data:
+creds: eyJ1c2VybmFtZSI6ICJmb28iLCAicGFzc3dvcmQiOiAiYmFyIn0=
+password: YmFy
+username: Zm9v
+&lt;/code>&lt;/pre>&lt;p>Notice that in addition to the values created in the &lt;code>template&lt;/code> section, the &lt;code>Secret&lt;/code> also contains any keys defined in the &lt;code>data&lt;/code> section of the &lt;code>ExternalSecret&lt;/code>.&lt;/p>
+&lt;p>Templating can also be used to override the secret type if you want something other than &lt;code>Opaque&lt;/code>, add metadata, and otherwise influence the generated &lt;code>Secret&lt;/code>.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>E.g. Azure Key Vault, Google Secret Manager, Alibaba Cloud KMS Secret Manager, Akeyless&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></content></item><item><title>Connecting OpenShift to an External Ceph Cluster</title><link>https://blog.oddbit.com/posts/external-ocs/</link><pubDate>Mon, 23 Aug 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/external-ocs/</guid><description>Red Hat&amp;rsquo;s OpenShift Data Foundation (formerly &amp;ldquo;OpenShift Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically set up a Ceph cluster as an application running on your OpenShift cluster, or (b) connect your OpenShift cluster to an externally managed Ceph cluster. While setting up Ceph as an OpenShift application is a relatively polished experienced, connecting to an external cluster still has some rough edges.
+NB I am not a Ceph expert.</description><content>&lt;p>Red Hat&amp;rsquo;s &lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-data-foundation">OpenShift Data Foundation&lt;/a> (formerly &amp;ldquo;OpenShift
+Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically
+set up a Ceph cluster as an application running on your OpenShift
+cluster, or (b) connect your OpenShift cluster to an externally
+managed Ceph cluster. While setting up Ceph as an OpenShift
+application is a relatively polished experienced, connecting to an
+external cluster still has some rough edges.&lt;/p>
+&lt;p>&lt;strong>NB&lt;/strong> I am not a Ceph expert. If you read this and think I&amp;rsquo;ve made a
+mistake with respect to permissions or anything else, please feel free
+to leave a comment and I will update the article as necessary. In
+particular, I think it may be possible to further restrict the &lt;code>mgr&lt;/code>
+permissions shown in this article and I&amp;rsquo;m interested in feedback on
+that topic.&lt;/p>
+&lt;h2 id="installing-ocs">Installing OCS&lt;/h2>
+&lt;p>Regardless of which option you choose, you start by installing the
+&amp;ldquo;OpenShift Container Storage&amp;rdquo; operator (the name change apparently
+hasn&amp;rsquo;t made it to the Operator Hub yet). When you select &amp;ldquo;external
+mode&amp;rdquo;, you will be given the opportunity to download a Python script
+that you are expected to run on your Ceph cluster. This script will
+create some Ceph authentication principals and will emit a block of
+JSON data that gets pasted into the OpenShift UI to configure the
+external StorageCluster resource.&lt;/p>
+&lt;p>The script has a single required option, &lt;code>--rbd-data-pool-name&lt;/code>, that
+you use to provide the name of an existing pool. If you run the script
+with only that option, it will create the following ceph principals
+and associated capabilities:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>client.csi-rbd-provisioner&lt;/code>&lt;/p>
+&lt;pre tabindex="0">&lt;code>caps mgr = &amp;#34;allow rw&amp;#34;
+caps mon = &amp;#34;profile rbd&amp;#34;
+caps osd = &amp;#34;profile rbd&amp;#34;
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>&lt;code>client.csi-rbd-node&lt;/code>&lt;/p>
+&lt;pre tabindex="0">&lt;code>caps mon = &amp;#34;profile rbd&amp;#34;
+caps osd = &amp;#34;profile rbd&amp;#34;
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>&lt;code>client.healthchecker&lt;/code>&lt;/p>
+&lt;pre tabindex="0">&lt;code>caps mgr = &amp;#34;allow command config&amp;#34;
+caps mon = &amp;#34;allow r, allow command quorum_status, allow command version&amp;#34;
+caps osd = &amp;#34;allow rwx pool=default.rgw.meta, allow r pool=.rgw.root, allow rw pool=default.rgw.control, allow rx pool=default.rgw.log, allow x pool=default.rgw.buckets.index&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>This account is used to verify the health of the ceph cluster.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>If you also provide the &lt;code>--cephfs-filesystem-name&lt;/code> option, the script
+will also create:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>client.csi-cephfs-provisioner&lt;/code>&lt;/p>
+&lt;pre tabindex="0">&lt;code>caps mgr = &amp;#34;allow rw&amp;#34;
+caps mon = &amp;#34;allow r&amp;#34;
+caps osd = &amp;#34;allow rw tag cephfs metadata=*&amp;#34;
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>&lt;code>client.csi-cephfs-node&lt;/code>&lt;/p>
+&lt;pre tabindex="0">&lt;code>caps mds = &amp;#34;allow rw&amp;#34;
+caps mgr = &amp;#34;allow rw&amp;#34;
+caps mon = &amp;#34;allow r&amp;#34;
+caps osd = &amp;#34;allow rw tag cephfs *=*&amp;#34;
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;/ul>
+&lt;p>If you specify &lt;code>--rgw-endpoint&lt;/code>, the script will create a RGW user
+named &lt;code>rgw-admin-ops-user&lt;/code>with administrative access to the default
+RGW pool.&lt;/p>
+&lt;h2 id="so-whats-the-problem">So what&amp;rsquo;s the problem?&lt;/h2>
+&lt;p>The above principals and permissions are fine if you&amp;rsquo;ve created an
+external Ceph cluster explicitly for the purpose of supporting a
+single OpenShift cluster.&lt;/p>
+&lt;p>In an environment where a single Ceph cluster is providing storage to
+multiple OpenShift clusters, and &lt;em>especially&lt;/em> in an environment where
+administration of the Ceph and OpenShift environments are managed by
+different groups, the process, principals, and permissions create a
+number of problems.&lt;/p>
+&lt;p>The first and foremost is that the script provided by OCS both (a)
+gathers information about the Ceph environment, and (b) &lt;em>makes changes
+to that environment&lt;/em>. If you are installing OCS on OpenShift and want
+to connect to a Ceph cluster over which you do not have administrative
+control, you may find yourself stymied when the storage administrators
+refuse to run your random Python script on the Ceph cluster.&lt;/p>
+&lt;p>Ideally, the script would be read-only, and instead of &lt;em>making&lt;/em>
+changes to the Ceph cluster it would only &lt;em>validate&lt;/em> the cluster
+configuration, and inform the administrator of what changes were
+necessary. There should be complete documentation that describes the
+necessary configuration scripts so that a Ceph cluster can be
+configured correctly without running &lt;em>any&lt;/em> script, and OCS should
+provide something more granular than &amp;ldquo;drop a blob of JSON here&amp;rdquo; for
+providing the necessary configuration to OpenShift.&lt;/p>
+&lt;p>The second major problem is that while the script creates several
+principals, it only allows you to set the name of one of them. The
+script has a &lt;code>--run-as-user&lt;/code> option, which at first sounds promising,
+but ultimately is of questionable use: it only allows you set the Ceph
+principal used for cluster health checks.&lt;/p>
+&lt;p>There is no provision in the script to create separate principals for
+each OpenShift cluster.&lt;/p>
+&lt;p>Lastly, the permissions granted to the principals are too broad. For
+example, the &lt;code>csi-rbd-node&lt;/code> principal has access to &lt;em>all&lt;/em> RBD pools on
+the cluster.&lt;/p>
+&lt;h2 id="how-can-we-work-around-it">How can we work around it?&lt;/h2>
+&lt;p>If you would like to deploy OCS in an environment where the default
+behavior of the configuration script is inappropriate you can work
+around this problem by:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Manually generating the necessary principals (with more appropriate
+permissions), and&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Manually generating the JSON data for input into OCS&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="create-the-storage">Create the storage&lt;/h3>
+&lt;p>I&amp;rsquo;ve adopted the following conventions for naming storage pools and
+filesystems:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>All resources are prefixed with the name of the cluster (represented
+here by &lt;code>${clustername}&lt;/code>).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The RBD pool is named &lt;code>${clustername}-rbd&lt;/code>. I create it like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code> ceph osd pool create ${clustername}-rbd
+ceph osd pool application enable ${clustername}-rbd rbd
+&lt;/code>&lt;/pre>&lt;/li>
+&lt;li>
+&lt;p>The CephFS filesystem (if required) is named
+&lt;code>${clustername}-fs&lt;/code>, and I create it like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code> ceph fs volume create ${clustername}-fs
+&lt;/code>&lt;/pre>&lt;p>In addition to the filesystem, this creates two pools:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>cephfs.${clustername}-fs.meta&lt;/code>&lt;/li>
+&lt;li>&lt;code>cephfs.${clustername}-fs.data&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="creating-the-principals">Creating the principals&lt;/h3>
+&lt;p>Assuming that you have followed the same conventions and have an RBD
+pool named &lt;code>${clustername}-rbd&lt;/code> and a CephFS filesystem named
+&lt;code>${clustername}-fs&lt;/code>, the following set of &lt;code>ceph auth add&lt;/code> commands
+should create an appropriate set of principals (with access limited to
+just those resources that belong to the named cluster):&lt;/p>
+&lt;pre tabindex="0">&lt;code>ceph auth add client.healthchecker-${clustername} \
+mgr &amp;#34;allow command config&amp;#34; \
+mon &amp;#34;allow r, allow command quorum_status, allow command version&amp;#34;
+ceph auth add client.csi-rbd-provisioner-${clustername} \
+mgr &amp;#34;allow rw&amp;#34; \
+mon &amp;#34;profile rbd&amp;#34; \
+osd &amp;#34;profile rbd pool=${clustername}-rbd&amp;#34;
+ceph auth add client.csi-rbd-node-${clustername} \
+mon &amp;#34;profile rbd&amp;#34; \
+osd &amp;#34;profile rbd pool=${clustername}-rbd&amp;#34;
+ceph auth add client.csi-cephfs-provisioner-${clustername} \
+mgr &amp;#34;allow rw&amp;#34; \
+mds &amp;#34;allow rw fsname=${clustername}-fs&amp;#34; \
+mon &amp;#34;allow r fsname=${clustername}-fs&amp;#34; \
+osd &amp;#34;allow rw tag cephfs metadata=${clustername}-fs&amp;#34;
+ceph auth add client.csi-cephfs-node-${clustername} \
+mgr &amp;#34;allow rw&amp;#34; \
+mds &amp;#34;allow rw fsname=${clustername}-fs&amp;#34; \
+mon &amp;#34;allow r fsname=${clustername}-fs&amp;#34; \
+osd &amp;#34;allow rw tag cephfs data=${clustername}-fs&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Note that I&amp;rsquo;ve excluded the RGW permissions here; in our OpenShift
+environments, we typically rely on the object storage interface
+provided by &lt;a href="https://www.noobaa.io/">Noobaa&lt;/a> so I haven&amp;rsquo;t spent time investigating
+permissions on the RGW side.&lt;/p>
+&lt;h3 id="create-the-json">Create the JSON&lt;/h3>
+&lt;p>The final step is to create the JSON blob that you paste into the OCS
+installation UI. I use the following script which calls &lt;code>ceph -s&lt;/code>,
+&lt;code>ceph mon dump&lt;/code>, and &lt;code>ceph auth get-key&lt;/code> to get the necessary
+information from the cluster:&lt;/p>
+&lt;pre tabindex="0">&lt;code>#!/usr/bin/python3
+import argparse
+import json
+import subprocess
+from urllib.parse import urlparse
+usernames = [
+&amp;#39;healthchecker&amp;#39;,
+&amp;#39;csi-rbd-node&amp;#39;,
+&amp;#39;csi-rbd-provisioner&amp;#39;,
+&amp;#39;csi-cephfs-node&amp;#39;,
+&amp;#39;csi-cephfs-provisioner&amp;#39;,
+]
+def parse_args():
+p = argparse.ArgumentParser()
+p.add_argument(&amp;#39;--use-cephfs&amp;#39;, action=&amp;#39;store_true&amp;#39;, dest=&amp;#39;use_cephfs&amp;#39;)
+p.add_argument(&amp;#39;--no-use-cephfs&amp;#39;, action=&amp;#39;store_false&amp;#39;, dest=&amp;#39;use_cephfs&amp;#39;)
+p.add_argument(&amp;#39;instance_name&amp;#39;)
+p.set_defaults(use_rbd=True, use_cephfs=True)
+return p.parse_args()
+def main():
+args = parse_args()
+cluster_status = json.loads(subprocess.check_output([&amp;#39;ceph&amp;#39;, &amp;#39;-s&amp;#39;, &amp;#39;-f&amp;#39;, &amp;#39;json&amp;#39;]))
+mon_status = json.loads(subprocess.check_output([&amp;#39;ceph&amp;#39;, &amp;#39;mon&amp;#39;, &amp;#39;dump&amp;#39;, &amp;#39;-f&amp;#39;, &amp;#39;json&amp;#39;]))
+users = {}
+for username in usernames:
+key = subprocess.check_output([&amp;#39;ceph&amp;#39;, &amp;#39;auth&amp;#39;, &amp;#39;get-key&amp;#39;, &amp;#39;client.{}-{}&amp;#39;.format(username, args.instance_name)])
+users[username] = {
+&amp;#39;name&amp;#39;: &amp;#39;client.{}-{}&amp;#39;.format(username, args.instance_name),
+&amp;#39;key&amp;#39;: key.decode(),
+}
+mon_name = mon_status[&amp;#39;mons&amp;#39;][0][&amp;#39;name&amp;#39;]
+mon_ip = [
+addr for addr in
+mon_status[&amp;#39;mons&amp;#39;][0][&amp;#39;public_addrs&amp;#39;][&amp;#39;addrvec&amp;#39;]
+if addr[&amp;#39;type&amp;#39;] == &amp;#39;v1&amp;#39;
+][0][&amp;#39;addr&amp;#39;]
+prom_url = urlparse(cluster_status[&amp;#39;mgrmap&amp;#39;][&amp;#39;services&amp;#39;][&amp;#39;prometheus&amp;#39;])
+prom_ip, prom_port = prom_url.netloc.split(&amp;#39;:&amp;#39;)
+output = [
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-ceph-mon-endpoints&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;ConfigMap&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;data&amp;#34;: &amp;#34;{}={}&amp;#34;.format(mon_name, mon_ip),
+&amp;#34;maxMonId&amp;#34;: &amp;#34;0&amp;#34;,
+&amp;#34;mapping&amp;#34;: &amp;#34;{}&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-ceph-mon&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;admin-secret&amp;#34;: &amp;#34;admin-secret&amp;#34;,
+&amp;#34;fsid&amp;#34;: cluster_status[&amp;#39;fsid&amp;#39;],
+&amp;#34;mon-secret&amp;#34;: &amp;#34;mon-secret&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-ceph-operator-creds&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;userID&amp;#34;: users[&amp;#39;healthchecker&amp;#39;][&amp;#39;name&amp;#39;],
+&amp;#34;userKey&amp;#34;: users[&amp;#39;healthchecker&amp;#39;][&amp;#39;key&amp;#39;],
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;ceph-rbd&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;StorageClass&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;pool&amp;#34;: &amp;#34;{}-rbd&amp;#34;.format(args.instance_name),
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;monitoring-endpoint&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;CephCluster&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;MonitoringEndpoint&amp;#34;: prom_ip,
+&amp;#34;MonitoringPort&amp;#34;: prom_port,
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-rbd-node&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;userID&amp;#34;: users[&amp;#39;csi-rbd-node&amp;#39;][&amp;#39;name&amp;#39;].replace(&amp;#39;client.&amp;#39;, &amp;#39;&amp;#39;),
+&amp;#34;userKey&amp;#34;: users[&amp;#39;csi-rbd-node&amp;#39;][&amp;#39;key&amp;#39;],
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-rbd-provisioner&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;userID&amp;#34;: users[&amp;#39;csi-rbd-provisioner&amp;#39;][&amp;#39;name&amp;#39;].replace(&amp;#39;client.&amp;#39;, &amp;#39;&amp;#39;),
+&amp;#34;userKey&amp;#34;: users[&amp;#39;csi-rbd-provisioner&amp;#39;][&amp;#39;key&amp;#39;],
+}
+}
+]
+if args.use_cephfs:
+output.extend([
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-cephfs-provisioner&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;adminID&amp;#34;: users[&amp;#39;csi-cephfs-provisioner&amp;#39;][&amp;#39;name&amp;#39;].replace(&amp;#39;client.&amp;#39;, &amp;#39;&amp;#39;),
+&amp;#34;adminKey&amp;#34;: users[&amp;#39;csi-cephfs-provisioner&amp;#39;][&amp;#39;key&amp;#39;],
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-cephfs-node&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;adminID&amp;#34;: users[&amp;#39;csi-cephfs-node&amp;#39;][&amp;#39;name&amp;#39;].replace(&amp;#39;client.&amp;#39;, &amp;#39;&amp;#39;),
+&amp;#34;adminKey&amp;#34;: users[&amp;#39;csi-cephfs-node&amp;#39;][&amp;#39;key&amp;#39;],
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;cephfs&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;StorageClass&amp;#34;,
+&amp;#34;data&amp;#34;: {
+&amp;#34;fsName&amp;#34;: &amp;#34;{}-fs&amp;#34;.format(args.instance_name),
+&amp;#34;pool&amp;#34;: &amp;#34;cephfs.{}-fs.data&amp;#34;.format(args.instance_name),
+}
+}
+])
+print(json.dumps(output, indent=2))
+if __name__ == &amp;#39;__main__&amp;#39;:
+main()
+&lt;/code>&lt;/pre>&lt;p>If you&amp;rsquo;d prefer a strictly manual process, you can fill in the
+necessary values yourself. The JSON produced by the above script
+looks like the following, which is invalid JSON because I&amp;rsquo;ve use
+inline comments to mark all the values which you would need to
+provide:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-ceph-mon-endpoints&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;ConfigMap&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# The format is &amp;lt;mon_name&amp;gt;=&amp;lt;mon_endpoint&amp;gt;, and you only need to
+# provide a single mon address.
+&amp;#34;data&amp;#34;: &amp;#34;ceph0=192.168.122.140:6789&amp;#34;,
+&amp;#34;maxMonId&amp;#34;: &amp;#34;0&amp;#34;,
+&amp;#34;mapping&amp;#34;: &amp;#34;{}&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-ceph-mon&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the fsid of your Ceph cluster.
+&amp;#34;fsid&amp;#34;: &amp;#34;c9c32c73-dac4-4cc9-8baa-d73b96c135f4&amp;#34;,
+# Do **not** fill in these values, they are unnecessary. OCS
+# does not require admin access to your Ceph cluster.
+&amp;#34;admin-secret&amp;#34;: &amp;#34;admin-secret&amp;#34;,
+&amp;#34;mon-secret&amp;#34;: &amp;#34;mon-secret&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-ceph-operator-creds&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name and key for your healthchecker principal.
+# Note that here, unlike elsewhere in this JSON, you must
+# provide the &amp;#34;client.&amp;#34; prefix to the principal name.
+&amp;#34;userID&amp;#34;: &amp;#34;client.healthchecker-mycluster&amp;#34;,
+&amp;#34;userKey&amp;#34;: &amp;#34;&amp;lt;key&amp;gt;&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;ceph-rbd&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;StorageClass&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name of your RBD pool.
+&amp;#34;pool&amp;#34;: &amp;#34;mycluster-rbd&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;monitoring-endpoint&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;CephCluster&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the address and port of the Ceph cluster prometheus
+# endpoint.
+&amp;#34;MonitoringEndpoint&amp;#34;: &amp;#34;192.168.122.140&amp;#34;,
+&amp;#34;MonitoringPort&amp;#34;: &amp;#34;9283&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-rbd-node&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name and key of the csi-rbd-node principal.
+&amp;#34;userID&amp;#34;: &amp;#34;csi-rbd-node-mycluster&amp;#34;,
+&amp;#34;userKey&amp;#34;: &amp;#34;&amp;lt;key&amp;gt;&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-rbd-provisioner&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name and key of your csi-rbd-provisioner
+# principal.
+&amp;#34;userID&amp;#34;: &amp;#34;csi-rbd-provisioner-mycluster&amp;#34;,
+&amp;#34;userKey&amp;#34;: &amp;#34;&amp;lt;key&amp;gt;&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-cephfs-provisioner&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name and key of your csi-cephfs-provisioner
+# principal.
+&amp;#34;adminID&amp;#34;: &amp;#34;csi-cephfs-provisioner-mycluster&amp;#34;,
+&amp;#34;adminKey&amp;#34;: &amp;#34;&amp;lt;key&amp;gt;&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;rook-csi-cephfs-node&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;Secret&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name and key of your csi-cephfs-node principal.
+&amp;#34;adminID&amp;#34;: &amp;#34;csi-cephfs-node-mycluster&amp;#34;,
+&amp;#34;adminKey&amp;#34;: &amp;#34;&amp;lt;key&amp;gt;&amp;#34;
+}
+},
+{
+&amp;#34;name&amp;#34;: &amp;#34;cephfs&amp;#34;,
+&amp;#34;kind&amp;#34;: &amp;#34;StorageClass&amp;#34;,
+&amp;#34;data&amp;#34;: {
+# Fill in the name of your CephFS filesystem and the name of the
+# associated data pool.
+&amp;#34;fsName&amp;#34;: &amp;#34;mycluster-fs&amp;#34;,
+&amp;#34;pool&amp;#34;: &amp;#34;cephfs.mycluster-fs.data&amp;#34;
+}
+}
+]
+&lt;/code>&lt;/pre>&lt;h2 id="associated-bugs">Associated Bugs&lt;/h2>
+&lt;p>I&amp;rsquo;ve opened several bug reports to see about adressing some of these
+issues:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996833">#1996833&lt;/a>
+&amp;ldquo;ceph-external-cluster-details-exporter.py should have a read-only
+mode&amp;rdquo;&lt;/li>
+&lt;li>&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996830">#1996830&lt;/a> &amp;ldquo;OCS
+external mode should allow specifying names for all Ceph auth
+principals&amp;rdquo;&lt;/li>
+&lt;li>&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996829">#1996829&lt;/a>
+&amp;ldquo;Permissions assigned to ceph auth principals when using external
+storage are too broad&amp;rdquo;&lt;/li>
+&lt;/ul></content></item><item><title>Getting started with KSOPS</title><link>https://blog.oddbit.com/posts/getting-started-with-ksops/</link><pubDate>Tue, 09 Mar 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/getting-started-with-ksops/</guid><description>Kustomize is a tool for assembling Kubernetes manifests from a collection of files. We&amp;rsquo;re making extensive use of Kustomize in the operate-first project. In order to keep secrets stored in our configuration repositories, we&amp;rsquo;re using the KSOPS plugin, which enables Kustomize to use sops to encrypt/files using GPG.
+In this post, I&amp;rsquo;d like to walk through the steps necessary to get everything up and running.
+Set up GPG We encrypt files using GPG, so the first step is making sure that you have a GPG keypair and that your public key is published where other people can find it.</description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
+&lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
+configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
+enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
+&lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
+everything up and running.&lt;/p>
+&lt;h2 id="set-up-gpg">Set up GPG&lt;/h2>
+&lt;p>We encrypt files using GPG, so the first step is making sure that you
+have a GPG keypair and that your public key is published where other
+people can find it.&lt;/p>
+&lt;h3 id="install-gpg">Install GPG&lt;/h3>
+&lt;p>GPG will be pre-installed on most Linux distributions. You can check
+if it&amp;rsquo;s installed by running e.g. &lt;code>gpg --version&lt;/code>. If it&amp;rsquo;s not
+installed, you will need to figure out how to install it for your
+operating system.&lt;/p>
+&lt;h3 id="create-a-key">Create a key&lt;/h3>
+&lt;p>Run the following command to create a new GPG keypair:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --full-generate-key
+&lt;/code>&lt;/pre>&lt;p>This will step you through a series of prompts. First, select a key
+type. You can just press &lt;code>&amp;lt;RETURN&amp;gt;&lt;/code> for the default:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg (GnuPG) 2.2.25; Copyright (C) 2020 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Please select what kind of key you want:
+(1) RSA and RSA (default)
+(2) DSA and Elgamal
+(3) DSA (sign only)
+(4) RSA (sign only)
+(14) Existing key from card
+Your selection?
+&lt;/code>&lt;/pre>&lt;p>Next, select a key size. The default is fine:&lt;/p>
+&lt;pre tabindex="0">&lt;code>RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (3072)
+Requested keysize is 3072 bits
+&lt;/code>&lt;/pre>&lt;p>You will next need to select an expiration date for your key. The
+default is &amp;ldquo;key does not expire&amp;rdquo;, which is a fine choice for our
+purposes. If you&amp;rsquo;re interested in understanding this value in more
+detail, the following articles are worth reading:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386">Does OpenPGP key expiration add to security?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.g-loaded.eu/2010/11/01/change-expiration-date-gpg-key/">How to change the expiration date of a GPG key&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Setting an expiration date will require that you periodically update
+the expiration date (or generate a new key).&lt;/p>
+&lt;pre tabindex="0">&lt;code>Please specify how long the key should be valid.
+0 = key does not expire
+&amp;lt;n&amp;gt; = key expires in n days
+&amp;lt;n&amp;gt;w = key expires in n weeks
+&amp;lt;n&amp;gt;m = key expires in n months
+&amp;lt;n&amp;gt;y = key expires in n years
+Key is valid for? (0)
+Key does not expire at all
+Is this correct? (y/N) y
+&lt;/code>&lt;/pre>&lt;p>Now you will need to enter your identity, which consists of your name,
+your email address, and a comment (which is generally left blank).
+Note that you&amp;rsquo;ll need to enter &lt;code>o&lt;/code> for &lt;code>okay&lt;/code> to continue from this
+prompt.&lt;/p>
+&lt;pre tabindex="0">&lt;code>GnuPG needs to construct a user ID to identify your key.
+Real name: Your Name
+Email address: you@example.com
+Comment:
+You selected this USER-ID:
+&amp;#34;Your Name &amp;lt;you@example.com&amp;gt;&amp;#34;
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
+&lt;/code>&lt;/pre>&lt;p>Lastly, you need to enter a password. In most environments, GPG will
+open a new window asking you for a passphrase. After you&amp;rsquo;ve entered and
+confirmed the passphrase, you should see your key information on the
+console:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg: key 02E34E3304C8ADEB marked as ultimately trusted
+gpg: revocation certificate stored as &amp;#39;/home/lars/tmp/gpgtmp/openpgp-revocs.d/9A4EB5B1F34B3041572937C002E34E3304C8ADEB.rev&amp;#39;
+public and secret key created and signed.
+pub rsa3072 2021-03-11 [SC]
+9A4EB5B1F34B3041572937C002E34E3304C8ADEB
+uid Your Name &amp;lt;you@example.com&amp;gt;
+sub rsa3072 2021-03-11 [E]
+&lt;/code>&lt;/pre>&lt;h3 id="publish-your-key">Publish your key&lt;/h3>
+&lt;p>You need to publish your GPG key so that others can find it. You&amp;rsquo;ll
+need your key id, which you can get by running &lt;code>gpg -k --fingerprint&lt;/code>
+like this (using your email address rather than mine):&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ gpg -k --fingerprint lars@oddbit.com
+&lt;/code>&lt;/pre>&lt;p>The output will look like the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>pub rsa2048/0x362D63A80853D4CF 2013-06-21 [SC]
+Key fingerprint = 3E70 A502 BB52 55B6 BB8E 86BE 362D 63A8 0853 D4CF
+uid [ultimate] Lars Kellogg-Stedman &amp;lt;lars@oddbit.com&amp;gt;
+uid [ultimate] keybase.io/larsks &amp;lt;larsks@keybase.io&amp;gt;
+sub rsa2048/0x042DF6CF74E4B84C 2013-06-21 [S] [expires: 2023-07-01]
+sub rsa2048/0x426D9382DFD6A7A9 2013-06-21 [E]
+sub rsa2048/0xEE1A8B9F9369CC85 2013-06-21 [A]
+&lt;/code>&lt;/pre>&lt;p>Look for the &lt;code>Key fingerprint&lt;/code> line, you want the value after the &lt;code>=&lt;/code>.
+Use this to publish your key to &lt;code>keys.openpgp.org&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --keyserver keys.opengpg.org \
+--send-keys &amp;#39;3E70 A502 BB52 55B6 BB8E 86BE 362D 63A8 0853 D4CF&amp;#39;
+&lt;/code>&lt;/pre>&lt;p>You will shortly receive an email to the address in your key asking
+you to approve it. Once you have approved the key, it will be
+published on &lt;a href="https://keys.openpgp.org">https://keys.openpgp.org&lt;/a> and people will be able to look
+it up by address or key id. For example, you can find my public key
+at &lt;a href="https://keys.openpgp.org/vks/v1/by-fingerprint/3E70A502BB5255B6BB8E86BE362D63A80853D4CF">https://keys.openpgp.org/vks/v1/by-fingerprint/3E70A502BB5255B6BB8E86BE362D63A80853D4CF&lt;/a>.&lt;/p>
+&lt;h2 id="installing-the-tools">Installing the Tools&lt;/h2>
+&lt;p>In this section, we&amp;rsquo;ll get all the necessary tools installed on your
+system in order to interact with a repository using Kustomize and
+KSOPS.&lt;/p>
+&lt;h3 id="install-kustomize">Install Kustomize&lt;/h3>
+&lt;p>Pre-compiled binaries of Kustomize are published &lt;a href="https://github.com/kubernetes-sigs/kustomize/releases">on
+GitHub&lt;/a>. To install the command, navigate to the current
+release (&lt;a href="https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.5">v4.0.5&lt;/a> as of this writing) and download the appropriate
+tarball for your system. E.g, for an x86-64 Linux environment, you
+would grab &lt;a href="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.0.5/kustomize_v4.0.5_linux_amd64.tar.gz">kustomize_v4.0.5_linux_amd64.tar.gz&lt;/a>.&lt;/p>
+&lt;p>The tarball contains a single file. You need to extract this file and
+place it somwhere in your &lt;code>$PATH&lt;/code>. For example, if you use your
+&lt;code>$HOME/bin&lt;/code> directory, you could run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>tar -C ~/bin -xf kustomize_v4.0.5_linux_amd64.tar.gz
+&lt;/code>&lt;/pre>&lt;p>Or to install into &lt;code>/usr/local/bin&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sudo tar -C /usr/local/bin -xf kustomize_v4.0.5_linux_amd64.tar.gz
+&lt;/code>&lt;/pre>&lt;p>Run &lt;code>kustomize&lt;/code> with no arguments to verify the command has been
+installed correctly.&lt;/p>
+&lt;h3 id="install-sops">Install sops&lt;/h3>
+&lt;p>The KSOPS plugin relies on the &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> command, so we need to install
+that first. Binary releases are published on GitHub, and the current
+release is &lt;a href="https://github.com/mozilla/sops/releases/tag/v3.6.1">v3.6.1&lt;/a>.&lt;/p>
+&lt;p>Instead of a tarball, the project publishes the raw binary as well as
+packages for a couple of different Linux distributions. For
+consistency with the rest of this post we&amp;rsquo;re going to grab the &lt;a href="https://github.com/mozilla/sops/releases/download/v3.6.1/sops-v3.6.1.linux">raw
+binary&lt;/a>. We can install that into &lt;code>$HOME/bin&lt;/code> like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>curl -o ~/bin/sops https://github.com/mozilla/sops/releases/download/v3.6.1/sops-v3.6.1.linux
+chmod 755 ~/bin/sops
+&lt;/code>&lt;/pre>&lt;h3 id="install-ksops">Install KSOPS&lt;/h3>
+&lt;p>KSOPS is a Kustomize plugin. The &lt;code>kustomize&lt;/code> command looks for plugins
+in subdirectories of &lt;code>$HOME/.config/kustomize/plugin&lt;/code>. Directories are
+named after an API and plugin name. In the case of KSOPS, &lt;code>kustomize&lt;/code>
+will be looking for a plugin named &lt;code>ksops&lt;/code> in the
+&lt;code>$HOME/.config/kustomize/plugin/viaduct.ai/v1/ksops/&lt;/code> directory.&lt;/p>
+&lt;p>The current release of KSOPS is &lt;a href="https://github.com/viaduct-ai/kustomize-sops/releases/tag/v2.4.0">v2.4.0&lt;/a>, which is published as a
+tarball. We&amp;rsquo;ll start by downloading
+&lt;a href="https://github.com/viaduct-ai/kustomize-sops/releases/download/v2.4.0/ksops_2.4.0_Linux_x86_64.tar.gz">ksops_2.4.0_Linux_x86_64.tar.gz&lt;/a>, which contains the following
+files:&lt;/p>
+&lt;pre tabindex="0">&lt;code>LICENSE
+README.md
+ksops
+&lt;/code>&lt;/pre>&lt;p>To extract the &lt;code>ksops&lt;/code> command to &lt;code>$HOME/bin&lt;/code>, you can run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>mkdir -p ~/.config/kustomize/plugin/viaduct.ai/v1/ksops/
+tar -C ~/.config/kustomize/plugin/viaduct.ai/v1/ksops -xf ksops_2.4.0_Linux_x86_64.tar.gz ksops
+&lt;/code>&lt;/pre>&lt;h2 id="test-it-out">Test it out&lt;/h2>
+&lt;p>Let&amp;rsquo;s create a simple Kustomize project to make sure everything is
+installed and functioning.&lt;/p>
+&lt;p>Start by creating a new directory and changing into it:&lt;/p>
+&lt;pre tabindex="0">&lt;code>mkdir kustomize-test
+cd kustomize-test
+&lt;/code>&lt;/pre>&lt;p>Create a &lt;code>kustomization.yaml&lt;/code> file that looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>generators:
+- secret-generator.yaml
+&lt;/code>&lt;/pre>&lt;p>Put the following content in &lt;code>secret-generator.yaml&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>---
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+name: secret-generator
+files:
+- example-secret.enc.yaml
+&lt;/code>&lt;/pre>&lt;p>This instructs Kustomize to use the KSOPS plugin to generate content
+from the file &lt;code>example-secret.enc.yaml&lt;/code>.&lt;/p>
+&lt;p>Configure &lt;code>sops&lt;/code> to use your GPG key by default by creating a
+&lt;code>.sops.yaml&lt;/code> (note the leading dot) similar to the following (you&amp;rsquo;ll
+need to put your GPG key fingerprint in the right place):&lt;/p>
+&lt;pre tabindex="0">&lt;code>creation_rules:
+- encrypted_regex: &amp;#34;^(users|data|stringData)$&amp;#34;
+pgp: &amp;lt;YOUR KEY FINGERPRINT HERE&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>encrypted_regex&lt;/code> line tells &lt;code>sops&lt;/code> which attributes in your YAML
+files should be encrypted. The &lt;code>pgp&lt;/code> line is a (comma delimited) list
+of keys to which data will be encrypted.&lt;/p>
+&lt;p>Now, edit the file &lt;code>example-secret.enc.yaml&lt;/code> using the &lt;code>sops&lt;/code> command.
+Run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sops example-secret.enc.yaml
+&lt;/code>&lt;/pre>&lt;p>This will open up an editor with some default content. Replace the
+content with the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Secret
+metadata:
+name: example-secret
+type: Opaque
+stringData:
+message: this is a test
+&lt;/code>&lt;/pre>&lt;p>Save the file and exit your editor. Now examine the file; you will see
+that it contains a mix of encrypted and unencrypted content. When
+encrypted with my private key, it looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ cat example-secret.enc.yaml
+{
+&amp;#34;data&amp;#34;: &amp;#34;ENC[AES256_GCM,data:wZvEylsvhfU29nfFW1PbGqyk82x8+Vm/3p2Y89B8a1A26wa5iUTr1hEjDYrQIGQq4rvDyK4Bevxb/PrTzdOoTrYIhaerEWk13g9UrteLoaW0FpfGv9bqk0c12OwTrzS+5qCW2mIlfzQpMH5+7xxeruUXO7w=,iv:H4i1/Znp6WXrMmmP9YVkz+xKOX0XBH7kPFaa36DtTxs=,tag:bZhSzkM74wqayo7McV/VNQ==,type:str]&amp;#34;,
+&amp;#34;sops&amp;#34;: {
+&amp;#34;kms&amp;#34;: null,
+&amp;#34;gcp_kms&amp;#34;: null,
+&amp;#34;azure_kv&amp;#34;: null,
+&amp;#34;hc_vault&amp;#34;: null,
+&amp;#34;lastmodified&amp;#34;: &amp;#34;2021-03-12T03:11:46Z&amp;#34;,
+&amp;#34;mac&amp;#34;: &amp;#34;ENC[AES256_GCM,data:2NrsF6iLA3zHeupD314Clg/WyBA8mwCn5SHHI5P9tsOt6472Tevdamv6ARD+xqfrSVWz+Wy4PtWPoeqZrFJwnL/qCR4sdjt/CRzLmcBistUeAnlqoWIwbtMxBqaFg9GxTd7f5q0iHr9QNWGSVV3JMeZZ1jeWyeQohAPpPufsuPQ=,iv:FJvZz8SV+xsy4MC1W9z1Vn0s4Dzw9Gya4v+rSpwZLrw=,tag:pfW8r5856c7qetCNgXMyeA==,type:str]&amp;#34;,
+&amp;#34;pgp&amp;#34;: [
+{
+&amp;#34;created_at&amp;#34;: &amp;#34;2021-03-12T03:11:45Z&amp;#34;,
+&amp;#34;enc&amp;#34;: &amp;#34;-----BEGIN PGP MESSAGE-----\n\nwcBMA0Jtk4Lf1qepAQgAGKwk6zDMPUYbUscky07v/7r3fsws3pTVRMgpEdhTra6x\nDxiMaLnjTKJi9fsB7sQuh/PTGWhXGuHtHg0YBtxRkuZY0Kl6xKXTXGBIBhI/Ahgw\n4BSz/rE7gbz1h6X4EFml3e1NeUTvGntA3HjY0o42YN9uwsi9wvMbiR4OLQfwY1gG\np9/v57KJx5ipEKSgt+81KwzOhuW79ttXd2Tvi9rjuAfvmLBU9q/YKMT8miuNhjet\nktNwXNJNpglHJta431YUhPZ6q41LpgvQPMX4bIZm7i7NuR470njYLQPe7xiGqqeT\nBcuF7KkNXGcDu9/RnIyxK4W5Bo9NEa06TqUGTHLEENLgAeSzHdQdUwx/pLLD6OPa\nv/U34YJU4JngqOGqTuDu4orgwLDg++XysBwVsmFp1t/nHvTkwj57wAuxJ4/It/9l\narvRHlCx6uA05IXukmCTvYMPRV3kY/81B+biHcka7uFUOQA=\n=x+7S\n-----END PGP MESSAGE-----&amp;#34;,
+&amp;#34;fp&amp;#34;: &amp;#34;3E70A502BB5255B6BB8E86BE362D63A80853D4CF&amp;#34;
+}
+],
+&amp;#34;encrypted_regex&amp;#34;: &amp;#34;^(users|data|stringData)$&amp;#34;,
+&amp;#34;version&amp;#34;: &amp;#34;3.6.1&amp;#34;
+}
+}
+&lt;/code>&lt;/pre>&lt;p>Finally, attempt to render the project with Kustomize by running:&lt;/p>
+&lt;pre tabindex="0">&lt;code>kustomize build --enable-alpha-plugins
+&lt;/code>&lt;/pre>&lt;p>This should produce on stdout the unencrypted content of your secret:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: v1
+kind: Secret
+metadata:
+name: example-secret
+type: Opaque
+stringData:
+message: this is a test
+&lt;/code>&lt;/pre></content></item><item><title>Object storage with OpenShift Container Storage</title><link>https://blog.oddbit.com/posts/object-storage-with-openshift/</link><pubDate>Wed, 10 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/object-storage-with-openshift/</guid><description>OpenShift Container Storage (OCS) from Red Hat deploys Ceph in your OpenShift cluster (or allows you to integrate with an external Ceph cluster). In addition to the file- and block- based volume services provided by Ceph, OCS includes two S3-api compatible object storage implementations.
+The first option is the Ceph Object Gateway (radosgw), Ceph&amp;rsquo;s native object storage interface. The second option called the &amp;ldquo;Multicloud Object Gateway&amp;rdquo;, which is in fact a piece of software named Noobaa, a storage abstraction layer that was acquired by Red Hat in 2018.</description><content>&lt;p>&lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage">OpenShift Container Storage&lt;/a> (OCS) from Red Hat deploys Ceph in your
+OpenShift cluster (or allows you to integrate with an external Ceph
+cluster). In addition to the file- and block- based volume services
+provided by Ceph, OCS includes two S3-api compatible object storage
+implementations.&lt;/p>
+&lt;p>The first option is the &lt;a href="https://docs.ceph.com/en/latest/radosgw/">Ceph Object Gateway&lt;/a> (radosgw),
+Ceph&amp;rsquo;s native object storage interface. The second option called the
+&amp;ldquo;&lt;a href="https://www.openshift.com/blog/introducing-multi-cloud-object-gateway-for-openshift">Multicloud Object Gateway&lt;/a>&amp;rdquo;, which is in fact a piece of software
+named &lt;a href="https://www.noobaa.io/">Noobaa&lt;/a>, a storage abstraction layer that was &lt;a href="https://www.redhat.com/en/blog/faq-red-hat-acquires-noobaa">acquired by
+Red Hat&lt;/a> in 2018. In this article I&amp;rsquo;d like to demonstrate how to
+take advantage of these storage options.&lt;/p>
+&lt;h2 id="what-is-object-storage">What is object storage?&lt;/h2>
+&lt;p>The storage we interact with regularly on our local computers is
+block storage: data is stored as a collection of blocks on some sort
+of storage device. Additional layers &amp;ndash; such as a filesystem driver &amp;ndash;
+are responsible for assembling those blocks into something useful.&lt;/p>
+&lt;p>Object storage, on the other hand, manages data as objects: a single
+unit of data and associated metadata (such as access policies). An
+object is identified by some sort of unique id. Object storage
+generally provides an API that is largely independent of the physical
+storage layer; data may live on a variety of devices attached to a
+variety of systems, and you don&amp;rsquo;t need to know any of those details in
+order to access the data.&lt;/p>
+&lt;p>The most well known example of object storage service Amazon&amp;rsquo;s
+&lt;a href="https://aws.amazon.com/s3/">S3&lt;/a> service (&amp;ldquo;Simple Storage Service&amp;rdquo;), first introduced in 2006.
+The S3 API has become a de-facto standard for object storage
+implementations. The two services we&amp;rsquo;ll be discussing in this article
+provide S3-compatible APIs.&lt;/p>
+&lt;h2 id="creating-buckets">Creating buckets&lt;/h2>
+&lt;p>The fundamental unit of object storage is called a &amp;ldquo;bucket&amp;rdquo;.&lt;/p>
+&lt;p>Creating a bucket with OCS works a bit like creating a &lt;a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">persistent
+volume&lt;/a>, although instead of starting with a &lt;code>PersistentVolumeClaim&lt;/code>
+you instead start with an &lt;code>ObjectBucketClaim&lt;/code> (&amp;quot;&lt;code>OBC&lt;/code>&amp;quot;). An &lt;code>OBC&lt;/code>
+looks something like this when using RGW:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">apiVersion&lt;/span>: &lt;span style="color:#ae81ff">objectbucket.io/v1alpha1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">kind&lt;/span>: &lt;span style="color:#ae81ff">ObjectBucketClaim&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">metadata&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">example-rgw&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">spec&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">generateBucketName&lt;/span>: &lt;span style="color:#ae81ff">example-rgw&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">storageClassName&lt;/span>: &lt;span style="color:#ae81ff">ocs-storagecluster-ceph-rgw&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or like this when using Noobaa (note the different value for
+&lt;code>storageClassName&lt;/code>):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">apiVersion&lt;/span>: &lt;span style="color:#ae81ff">objectbucket.io/v1alpha1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">kind&lt;/span>: &lt;span style="color:#ae81ff">ObjectBucketClaim&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">metadata&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">example-noobaa&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">spec&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">generateBucketName&lt;/span>: &lt;span style="color:#ae81ff">example-noobaa&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">storageClassName&lt;/span>: &lt;span style="color:#ae81ff">openshift-storage.noobaa.io&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With OCS 4.5, your out-of-the-box choices for &lt;code>storageClassName&lt;/code> will be
+&lt;code>ocs-storagecluster-ceph-rgw&lt;/code>, if you choose to use Ceph Radosgw, or
+&lt;code>openshift-storage.noobaa.io&lt;/code>, if you choose to use the Noobaa S3 endpoint.&lt;/p>
+&lt;p>Before we continue, I&amp;rsquo;m going to go ahead and create these resources
+in my OpenShift environment. To do so, I&amp;rsquo;m going to use &lt;a href="https://kustomize.io/">Kustomize&lt;/a>
+to deploy the resources described in the following &lt;code>kustomization.yml&lt;/code>
+file:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">namespace&lt;/span>: &lt;span style="color:#ae81ff">oddbit-ocs-example&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">resources&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#ae81ff">obc-noobaa.yml&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#ae81ff">obc-rgw.yml&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Running &lt;code>kustomize build | oc apply -f-&lt;/code> from the directory containing
+this file populates the specified namespace with the two
+&lt;code>ObjectBucketClaims&lt;/code> mentioned above:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ kustomize build | oc apply -f-
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>objectbucketclaim.objectbucket.io/example-noobaa created
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>objectbucketclaim.objectbucket.io/example-rgw created
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Verifying that things seem healthy:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc get objectbucketclaim
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>NAME STORAGE-CLASS PHASE AGE
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>example-noobaa openshift-storage.noobaa.io Bound 2m59s
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>example-rgw ocs-storagecluster-ceph-rgw Bound 2m59s
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Each &lt;code>ObjectBucketClaim&lt;/code> will result in a OpenShift creating a new
+&lt;code>ObjectBucket&lt;/code> resource (which, like &lt;code>PersistentVolume&lt;/code> resources, are
+not namespaced). The &lt;code>ObjectBucket&lt;/code> resource will be named
+&lt;code>obc-&amp;lt;namespace-name&amp;gt;-&amp;lt;objectbucketclaim-name&amp;gt;&lt;/code>.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc get objectbucket obc-oddbit-ocs-example-example-rgw obc-oddbit-ocs-example-example-noobaa
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>NAME STORAGE-CLASS CLAIM-NAMESPACE CLAIM-NAME RECLAIM-POLICY PHASE AGE
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>obc-oddbit-ocs-example-example-rgw ocs-storagecluster-ceph-rgw oddbit-ocs-example example-rgw Delete Bound 67m
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>obc-oddbit-ocs-example-example-noobaa openshift-storage.noobaa.io oddbit-ocs-example example-noobaa Delete Bound 67m
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Each &lt;code>ObjectBucket&lt;/code> resource corresponds to a bucket in the selected
+object storage backend.&lt;/p>
+&lt;p>Because buckets exist in a flat namespace, the OCS documentation
+recommends always using &lt;code>generateName&lt;/code> in the claim, rather than
+explicitly setting &lt;code>bucketName&lt;/code>, in order to avoid unexpected
+conflicts. This means that the generated buckets will have a named
+prefixed by the value in &lt;code>generateName&lt;/code>, followed by a random string:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc get objectbucketclaim example-rgw -o jsonpath&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;{.spec.bucketName}&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>example-rgw-425d7193-ae3a-41d9-98e3-9d07b82c9661
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ oc get objectbucketclaim example-noobaa -o jsonpath&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;{.spec.bucketName}&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>example-noobaa-2e087028-b3a4-475b-ae83-a4fa80d9e3ef
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Along with the bucket itself, OpenShift will create a &lt;code>Secret&lt;/code> and a
+&lt;code>ConfigMap&lt;/code> resource &amp;ndash; named after your &lt;code>OBC&lt;/code> &amp;ndash; with the metadata
+necessary to access the bucket.&lt;/p>
+&lt;p>The &lt;code>Secret&lt;/code> contains AWS-style credentials for authenticating to the
+S3 API:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc get secret example-rgw -o yaml | oc neat
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>apiVersion: v1
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>data:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> AWS_ACCESS_KEY_ID: ...
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> AWS_SECRET_ACCESS_KEY: ...
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>kind: Secret
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>metadata:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> labels:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> bucket-provisioner: openshift-storage.ceph.rook.io-bucket
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> name: example-rgw
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> namespace: oddbit-ocs-example
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>type: Opaque
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>(I&amp;rsquo;m using the &lt;a href="https://github.com/itaysk/kubectl-neat">neat&lt;/a> filter here to remove extraneous metadata that
+OpenShift returns when you request a resource.)&lt;/p>
+&lt;p>The &lt;code>ConfigMap&lt;/code> contains a number of keys that provide you (or your code)
+with the information necessary to access the bucket. For the RGW
+bucket:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc get configmap example-rgw -o yaml | oc neat
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>apiVersion: v1
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>data:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_HOST: rook-ceph-rgw-ocs-storagecluster-cephobjectstore.openshift-storage.svc.cluster.local
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_NAME: example-rgw-425d7193-ae3a-41d9-98e3-9d07b82c9661
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_PORT: &lt;span style="color:#e6db74">&amp;#34;80&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_REGION: us-east-1
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>kind: ConfigMap
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>metadata:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> labels:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> bucket-provisioner: openshift-storage.ceph.rook.io-bucket
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> name: example-rgw
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> namespace: oddbit-ocs-example
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And for the Noobaa bucket:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc get configmap example-noobaa -o yaml | oc neat
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>apiVersion: v1
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>data:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_HOST: s3.openshift-storage.svc
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_NAME: example-noobaa-2e087028-b3a4-475b-ae83-a4fa80d9e3ef
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> BUCKET_PORT: &lt;span style="color:#e6db74">&amp;#34;443&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>kind: ConfigMap
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>metadata:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> labels:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> app: noobaa
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> bucket-provisioner: openshift-storage.noobaa.io-obc
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> noobaa-domain: openshift-storage.noobaa.io
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> name: example-noobaa
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> namespace: oddbit-ocs-example
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note that &lt;code>BUCKET_HOST&lt;/code> contains the internal S3 API endpoint. You won&amp;rsquo;t be
+able to reach this from outside the cluster. We&amp;rsquo;ll tackle that in just a
+bit.&lt;/p>
+&lt;h2 id="accessing-a-bucket-from-a-pod">Accessing a bucket from a pod&lt;/h2>
+&lt;p>The easiest way to expose the credentials in a pod is to map the keys
+from both the &lt;code>ConfigMap&lt;/code> and &lt;code>Secret&lt;/code> as environment variables using
+the &lt;code>envFrom&lt;/code> directive, like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">apiVersion&lt;/span>: &lt;span style="color:#ae81ff">v1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">kind&lt;/span>: &lt;span style="color:#ae81ff">Pod&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">metadata&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">bucket-example&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">spec&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">containers&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">image&lt;/span>: &lt;span style="color:#ae81ff">myimage&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">env&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">AWS_CA_BUNDLE&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">value&lt;/span>: &lt;span style="color:#ae81ff">/run/secrets/kubernetes.io/serviceaccount/service-ca.crt&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">envFrom&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">configMapRef&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">example-rgw&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">secretRef&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">example-rgw&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> [&lt;span style="color:#ae81ff">...]&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note that we&amp;rsquo;re also setting &lt;code>AWS_CA_BUNDLE&lt;/code> here, which you&amp;rsquo;ll need
+if the internal endpoint referenced by &lt;code>$BUCKET_HOST&lt;/code> is using SSL.&lt;/p>
+&lt;p>Inside the pod, we can run, for example, &lt;code>aws&lt;/code> commands as long as we
+provide an appropriate s3 endpoint. We can inspect the value of
+&lt;code>BUCKET_PORT&lt;/code> to determine if we need &lt;code>http&lt;/code> or &lt;code>https&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ &lt;span style="color:#f92672">[&lt;/span> &lt;span style="color:#e6db74">&amp;#34;&lt;/span>$BUCKET_PORT&lt;span style="color:#e6db74">&amp;#34;&lt;/span> &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#ae81ff">80&lt;/span> &lt;span style="color:#f92672">]&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span> schema&lt;span style="color:#f92672">=&lt;/span>http &lt;span style="color:#f92672">||&lt;/span> schema&lt;span style="color:#f92672">=&lt;/span>https
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ aws s3 --endpoint $schema://$BUCKET_HOST ls
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>2021-02-10 04:30:31 example-rgw-8710aa46-a47a-4a8b-8edd-7dabb7d55469
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Python&amp;rsquo;s &lt;code>boto3&lt;/code> module can also make use of the same environment
+variables:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> boto3
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#f92672">import&lt;/span> os
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> bucket_host &lt;span style="color:#f92672">=&lt;/span> os&lt;span style="color:#f92672">.&lt;/span>environ[&lt;span style="color:#e6db74">&amp;#39;BUCKET_HOST&amp;#39;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> schema &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#e6db74">&amp;#39;http&amp;#39;&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> os&lt;span style="color:#f92672">.&lt;/span>environ[&lt;span style="color:#e6db74">&amp;#39;BUCKET_PORT&amp;#39;&lt;/span>] &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#e6db74">&amp;#39;80&amp;#39;&lt;/span> &lt;span style="color:#66d9ef">else&lt;/span> &lt;span style="color:#e6db74">&amp;#39;https&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> s3 &lt;span style="color:#f92672">=&lt;/span> boto3&lt;span style="color:#f92672">.&lt;/span>client(&lt;span style="color:#e6db74">&amp;#39;s3&amp;#39;&lt;/span>, endpoint_url&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>schema&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">://&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>bucket_host&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> s3&lt;span style="color:#f92672">.&lt;/span>list_buckets()[&lt;span style="color:#e6db74">&amp;#39;Buckets&amp;#39;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>[{&lt;span style="color:#e6db74">&amp;#39;Name&amp;#39;&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;example-noobaa-...&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;CreationDate&amp;#39;&lt;/span>: datetime&lt;span style="color:#f92672">.&lt;/span>datetime(&lt;span style="color:#f92672">...&lt;/span>)}]
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="external-connections-to-s3-endpoints">External connections to S3 endpoints&lt;/h2>
+&lt;p>External access to services in OpenShift is often managed via
+&lt;a href="https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/routes.html">routes&lt;/a>. If you look at the routes available in your
+&lt;code>openshift-storage&lt;/code> namespace, you&amp;rsquo;ll find the following:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc -n openshift-storage get route
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>NAME HOST/PORT PATH SERVICES PORT TERMINATION WILDCARD
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>noobaa-mgmt noobaa-mgmt-openshift-storage.apps.example.com noobaa-mgmt mgmt-https reencrypt None
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>s3 s3-openshift-storage.apps.example.com s3 s3-https reencrypt None
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>s3&lt;/code> route provides external access to your Noobaa S3 endpoint.
+You&amp;rsquo;ll note that in the list above there is no route registered for
+radosgw&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. There is a service registered for Radosgw named
+&lt;code>rook-ceph-rgw-ocs-storagecluster-cephobjectstore&lt;/code>, so we
+can expose that service to create an external route by running
+something like:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>oc create route edge rgw --service rook-ceph-rgw-ocs-storagecluster-cephobjectstore
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This will create a route with &amp;ldquo;edge&amp;rdquo; encryption (TLS termination is
+handled by the default ingress router):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ oc -n openshift storage get route
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>NAME HOST/PORT PATH SERVICES PORT TERMINATION WILDCARD
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>noobaa-mgmt noobaa-mgmt-openshift-storage.apps.example.com noobaa-mgmt mgmt-https reencrypt None
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>rgw rgw-openshift-storage.apps.example.com rook-ceph-rgw-ocs-storagecluster-cephobjectstore http edge None
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>s3 s3-openshift-storage.apps.example.com s3 s3-https reencrypt None
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="accessing-a-bucket-from-outside-the-cluster">Accessing a bucket from outside the cluster&lt;/h2>
+&lt;p>Once we know the &lt;code>Route&lt;/code> to our S3 endpoint, we can use the
+information in the &lt;code>Secret&lt;/code> and &lt;code>ConfigMap&lt;/code> created for us when we
+provisioned the storage. We just need to replace the &lt;code>BUCKET_HOST&lt;/code>
+with the hostname in the route, and we need to use SSL over port 443
+regardless of what &lt;code>BUCKET_PORT&lt;/code> tells us.&lt;/p>
+&lt;p>We can extract the values into variables using something like the
+following shell script, which takes care of getting the appropriate
+route from the &lt;code>openshift-storage&lt;/code> namespace, base64-decoding the values
+in the &lt;code>Secret&lt;/code>, and replacing the &lt;code>BUCKET_HOST&lt;/code> value:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#!/bin/sh
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>bucket_host&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">$(&lt;/span>oc get configmap $1 -o json | jq -r .data.BUCKET_HOST&lt;span style="color:#66d9ef">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>service_name&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">$(&lt;/span>cut -f1 -d. &lt;span style="color:#f92672">&amp;lt;&amp;lt;&amp;lt;&lt;/span>$bucket_host&lt;span style="color:#66d9ef">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>service_ns&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">$(&lt;/span>cut -f2 -d. &lt;span style="color:#f92672">&amp;lt;&amp;lt;&amp;lt;&lt;/span>$bucket_host&lt;span style="color:#66d9ef">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># get the externally visible hostname provided by the route&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>public_bucket_host&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">$(&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> oc -n $service_ns get route -o json |
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> jq -r &lt;span style="color:#e6db74">&amp;#39;.items[]|select(.spec.to.name==&amp;#34;&amp;#39;&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>$service_name&lt;span style="color:#e6db74">&amp;#34;&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&amp;#34;)|.spec.host&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># dump configmap and secret as shell variables, replacing the&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># value of BUCKET_HOST in the process.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> oc get configmap $1 -o json |
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> jq -r &lt;span style="color:#e6db74">&amp;#39;.data as $data|.data|keys[]|&amp;#34;\(.)=\($data[.])&amp;#34;&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> oc get secret $1 -o json |
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> jq -r &lt;span style="color:#e6db74">&amp;#39;.data as $data|.data|keys[]|&amp;#34;\(.)=\($data[.]|@base64d)&amp;#34;&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">)&lt;/span> | sed -e &lt;span style="color:#e6db74">&amp;#39;s/^/export /&amp;#39;&lt;/span> -e &lt;span style="color:#e6db74">&amp;#39;/BUCKET_HOST/ s/=.*/=&amp;#39;&lt;/span>$public_bucket_host&lt;span style="color:#e6db74">&amp;#39;/&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we call the script &lt;code>getenv.sh&lt;/code> and run it like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sh getenv.sh example-rgw
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>It will produce output like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>export BUCKET_HOST&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;s3-openshift-storage.apps.cnv.massopen.cloud&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>export BUCKET_NAME&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;example-noobaa-2e1bca2f-ff49-431a-99b8-d7d63a8168b0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>export BUCKET_PORT&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;443&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>export BUCKET_REGION&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>export BUCKET_SUBREGION&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>export AWS_ACCESS_KEY_ID&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;...&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>export AWS_SECRET_ACCESS_KEY&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;...&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We could accomplish something similar in Python with the following,
+which shows how to use the OpenShift dynamic client to interact with
+OpenShift:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> argparse
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> base64
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> kubernetes
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> openshift.dynamic
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">parse_args&lt;/span>():
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> p &lt;span style="color:#f92672">=&lt;/span> argparse&lt;span style="color:#f92672">.&lt;/span>ArgumentParser()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> p&lt;span style="color:#f92672">.&lt;/span>add_argument(&lt;span style="color:#e6db74">&amp;#39;-n&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;--namespace&amp;#39;&lt;/span>, required&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> p&lt;span style="color:#f92672">.&lt;/span>add_argument(&lt;span style="color:#e6db74">&amp;#39;obcname&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> p&lt;span style="color:#f92672">.&lt;/span>parse_args()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>args &lt;span style="color:#f92672">=&lt;/span> parse_args()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>k8s_client &lt;span style="color:#f92672">=&lt;/span> kubernetes&lt;span style="color:#f92672">.&lt;/span>config&lt;span style="color:#f92672">.&lt;/span>new_client_from_config()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>dyn_client &lt;span style="color:#f92672">=&lt;/span> openshift&lt;span style="color:#f92672">.&lt;/span>dynamic&lt;span style="color:#f92672">.&lt;/span>DynamicClient(k8s_client)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>v1_configmap &lt;span style="color:#f92672">=&lt;/span> dyn_client&lt;span style="color:#f92672">.&lt;/span>resources&lt;span style="color:#f92672">.&lt;/span>get(api_version&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;v1&amp;#39;&lt;/span>, kind&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;ConfigMap&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>v1_secret &lt;span style="color:#f92672">=&lt;/span> dyn_client&lt;span style="color:#f92672">.&lt;/span>resources&lt;span style="color:#f92672">.&lt;/span>get(api_version&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;v1&amp;#39;&lt;/span>, kind&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;Secret&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>v1_service &lt;span style="color:#f92672">=&lt;/span> dyn_client&lt;span style="color:#f92672">.&lt;/span>resources&lt;span style="color:#f92672">.&lt;/span>get(api_version&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;v1&amp;#39;&lt;/span>, kind&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;Service&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>v1_route &lt;span style="color:#f92672">=&lt;/span> dyn_client&lt;span style="color:#f92672">.&lt;/span>resources&lt;span style="color:#f92672">.&lt;/span>get(api_version&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;route.openshift.io/v1&amp;#39;&lt;/span>, kind&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;Route&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>configmap &lt;span style="color:#f92672">=&lt;/span> v1_configmap&lt;span style="color:#f92672">.&lt;/span>get(name&lt;span style="color:#f92672">=&lt;/span>args&lt;span style="color:#f92672">.&lt;/span>obcname, namespace&lt;span style="color:#f92672">=&lt;/span>args&lt;span style="color:#f92672">.&lt;/span>namespace)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>secret &lt;span style="color:#f92672">=&lt;/span> v1_secret&lt;span style="color:#f92672">.&lt;/span>get(name&lt;span style="color:#f92672">=&lt;/span>args&lt;span style="color:#f92672">.&lt;/span>obcname, namespace&lt;span style="color:#f92672">=&lt;/span>args&lt;span style="color:#f92672">.&lt;/span>namespace)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>env &lt;span style="color:#f92672">=&lt;/span> dict(configmap&lt;span style="color:#f92672">.&lt;/span>data)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>env&lt;span style="color:#f92672">.&lt;/span>update({k: base64&lt;span style="color:#f92672">.&lt;/span>b64decode(v)&lt;span style="color:#f92672">.&lt;/span>decode() &lt;span style="color:#66d9ef">for&lt;/span> k, v &lt;span style="color:#f92672">in&lt;/span> secret&lt;span style="color:#f92672">.&lt;/span>data&lt;span style="color:#f92672">.&lt;/span>items()})
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svc_name, svc_ns &lt;span style="color:#f92672">=&lt;/span> env[&lt;span style="color:#e6db74">&amp;#39;BUCKET_HOST&amp;#39;&lt;/span>]&lt;span style="color:#f92672">.&lt;/span>split(&lt;span style="color:#e6db74">&amp;#39;.&amp;#39;&lt;/span>)[:&lt;span style="color:#ae81ff">2&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>routes &lt;span style="color:#f92672">=&lt;/span> v1_route&lt;span style="color:#f92672">.&lt;/span>get(namespace&lt;span style="color:#f92672">=&lt;/span>svc_ns)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">for&lt;/span> route &lt;span style="color:#f92672">in&lt;/span> routes&lt;span style="color:#f92672">.&lt;/span>items:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> route&lt;span style="color:#f92672">.&lt;/span>spec&lt;span style="color:#f92672">.&lt;/span>to&lt;span style="color:#f92672">.&lt;/span>name &lt;span style="color:#f92672">==&lt;/span> svc_name:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">break&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>env[&lt;span style="color:#e6db74">&amp;#39;BUCKET_PORT&amp;#39;&lt;/span>] &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#ae81ff">443&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>env[&lt;span style="color:#e6db74">&amp;#39;BUCKET_HOST&amp;#39;&lt;/span>] &lt;span style="color:#f92672">=&lt;/span> route[&lt;span style="color:#e6db74">&amp;#39;spec&amp;#39;&lt;/span>][&lt;span style="color:#e6db74">&amp;#39;host&amp;#39;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">for&lt;/span> k, v &lt;span style="color:#f92672">in&lt;/span> env&lt;span style="color:#f92672">.&lt;/span>items():
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> print(&lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#39;export &lt;/span>&lt;span style="color:#e6db74">{&lt;/span>k&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">=&amp;#34;&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>v&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we run it like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>python genenv.py -n oddbit-ocs-example example-noobaa
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>It will produce output largely identical to what we saw above with the
+shell script.&lt;/p>
+&lt;p>If we load those variables into the environment:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ eval &lt;span style="color:#66d9ef">$(&lt;/span>sh getenv.sh example-rgw&lt;span style="color:#66d9ef">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We can perform the same operations we executed earlier from inside the
+pod:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ aws s3 --endpoint https://$BUCKET_HOST ls
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>2021-02-10 14:34:12 example-rgw-425d7193-ae3a-41d9-98e3-9d07b82c9661
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>note that this may have changed in the recent OCS 4.6
+release&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/posts/heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/heatkubernetes-demo-with-autos/</guid><description>Next week is the Red Hat Summit in Boston, and I&amp;rsquo;ll be taking part in a Project Atomic presentation in which I will discuss various (well, two) options for deploying Atomic into an OpenStack environment, focusing on my heat-kubernetes templates.
+As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:
+This shows off the autoscaling behavior available with recent versions of these templates (and also serves as a very brief introduction to working with Kubernetes).</description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
+(well, two) options for deploying Atomic into an OpenStack
+environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
+&lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>This shows off the autoscaling behavior available with recent versions
+of these templates (and also serves as a very brief introduction to
+working with Kubernetes).&lt;/p></content></item><item><title>External networking for Kubernetes services</title><link>https://blog.oddbit.com/posts/external-networking-for-kubern/</link><pubDate>Tue, 10 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/external-networking-for-kubern/</guid><description>I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is, &amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of Kubernetes (running on bare metal), which means I suddenly had to confront the question of how to provide external access to Kubernetes hosted services. Kubernetes provides two solutions to this problem, neither of which is particularly attractive out of the box:
+There is a field createExternalLoadBalancer that can be set in a service description.</description><content>&lt;p>I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is,
+&amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of
+Kubernetes (running on bare metal), which means I suddenly had to
+confront the question of how to provide external access to Kubernetes
+hosted services. Kubernetes provides two solutions to this problem,
+neither of which is particularly attractive out of the box:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>There is a field &lt;code>createExternalLoadBalancer&lt;/code> that can be set in a
+service description. This is meant to integrate with load
+balancers provided by your local cloud environment, but at the
+moment there is only support for this when running under &lt;a href="https://cloud.google.com/compute/">GCE&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>A service description can have a list of public IP addresses
+associated with it in the &lt;code>publicIPS&lt;/code> field. This will cause
+&lt;code>kube-proxy&lt;/code> to create rules in the &lt;code>KUBE-PROXY&lt;/code> chain of your
+&lt;code>nat&lt;/code> table to direct traffic inbound to those addresses to the
+appropriate local &lt;code>kube-proxy&lt;/code> port.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>The second option is a good starting point, since if you were to
+simply list the public IP addresses of your Kubernetes minions in the
+&lt;code>publicIPs&lt;/code> field, everything would Just Work. That is, inbound
+traffic to the appropriate port on your minions would get directed to
+&lt;code>kube-proxy&lt;/code> by the &lt;code>nat&lt;/code> rules. That&amp;rsquo;s great for simple cases, but
+in practice it means that you cannot have more that &lt;em>N&lt;/em> services
+exposed on a given port where &lt;em>N&lt;/em> is the number of minions in your
+cluster. That limit is difficult if you &amp;ndash; like I do &amp;ndash; have an
+all-in-one (e.g., on a single host) Kubernetes deployment on which you
+wish to host multiple web services exposed on port 80 (and even in a
+larger environment, you really don&amp;rsquo;t want &amp;ldquo;number of things on port
+XX&amp;rdquo; tightly coupled to &amp;ldquo;number of minions&amp;rdquo;).&lt;/p>
+&lt;h2 id="introducing-kiwi">Introducing Kiwi&lt;/h2>
+&lt;p>To overcome this problem, I wrote &lt;a href="http://github.com/larsks/kiwi/">Kiwi&lt;/a>, a service that listens to
+Kubernetes for events concerning new/modified/deleted services, and in
+response to those events manages (a) the assignment of IP addresses to
+network interfaces on your minions and (b) creating additional
+firewall rules to permit traffic inbound to your services to pass a
+default-deny firewall configuration.&lt;/p>
+&lt;p>Kiwi uses &lt;a href="https://github.com/coreos/etcd">etcd&lt;/a> to coordinate ownership of IP addresses between
+minions in your Kubernetes cluster.&lt;/p>
+&lt;h2 id="how-it-works">How it works&lt;/h2>
+&lt;p>Kiwi listens to event streams from both Kubernetes and Etcd.&lt;/p>
+&lt;p>On the Kubernetes side, Kiwi listens to &lt;code>/api/v1beta/watch/services&lt;/code>,
+which produces events in response to new, modified, or deleted
+services. The Kubernetes API uses a server-push model, in which a
+client makes a single HTTP request and then receives a series of
+events over the same connection. A event looks something like:&lt;/p>
+&lt;pre>&lt;code>{
+&amp;quot;type&amp;quot;: &amp;quot;ADDED&amp;quot;,
+&amp;quot;object&amp;quot;: {
+&amp;quot;portalIP&amp;quot;: &amp;quot;10.254.93.176&amp;quot;,
+&amp;quot;containerPort&amp;quot;: 80,
+&amp;quot;publicIPs&amp;quot;: [
+&amp;quot;192.168.1.100&amp;quot;
+],
+&amp;quot;selector&amp;quot;: {
+&amp;quot;name&amp;quot;: &amp;quot;test-web&amp;quot;
+},
+&amp;quot;protocol&amp;quot;: &amp;quot;TCP&amp;quot;,
+&amp;quot;port&amp;quot;: 8080,
+&amp;quot;kind&amp;quot;: &amp;quot;Service&amp;quot;,
+&amp;quot;id&amp;quot;: &amp;quot;test-web&amp;quot;,
+&amp;quot;uid&amp;quot;: &amp;quot;72bc1286-a440-11e4-b83e-20cf30467e62&amp;quot;,
+&amp;quot;creationTimestamp&amp;quot;: &amp;quot;2015-01-24T22:15:43-05:00&amp;quot;,
+&amp;quot;selfLink&amp;quot;: &amp;quot;/api/v1beta1/services/test-web&amp;quot;,
+&amp;quot;resourceVersion&amp;quot;: 245,
+&amp;quot;apiVersion&amp;quot;: &amp;quot;v1beta1&amp;quot;,
+&amp;quot;namespace&amp;quot;: &amp;quot;default&amp;quot;
+}
+}
+&lt;/code>&lt;/pre>
+&lt;p>I am using the Python &lt;a href="http://docs.python-requests.org/en/latest/">requests&lt;/a> library, which it turns out &lt;a href="https://github.com/kennethreitz/requests/issues/2433">has a
+bug&lt;/a> in its handling of streaming server responses, but I was
+able to work around that issue once I realized what was going on.&lt;/p>
+&lt;p>On the Etcd side, Kiwi uses keys under the &lt;code>/kiwi/publicips&lt;/code> prefix to
+coordinate address ownership among Kiwi instances. It listens to
+events from Etcd regarding key create/delete/set/etc operations in
+this prefix by calling
+&lt;code>/v2/keys/kiwi/publicips?watch=true&amp;amp;recursive=true&lt;/code>. This is a
+long-poll request, rather than a streaming request: that means that a
+request will only ever receive a single event, but it may need to wait
+for a while before it receives that response. This model worked well
+with the &lt;code>requests&lt;/code> library out of the box.&lt;/p>
+&lt;p>After receiving an event from Kubernetes, Kiwi iterates over the
+public IP addresses in the &lt;code>publicIPs&lt;/code> key, and for any address that
+is not already being manged by the local instance it makes a claim on
+that address by attempting to atomically create a key in etcd under
+&lt;code>/kiwi/publicips/&lt;/code> (such as &lt;code>/kiwi/publicips/192.168.1.100&lt;/code>). If this
+attempt succeeds, Kiwi on the local minion has claimed that address
+and proceeds to assign it to the local interface. If the attempt to
+set that key does not succeed, it means the address is already being
+managed by Kiwi on another minion.&lt;/p>
+&lt;p>The address keys are set with a TTL of 20 seconds, after which they
+will be expired. If an address expires, other Kiwi instances will
+receive notification from Etcd and ownership of that address will
+transfer to another Kiwi instance.&lt;/p>
+&lt;h2 id="getting-started-with-kiwi">Getting started with Kiwi&lt;/h2>
+&lt;p>The easiest way to get started with Kiwi is to use the &lt;a href="https://registry.hub.docker.com/u/larsks/kiwi/">larsks/kiwi&lt;/a>
+Docker image that is automatically built from the &lt;a href="http://github.com/larsks/kiwi/">Git
+repository&lt;/a>. For example, if you want to host public ip
+addresses on &lt;code>eth0&lt;/code> in the range &lt;code>192.168.1.32/28&lt;/code>, you would start it
+like this:&lt;/p>
+&lt;pre>&lt;code>docker run --privileged --net=host larsks/kiwi \
+--interface eth0 \
+--range 192.168.1.32/28
+&lt;/code>&lt;/pre>
+&lt;p>You need both &lt;code>--privileged&lt;/code> and &lt;code>--net=host&lt;/code> in order for Kiwi to
+assign addresses to your host interfaces and to manage the iptables
+configuration.&lt;/p>
+&lt;h2 id="an-example">An Example&lt;/h2>
+&lt;p>Start Kiwi as described above. Next, plae the following content in a
+file called &lt;code>service.yaml&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>kind: Service
+apiVersion: v1beta1
+id: test-web
+port: 8888
+selector:
+name: test-web
+containerPort: 80
+publicIPs:
+- 192.168.1.100
+&lt;/code>&lt;/pre>
+&lt;p>Create the service using &lt;code>kubectl&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>kubectl create -f service.yaml
+&lt;/code>&lt;/pre>
+&lt;p>After a short pause, you should see the address show up on interface
+&lt;code>eth0&lt;/code>; the entry will look something like:&lt;/p>
+&lt;pre>&lt;code>inet 192.168.1.100/32 scope global dynamic eth0:kube
+valid_lft 17sec preferred_lft 17sec
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>eth0:kube&lt;/code> is a label applied to the address; this allows Kiwi to
+clean up these addresses at startup (by getting a list of
+Kiwi-configured addresses with &lt;code>ip addr show label eth0:kube&lt;/code>).&lt;/p>
+&lt;p>The &lt;code>valid_lft&lt;/code> and &lt;code>preferred_lft&lt;/code> fields control the lifetime of the
+interface. When these counters reach 0, the addresses are removed by
+the kernel. This ensure that if Kiwi dies, the addresses can
+successfully be re-assigned on another node.&lt;/p></content></item><item><title>Building a minimal web server for testing Kubernetes</title><link>https://blog.oddbit.com/posts/building-a-minimal-web-server-/</link><pubDate>Sun, 04 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/building-a-minimal-web-server-/</guid><description>I have recently been doing some work with Kubernetes, and wanted to put together a minimal image with which I could test service and pod deployment. Size in this case was critical: I wanted something that would download quickly when initially deployed, because I am often setting up and tearing down Kubernetes as part of my testing (and some of my test environments have poor external bandwidth).
+Building thttpd My go-to minimal webserver is thttpd.</description><content>&lt;p>I have recently been doing some work with &lt;a href="https://github.com/googlecloudplatform/kubernetes">Kubernetes&lt;/a>, and wanted
+to put together a minimal image with which I could test service and
+pod deployment. Size in this case was critical: I wanted something
+that would download quickly when initially deployed, because I am
+often setting up and tearing down Kubernetes as part of my testing
+(and some of my test environments have poor external bandwidth).&lt;/p>
+&lt;h2 id="building-thttpd">Building thttpd&lt;/h2>
+&lt;p>My go-to minimal webserver is &lt;a href="http://acme.com/software/thttpd/">thttpd&lt;/a>. For the normal case,
+building the software is a simple matter of &lt;code>./configure&lt;/code> followed by
+&lt;code>make&lt;/code>. This gets you a dynamically linked binary; using &lt;code>ldd&lt;/code> you
+could build a Docker image containing only the necessary shared
+libraries:&lt;/p>
+&lt;pre>&lt;code>$ mkdir thttpd-root thttpd-root/lib64
+$ cp thttpd thttpd-root/
+$ cd thttpd-root
+$ cp $(ldd thttpd | awk '$3 ~ &amp;quot;/&amp;quot; {print $3}') lib64/
+$ cp /lib64/ld-linux-x86-64.so.2 lib64/
+&lt;/code>&lt;/pre>
+&lt;p>Which gets us:&lt;/p>
+&lt;pre>&lt;code>$ find * -type f
+lib64/ld-linux-x86-64.so.2
+lib64/libdl.so.2
+lib64/libc.so.6
+lib64/libcrypt.so.1
+lib64/libfreebl3.so
+thttpd
+&lt;/code>&lt;/pre>
+&lt;p>However, if we try to run &lt;code>thttpd&lt;/code> via a &lt;code>chroot&lt;/code> into this directory,
+it will fail:&lt;/p>
+&lt;pre>&lt;code>$ sudo chroot $PWD /thttpd -D
+/thttpd: unknown user - 'nobody'
+&lt;/code>&lt;/pre>
+&lt;p>A little &lt;code>strace&lt;/code> will show us what&amp;rsquo;s going on:&lt;/p>
+&lt;pre>&lt;code>$ sudo strace chroot $PWD /thttpd -D
+[...]
+open(&amp;quot;/etc/nsswitch.conf&amp;quot;, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+open(&amp;quot;/lib64/libnss_compat.so.2&amp;quot;, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[...]
+&lt;/code>&lt;/pre>
+&lt;p>It&amp;rsquo;s looking for an &lt;a href="https://en.wikipedia.org/wiki/Name_Service_Switch">NSS&lt;/a> configuration and related libraries. So
+let&amp;rsquo;s give it what it wants:&lt;/p>
+&lt;pre>&lt;code>$ mkdir etc
+$ cat &amp;gt; etc/nsswitch.conf &amp;lt;&amp;lt;EOF
+passwd: files
+group: files
+EOF
+$ grep nobody /etc/passwd &amp;gt; etc/passwd
+$ grep nobody /etc/group &amp;gt; etc/group
+$ cp /lib64/libnss_files.so.2 lib64/
+&lt;/code>&lt;/pre>
+&lt;p>And now:&lt;/p>
+&lt;pre>&lt;code>$ sudo chroot $PWD /thttpd -D
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and it keeps running. This gives a filesystem that is almost
+exactly 3MB in size. Can we do better?&lt;/p>
+&lt;h2 id="building-a-static-binary">Building a static binary&lt;/h2>
+&lt;p>In theory, building a static binary should be as simple as:&lt;/p>
+&lt;pre>&lt;code>$ make CCOPT='-O2 -static'
+&lt;/code>&lt;/pre>
+&lt;p>But on my Fedora 21 system, this gets me several warnings:&lt;/p>
+&lt;pre>&lt;code>thttpd.c:(.text.startup+0xf81): warning: Using 'initgroups' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+thttpd.c:(.text.startup+0x146d): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+thttpd.c:(.text.startup+0x65d): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+&lt;/code>&lt;/pre>
+&lt;p>And then a bunch of errors:&lt;/p>
+&lt;pre>&lt;code>/usr/lib/gcc/x86_64-redhat-linux/4.9.2/../../../../lib64/libcrypt.a(md5-crypt.o): In function `__md5_crypt_r':
+(.text+0x11c): undefined reference to `NSSLOW_Init'
+/usr/lib/gcc/x86_64-redhat-linux/4.9.2/../../../../lib64/libcrypt.a(md5-crypt.o): In function `__md5_crypt_r':
+(.text+0x136): undefined reference to `NSSLOWHASH_NewContext'
+/usr/lib/gcc/x86_64-redhat-linux/4.9.2/../../../../lib64/libcrypt.a(md5-crypt.o): In function `__md5_crypt_r':
+(.text+0x14a): undefined reference to `NSSLOWHASH_Begin'
+/usr/lib/gcc/x86_64-redhat-linux/4.9.2/../../../../lib64/libcrypt.a(md5-crypt.o): In function `__md5_crypt_r':
+[...]
+&lt;/code>&lt;/pre>
+&lt;p>Fortunately (?), this is a distribution-specific problem. Building
+&lt;code>thttpd&lt;/code> inside an Ubuntu Docker container seems to work fine:&lt;/p>
+&lt;pre>&lt;code>$ docker run -it --rm -v $PWD:/src ubuntu
+root@1e126269241c:/# apt-get update; apt-get -y install make gcc
+root@1e126269241c:/# make -C /src CCOPT='-O2 -static'
+root@1e126269241c:/# exit
+&lt;/code>&lt;/pre>
+&lt;p>Now we have a statically built binary:&lt;/p>
+&lt;pre>&lt;code>$ file thttpd
+thttpd: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, for GNU/Linux 2.6.24, BuildID[sha1]=bb211a88e9e1d51fa2e937b2b7ea892d87a287d5, not stripped
+&lt;/code>&lt;/pre>
+&lt;p>Let&amp;rsquo;s rebuild our &lt;code>chroot&lt;/code> environment:&lt;/p>
+&lt;pre>&lt;code>$ rm -rf thttpd-root
+$ mkdir thttpd-root thttpd-root/lib64
+$ cp thttpd thttpd-root/
+$ cd thttpd-root
+&lt;/code>&lt;/pre>
+&lt;p>And try running &lt;code>thttpd&lt;/code> again:&lt;/p>
+&lt;pre>&lt;code>$ sudo chroot $PWD /thttpd -D
+/thttpd: unknown user - 'nobody'
+&lt;/code>&lt;/pre>
+&lt;p>Bummer. It looks like the NSS libraries are still biting us, and it
+looks as if statically compiling code that uses NSS &lt;a href="https://stackoverflow.com/questions/3430400/linux-static-linking-is-dead">may be tricky&lt;/a>.
+Fortunately, it&amp;rsquo;s relatively simple to patch out the parts of the
+&lt;code>thttpd&lt;/code> code that are trying to switch to another uid/gid. The
+following &lt;a href="https://github.com/larsks/docker-image-thttpd/blob/master/builder/thttpd-runasroot.patch">patch&lt;/a> will do the trick:&lt;/p>
+&lt;pre>&lt;code>diff --git a/thttpd.c b/thttpd.c
+index fe21b44..397feb1 100644
+--- a/thttpd.c
++++ b/thttpd.c
+@@ -400,22 +400,6 @@ main( int argc, char** argv )
+if ( throttlefile != (char*) 0 )
+read_throttlefile( throttlefile );
+- /* If we're root and we're going to become another user, get the uid/gid
+- ** now.
+- */
+- if ( getuid() == 0 )
+- {
+- pwd = getpwnam( user );
+- if ( pwd == (struct passwd*) 0 )
+- {
+- syslog( LOG_CRIT, &amp;quot;unknown user - '%.80s'&amp;quot;, user );
+- (void) fprintf( stderr, &amp;quot;%s: unknown user - '%s'\n&amp;quot;, argv0, user );
+- exit( 1 );
+- }
+- uid = pwd-&amp;gt;pw_uid;
+- gid = pwd-&amp;gt;pw_gid;
+- }
+-
+/* Log file. */
+if ( logfile != (char*) 0 )
+{
+@@ -441,17 +425,6 @@ main( int argc, char** argv )
+(void) fprintf( stderr, &amp;quot;%s: logfile is not an absolute path, you may not be able to re-open it\n&amp;quot;, argv0 );
+}
+(void) fcntl( fileno( logfp ), F_SETFD, 1 );
+- if ( getuid() == 0 )
+- {
+- /* If we are root then we chown the log file to the user we'll
+- ** be switching to.
+- */
+- if ( fchown( fileno( logfp ), uid, gid ) &amp;lt; 0 )
+- {
+- syslog( LOG_WARNING, &amp;quot;fchown logfile - %m&amp;quot; );
+- perror( &amp;quot;fchown logfile&amp;quot; );
+- }
+- }
+}
+}
+else
+@@ -680,41 +653,6 @@ main( int argc, char** argv )
+stats_bytes = 0;
+stats_simultaneous = 0;
+- /* If we're root, try to become someone else. */
+- if ( getuid() == 0 )
+- {
+- /* Set aux groups to null. */
+- if ( setgroups( 0, (const gid_t*) 0 ) &amp;lt; 0 )
+- {
+- syslog( LOG_CRIT, &amp;quot;setgroups - %m&amp;quot; );
+- exit( 1 );
+- }
+- /* Set primary group. */
+- if ( setgid( gid ) &amp;lt; 0 )
+- {
+- syslog( LOG_CRIT, &amp;quot;setgid - %m&amp;quot; );
+- exit( 1 );
+- }
+- /* Try setting aux groups correctly - not critical if this fails. */
+- if ( initgroups( user, gid ) &amp;lt; 0 )
+- syslog( LOG_WARNING, &amp;quot;initgroups - %m&amp;quot; );
+-#ifdef HAVE_SETLOGIN
+- /* Set login name. */
+- (void) setlogin( user );
+-#endif /* HAVE_SETLOGIN */
+- /* Set uid. */
+- if ( setuid( uid ) &amp;lt; 0 )
+- {
+- syslog( LOG_CRIT, &amp;quot;setuid - %m&amp;quot; );
+- exit( 1 );
+- }
+- /* Check for unnecessary security exposure. */
+- if ( ! do_chroot )
+- syslog(
+- LOG_WARNING,
+- &amp;quot;started as root without requesting chroot(), warning only&amp;quot; );
+- }
+-
+/* Initialize our connections table. */
+connects = NEW( connecttab, max_connects );
+if ( connects == (connecttab*) 0 )
+&lt;/code>&lt;/pre>
+&lt;p>After patching this and re-building thttpd in the Ubuntu container, we
+have a functioning statically linked binary:&lt;/p>
+&lt;pre>&lt;code>$ ./thttpd -D -l /dev/stderr -p 8080
+127.0.0.1 - - [04/Jan/2015:16:44:26 -0500] &amp;quot;GET / HTTP/1.1&amp;quot; 200 1351 &amp;quot;&amp;quot; &amp;quot;curl/7.37.0&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>That line of output represents me running &lt;code>curl&lt;/code> in another window.&lt;/p>
+&lt;h2 id="automating-the-process">Automating the process&lt;/h2>
+&lt;p>I have put together an environment to perform the above steps and
+build a minimal Docker image with the resulting binary. You can find
+the code at &lt;a href="https://github.com/larsks/docker-image-thttpd">https://github.com/larsks/docker-image-thttpd&lt;/a>.&lt;/p>
+&lt;p>If you check out the code:&lt;/p>
+&lt;pre>&lt;code>$ git clone https://github.com/larsks/docker-image-thttpd
+$ cd docker-image-thttpd
+&lt;/code>&lt;/pre>
+&lt;p>And run &lt;code>make&lt;/code>, this will:&lt;/p>
+&lt;ol>
+&lt;li>build an Ubuntu-based image with scripts in place to produce a
+statically-linked thttpd,&lt;/li>
+&lt;li>Boot a container from that image and drop the static &lt;code>thttpd&lt;/code>
+binary into a local directory, and&lt;/li>
+&lt;li>Produce a minimal Docker image containing just &lt;code>thttpd&lt;/code> and a
+simple &lt;code>index.html&lt;/code>.&lt;/li>
+&lt;/ol>
+&lt;p>The final image is just over 1MB in size, and downloads to a new
+Kubernetes environment in seconds. You can grab the finished image
+via:&lt;/p>
+&lt;pre>&lt;code>docker pull larsks/thttpd
+&lt;/code>&lt;/pre>
+&lt;p>(Or you can grab the above repository from GitHub and build it
+yourself locally).&lt;/p></content></item><item><title>Fedora Atomic, OpenStack, and Kubernetes (oh my)</title><link>https://blog.oddbit.com/posts/fedora-atomic-openstack-and-ku/</link><pubDate>Mon, 24 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/fedora-atomic-openstack-and-ku/</guid><description>While experimenting with Fedora Atomic, I was looking for an elegant way to automatically deploy Atomic into an OpenStack environment and then automatically schedule some Docker containers on the Atomic host. This post describes my solution.
+Like many other cloud-targeted distributions, Fedora Atomic runs cloud-init when the system boots. We can take advantage of this to configure the system at first boot by providing a user-data blob to Nova when we boot the instance.</description><content>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
+elegant way to automatically deploy Atomic into an &lt;a href="http://openstack.org/">OpenStack&lt;/a>
+environment and then automatically schedule some &lt;a href="http://docker.com/">Docker&lt;/a> containers
+on the Atomic host. This post describes my solution.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>Like many other cloud-targeted distributions, Fedora Atomic runs
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> when the system boots. We can take advantage of this
+to configure the system at first boot by providing a &lt;code>user-data&lt;/code> blob
+to Nova when we boot the instance. A &lt;code>user-data&lt;/code> blob can be as
+simple as a shell script, and while we could arguably mash everything
+into a single script it wouldn&amp;rsquo;t be particularly maintainable or
+flexible in the face of different pod/service/etc descriptions.&lt;/p>
+&lt;p>In order to build a more flexible solution, we&amp;rsquo;re going to take
+advantage of the following features:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Support for &lt;a href="http://cloudinit.readthedocs.org/en/latest/topics/format.html#mime-multi-part-archive">multipart MIME archives&lt;/a>.&lt;/p>
+&lt;p>Cloud-init allows you to pass in multiple files via &lt;code>user-data&lt;/code> by
+encoding them as a multipart MIME archive.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Support for a &lt;a href="http://cloudinit.readthedocs.org/en/latest/topics/format.html#part-handler">custom part handler&lt;/a>.&lt;/p>
+&lt;p>Cloud-init recognizes a number of specific MIME types (such as
+&lt;code>text/cloud-config&lt;/code> or &lt;code>text/x-shellscript&lt;/code>). We can provide a
+custom part handler that will be used to handle MIME types not
+intrinsincally supported by &lt;code>cloud-init&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="a-custom-part-handler-for-kubernetes-configurations">A custom part handler for Kubernetes configurations&lt;/h2>
+&lt;p>I have written a &lt;a href="https://github.com/larsks/atomic-kubernetes-tools/blob/master/kube-part-handler.py">custom part handler&lt;/a> that knows
+about the following MIME types:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>text/x-kube-pod&lt;/code>&lt;/li>
+&lt;li>&lt;code>text/x-kube-service&lt;/code>&lt;/li>
+&lt;li>&lt;code>text/x-kube-replica&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>When the part handler is first initialized it will ensure the
+Kubernetes is started. If it is provided with a document matching one
+of the above MIME types, it will pass it to the appropriate &lt;code>kubecfg&lt;/code>
+command to create the objects in Kubernetes.&lt;/p>
+&lt;h2 id="creating-multipart-mime-archives">Creating multipart MIME archives&lt;/h2>
+&lt;p>I have also created a &lt;a href="https://github.com/larsks/atomic-kubernetes-tools/blob/master/write-mime-multipart.py">modified version&lt;/a> of the standard
+&lt;code>write-multipart-mime.py&lt;/code> Python script. This script will inspect the
+first lines of files to determine their content type; in addition to
+the standard &lt;code>cloud-init&lt;/code> types (like &lt;code>#cloud-config&lt;/code> for a
+&lt;code>text/cloud-config&lt;/code> type file), this script recognizes:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>#kube-pod&lt;/code> for &lt;code>text/x-kube-pod&lt;/code>&lt;/li>
+&lt;li>&lt;code>#kube-service&lt;/code> for &lt;code>text/x-kube-service&lt;/code>&lt;/li>
+&lt;li>&lt;code>#kube-replica&lt;/code> for &lt;code>text/x-kube-replca&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>That is, a simple pod description might look something like:&lt;/p>
+&lt;pre>&lt;code>#kube-pod
+id: dbserver
+desiredState:
+manifest:
+version: v1beta1
+id: dbserver
+containers:
+- image: mysql
+name: dbserver
+env:
+- name: MYSQL_ROOT_PASSWORD
+value: secret
+&lt;/code>&lt;/pre>
+&lt;h2 id="putting-it-all-together">Putting it all together&lt;/h2>
+&lt;p>Assuming that the pod description presented in the previous section is
+stored in a file named &lt;code>dbserver.yaml&lt;/code>, we can bundle that file up
+with our custom part handler like this:&lt;/p>
+&lt;pre>&lt;code>$ write-mime-multipart.py \
+kube-part-handler.py dbserver.yaml &amp;gt; userdata
+&lt;/code>&lt;/pre>
+&lt;p>We would then launch a Nova instance using the &lt;code>nova boot&lt;/code> command,
+providing the generated &lt;code>userdata&lt;/code> file as an argument to the
+&lt;code>user-data&lt;/code> command:&lt;/p>
+&lt;pre>&lt;code>$ nova boot --image fedora-atomic --key-name mykey \
+--flavor m1.small --user-data userdata my-atomic-server
+&lt;/code>&lt;/pre>
+&lt;p>You would obviously need to substitute values for &lt;code>--image&lt;/code> and
+&lt;code>--key-name&lt;/code> that are appropriate for your environment.&lt;/p>
+&lt;h2 id="details-details">Details, details&lt;/h2>
+&lt;p>If you are experimenting with Fedora Atomic 21, you may find out that
+the above example doesn&amp;rsquo;t work &amp;ndash; the official &lt;code>mysql&lt;/code> image generates
+an selinux error. We can switch selinux to permissive mode by putting
+the following into a file called &lt;code>disable-selinux.sh&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>#!/bin/sh
+setenforce 0
+sed -i '/^SELINUX=/ s/=.*/=permissive/' /etc/selinux/config
+&lt;/code>&lt;/pre>
+&lt;p>And then including that in our MIME archive:&lt;/p>
+&lt;pre>&lt;code>$ write-mime-multipart.py \
+kube-part-handler.py disable-selinux.sh dbserver.yaml &amp;gt; userdata
+&lt;/code>&lt;/pre>
+&lt;h2 id="a-brief-demonstration">A brief demonstration&lt;/h2>
+&lt;p>If we launch an instance as described in the previous section and then
+log in, we should find that the pod has already been scheduled:&lt;/p>
+&lt;pre>&lt;code># kubecfg list pods
+ID Image(s) Host Labels Status
+---------- ---------- ---------- ---------- ----------
+dbserver mysql / Waiting
+&lt;/code>&lt;/pre>
+&lt;p>At this point, &lt;code>docker&lt;/code> needs to pull the &lt;code>mysql&lt;/code> image locally, so
+this step can take a bit depending on the state of your local internet
+connection.&lt;/p>
+&lt;p>Running &lt;code>docker ps&lt;/code> at this point will yield:&lt;/p>
+&lt;pre>&lt;code># docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+3561e39f198c kubernetes/pause:latest &amp;quot;/pause&amp;quot; 46 seconds ago Up 43 seconds k8s--net.d96a64a9--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--d872be51
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>pause&lt;/code> image here is a Kubernetes detail that is used to
+configure the networking for a pod (in the Kubernetes world, a pod is
+a group of linked containers that share a common network namespace).&lt;/p>
+&lt;p>After a few minutes, you should eventually see:&lt;/p>
+&lt;pre>&lt;code># docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+644c8fc5a79c mysql:latest &amp;quot;/entrypoint.sh mysq 3 minutes ago Up 3 minutes k8s--dbserver.fd48803d--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--58794467
+3561e39f198c kubernetes/pause:latest &amp;quot;/pause&amp;quot; 5 minutes ago Up 5 minutes k8s--net.d96a64a9--dbserver.etcd--3d30eac0_-_745c_-_11e4_-_b32a_-_fa163e6e92ce--d872be51
+&lt;/code>&lt;/pre>
+&lt;p>And &lt;code>kubecfg&lt;/code> should show the pod as running:&lt;/p>
+&lt;pre>&lt;code># kubecfg list pods
+ID Image(s) Host Labels Status
+---------- ---------- ---------- ---------- ----------
+dbserver mysql 127.0.0.1/ Running
+&lt;/code>&lt;/pre>
+&lt;h2 id="problems-problems">Problems, problems&lt;/h2>
+&lt;p>This works and is I think a relatively elegant solution. However,
+there are some drawbacks. In particular, the custom part handler
+runs fairly early in the &lt;code>cloud-init&lt;/code> process, which means that it
+cannot depend on changes implemented by &lt;code>user-data&lt;/code> scripts (because
+these run much later).&lt;/p>
+&lt;p>A better solution might be to have the custom part handler simply
+write the Kubernetes configs into a directory somewhere, and then
+install a service that launches after Kubernetes and (a) watches that
+directory for files, then (b) passes the configuration to Kubernetes
+and deletes (or relocates) the file.&lt;/p></content></item><item><title>Docker networking with dedicated network containers</title><link>https://blog.oddbit.com/posts/docker-networking-with-dedicat/</link><pubDate>Mon, 06 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/docker-networking-with-dedicat/</guid><description>The current version of Docker has a very limited set of networking options:
+bridge &amp;ndash; connect a container to the Docker bridge host &amp;ndash; run the container in the global network namespace container:xxx &amp;ndash; connect a container to the network namespace of another container none &amp;ndash; do not configure any networking If you need something more than that, you can use a tool like pipework to provision additional network interfaces inside the container, but this leads to a synchronization problem: pipework can only be used after your container is running.</description><content>&lt;p>The current version of Docker has a very limited set of networking
+options:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>bridge&lt;/code> &amp;ndash; connect a container to the Docker bridge&lt;/li>
+&lt;li>&lt;code>host&lt;/code> &amp;ndash; run the container in the global network namespace&lt;/li>
+&lt;li>&lt;code>container:xxx&lt;/code> &amp;ndash; connect a container to the network namespace of
+another container&lt;/li>
+&lt;li>&lt;code>none&lt;/code> &amp;ndash; do not configure any networking&lt;/li>
+&lt;/ul>
+&lt;p>If you need something more than that, you can use a tool like
+&lt;a href="https://github.com/jpetazzo/pipework">pipework&lt;/a> to provision additional network interfaces inside the
+container, but this leads to a synchronization problem: &lt;code>pipework&lt;/code> can
+only be used after your container is running. This means that when
+starting your container, you must have logic that will wait until the
+necessary networking is available before starting your service.&lt;/p>
+&lt;p>The &lt;a href="https://github.com/GoogleCloudPlatform/kubernetes">kubernetes&lt;/a> project uses a clever solution to this problem:&lt;/p>
+&lt;p>Begin by starting a no-op container &amp;ndash; that is, a container that does
+not run any services &amp;ndash; with &lt;code>--net=none&lt;/code>. It needs to run
+&lt;em>something&lt;/em>; otherwise it will exit. The &lt;code>kubernetes/pause&lt;/code> image
+implements an extremely minimal &amp;ldquo;do nothing but wait&amp;rdquo; solution.&lt;/p>
+&lt;p>Once you have this no-op container running, you can set up the
+corresponding network namespace to meet your requirements. For
+example, you can create a &lt;code>veth&lt;/code> device pair and place one end in the
+interface and attach another to a bridge on your system. &lt;a href="https://github.com/jpetazzo/pipework">Pipework&lt;/a>
+can help with this, but you can also perform all the &lt;a href="https://blog.oddbit.com/posts/four-ways-to-connect-a-docker/">changes by
+hand&lt;/a>&lt;/p>
+&lt;p>Once your networking is configured, start your actual service
+container with &lt;code>--net=container:&amp;lt;id-of-noop-container&amp;gt;&lt;/code>. Your service
+container will start with your configured network environment.&lt;/p>
+&lt;p>You could, I suppose, decide to link &lt;em>every&lt;/em> service container with
+it&amp;rsquo;s own network container, but that would get messy. Kubernetes
+groups containers together into &amp;ldquo;pods&amp;rdquo;, in which all containers in a
+pod share the same network namespace, which reduces the number of
+&amp;ldquo;networking containers&amp;rdquo; necessary for services that have the same
+networking requirements.&lt;/p>
+&lt;p>This solution &amp;ndash; linking your service container with a no-op container
+used to implement networking &amp;ndash; solves the problems identified at the
+beginning of this post: because you can perform all your network
+configuration prior to starting your service, your service container
+does not need any special logic to deal with interfaces that will be
+created after the container starts. The networking will already be
+in place when the service starts.&lt;/p>
+&lt;p>Docker issue &lt;a href="https://github.com/docker/docker/issues/7455">7455&lt;/a> proposes a docker-native solution that would
+accomplish largely the same thing without requiring the separate
+networking container (by permitting you to pre-configure a network
+namespace and then pass that to docker using something like
+&lt;code>--net=netns:&amp;lt;name-of-network-namespace&amp;gt;&lt;/code>).&lt;/p></content></item></channel></rss>

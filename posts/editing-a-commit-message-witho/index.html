@@ -1,0 +1,205 @@
+<!doctype html><html lang=en><head><title>Editing a commit message without git rebase :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="While working on a pull request I will make liberal use of git rebase to clean up a series of commits: squashing typos, re-ordering changes for logical clarity, and so forth. But there are some times when all I want to do is change a commit message somewhere down the stack, and I was wondering if I had any options for doing that without reaching for git rebase.
+It turns out the answer is &amp;ldquo;yes&amp;rdquo;, as long as you have a linear history."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/editing-a-commit-message-witho/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Editing a commit message without git rebase"><meta property="og:description" content="While working on a pull request I will make liberal use of git rebase to clean up a series of commits: squashing typos, re-ordering changes for logical clarity, and so forth. But there are some times when all I want to do is change a commit message somewhere down the stack, and I was wondering if I had any options for doing that without reaching for git rebase.
+It turns out the answer is &amp;ldquo;yes&amp;rdquo;, as long as you have a linear history."><meta property="og:url" content="https://blog.oddbit.com/posts/editing-a-commit-message-witho/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2021-02-18 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/editing-a-commit-message-witho/>Editing a commit message without git rebase</a></h1><div class=post-meta><time class=post-date>2021-02-18 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/git/>git</a>&nbsp;</span><div class=post-content><div><p>While working on a pull request I will make liberal use of <a href=https://git-scm.com/docs/git-rebase>git
+rebase</a> to clean up a series of commits: squashing typos,
+re-ordering changes for logical clarity, and so forth. But there are
+some times when all I want to do is change a commit message somewhere
+down the stack, and I was wondering if I had any options for doing
+that without reaching for <code>git rebase</code>.</p><p>It turns out the answer is &ldquo;yes&rdquo;, as long as you have a linear
+history.</p><p>Let&rsquo;s assume we have a git history that looks like this:</p><pre tabindex=0><code>┌────────┐     ┌────────┐     ┌────────┐     ┌────────┐     ┌────────┐
+│ 4be811 │ ◀── │ 519636 │ ◀── │ 38f6fe │ ◀── │ 2951ec │ ◀╴╴ │ master │
+└────────┘     └────────┘     └────────┘     └────────┘     └────────┘
+</code></pre><p>The corresponding <code>git log</code> looks like:</p><pre tabindex=0><code>commit 2951ec3f54205580979d63614ef2751b61102c5d
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    Add detailed, high quality documentation
+
+commit 38f6fe61ffd444f601ac01ecafcd524487c83394
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    Fixed bug that would erroneously call rm -rf
+
+commit 51963667037ceb79aff8c772a009a5fbe4b8d7d9
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    A very interesting change
+
+commit 4be8115640821df1565c421d8ed848bad34666e5
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    The beginning of time
+</code></pre><h2 id=mucking-about-with-objects>Mucking about with objects<a href=#mucking-about-with-objects class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We would like to modify the message on commit <code>519636</code>.</p><p>We start by extracting the <code>commit</code> object for that commit using <code>git cat-file</code>:</p><pre tabindex=0><code>$ git cat-file -p 519636
+tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+parent 4be8115640821df1565c421d8ed848bad34666e5
+author Alice User &lt;alice@example.com&gt; 978325200 -0500
+committer Alice User &lt;alice@example.com&gt; 978325200 -0500
+
+A very interesting change
+</code></pre><p>We want to produce a commit object that is identical except for an
+updated commit message. That sounds like a job for <code>sed</code>! We can strip
+the existing message out like this:</p><pre tabindex=0><code>git cat-file -p 519636 | sed &#39;/^$/q&#39;
+</code></pre><p>And we can append a new commit message with the power of <code>cat</code>:</p><pre tabindex=0><code>git cat-file -p 519636 | sed &#39;/^$/q&#39;; cat &lt;&lt;EOF
+A very interesting change
+
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+</code></pre><p>This will give us:</p><pre tabindex=0><code>tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+parent 4be8115640821df1565c421d8ed848bad34666e5
+author Alice User &lt;alice@example.com&gt; 978325200 -0500
+committer Alice User &lt;alice@example.com&gt; 978325200 -0500
+
+A very interesting change
+
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+</code></pre><p>We need to take this modified commit and store it back into the git
+object database. We do that using the <code>git hash-object</code> command:</p><pre tabindex=0><code>(git cat-file -p 519636 | sed &#39;/^$/q&#39;; cat &lt;&lt;EOF) | git hash-object -t commit --stdin -w
+A very interesting change
+
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+</code></pre><p>The <code>-t commit</code> argument instructs <code>hash-object</code> to create a new
+commit object. The <code>--stdin</code> argument instructs <code>hash-object</code> to read
+input from <code>stdin</code>, while the <code>-w</code> argument instructs <code>hash-object</code> to
+write a new object to the object database, rather than just
+calculating the hash and printing it for us.</p><p>This will print the hash of the new object on stdout. We can wrap
+everything in a <code>$(...)</code> expression to capture the output:</p><pre tabindex=0><code>newref=$(
+(git cat-file -p 519636 | sed &#39;/^$/q&#39;; cat &lt;&lt;EOF) | git hash-object -t commit --stdin -w
+A very interesting change
+
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+)
+</code></pre><p>At this point we have successfully created a new commit, but it isn&rsquo;t
+reachable from anywhere. If we were to run <code>git log</code> at this point,
+everything would look the same as when we started. We need to walk
+back up the tree, starting with the immediate descendant of our target
+commit, replacing parent pointers as we go along.</p><p>The first thing we need is a list of revisions from our target commit
+up to the current <code>HEAD</code>. We can get that with <code>git rev-list</code>:</p><pre tabindex=0><code>$ git rev-list 519636..HEAD
+2951ec3f54205580979d63614ef2751b61102c5d
+38f6fe61ffd444f601ac01ecafcd524487c83394
+</code></pre><p>We&rsquo;ll process these in reverse order, so first we modify <code>38f6fe</code>:</p><pre tabindex=0><code>oldref=51963667037ceb79aff8c772a009a5fbe4b8d7d9
+newref=$(git cat-file -p 38f6fe61ffd444f601ac01ecafcd524487c83394 |
+  sed &#34;s/parent $oldref/parent $newref/&#34; |
+  git hash-object -t commit --stdin -w)
+</code></pre><p>And then repeat that for the next commit up the tree:</p><pre tabindex=0><code>oldref=38f6fe61ffd444f601ac01ecafcd524487c83394
+newref=$(git cat-file -p 2951ec3f54205580979d63614ef2751b61102c5d |
+  sed &#34;s/parent $oldref/parent $newref/&#34; |
+  git hash-object -t commit --stdin -w)
+</code></pre><p>We&rsquo;ve now replaced all the descendants of the modified commit&mldr;but
+<code>git log</code> would <em>still</em> show us the old history. The last thing we
+need to do is update the branch point to point at the top of the
+modified tree. We do that using the <code>git update-ref</code> command. Assuming
+we&rsquo;re on the <code>master</code> branch, the command would look like this:</p><pre tabindex=0><code>git update-ref refs/heads/master $newref
+</code></pre><p>And at this point, running <code>git log</code> show us our modified commit in
+all its glory:</p><pre tabindex=0><code>commit 365bc25ee1fe365d5d63d2248b77196d95d9573a
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    Add detailed, high quality documentation
+
+commit 09d6203a2b64c201dde12af7ef5a349e1ae790d7
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    Fixed bug that would erroneously call rm -rf
+
+commit fb01f35c38691eafbf44e9ee86824b594d036ba4
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    A very interesting change
+
+    Completely refactor the widget implementation to prevent
+    a tear in the time/space continuum when given invalid
+    input.
+
+commit 4be8115640821df1565c421d8ed848bad34666e5
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    The beginning of time
+</code></pre><p>Giving us a modified history that looks like:</p><pre tabindex=0><code>┌────────┐     ┌────────┐     ┌────────┐     ┌────────┐     ┌────────┐
+│ 4be811 │ ◀── │ fb01f3 │ ◀── │ 09d620 │ ◀── │ 365bc2 │ ◀╴╴ │ master │
+└────────┘     └────────┘     └────────┘     └────────┘     └────────┘
+</code></pre><h2 id=automating-the-process>Automating the process<a href=#automating-the-process class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Now, that was a lot of manual work. Let&rsquo;s try to automate the process.</p><pre tabindex=0><code>#!/bin/sh
+
+# get the current branch name
+branch=$(git rev-parse --symbolic-full-name HEAD)
+
+# git the full commit id of our target commit (this allows us to
+# specify the target as a short commit id, or as something like
+# `HEAD~3` or `:/interesting`.
+oldref=$(git rev-parse &#34;$1&#34;)
+
+# generate a replacement commit object, reading the new commit message
+# from stdin.
+newref=$(
+(git cat-file -p $oldref | sed &#39;/^$/q&#39;; cat) | tee newref.txt | git hash-object -t commit --stdin -w
+)
+
+# iterate over commits between our target commit and HEAD in
+# reverse order, replacing parent points with updated commit objects
+for rev in $(git rev-list --reverse ${oldref}..HEAD); do
+  newref=$(git cat-file -p $rev |
+    sed &#34;s/parent $oldref/parent $newref/&#34; |
+    git hash-object -t commit --stdin -w)
+  oldref=$rev
+done
+
+# update the branch pointer to the head of the modified tree
+git update-ref $branch $newref
+</code></pre><p>If we place the above script in <code>editmsg.sh</code> and restore our original
+revision history, we can run:</p><pre tabindex=0><code>sh editmsg.sh :/interesting &lt;&lt;EOF
+A very interesting change
+
+Completely refactor the widget implementation to prevent
+a tear in the time/space continuum when given invalid
+input.
+EOF
+</code></pre><p>And end up with a new history identical to the one we created
+manually:</p><pre tabindex=0><code>commit 365bc25ee1fe365d5d63d2248b77196d95d9573a
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    Add detailed, high quality documentation
+
+commit 09d6203a2b64c201dde12af7ef5a349e1ae790d7
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    Fixed bug that would erroneously call rm -rf
+
+commit fb01f35c38691eafbf44e9ee86824b594d036ba4
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    A very interesting change
+
+    Completely refactor the widget implementation to prevent
+    a tear in the time/space continuum when given invalid
+    input.
+
+commit 4be8115640821df1565c421d8ed848bad34666e5
+Author: Alice User &lt;alice@example.com&gt;
+Date:   Mon Jan 1 00:00:00 2001 -0500
+
+    The beginning of time
+</code></pre><h2 id=caveats>Caveats<a href=#caveats class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The above script is intentionally simple. If you&rsquo;re interesting in
+doing something like this in practice, you should be aware of the
+following:</p><ul><li>The above process works great with a linear history, but will break
+things if the rewriting process crosses a merge commit.</li><li>We&rsquo;re assuming that the given target commit is actually reachable
+from the current branch.</li><li>We&rsquo;re assuming that the given target actually exists.</li></ul><p>It&rsquo;s possible to check for all of these conditions in our script, but
+I&rsquo;m leaving that as an exercise for the reader.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

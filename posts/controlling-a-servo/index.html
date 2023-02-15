@@ -1,0 +1,61 @@
+<!doctype html><html lang=en><head><title>Controlling a servo with your Arduino :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I&amp;rsquo;ve recently started playing with an Arduino kit I purchased a year ago (and only just now got around to unboxing). I purchased the kit from SparkFun, and it includes a motley collection of resistors, LEDs, a motor, a servo, and more.
+I was fiddling around with this exercise, which uses the SoftwareServo library to control a servo. Using this library, you just pass it an angle and the library takes care of everything else, e."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/controlling-a-servo/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Controlling a servo with your Arduino"><meta property="og:description" content="I&amp;rsquo;ve recently started playing with an Arduino kit I purchased a year ago (and only just now got around to unboxing). I purchased the kit from SparkFun, and it includes a motley collection of resistors, LEDs, a motor, a servo, and more.
+I was fiddling around with this exercise, which uses the SoftwareServo library to control a servo. Using this library, you just pass it an angle and the library takes care of everything else, e."><meta property="og:url" content="https://blog.oddbit.com/posts/controlling-a-servo/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-03-07 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/controlling-a-servo/>Controlling a servo with your Arduino</a></h1><div class=post-meta><time class=post-date>2013-03-07 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/arduino/>arduino</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/hardware/>hardware</a>&nbsp;</span><div class=post-content><div><p>I&rsquo;ve recently started playing with an <a href=http://arduino.cc/>Arduino</a> kit I purchased a year
+ago (and only just now got around to unboxing). I purchased the kit
+from <a href=https://www.sparkfun.com/>SparkFun</a>, and it includes a motley collection of resistors,
+LEDs, a motor, a servo, and more.</p><p>I was fiddling around with <a href=http://oomlout.com/a/products/ardx/circ-04/>this exercise</a>, which uses the
+<code>SoftwareServo</code> library to control a servo. Using this library,
+you just pass it an angle and the library takes care of everything
+else, e.g. to rotate to 90 degrees you would do this:</p><pre><code>myservo.write(90);
+</code></pre><p>The exercise suggests trying to control the servo without using the
+library:</p><blockquote><p>While it is easy to control a servo using the Arduino’s included
+library sometimes it is fun to figure out how to program something
+yourself. Try it. We’re controlling the pulse directly so you could
+use this method to control servos on any of the Arduino’s 20
+available pins (you need to highly optimize this code before doing
+that).</p></blockquote><p>It took me a few tries, and it looks as if the upper and lower limits
+for the servo pulses given in that documentation may not be 100%
+accurate. This is what I finally came with. As an added bonus, it
+writes position information to the serial port:</p><pre><code>int incomingByte = 0;
+int servo0 = 600;
+int servo180 = 2100;
+int inc = 20;
+int pos = servo0;
+int servoPin = 9;
+int pulseInterval=2000;
+
+void setup() {
+  Serial.begin(9600);     // opens serial port, sets data rate to 9600 bps
+  pinMode(servoPin, OUTPUT);
+}
+
+void loop() {
+  int i;
+
+  pos += inc;
+
+  if (pos &gt; servo180) {
+    Serial.println(&quot;REVERSE!&quot;);
+    pos = servo180;
+    inc *= -1;
+    delay(500);
+  } else if (pos &lt; servo0) {
+    Serial.println(&quot;FORWARD!&quot;);
+    pos = servo0;
+    inc *= -1;
+    delay(500);
+  }
+
+  Serial.print(&quot;pos = &quot;);
+  Serial.println(pos, DEC);
+
+  digitalWrite(servoPin, HIGH);
+  delayMicroseconds(pos);
+  digitalWrite(servoPin, LOW);
+  delay(20);
+}
+</code></pre><p>Under Linux or OS X, you could view the serial output using <code>screen</code>
+like this:</p><pre><code>screen /dev/tty.usbmodemfd12441 9600
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

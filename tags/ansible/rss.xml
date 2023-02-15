@@ -1,0 +1,1565 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>ansible on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/ansible/</link><description>Recent content in ansible on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 26 Apr 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/ansible/rss.xml" rel="self" type="application/rss+xml"/><item><title>Adding support for privilege escalation to Ansible's docker connection driver</title><link>https://blog.oddbit.com/posts/adding-support-for-privilege-e/</link><pubDate>Fri, 26 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/adding-support-for-privilege-e/</guid><description>Update 2019-05-09 Pull request #55816 has merged, so you can now use sudo with the docker connection driver even when sudo is configured to require a password.
+I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:
+--- - hosts: all gather_facts: false become: true tasks: - ping: And an inventory like this:</description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
+&lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
+has merged, so you can now use &lt;code>sudo&lt;/code> with the &lt;code>docker&lt;/code> connection driver even when &lt;code>sudo&lt;/code> is configured to require a password.&lt;/p>
+&lt;hr>
+&lt;p>I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:&lt;/p>
+&lt;pre>&lt;code>---
+- hosts: all
+gather_facts: false
+become: true
+tasks:
+- ping:
+&lt;/code>&lt;/pre>
+&lt;p>And an inventory like this:&lt;/p>
+&lt;pre>&lt;code>all:
+vars:
+ansible_user: example
+ansible_connection: docker
+hosts:
+server1:
+ansible_host: sudostuff_server1_1
+server2:
+ansible_host: sudostuff_server2_1
+server3:
+ansible_host: sudostuff_server3_1
+&lt;/code>&lt;/pre>
+&lt;p>And containers with &lt;code>sudo&lt;/code> configured to require a password, Ansible would fail like this (note that I&amp;rsquo;ve configured Ansible to use the &lt;code>debug&lt;/code> plugin for &lt;code>stdout_callback&lt;/code>):&lt;/p>
+&lt;pre tabindex="0">&lt;code>fatal: [server1]: FAILED! =&amp;gt; {
+&amp;#34;changed&amp;#34;: false,
+&amp;#34;rc&amp;#34;: 1
+}
+MSG:
+MODULE FAILURE
+See stdout/stderr for the exact error
+MODULE_STDERR:
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+#1) Respect the privacy of others.
+#2) Think before you type.
+#3) With great power comes great responsibility.
+[sudo via ansible, key=rzrfiifcqoggklmehivtcrrlnnbphwbp] password:
+&lt;/code>&lt;/pre>&lt;p>In the above output, you&amp;rsquo;ll note that there are no actual errors, but unexpectedly we&amp;rsquo;re seeing the privilege escalation prompt show up in the &lt;code>stderr&lt;/code> of the command. A quick search revealed bugs &lt;a href="https://github.com/ansible/ansible/issues/31759">#31759&lt;/a> and &lt;a href="https://github.com/ansible/ansible/issues/53385">#53385&lt;/a>, both of which confirm that privilege escalation simply doesn&amp;rsquo;t work using the &lt;code>docker&lt;/code> connection plugin.&lt;/p>
+&lt;h2 id="use-the-source-luke">Use the source, Luke&lt;/h2>
+&lt;figure class="left" >
+&lt;img src="https://blog.oddbit.com/assets/2019/04/26/sausage.jpg" />
+&lt;figcaption class="center" >Discovering how the sausage is made...&lt;/figcaption>
+&lt;/figure>
+&lt;p>Looking at the source, I was surprised: while Ansible has individual plugins for different privilege escalation methods, it is entirely up to the individual connection plugin to implement the logic necessary to make use of these mechanisms. I had expected privilege escalation support to be implemented in the base connection plugin (&lt;code>ConnectionBase&lt;/code> in &lt;code>lib/ansible/plugins/connection/__init__.py&lt;/code>), but it&amp;rsquo;s not. So while the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/ssh.py">ssh plugin&lt;/a> has a fairly complex set of logic for handing the &lt;code>become&lt;/code> prompt, and the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/local.py">local plugin&lt;/a> had a relatively simple solution, the &lt;code>docker&lt;/code> connection had none.&lt;/p>
+&lt;p>Fortunately, in many ways the &lt;code>docker&lt;/code> plugin is almost identical to the &lt;code>local&lt;/code> plugin, which means that rather than doing actual work I was able to largely cut-and-paste the privilege escalation support from the &lt;code>local&lt;/code> plugin into the &lt;code>docker&lt;/code> plugin. You can find this work in pull request
+&lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
+.&lt;/p></content></item><item><title>Writing Ansible filter plugins</title><link>https://blog.oddbit.com/posts/writing-ansible-filter-plugins/</link><pubDate>Thu, 25 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/writing-ansible-filter-plugins/</guid><description>I often see questions from people who are attemping to perform complex text transformations in their Ansible playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone asked a question on Stack Overflow in which they were attempting to convert the output of the keytool command into a list of dictionaries. The output of the keytool -list -v command looks something like this:</description><content>&lt;p>I often see questions from people who are attemping to perform complex text transformations in their &lt;a href="https://www.ansible.com/">Ansible&lt;/a> playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone &lt;a href="https://stackoverflow.com/questions/55853384/ansible-build-list-dictionary-with-from-list-of-strings/55854394">asked a question&lt;/a> on Stack Overflow in which they were attempting to convert the output of the &lt;a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html">keytool&lt;/a> command into a list of dictionaries. The output of the &lt;code>keytool -list -v&lt;/code> command looks something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Keystore type: PKCS12
+Keystore provider: SUN
+Your keystore contains 2 entries
+Alias name: alias2
+Creation date: Apr 25, 2019
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Alice McHacker, OU=Unknown, O=Example Corp, L=Boston, ST=MA, C=US
+Issuer: CN=Alice McHacker, OU=Unknown, O=Example Corp, L=Boston, ST=MA, C=US
+Serial number: 5c017636
+Valid from: Thu Apr 25 23:22:37 EDT 2019 until: Wed Jul 24 23:22:37 EDT 2019
+Certificate fingerprints:
+SHA1: FB:AC:36:08:F6:3C:C0:CF:E1:D7:E6:7D:2F:31:BF:BE:5A:C8:7A:C6
+SHA256: 73:F1:EC:61:6B:63:93:F5:BE:78:23:A1:79:14:7D:F0:A3:9A:D8:22:99:6B:38:0F:D6:38:AA:93:B5:58:8E:E0
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+Extensions:
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 17 D4 A3 54 E4 0C DB CC 00 3E 1C 4D 74 B4 DE 55 ...T.....&amp;gt;.Mt..U
+0010: D6 C9 CB 21 ...!
+]
+]
+*******************************************
+*******************************************
+Alias name: alias1
+Creation date: Apr 25, 2019
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Mallory Root, OU=Unknown, O=Example Corp, L=New York, ST=NY, C=US
+Issuer: CN=Mallory Root, OU=Unknown, O=Example Corp, L=New York, ST=NY, C=US
+Serial number: 2617e8fb
+Valid from: Thu Apr 25 23:22:59 EDT 2019 until: Wed Jul 24 23:22:59 EDT 2019
+Certificate fingerprints:
+SHA1: DD:83:42:F3:AD:EB:DC:66:50:DA:7D:D7:59:32:9B:31:0C:E0:90:B9
+SHA256: D9:3E:42:47:A1:DB:2F:00:46:F7:58:54:30:D1:83:F5:DD:C6:5D:8B:8B:6B:94:4A:34:B0:0D:D8:6F:7A:6E:B6
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+Extensions:
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 98 53 CF EF 77 36 02 4D 63 83 D7 4F 06 EF 09 CA .S..w6.Mc..O....
+0010: 41 92 6D 92 A.m.
+]
+]
+*******************************************
+*******************************************
+&lt;/code>&lt;/pre>&lt;p>That&amp;rsquo;s a mess. We&amp;rsquo;d like to extract specific information about the keys in the keystore; specifically:&lt;/p>
+&lt;ul>
+&lt;li>The owner&lt;/li>
+&lt;li>The issuer&lt;/li>
+&lt;li>The creation date&lt;/li>
+&lt;li>The valid from/valid until dates&lt;/li>
+&lt;/ul>
+&lt;p>There are a few ways of approaching this problem (for example, one could have your playbook call out to &lt;code>awk&lt;/code> to parse the &lt;code>keytool&lt;/code> output and generate JSON data for Ansible to consume), but a more robust, flexible, and often simpler way of dealing with something like this is to write a custom filter plugin in Python.&lt;/p>
+&lt;h2 id="what-is-a-filter-plugin">What is a filter plugin?&lt;/h2>
+&lt;p>A filter plugin defines one or more Python functions that can be used in Jinja2 templating expressions (using the &lt;code>|&lt;/code> filter operator). A filter function receives one mandatory argument (the value to the left of the &lt;code>|&lt;/code>) and zero or more additional positional and/or keyword arguments, performs some transformation on the input data, and returns the result.&lt;/p>
+&lt;p>For example, there is a &lt;code>unique&lt;/code> filter, which takes a list and returns a new list consisting of only unique values. If we had a list of names and wanted to eliminiate duplicates, we might use something like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">set_fact&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">unique_names&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;{{ [&amp;#39;alice&amp;#39;, &amp;#39;bob&amp;#39;, &amp;#39;alice&amp;#39;, &amp;#39;mallory&amp;#39;, &amp;#39;bob&amp;#39;, &amp;#39;mallory&amp;#39;]|unique }}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>That would set &lt;code>unique_names&lt;/code> to the list &lt;code>['alice', 'bob', 'mallory']&lt;/code>.&lt;/p>
+&lt;h2 id="how-do-you-write-a-filter-plugin">How do you write a filter plugin?&lt;/h2>
+&lt;p>A filter plugin doesn&amp;rsquo;t require much. You&amp;rsquo;ll need to create a Python module that defines a &lt;code>FilterModule&lt;/code> class, and that class must have a method named &lt;code>filters&lt;/code> that will return a dictionary that maps filter names to callables implementing the filter. For example, if we want a filter named &lt;code>upper&lt;/code> that would transform a string to upper-case, we could write:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">FilterModule&lt;/span>(object):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filters&lt;/span>(self):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> {&lt;span style="color:#e6db74">&amp;#39;upper&amp;#39;&lt;/span>: &lt;span style="color:#66d9ef">lambda&lt;/span> x: x&lt;span style="color:#f92672">.&lt;/span>upper()}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we wanted implement a version of the &lt;code>unique&lt;/code> filter, it might look like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filter_unique&lt;/span>(things):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> seen &lt;span style="color:#f92672">=&lt;/span> set()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> unique_things &lt;span style="color:#f92672">=&lt;/span> []
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">for&lt;/span> thing &lt;span style="color:#f92672">in&lt;/span> things:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> thing &lt;span style="color:#f92672">not&lt;/span> &lt;span style="color:#f92672">in&lt;/span> seen:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> seen&lt;span style="color:#f92672">.&lt;/span>add(thing)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> unique_things&lt;span style="color:#f92672">.&lt;/span>append(thing)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> unique_things
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">FilterModule&lt;/span>(object):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filters&lt;/span>(self):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> {&lt;span style="color:#e6db74">&amp;#39;unique&amp;#39;&lt;/span>: filter_unique}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We need to put the new module in a directory named &lt;code>filter_plugins&lt;/code> that is adjacent to our playbook. If we were to place the &lt;code>upper&lt;/code> filter module in, say, &lt;code>filter_plugins/upper.py&lt;/code>, we could then add a task like this to our playbook:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">debug&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;{{ &amp;#39;this is a test&amp;#39;|upper }}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And get this output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>TASK [debug] **********************************************************************************
+ok: [localhost] =&amp;gt; {
+&amp;#34;msg&amp;#34;: &amp;#34;THIS IS A TEST&amp;#34;
+}
+&lt;/code>&lt;/pre>&lt;h2 id="parsing-keytool-output">Parsing keytool output&lt;/h2>
+&lt;p>Our &lt;code>keytool&lt;/code> filter is only a little bit more complicated:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#!/usr/bin/python&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filter_keys_to_list&lt;/span>(v):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key_list &lt;span style="color:#f92672">=&lt;/span> []
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key &lt;span style="color:#f92672">=&lt;/span> {}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> found_start &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">False&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># iterate over lines of output from keytool&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">for&lt;/span> line &lt;span style="color:#f92672">in&lt;/span> v&lt;span style="color:#f92672">.&lt;/span>splitlines():
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Discard any lines that don&amp;#39;t look like &amp;#34;key: value&amp;#34; lines&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#e6db74">&amp;#39;: &amp;#39;&lt;/span> &lt;span style="color:#f92672">not&lt;/span> &lt;span style="color:#f92672">in&lt;/span> line:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">continue&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Look for &amp;#34;Alias name&amp;#34; at the beginning of a line to identify&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># the start of a new key.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> line&lt;span style="color:#f92672">.&lt;/span>startswith(&lt;span style="color:#e6db74">&amp;#39;Alias name&amp;#39;&lt;/span>):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> found_start &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">True&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># If we have already collected data on a key, append that to&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># the list of keys.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> key:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key_list&lt;span style="color:#f92672">.&lt;/span>append(key)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key &lt;span style="color:#f92672">=&lt;/span> {}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Read the next line if we haven&amp;#39;t found the start of a key&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># yet.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#f92672">not&lt;/span> found_start:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">continue&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Split fields and values into dictionary items.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> field, value &lt;span style="color:#f92672">=&lt;/span> line&lt;span style="color:#f92672">.&lt;/span>split(&lt;span style="color:#e6db74">&amp;#39;: &amp;#39;&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> field &lt;span style="color:#f92672">in&lt;/span> [&lt;span style="color:#e6db74">&amp;#39;Alias name&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;Owner&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;Issuer&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;Creation date&amp;#39;&lt;/span>]:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key[field] &lt;span style="color:#f92672">=&lt;/span> value
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">elif&lt;/span> field &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#e6db74">&amp;#39;Valid from&amp;#39;&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key[&lt;span style="color:#e6db74">&amp;#39;Valid from&amp;#39;&lt;/span>], key[&lt;span style="color:#e6db74">&amp;#39;Valid until&amp;#39;&lt;/span>] &lt;span style="color:#f92672">=&lt;/span> value&lt;span style="color:#f92672">.&lt;/span>split(&lt;span style="color:#e6db74">&amp;#39; until: &amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e"># Append the final key.&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> key:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> key_list&lt;span style="color:#f92672">.&lt;/span>append(key)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> key_list
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">FilterModule&lt;/span>(object):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> filter_map &lt;span style="color:#f92672">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#39;keys_to_list&amp;#39;&lt;/span>: filter_keys_to_list,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">filters&lt;/span>(self):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>filter_map
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The logic here is fairly simple:&lt;/p>
+&lt;ul>
+&lt;li>Iterate over the lines in the output from &lt;code>keytool&lt;/code>.&lt;/li>
+&lt;li>Look for &amp;ldquo;Alias name&amp;rdquo; at the beginning of a line to identify
+the start of key data.&lt;/li>
+&lt;li>Split lines on &lt;code>: &lt;/code> into field names and values.&lt;/li>
+&lt;li>Assemble a dictionary from selected fields.&lt;/li>
+&lt;li>Append the dictionary to a list and repeat.&lt;/li>
+&lt;/ul>
+&lt;p>Using it makes for a clear and simple playbook:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">set_fact&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">key_list&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;{{ keytool.stdout|keys_to_list }}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="more-information">More information&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/blog-2019-04-25-filter-plugins">Playbook and filter plugin referenced in this article&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html">Ansible &amp;ldquo;Filters&amp;rdquo; documentation&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://github.com/ansible/ansible/tree/devel/lib/ansible/plugins/filter">Existing filter plugins in Ansible&lt;/a>&lt;/li>
+&lt;/ul></content></item><item><title>Integrating Bitwarden with Ansible</title><link>https://blog.oddbit.com/posts/integrating-bitwarden-with-ans/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/integrating-bitwarden-with-ans/</guid><description>Bitwarden is a password management service (like LastPass or 1Password). It&amp;rsquo;s unique in that it is built entirely on open source software. In addition to the the web UI and mobile apps that you would expect, Bitwarden also provides a command-line tool for interacting with the your password store.
+At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password sharing and management solution that was better than dropping files into directories on remote hosts or sharing things over Slack.</description><content>&lt;p>&lt;a href="https://bitwarden.com">Bitwarden&lt;/a> is a password management service (like &lt;a href="https://www.lastpass.com/">LastPass&lt;/a> or
+&lt;a href="https://1password.com/">1Password&lt;/a>). It&amp;rsquo;s unique in that it is built entirely on open
+source software. In addition to the the web UI and mobile apps that
+you would expect, Bitwarden also provides a &lt;a href="https://help.bitwarden.com/article/cli/">command-line tool&lt;/a> for
+interacting with the your password store.&lt;/p>
+&lt;p>At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password
+sharing and management solution that was better than dropping files
+into directories on remote hosts or sharing things over Slack. At
+the same time, we are also thinking about bringing more automation to
+our operational environment, possibly by making more extensive use of
+&lt;a href="https://ansible.com">Ansible&lt;/a>. It looked like all the pieces were available to use
+Bitwarden as a credential storage mechanism for Ansible playbooks, so
+I set out to write a lookup plugin to implement the integration&amp;hellip;&lt;/p>
+&lt;p>&amp;hellip;only to find that I was not the first person to have this idea;
+Matt Stofko &lt;a href="https://github.com/c0sco/ansible-modules-bitwarden/">beat me to it&lt;/a>. While it worked, the directory
+structure of Matt&amp;rsquo;s repository made it difficult to integrate into an
+existing Ansible project. It was also missing some convenience
+features I wanted to see, so I have submitted
+&lt;a href="https://github.com/c0sco/ansible-modules-bitwarden/pull/1" class="pull-request">#1&lt;/a>
+that
+makes several changes to the module.&lt;/p>
+&lt;p>You can find my fork of the Bitwarden lookup plugin at
+&lt;a href="https://github.com/larsks/ansible-modules-bitwarden">https://github.com/larsks/ansible-modules-bitwarden&lt;/a>.&lt;/p>
+&lt;h2 id="make-it-installable">Make it installable&lt;/h2>
+&lt;p>By re-arranging the repository to following the standard Ansible role
+structure, it is now possible to install it either a submodule of your
+own git repository, or to install it using the &lt;code>ansible-galaxy&lt;/code> tool:&lt;/p>
+&lt;pre>&lt;code>ansible-galaxy install git+https://github.com/larsks/ansible-modules-bitwarden
+&lt;/code>&lt;/pre>
+&lt;p>This command would place the role in &lt;code>$HOME/.ansible/roles&lt;/code>, where it
+will be available to any playbooks you run on your system.&lt;/p>
+&lt;h2 id="add-explicit-support-for-custom-fields">Add explicit support for custom fields&lt;/h2>
+&lt;p>While it was possible to access custom fields by fetching the complete
+JSON representation of an item in Bitwarden and then querying the
+resulting document, it wasn&amp;rsquo;t particularly graceful. I&amp;rsquo;ve added
+explicit support for looking up custom fields. Whereas the normal
+lookup will the specific keys that Bitwarden supports in the &lt;code>bw get&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>lookup('bitwarden', 'Google', field=username)
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;adding &lt;code>custom_field=True&lt;/code> causes the lookup to be performed against
+the list of custom fields:&lt;/p>
+&lt;pre>&lt;code>lookup('bitwarden', 'Google', field=mycustomfield, custom_field=true)
+&lt;/code>&lt;/pre>
+&lt;h2 id="add-support-for-the-sync-operation">Add support for the sync operation&lt;/h2>
+&lt;p>The Bitwarden CLI operates by keeping a local cache of your
+credentials. This means that if you have just modified an item through
+the web ui (or mobile app), you may still be querying stale data when
+querying Bitwarden through the CLI. The &lt;code>bw sync&lt;/code> command refreshes
+the local cache.&lt;/p>
+&lt;p>You can add &lt;code>sync=true&lt;/code> to the lookup to have Ansible run &lt;code>bw sync&lt;/code>
+before querying Bitwarden for data:&lt;/p>
+&lt;pre>&lt;code>lookup('bitwarden', 'Google', field=username, sync=true)
+&lt;/code>&lt;/pre>
+&lt;h2 id="using-the-lookup-module-in-practice">Using the lookup module in practice&lt;/h2>
+&lt;p>We&amp;rsquo;re using &lt;a href="https://docs.openstack.org/tripleo-docs/latest/">TripleO&lt;/a> to deploy OpenStack. TripleO requires as input
+to the deployment process a number of parameters, including various
+credentials. For example, to set the password that will be assigned
+to the Keystone admin user, one would pass in a file that looks
+something like:&lt;/p>
+&lt;pre>&lt;code>---
+parameter_defaults:
+AdminPassword: &amp;quot;secret.password.goes.here&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Because our deployment configuration is public, we don&amp;rsquo;t want to store
+credentials there. We&amp;rsquo;ve been copying around a credentials file that
+lives outside the repository, but that&amp;rsquo;s not a great solution.&lt;/p>
+&lt;p>Using the Bitwarden lookup module, we can replace the above with:&lt;/p>
+&lt;pre>&lt;code>---
+parameter_defaults:
+AdminPassword: &amp;quot;{{ lookup('bitwarden', 'keystone admin') }}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>With this change, we can use Ansible to query Bitwarden to get the
+Keystone admin password and generate as output a file with the
+passwords included.&lt;/p>
+&lt;p>Using the custom field support, we can include metadata associated
+with a credential in the same place as the credential itself. To
+configure access to a remote Ceph installation, we need to provide a
+client key and cluster id. By putting the cluster id in a custom
+field, we can do something like this:&lt;/p>
+&lt;pre>&lt;code>CephClientKey: &amp;quot;{{ lookup('bitwarden', 'ceph client key') }}&amp;quot;
+CephClusterFSID: &amp;quot;{{ ((lookup('bitwarden', 'ceph client key', field='clusterid', custom_field=true) }}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;h2 id="an-example-playbook">An example playbook&lt;/h2>
+&lt;p>Before you can run a playbook making use of the Bitwarden lookup
+module, you need to &lt;a href="https://help.bitwarden.com/article/cli/#download--install">install&lt;/a> the Bitwarden CLI. This is as simple
+as grabbing an appropriate binary and dropping it somewhere in
+your &lt;code>$PATH&lt;/code>. I&amp;rsquo;ve been doing this:&lt;/p>
+&lt;pre>&lt;code>$ curl -L 'https://vault.bitwarden.com/download/?app=cli&amp;amp;platform=linux' |
+funzip &amp;gt; $HOME/bin/bw
+$ chmod 755 $HOME/bin/bw
+&lt;/code>&lt;/pre>
+&lt;p>For the following example, assume that we have a template named
+&lt;code>no-passwords-here.yml&lt;/code> matching the earlier example:&lt;/p>
+&lt;pre>&lt;code>---
+parameter_defaults:
+AdminPassword: &amp;quot;{{ lookup('bitwarden', 'keystone admin') }}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>We can generate a version of the file named &lt;code>yes-passwords-here.yml&lt;/code>
+that includes the actual passwords by running the following playbook:&lt;/p>
+&lt;pre>&lt;code>---
+- hosts: localhost
+# we need to include the role in order to make the lookup plugin
+# available.
+roles:
+- ansible-modules-bitwarden
+tasks:
+- name: inject passwords into a file
+template:
+src: ./no-passwords-here.yml
+dest: ./yes-passwords-here.yml
+&lt;/code>&lt;/pre>
+&lt;p>To actually run the playbook, we need to be authenticated to Bitwarden
+first. That means:&lt;/p>
+&lt;ol>
+&lt;li>Run &lt;code>bw login&lt;/code> (or &lt;code>bw unlock&lt;/code>) to log in and get a session key.&lt;/li>
+&lt;li>Set the &lt;code>BW_SESSION&lt;/code> environment variable to this value.&lt;/li>
+&lt;li>Run the playbook.&lt;/li>
+&lt;/ol>
+&lt;p>The above tasks would look something like this:&lt;/p>
+&lt;pre>&lt;code>bash$ bw login
+? Email address: lars@redhat.com
+? Master password: [hidden]
+You are logged in!
+To unlock your vault, set your session key to the `BW_SESSION`
+environment variable. ex:
+$ export BW_SESSION=&amp;quot;...&amp;quot;
+[...]
+bash$ export BW_SESSION=&amp;quot;...&amp;quot;
+bash$ ansible-playbook inject-passwords.yml
+&lt;/code>&lt;/pre></content></item><item><title>Safely restarting an OpenStack server with Ansible</title><link>https://blog.oddbit.com/posts/safely-restarting-an-openstack/</link><pubDate>Wed, 24 Jan 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/safely-restarting-an-openstack/</guid><description>The other day on #ansible, someone was looking for a way to safely shut down a Nova server, wait for it to stop, and then start it up again using the openstack cli. The first part seemed easy:
+- hosts: myserver tasks: - name: shut down the server command: poweroff become: true &amp;hellip;but that will actually fail with the following result:
+TASK [shut down server] ************************************* fatal: [myserver]: UNREACHABLE! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;msg&amp;quot;: &amp;quot;Failed to connect to the host via ssh: Shared connection to 10.</description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
+shut down a Nova server, wait for it to stop, and then start it up
+again using the &lt;code>openstack&lt;/code> cli. The first part seemed easy:&lt;/p>
+&lt;pre>&lt;code>- hosts: myserver
+tasks:
+- name: shut down the server
+command: poweroff
+become: true
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;but that will actually fail with the following result:&lt;/p>
+&lt;pre>&lt;code>TASK [shut down server] *************************************
+fatal: [myserver]: UNREACHABLE! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;msg&amp;quot;:
+&amp;quot;Failed to connect to the host via ssh: Shared connection to
+10.0.0.103 closed.\r\n&amp;quot;, &amp;quot;unreachable&amp;quot;: true}
+&lt;/code>&lt;/pre>
+&lt;p>This happens because running &lt;code>poweroff&lt;/code> immediately closes Ansible&amp;rsquo;s
+ssh connection. The workaround here is to use a &amp;ldquo;fire-and-forget&amp;rdquo;
+&lt;a href="http://docs.ansible.com/ansible/latest/playbooks_async.html">asynchronous task&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>- hosts: myserver
+tasks:
+- name: shut down the server
+command: poweroff
+become: true
+async: 30
+poll: 0
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>poll: 0&lt;/code> means that Ansible won&amp;rsquo;t wait around to check the result
+of this task. Control will return to ansible immediately, so our
+playbook can continue without errors resulting from the closed
+connection.&lt;/p>
+&lt;p>Now that we&amp;rsquo;ve started the shutdown process on the host, how do we
+wait for it to complete? You&amp;rsquo;ll see people solve this with a
+&lt;a href="http://docs.ansible.com/ansible/latest/pause_module.html">pause&lt;/a> task, but that&amp;rsquo;s fragile because the timing there can be
+tricky to get right.&lt;/p>
+&lt;p>Another option is to use something like Ansible&amp;rsquo;s &lt;a href="http://docs.ansible.com/ansible/latest/wait_for_module.html">wait_for&lt;/a> module.
+For example, we could wait for &lt;code>sshd&lt;/code> to become unresponsive:&lt;/p>
+&lt;pre>&lt;code>- name: wait for server to finishing shutting down
+wait_for:
+port: 22
+state: stopped
+&lt;/code>&lt;/pre>
+&lt;p>Be this is really just checking whether or not &lt;code>sshd&lt;/code> is listening for
+a connection, and &lt;code>sshd&lt;/code> may shut down long before the system shutdown
+process completes.&lt;/p>
+&lt;p>The best option is to ask Nova. We can query Nova for information
+about a server using the Ansible&amp;rsquo;s &lt;a href="http://docs.ansible.com/ansible/latest/os_server_facts_module.html">os_server_facts&lt;/a> module. Like
+the other OpenStack modules, this uses &lt;a href="https://docs.openstack.org/os-client-config/latest/">os-client-config&lt;/a> to find
+authentication credentials for your OpenStack environment. If you&amp;rsquo;re
+not explicitly providing authentication information in your playbook,
+the module will use the &lt;code>OS_*&lt;/code> environment variables that are commonly
+used with the OpenStack command line tools.&lt;/p>
+&lt;p>The &lt;code>os_server_facts&lt;/code> module creates an &lt;code>openstack_servers&lt;/code> fact, the
+value of which is a list of dictionaries which contains keys like
+&lt;code>status&lt;/code>, which is the one in which we&amp;rsquo;re interested. A running
+server has &lt;code>status == &amp;quot;ACTIVE&amp;quot;&lt;/code> and a server that has been powered off
+has &lt;code>status == &amp;quot;SHUTOFF&lt;/code>.&lt;/p>
+&lt;p>Given the above, the &amp;ldquo;wait for shutdown&amp;rdquo; task would look something
+like the following:&lt;/p>
+&lt;pre>&lt;code>- hosts: localhost
+tasks:
+- name: wait for server to stop
+os_server_facts:
+server: myserver
+register: results
+until: openstack_servers.0.status == &amp;quot;SHUTOFF&amp;quot;
+retries: 120
+delay: 5
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll note that I&amp;rsquo;m targeting &lt;code>localhost&lt;/code> right now, because my local
+system has access to my OpenStack environment and I have the necessary
+credentials in my environment. If you need to run these tasks
+elsewhere, you&amp;rsquo;ll want to read up on how to provide credentials in
+your playbook.&lt;/p>
+&lt;p>This task will retry up to &lt;code>120&lt;/code> times, waiting &lt;code>5&lt;/code> seconds between
+tries, until the server reaches the desired state.&lt;/p>
+&lt;p>Next, we want to start the server back up. We can do this using
+the &lt;a href="http://docs.ansible.com/ansible/latest/os_server_action_module.html">os_server_action&lt;/a> module, using the &lt;code>start&lt;/code> action. This task
+also runs on &lt;code>localhost&lt;/code>:&lt;/p>
+&lt;pre>&lt;code> - name: start the server
+os_server_action:
+server: larstest
+action: start
+&lt;/code>&lt;/pre>
+&lt;p>Finally, we want to wait for the host to come back up before we run
+any additional tasks on it. In this case, we can&amp;rsquo;t just look at the
+status reported by Nova: the host will be &lt;code>ACTIVE&lt;/code> from Nova&amp;rsquo;s
+perspective long before it is ready to accept &lt;code>ssh&lt;/code> connections. Nor
+can we use the &lt;code>wait_for&lt;/code> module, since the &lt;code>ssh&lt;/code> port may be open
+before we are actually able to log in. The solution to this is the
+&lt;a href="http://docs.ansible.com/ansible/latest/wait_for_connection_module.html">wait_for_connection&lt;/a> module, which waits until Ansible is able to
+successful execute an action on the target host:&lt;/p>
+&lt;pre>&lt;code>- hosts: larstest
+gather_facts: false
+tasks:
+- name: wait for server to start
+wait_for_connection:
+&lt;/code>&lt;/pre>
+&lt;p>We need to set &lt;code>gather_facts: false&lt;/code> here because fact gathering
+requires a functioning connection to the target host.&lt;/p>
+&lt;p>And that&amp;rsquo;s it: a recipe for gently shutting down a remote host,
+waiting for the shutdown to complete, then later on spinning it back
+up and waiting until subsequent Ansible tasks will work correctly.&lt;/p></content></item><item><title>Ansible for Infrastructure Testing</title><link>https://blog.oddbit.com/posts/ansible-for-infrastructure-tes/</link><pubDate>Wed, 02 Aug 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/ansible-for-infrastructure-tes/</guid><description>At $JOB we often find ourselves at customer sites where we see the same set of basic problems that we have previously encountered elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo; or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a simple tool that could be run either by the customer or by our own engineers to test for and report on these common issues. Fundamentally, we want something that acts like a typical code test suite, but for infrastructure.</description><content>&lt;p>At &lt;code>$JOB&lt;/code> we often find ourselves at customer sites where we see the
+same set of basic problems that we have previously encountered
+elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo;
+or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a
+simple tool that could be run either by the customer or by our own
+engineers to test for and report on these common issues.
+Fundamentally, we want something that acts like a typical code test
+suite, but for infrastructure.&lt;/p>
+&lt;p>It turns out that Ansible is &lt;em>almost&lt;/em> the right tool for the job:&lt;/p>
+&lt;ul>
+&lt;li>It&amp;rsquo;s easy to write simple tests.&lt;/li>
+&lt;li>It works well in distributed environments.&lt;/li>
+&lt;li>It&amp;rsquo;s easy to extend with custom modules and plugins.&lt;/li>
+&lt;/ul>
+&lt;p>The only real problem is that Ansible has, by default, &amp;ldquo;fail fast&amp;rdquo;
+behavior: once a task fails on a host, no more tasks will run on that
+host. That&amp;rsquo;s great if you&amp;rsquo;re actually making configuration changes,
+but for our purposes we are running a set of read-only independent
+checks, and we want to know the success or failure of all of those
+checks in a single operation (and in many situations we may not have
+the option of correcting the underlying problem ourselves).&lt;/p>
+&lt;p>In this post, I would like to discuss a few Ansible extensions I&amp;rsquo;ve
+put together to make it more useful as an infrastructure testing tool.&lt;/p>
+&lt;h2 id="the-ansible-assertive-project">The ansible-assertive project&lt;/h2>
+&lt;p>The &lt;a href="https://github.com/larsks/ansible-assertive/">ansible-assertive&lt;/a> project contains two extensions for Ansible:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>The &lt;code>assert&lt;/code> action plugin replaces Ansible&amp;rsquo;s native &lt;code>assert&lt;/code>
+behavior with something more appropriate for infrastructure testing.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The &lt;code>assertive&lt;/code> callback plugin modifies the output of &lt;code>assert&lt;/code>
+tasks and collects and reports results.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>The idea is that you write all of your tests using the &lt;code>assert&lt;/code>
+plugin, which means you can run your playbooks in a stock environment
+and see the standard Ansible fail-fast behavior, or you can activate
+the &lt;code>assert&lt;/code> plugin from the ansible-assertive project and get
+behavior more useful for infrastructure testing.&lt;/p>
+&lt;h2 id="a-simple-example">A simple example&lt;/h2>
+&lt;p>Ansible&amp;rsquo;s native &lt;code>assert&lt;/code> plugin will trigger a task failure when an
+assertion evaluates to &lt;code>false&lt;/code>. Consider the following example:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">hosts&lt;/span>: &lt;span style="color:#ae81ff">localhost&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">vars&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">fruits&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#ae81ff">oranges&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#ae81ff">lemons&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">tasks&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assert&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">that&lt;/span>: &amp;gt;-&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> &lt;/span> &lt;span style="color:#e6db74">&amp;#39;apples&amp;#39;&lt;/span> &lt;span style="color:#ae81ff">in fruits&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">you have no apples&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assert&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">that&lt;/span>: &amp;gt;-&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> &lt;/span> &lt;span style="color:#e6db74">&amp;#39;lemons&amp;#39;&lt;/span> &lt;span style="color:#ae81ff">in fruits&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">you have no lemons&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we run this in a stock Ansible environment, we will see the
+following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>PLAY [localhost] ***************************************************************
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+TASK [assert] ******************************************************************
+fatal: [localhost]: FAILED! =&amp;gt; {
+&amp;#34;assertion&amp;#34;: &amp;#34;&amp;#39;apples&amp;#39; in fruits&amp;#34;,
+&amp;#34;changed&amp;#34;: false,
+&amp;#34;evaluated_to&amp;#34;: false,
+&amp;#34;failed&amp;#34;: true,
+&amp;#34;msg&amp;#34;: &amp;#34;you have no apples&amp;#34;
+}
+to retry, use: --limit @/home/lars/projects/ansible-assertive/examples/ex-005/playbook1.retry
+PLAY RECAP *********************************************************************
+localhost : ok=1 changed=0 unreachable=0 failed=1
+&lt;/code>&lt;/pre>&lt;h2 id="a-modified-assert-plugin">A modified assert plugin&lt;/h2>
+&lt;p>Let&amp;rsquo;s activate the &lt;code>assert&lt;/code> plugin in &lt;a href="https://github.com/larsks/ansible-assertive/">ansible-assertive&lt;/a>. We&amp;rsquo;ll
+start by cloning the project into our local directory:&lt;/p>
+&lt;pre>&lt;code>$ git clone https://github.com/larsks/ansible-assertive
+&lt;/code>&lt;/pre>
+&lt;p>And we&amp;rsquo;ll activate the plugin by creating an &lt;code>ansible.cfg&lt;/code> file with
+the following content:&lt;/p>
+&lt;pre>&lt;code>[defaults]
+action_plugins = ./ansible-assertive/action_plugins
+&lt;/code>&lt;/pre>
+&lt;p>Now when we re-run the playbook we see that a failed assertion now
+registers as &lt;code>changed&lt;/code> rather than &lt;code>failed&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>PLAY [localhost] ***************************************************************
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+TASK [assert] ******************************************************************
+changed: [localhost]
+TASK [assert] ******************************************************************
+ok: [localhost]
+PLAY RECAP *********************************************************************
+localhost : ok=3 changed=1 unreachable=0 failed=0
+&lt;/code>&lt;/pre>&lt;p>While that doesn&amp;rsquo;t look like much of a change, there are two things of
+interest going on here. The first is that the &lt;code>assert&lt;/code> plugin
+provides detailed information about the assertions specified in the
+task; if we were to &lt;code>register&lt;/code> the result of the failed assertion and
+display it in a &lt;code>debug&lt;/code> task, it would look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>TASK [debug] *******************************************************************
+ok: [localhost] =&amp;gt; {
+&amp;#34;apples&amp;#34;: {
+&amp;#34;ansible_stats&amp;#34;: {
+&amp;#34;aggregate&amp;#34;: true,
+&amp;#34;data&amp;#34;: {
+&amp;#34;assertions&amp;#34;: 1,
+&amp;#34;assertions_failed&amp;#34;: 1,
+&amp;#34;assertions_passed&amp;#34;: 0
+},
+&amp;#34;per_host&amp;#34;: true
+},
+&amp;#34;assertions&amp;#34;: [
+{
+&amp;#34;assertion&amp;#34;: &amp;#34;&amp;#39;apples&amp;#39; in fruits&amp;#34;,
+&amp;#34;evaluated_to&amp;#34;: false
+}
+],
+&amp;#34;changed&amp;#34;: true,
+&amp;#34;failed&amp;#34;: false,
+&amp;#34;msg&amp;#34;: &amp;#34;you have no apples&amp;#34;
+}
+}
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>assertions&lt;/code> key in the result dictionary contains of a list of
+tests and their results. The &lt;code>ansible_stats&lt;/code> key contains metadata
+that will be consumed by the custom statistics support in recent
+versions of Ansible. If you have Ansible 2.3.0.0 or later, add
+the following to the &lt;code>defaults&lt;/code> section of your &lt;code>ansible.cfg&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>show_custom_stats = yes
+&lt;/code>&lt;/pre>&lt;p>With this feature enabled, your playbook run will conclude with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>CUSTOM STATS: ******************************************************************
+localhost: { &amp;#34;assertions&amp;#34;: 2, &amp;#34;assertions_failed&amp;#34;: 1, &amp;#34;assertions_passed&amp;#34;: 1}
+&lt;/code>&lt;/pre>&lt;h2 id="a-callback-plugin-for-better-output">A callback plugin for better output&lt;/h2>
+&lt;p>The &lt;code>assertive&lt;/code> callback plugin provided by the &lt;a href="https://github.com/larsks/ansible-assertive/">ansible-assertive&lt;/a>
+project will provide more useful output concerning the result of
+failed assertions. We activate it by adding the following to our
+&lt;code>ansible.cfg&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>callback_plugins = ./ansible-assertive/callback_plugins
+stdout_callback = assertive
+&lt;/code>&lt;/pre>
+&lt;p>Now when we run our playbook we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code>PLAY [localhost] ***************************************************************
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+TASK [assert] ******************************************************************
+failed: [localhost] ASSERT(&amp;#39;apples&amp;#39; in fruits)
+failed: you have no apples
+TASK [assert] ******************************************************************
+passed: [localhost] ASSERT(&amp;#39;lemons&amp;#39; in fruits)
+PLAY RECAP *********************************************************************
+localhost : ok=3 changed=1 unreachable=0 failed=0
+&lt;/code>&lt;/pre>&lt;h2 id="machine-readable-statistics">Machine readable statistics&lt;/h2>
+&lt;p>The above is nice but is still primarily human-consumable. What if we
+want to collect test statistics for machine processing (maybe we want
+to produce a nicely formatted report of some kind, or maybe we want to
+aggregate information from multiple test runs, or maybe we want to
+trigger some action in the event there are failed tests, or&amp;hellip;)? You
+can ask the &lt;code>assertive&lt;/code> plugin to write a YAML format document with
+this information by adding the following to your &lt;code>ansible.cfg&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[assertive]
+results = testresult.yml
+&lt;/code>&lt;/pre>
+&lt;p>After running our playbook, this file would contain:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">groups&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>- &lt;span style="color:#f92672">hosts&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">localhost&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">stats&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions&lt;/span>: &lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_failed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_passed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_skipped&lt;/span>: &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">tests&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assertions&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">test&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;apples&amp;#39;&amp;#39; in fruits&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">failed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">you have no apples&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">failed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testtime&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.624789&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">assertions&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> - &lt;span style="color:#f92672">test&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;lemons&amp;#39;&amp;#39; in fruits&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">passed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">msg&lt;/span>: &lt;span style="color:#ae81ff">All assertions passed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testresult&lt;/span>: &lt;span style="color:#ae81ff">passed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">testtime&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.669144&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">name&lt;/span>: &lt;span style="color:#ae81ff">localhost&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">stats&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions&lt;/span>: &lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_failed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_passed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_skipped&lt;/span>: &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">stats&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions&lt;/span>: &lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_failed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_passed&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">assertions_skipped&lt;/span>: &lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">timing&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">test_finished_at&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.670802&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">test_started_at&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:57.918412&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With these tools it becomes much easier to design playbooks for
+testing your infrastructure.&lt;/p></content></item><item><title>Deploying an HA OpenStack development environment with tripleo-quickstart</title><link>https://blog.oddbit.com/posts/deploy-an-ha-openstack-develop/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/deploy-an-ha-openstack-develop/</guid><description>In this article I would like to introduce tripleo-quickstart, a tool that will automatically provision a virtual environment and then use TripleO to deploy an HA OpenStack on top of it.
+Introducing Tripleo-Quickstart The goal of the Tripleo-Quickstart project is to replace the instack-virt-setup tool for quickly setting up virtual TripleO environments, and to ultimately become the tool used by both developers and upstream CI for this purpose. The project is a set of Ansible playbooks that will take care of:</description><content>&lt;p>In this article I would like to introduce &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">tripleo-quickstart&lt;/a>, a
+tool that will automatically provision a virtual environment and then
+use &lt;a href="http://docs.openstack.org/developer/tripleo-docs/">TripleO&lt;/a> to deploy an HA OpenStack on top of it.&lt;/p>
+&lt;h2 id="introducing-tripleo-quickstart">Introducing Tripleo-Quickstart&lt;/h2>
+&lt;p>The goal of the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">Tripleo-Quickstart&lt;/a> project is to replace the
+&lt;code>instack-virt-setup&lt;/code> tool for quickly setting up virtual TripleO
+environments, and to ultimately become the tool used by both
+developers and upstream CI for this purpose. The project is a set of
+&lt;a href="http://ansible.com/">Ansible&lt;/a> playbooks that will take care of:&lt;/p>
+&lt;ul>
+&lt;li>Creating virtual undercloud node&lt;/li>
+&lt;li>Creating virtual overcloud nodes&lt;/li>
+&lt;li>Deploying the undercloud&lt;/li>
+&lt;li>Deploying the overcloud&lt;/li>
+&lt;li>Validating the overcloud&lt;/li>
+&lt;/ul>
+&lt;p>In this article, I will be using &lt;code>tripleo-quickstart&lt;/code> to set up a
+development environment on a 32GB desktop. This is probably the
+minimum sized system if your goal is to create an HA install (a
+single controller/single compute environment could be deployed on
+something smaller).&lt;/p>
+&lt;h2 id="requirements">Requirements&lt;/h2>
+&lt;p>Before we get started, you will need:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>A target system with at least 32GB of RAM.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Ansible 2.0.x. This is what you get if you &lt;code>pip install ansible&lt;/code>;
+it is also available in the Fedora &lt;code>updates-testing&lt;/code> repository and
+in the EPEL &lt;code>epel-testing&lt;/code> repository.&lt;/p>
+&lt;p>Do &lt;strong>not&lt;/strong> use Ansible from the HEAD of the git repository; the
+development version is not necessarily backwards compatible with
+2.0.x and may break in unexpected ways.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>A user account on the target system with which you can (a) log in
+via ssh without a password and (b) use &lt;code>sudo&lt;/code> without a password to
+gain root privileges. In other words, this should work:&lt;/p>
+&lt;pre>&lt;code> ssh -tt targetuser@targethost sudo echo it worked
+&lt;/code>&lt;/pre>
+&lt;p>Your &lt;em>targetuser&lt;/em> could be &lt;code>root&lt;/code>, in which case the &lt;code>sudo&lt;/code> is
+superfluous and you should be all set.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>A copy of the tripleo-quickstart repository:&lt;/p>
+&lt;pre>&lt;code> git clone https://github.com/redhat-openstack/tripleo-quickstart/
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ul>
+&lt;p>The remainder of this document assumes that you are running things
+from inside the &lt;code>tripleo-quickstart&lt;/code> directory.&lt;/p>
+&lt;h2 id="the-quick-way">The quick way&lt;/h2>
+&lt;p>If you just want to take things out for a spin using the defaults
+&lt;em>and&lt;/em> you can ssh to your target host as &lt;code>root&lt;/code>, you can skip the
+remainder of this article and just run:&lt;/p>
+&lt;pre>&lt;code>ansible-playbook playbooks/centosci/minimal.yml \
+-e virthost=my.target.host
+&lt;/code>&lt;/pre>
+&lt;p>Or for an HA deployment:&lt;/p>
+&lt;pre>&lt;code>ansible-playbook playbooks/centosci/ha.yml \
+-e virthost=my.target.host
+&lt;/code>&lt;/pre>
+&lt;p>(Where you replace &lt;code>my.target.host&lt;/code> with the hostname of the host on
+which you want to install your virtual environment.)&lt;/p>
+&lt;p>In the remainder of this article I will discuss ways in which you can
+customize this process (and make subsequent deployments faster).&lt;/p>
+&lt;h2 id="create-an-inventory-file">Create an inventory file&lt;/h2>
+&lt;p>An inventory file tells Ansible to which hosts it should connect and
+provides information about how it should connect. For the quickstart,
+your inventory needs to have your target host listed in the &lt;code>virthost&lt;/code>
+group. For example:&lt;/p>
+&lt;pre>&lt;code>[virthost]
+my.target.host ansible_user=targetuser
+&lt;/code>&lt;/pre>
+&lt;p>I&amp;rsquo;m going to assume you put this into a file named &lt;code>inventory&lt;/code>.&lt;/p>
+&lt;h2 id="creating-a-playbook">Creating a playbook&lt;/h2>
+&lt;p>A playbook tells Ansible what do to do.&lt;/p>
+&lt;p>First, we want to tear down any existing virtual environment, and then
+spin up a new undercloud node and create guests that will be used as
+overcloud nodes. We do this with the &lt;code>libvirt/teardown&lt;/code> and
+&lt;code>libvirt/setup&lt;/code> roles:&lt;/p>
+&lt;pre>&lt;code>- hosts: virthost
+roles:
+- libvirt/teardown
+- libvirt/setup
+&lt;/code>&lt;/pre>
+&lt;p>The next play will generate an Ansible inventory file (by default
+&lt;code>$HOME/.quickstart/hosts&lt;/code>) that we can use in the future to refer to
+our deployment:&lt;/p>
+&lt;pre>&lt;code>- hosts: localhost
+roles:
+- rebuild-inventory
+&lt;/code>&lt;/pre>
+&lt;p>Lastly, we install the undercloud host and deploy the overcloud:&lt;/p>
+&lt;pre>&lt;code>- hosts: undercloud
+roles:
+- overcloud
+&lt;/code>&lt;/pre>
+&lt;p>Put this content in a file named &lt;code>ha.yml&lt;/code> (the actual name doesn&amp;rsquo;t
+matter, but this gives us something to refer to later on in this
+article).&lt;/p>
+&lt;h2 id="configuring-the-deployment">Configuring the deployment&lt;/h2>
+&lt;p>Before we run tripleo-quickstart, we need to make a few configuration
+changes. We&amp;rsquo;ll do this by creating a &lt;a href="http://yaml.org/">YAML&lt;/a> file that describes our
+configuration, and we&amp;rsquo;ll feed this to ansible using the &lt;a href="http://docs.ansible.com/ansible/playbooks_variables.html#passing-variables-on-the-command-line">-e
+@filename.yml&lt;/a> syntax.&lt;/p>
+&lt;h3 id="describing-your-virtual-servers">Describing your virtual servers&lt;/h3>
+&lt;p>By default, tripleo-quickstart will deploy an environment consisting
+of four overcloud nodes:&lt;/p>
+&lt;ul>
+&lt;li>3 controller nodes&lt;/li>
+&lt;li>1 compute node&lt;/li>
+&lt;/ul>
+&lt;p>All of these will have 4GB of memory, which when added to the default
+overcloud node size of 12GB comes to a total memory footprint of 24GB.
+These defaults are defined in
+&lt;code>playbooks/roles/nodes/defaults/main.yml&lt;/code>. There are a number of ways
+we can override this default configuration.&lt;/p>
+&lt;p>To simply change the amount of memory assigned to each class of
+server, we can set the &lt;code>undercloud_memory&lt;/code>, &lt;code>control_memory&lt;/code>, and
+&lt;code>compute_memory&lt;/code> keys. For example:&lt;/p>
+&lt;pre>&lt;code>control_memory: 6000
+compute_memory: 2048
+&lt;/code>&lt;/pre>
+&lt;p>To change the number of CPUs assigned to a server, we can change the
+corresponding &lt;code>_vcpu&lt;/code> key. Your deployments will generally run faster
+if your undercloud host has more CPUs available:&lt;/p>
+&lt;pre>&lt;code>undercloud_vcpu: 4
+&lt;/code>&lt;/pre>
+&lt;p>To change the number and type of nodes, you can provide an
+&lt;code>overcloud_nodes&lt;/code> key with entries for each virtual system. The
+default looks like this:&lt;/p>
+&lt;pre>&lt;code>overcloud_nodes:
+- name: control_0
+flavor: control
+- name: control_1
+flavor: control
+- name: control_2
+flavor: control
+- name: compute_0
+flavor: compute
+&lt;/code>&lt;/pre>
+&lt;p>To create a minimal environment with a single controller and a single
+compute node, we could instead put the following into our configuration
+file:&lt;/p>
+&lt;pre>&lt;code>overcloud_nodes:
+- name: control_0
+flavor: control
+- name: compute_0
+flavor: compute
+&lt;/code>&lt;/pre>
+&lt;p>You may intuit from the above examples that you can actually describe
+custom flavors. This is true, but is beyond the scope of this post;
+take a look at &lt;code>playbooks/roles/nodes/defaults/main.yml&lt;/code> for an
+example.&lt;/p>
+&lt;h3 id="configuring-ha">Configuring HA&lt;/h3>
+&lt;p>To actually deploy an HA OpenStack environment, we need to pass a few
+additional options to the &lt;code>openstack overcloud deploy&lt;/code> command. Based
+on &lt;a href="http://docs.openstack.org/developer/tripleo-docs/basic_deployment/basic_deployment_cli.html#deploy-the-overcloud">the docs&lt;/a> I need:&lt;/p>
+&lt;pre>&lt;code>--control-scale 3 \
+-e /usr/share/openstack-tripleo-heat-templates/environments/puppet-pacemaker.yaml \
+--ntp-server pool.ntp.org
+&lt;/code>&lt;/pre>
+&lt;p>We configure deploy arguments in the &lt;code>extra_args&lt;/code> variable, so for the
+above configuration we would add:&lt;/p>
+&lt;pre>&lt;code>extra_args: &amp;gt;
+--control-scale 3
+-e /usr/share/openstack-tripleo-heat-templates/environments/puppet-pacemaker.yaml
+--ntp-server pool.ntp.org
+&lt;/code>&lt;/pre>
+&lt;h3 id="configuring-nested-kvm">Configuring nested KVM&lt;/h3>
+&lt;p>I want &lt;a href="https://www.kernel.org/doc/Documentation/virtual/kvm/nested-vmx.txt">nested KVM&lt;/a> on my compute hosts,
+which requires changes both to the libvirt XML used to deploy the
+&amp;ldquo;baremetal&amp;rdquo; hosts and the nova.conf configuration. I was able to
+accomplish this by adding the following to the configuration:&lt;/p>
+&lt;pre>&lt;code>baremetal_vm_xml: |
+&amp;lt;cpu mode='host-passthrough'/&amp;gt;
+libvirt_args: --libvirt-type kvm
+&lt;/code>&lt;/pre>
+&lt;p>For this to work, you will need to have your target host correctly
+configured to support nested KVM, which generally means adding the
+following to &lt;code>/etc/modprobe.d/kvm.conf&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>options kvm_intel nested=1
+&lt;/code>&lt;/pre>
+&lt;p>(And possibly unloading/reloading the &lt;code>kvm_intel&lt;/code> module if it was
+already loaded.)&lt;/p>
+&lt;h3 id="disable-some-steps">Disable some steps&lt;/h3>
+&lt;p>The default behavior is to:&lt;/p>
+&lt;ul>
+&lt;li>Install the undercloud&lt;/li>
+&lt;li>Deploy the overcloud&lt;/li>
+&lt;li>Validate the overcloud&lt;/li>
+&lt;/ul>
+&lt;p>You can enable or disable individual steps with the following
+variables:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>step_install_undercloud&lt;/code>&lt;/li>
+&lt;li>&lt;code>step_deploy_overcloud&lt;/code>&lt;/li>
+&lt;li>&lt;code>step_validate_overcloud&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>These all default to &lt;code>true&lt;/code>. If, for example, overcloud validation is
+failing because of a known issue, we could add the following to
+&lt;code>nodes.yml&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>step_validate_overcloud: false
+&lt;/code>&lt;/pre>
+&lt;h2 id="pre-caching-the-undercloud-image">Pre-caching the undercloud image&lt;/h2>
+&lt;p>Fetching the undercloud image from the CentOS CI environment can take
+a really long time. If you&amp;rsquo;re going to be deploying often, you can
+speed up this step by manually saving the image and the corresponding
+&lt;code>.md5&lt;/code> file to a file on your target host:&lt;/p>
+&lt;pre>&lt;code>mkdir -p /usr/share/quickstart_images/mitaka/
+cd /usr/share/quickstart_images/mitaka/
+wget https://ci.centos.org/artifacts/rdo/images/mitaka/delorean/stable/undercloud.qcow2.md5 \
+https://ci.centos.org/artifacts/rdo/images/mitaka/delorean/stable/undercloud.qcow2
+&lt;/code>&lt;/pre>
+&lt;p>And then providing the path to that file in the &lt;code>url&lt;/code> variable when
+you run the playbook. I&amp;rsquo;ve added the following to my &lt;code>nodes.yml&lt;/code>
+file, but you could also do this on the command line:&lt;/p>
+&lt;pre>&lt;code>url: file:///usr/share/quickstart_images/mitaka/undercloud.qcow2
+&lt;/code>&lt;/pre>
+&lt;h2 id="intermission">Intermission&lt;/h2>
+&lt;p>I&amp;rsquo;ve made the examples presented in this article available for
+download at the following URLs:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/ha.yml">ha.yml&lt;/a> playbook&lt;/li>
+&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
+&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
+&lt;/ul>
+&lt;h2 id="running-tripleo-quickstart">Running tripleo-quickstart&lt;/h2>
+&lt;p>With all of the above in place, we can run:&lt;/p>
+&lt;pre>&lt;code>ansible-playbook ha.yml -i inventory -e @nodes.yml
+&lt;/code>&lt;/pre>
+&lt;p>Which will proceed through the following phases:&lt;/p>
+&lt;h3 id="tear-down-existing-environment">Tear down existing environment&lt;/h3>
+&lt;p>This step deletes any libvirt guests matching the ones we are about to
+deploy, removes the &lt;code>stack&lt;/code> user from the target host, and otherwise
+ensures a clean slate from which to start.&lt;/p>
+&lt;h3 id="create-overcloud-vms">Create overcloud vms&lt;/h3>
+&lt;p>This uses the node definitions in &lt;code>vm.overcloud.nodes&lt;/code> to create a set
+of libvirt guests. They will &lt;em>not&lt;/em> be booted at this stage; that
+happens later during the ironic discovery process.&lt;/p>
+&lt;h3 id="fetch-the-undercloud-image">Fetch the undercloud image&lt;/h3>
+&lt;p>This will fetch the undercloud appliance image either from the CentOS
+CI environment or from wherever you point the &lt;code>url&lt;/code> variable.&lt;/p>
+&lt;h3 id="configure-the-undercloud-image">Configure the undercloud image&lt;/h3>
+&lt;p>This performs some initial configuration steps such as injecting ssh
+keys into the image.&lt;/p>
+&lt;h3 id="create-undercloud-vm">Create undercloud vm&lt;/h3>
+&lt;p>In this step, tripleo-quickstart uses the configured appliance image
+to create a new &lt;code>undercloud&lt;/code> libvirt guest.&lt;/p>
+&lt;h3 id="install-undercloud">Install undercloud&lt;/h3>
+&lt;p>This runs &lt;code>openstack undercloud install&lt;/code>.&lt;/p>
+&lt;h3 id="deploy-overcloud">Deploy overcloud&lt;/h3>
+&lt;p>This does everything else:&lt;/p>
+&lt;ul>
+&lt;li>Discover the available nodes via the Ironic discovery process&lt;/li>
+&lt;li>Use &lt;code>openstack overcloud deploy&lt;/code> to kick off the provisioning
+process. This feeds &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> a collection of templates that will be
+used to configure the overcloud nodes.&lt;/li>
+&lt;/ul>
+&lt;h2 id="accessing-the-undercloud">Accessing the undercloud&lt;/h2>
+&lt;p>You can ssh directly into the undercloud host by taking advantage of
+the ssh configuration that tripleo-quickstart generated for you. By
+default this will be &lt;code>$HOME/.quickstart/ssh.config.ansible&lt;/code>, but you
+can override that directory by specifying a value for the
+&lt;code>local_working_dir&lt;/code> variable when you run Ansible. You use the &lt;code>-F&lt;/code>
+option to ssh to point it at that file:&lt;/p>
+&lt;pre>&lt;code>ssh -F $HOME/.quickstart/ssh.config.ansible undercloud
+&lt;/code>&lt;/pre>
+&lt;p>The configuration uses an ssh &lt;code>ProxyConnection&lt;/code> configuration to
+automatically proxy your connection to the undercloud vm through your
+physical host.&lt;/p>
+&lt;h2 id="accessing-the-overcloud-hosts">Accessing the overcloud hosts&lt;/h2>
+&lt;p>Once you have logged into the undercloud, you&amp;rsquo;ll need to source in
+some credentials. The file &lt;code>stackrc&lt;/code> contains credentials for the
+undercloud:&lt;/p>
+&lt;pre>&lt;code>. stackrc
+&lt;/code>&lt;/pre>
+&lt;p>Now you can run &lt;code>nova list&lt;/code> to get a list of your overcloud nodes,
+investigate the &lt;code>overcloud&lt;/code> heat stack, and so forth:&lt;/p>
+&lt;pre>&lt;code>$ heat stack-list
++----------...+------------+-----------------+--------------...+--------------+
+| id ...| stack_name | stack_status | creation_time...| updated_time |
++----------...+------------+-----------------+--------------...+--------------+
+| b6cfd621-...| overcloud | CREATE_COMPLETE | 2016-02-19T20...| None |
++----------...+------------+-----------------+--------------...+--------------+
+&lt;/code>&lt;/pre>
+&lt;p>You can find the ip addresses of your overcloud nodes by running &lt;code>nova list&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ nova list
++----------...+-------------------------+--------+...+---------------------+
+| ID ...| Name | Status |...| Networks |
++----------...+-------------------------+--------+...+---------------------+
+| 1fc5d5e8-...| overcloud-controller-0 | ACTIVE |...| ctlplane=192.0.2.9 |
+| ab6439e8-...| overcloud-controller-1 | ACTIVE |...| ctlplane=192.0.2.10 |
+| 82e12f81-...| overcloud-controller-2 | ACTIVE |...| ctlplane=192.0.2.11 |
+| 53402a35-...| overcloud-novacompute-0 | ACTIVE |...| ctlplane=192.0.2.8 |
++----------...+-------------------------+--------+...+---------------------+
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll use the &lt;code>ctlplane&lt;/code> address to log into each host as the
+&lt;code>heat-admin&lt;/code> user. For example, to log into my compute host:&lt;/p>
+&lt;pre>&lt;code>$ ssh heat-admin@192.0.2.8
+&lt;/code>&lt;/pre>
+&lt;h2 id="accessing-the-overcloud-openstack-environment">Accessing the overcloud OpenStack environment&lt;/h2>
+&lt;p>The file &lt;code>overcloudrc&lt;/code> on the undercloud host has administrative
+credentials for the overcloud environment:&lt;/p>
+&lt;pre>&lt;code>. overcloudrc
+&lt;/code>&lt;/pre>
+&lt;p>After sourcing in the overcloud credentials you can use OpenStack
+clients to interact with your deployed cloud environment.&lt;/p>
+&lt;h2 id="if-you-find-bugs">If you find bugs&lt;/h2>
+&lt;p>If anything in the above process doesn&amp;rsquo;t work as described or
+expected, feel free to visit the &lt;code>#rdo&lt;/code> channel on &lt;a href="https://freenode.net/">freenode&lt;/a>, or
+open a bug report on the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart/issues">issue tracker&lt;/a>.&lt;/p></content></item><item><title>A systemd-nspawn connection driver for Ansible</title><link>https://blog.oddbit.com/posts/a-systemd-nspawn-connection-dr/</link><pubDate>Mon, 08 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/a-systemd-nspawn-connection-dr/</guid><description>I wrote earlier about systemd-nspawn, and how it can take much of the fiddly work out of setting up functional chroot environments. I&amp;rsquo;m a regular Ansible user, and I wanted to be able to apply some of those techniques to my playbooks.
+Ansible already has a chroot module, of course, but for some situations &amp;ndash; such as targeting an emulated chroot environment &amp;ndash; that just means a lot of extra work.</description><content>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/posts/systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
+of the fiddly work out of setting up functional &lt;code>chroot&lt;/code> environments.
+I&amp;rsquo;m a regular &lt;a href="http://ansible.com/">Ansible&lt;/a> user, and I wanted to be able to apply some
+of those techniques to my playbooks.&lt;/p>
+&lt;p>Ansible already has a &lt;code>chroot&lt;/code> module, of course, but for some
+situations &amp;ndash; such as targeting an emulated &lt;code>chroot&lt;/code> environment &amp;ndash;
+that just means a lot of extra work. Using &lt;code>systemd-nspawn&lt;/code> makes
+this trivial.&lt;/p>
+&lt;p>I&amp;rsquo;ve submitted
+&lt;a href="https://github.com/ansible/ansible/pull/14334" class="pull-request">#14334&lt;/a>
+to the Ansible project,
+which introduces a new connection driver named &lt;code>nspawn&lt;/code>. It acts very
+much like the &lt;code>chroot&lt;/code> driver, but it adds a few new configuration
+options:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>ansible_nspawn_args&lt;/code> &amp;ndash; analagous to &lt;code>ansible_ssh_args&lt;/code>, setting
+this will override the arguments that are passed to &lt;code>systemd-nspawn&lt;/code>
+by default.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ansible_nspawn_extra_args&lt;/code> &amp;ndash; analgous to &lt;code>ansible_ssh_extra_args&lt;/code>,
+setting this will &lt;em>append&lt;/em> the values to the default
+&lt;code>systemd-nspawn&lt;/code> command line.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="advantages-over-chroot">Advantages over chroot&lt;/h2>
+&lt;p>Let&amp;rsquo;s say we had a Fedora filesystem mounted on &lt;code>/fedora&lt;/code> and we want
+to run the following playbook:&lt;/p>
+&lt;pre>&lt;code>- hosts: /fedora
+tasks:
+- raw: dnf -y install python libselinux-python python2-dnf
+- dnf:
+name: git
+state: installed
+&lt;/code>&lt;/pre>
+&lt;p>Using the &lt;code>chroot&lt;/code> driver, we get:&lt;/p>
+&lt;pre>&lt;code>$ sudo ansible-playbook -i /fedora, -c chroot playbook.yml
+PLAY ***************************************************************************
+TASK [raw] *********************************************************************
+fatal: [/fedora]: FAILED! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;failed&amp;quot;: true, &amp;quot;rc&amp;quot;: -6, &amp;quot;stderr&amp;quot;: &amp;quot;Fatal Python error: Failed to open /dev/urandom\n&amp;quot;, &amp;quot;stdout&amp;quot;: &amp;quot;&amp;quot;, &amp;quot;stdout_lines&amp;quot;: []}
+&lt;/code>&lt;/pre>
+&lt;p>Adding the necessary tasks to our playbook to set up the chroot
+environment properly will add a lot of additional complexity and will
+make the playbook substantially less generic. Now compare that to the
+result of running the same playbook using the &lt;code>nspawn&lt;/code> driver:&lt;/p>
+&lt;pre>&lt;code>$ sudo ansible-playbook -i /fedora, -c nspawn playbook.yml
+PLAY ***************************************************************************
+TASK [raw] *********************************************************************
+ok: [/fedora]
+TASK [dnf] *********************************************************************
+changed: [/fedora]
+PLAY RECAP *********************************************************************
+/fedora : ok=2 changed=1 unreachable=0 failed=0
+&lt;/code>&lt;/pre>
+&lt;h2 id="ansible-in-emulation">Ansible in emulation&lt;/h2>
+&lt;p>By taking advantage of &lt;code>ansible_nspawn_extra_args&lt;/code> you can create
+more complex containers. For example, in my &lt;a href="https://blog.oddbit.com/posts/systemd-nspawn-for-fun-and-wel/">last post&lt;/a> on
+&lt;code>systemd-nspawn&lt;/code> I showed how to start a container for a different
+architecture through the use of QEMU user-mode emulation. We can
+apply the same idea to Ansible with an inventory entry like this:&lt;/p>
+&lt;pre>&lt;code>target
+ansible_host=/fedora
+ansible_connection=nspawn
+ansible_nspawn_extra_args=&amp;quot;--bind /usr/bin/qemu-arm&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>The above will allow you to run a playbook against a filesystem
+containing ARM architecture binaries, even though you&amp;rsquo;re running on an
+x86_64 host.&lt;/p></content></item><item><title>Folding long lines in Ansible inventory files</title><link>https://blog.oddbit.com/posts/folding-long-lines-in-ansible-/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/folding-long-lines-in-ansible-/</guid><description>If you have an Ansible inventory file that includes lots of per host variables, it&amp;rsquo;s not unusual for lines to get long enough that they become unwieldly, particularly if you want to discuss them in an email or write about them in some context (e.g., a blog post).
+I&amp;rsquo;ve just submitted pull request #14359 to Ansible which implements support for folding long lines using the INI-format convention of using indent to mark extended logical lines.</description><content>&lt;p>If you have an Ansible inventory file that includes lots of per host
+variables, it&amp;rsquo;s not unusual for lines to get long enough that they
+become unwieldly, particularly if you want to discuss them in an email
+or write about them in some context (e.g., a blog post).&lt;/p>
+&lt;p>I&amp;rsquo;ve just submitted pull request &lt;a href="https://github.com/ansible/ansible/pull/14359">#14359&lt;/a> to Ansible which
+implements support for folding long lines using the INI-format
+convention of using indent to mark extended logical lines.&lt;/p>
+&lt;p>With this patch in place, you can turn this:&lt;/p>
+&lt;pre>&lt;code>myhost ansible_host=a.b.c.d ansible_user=alice ansible_become=true ansible_ssh_extra_args=&amp;quot;-F ~/.ssh/specialconfig&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>Into this:&lt;/p>
+&lt;pre>&lt;code>myhost
+ansible_host=a.b.c.d
+ansible_user=alice
+ansible_become=true
+ansible_ssh_extra_args=&amp;quot;-F ~/.ssh/specialconfig&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>I think that&amp;rsquo;s a lot easier to read.&lt;/p>
+&lt;p>If you think this is a good idea (or not!), feel free to comment on
+the
+&lt;a href="https://github.com/ansible/ansible/pull/14359" class="pull-request">#14359&lt;/a>
+. I considered (and implemented, then discarded)
+using a backslash-based model instead&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>myhost \
+ansible_host=a.b.c.d \
+...
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;but I was swayed by the fact that the indent-style model is at
+least documented &lt;a href="https://docs.python.org/3/library/configparser.html#supported-ini-file-structure">somewhere&lt;/a>, and with the backslash
+model it&amp;rsquo;s easy to end up with something like this:&lt;/p>
+&lt;pre>&lt;code>myhost \
+ansible_host=a.b.c.d # &amp;lt;--- OOOPS NO BACKSLASH
+ansible_user=alice \
+ansible_become=true
+&lt;/code>&lt;/pre></content></item><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/posts/ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/ansible-20-new-openstack-modul/</guid><description>This is the second in a loose sequence of articles looking at new features in Ansible 2.0. In the previous article I looked at the Docker connection driver. In this article, I would like to provide an overview of the new-and-much-improved suite of modules for interacting with an OpenStack environment, and provide a few examples of their use.
+In versions of Ansible prior to 2.0, there was a small collection of OpenStack modules.</description><content>&lt;p>This is the second in a loose sequence of articles looking at new
+features in Ansible 2.0. In the previous article I looked at the
+&lt;a href="https://blog.oddbit.com/posts/ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
+provide an overview of the new-and-much-improved suite of modules for
+interacting with an &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> environment, and provide a few
+examples of their use.&lt;/p>
+&lt;p>In versions of Ansible prior to 2.0, there was a small collection of
+OpenStack modules. There was the minimum necessary to boot a Nova
+instance:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>glance_image.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>keystone_user.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>nova_compute.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>nova_keypair.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>And a collection of modules for interacting with &lt;a href="https://wiki.openstack.org/wiki/Neutron">Neutron&lt;/a> (previously
+Quantum):&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>quantum_floating_ip_associate.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>quantum_floating_ip.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>quantum_network.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>quantum_router_gateway.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>quantum_router_interface.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>quantum_router.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>quantum_subnet.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>While functional, these modules did not provide very comprehensive
+coverage of even basic OpenStack services, and they suffered from
+having a great deal of duplicated code (which made ensuring
+consistent behavior across all the modules more difficult). The
+behavior of these modules was not always what you would expect (e.g.,
+the &lt;code>nova_compute&lt;/code> module would return information in different forms
+depending on whether it had to create an instance or not).&lt;/p>
+&lt;h2 id="throwing-shade">Throwing Shade&lt;/h2>
+&lt;p>The situation is much improved in Ansible 2.0, which introduces a new
+suite of OpenStack modules in which the common code has been factored
+out into the &lt;a href="https://pypi.python.org/pypi/shade">Shade&lt;/a> project, a Python package that provides a
+simpler interface to OpenStack than is available using the native
+clients. Collecting this code in one place will help ensure both that
+these Ansible modules share consistent behavior and that they are
+easier to maintain.&lt;/p>
+&lt;p>There are modules for managing Keystone:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_auth.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_user_group.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_user.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>Glance:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_image_facts.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_image.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>Cinder:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_server_volume.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_volume.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>Nova:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_keypair.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_nova_flavor.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_server_actions.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_server_facts.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_server.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>Ironic:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_ironic_node.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_ironic.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>Neutron and Nova Networking:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_floating_ip.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_network.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_networks_facts.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_port.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_router.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_security_group.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_security_group_rule.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_subnet.py&lt;/code>&lt;/li>
+&lt;li>&lt;code>os_subnets_facts.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>and Swift:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>os_object.py&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;h2 id="authentication">Authentication&lt;/h2>
+&lt;p>Shade uses the &lt;a href="https://pypi.python.org/pypi/os-client-config/">os-client-config&lt;/a> library to configure
+authentication credentials for your OpenStack environment.&lt;/p>
+&lt;p>In the absence of any authentication information provided in your
+Ansible playbook, these modules will attempt to use the standard suite
+of &lt;code>OS_*&lt;/code> variables (&lt;code>OS_USERNAME&lt;/code>, &lt;code>OS_PASSWORD&lt;/code>, etc). This is fine
+for testing, but you usually want to provide some sort of
+authentication configuration in your Ansible environment.&lt;/p>
+&lt;p>You can provide credentials directly in your plays by providing an
+&lt;code>auth&lt;/code> argument to any of the modules. For example:&lt;/p>
+&lt;pre>&lt;code>- os_image:
+auth:
+auth_url: http://openstack.local:5000/v2.0
+username: admin
+password: secret
+project_name: admin
+[...]
+&lt;/code>&lt;/pre>
+&lt;p>But that can get complicated, especially if you are maintaining
+multiple sets of credentials. The &lt;code>shade&lt;/code> library allows you to
+manage credentials in a file named (by default) &lt;code>clouds.yml&lt;/code>, which
+&lt;code>shade&lt;/code> searches for in:&lt;/p>
+&lt;ul>
+&lt;li>The current directory&lt;/li>
+&lt;li>&lt;code>$HOME/.config/openstack/&lt;/code>&lt;/li>
+&lt;li>&lt;code>/etc/xdg/openstack/&lt;/code>&lt;/li>
+&lt;li>&lt;code>/etc/openstack&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>This file may contain credentials for one or more cloud environments,
+for example:&lt;/p>
+&lt;pre>&lt;code>clouds:
+testing:
+auth:
+auth_url: http://openstack.local:5000/v2.0
+username: admin
+password: secret
+project_name: admin
+&lt;/code>&lt;/pre>
+&lt;p>If you have the above in &lt;code>clouds.yml&lt;/code> along with your playbook, the
+above &lt;code>os_image&lt;/code> example can be rewritten as:&lt;/p>
+&lt;pre>&lt;code>- os_image:
+cloud: testing
+[...]
+&lt;/code>&lt;/pre>
+&lt;h2 id="return-values">Return values&lt;/h2>
+&lt;p>The new modules all return useful information about the objects they
+have created. For example, if you create a network using
+&lt;a href="http://docs.ansible.com/ansible/os_network_module.html">os_network&lt;/a> and register that result:&lt;/p>
+&lt;pre>&lt;code>- os_network:
+cloud: testing
+name: mynetwork
+register: mynetwork
+&lt;/code>&lt;/pre>
+&lt;p>You&amp;rsquo;ll get back a dictionary containing a top-level &lt;code>id&lt;/code> attribute,
+which is the UUID of the created network, along with a &lt;code>network&lt;/code>
+attribute containing a dictionary of information about the created
+object. The &lt;a href="http://docs.ansible.com/ansible/debug_module.html">debug&lt;/a> module is an excellent tool for exploring these
+return values. If we put the following in our playbook immediately
+after the above task:&lt;/p>
+&lt;pre>&lt;code>- debug:
+var: mynetwork
+&lt;/code>&lt;/pre>
+&lt;p>We would get output that looks something like:&lt;/p>
+&lt;pre>&lt;code>ok: [localhost] =&amp;gt; {
+&amp;quot;changed&amp;quot;: false,
+&amp;quot;mynetwork&amp;quot;: {
+&amp;quot;changed&amp;quot;: true,
+&amp;quot;id&amp;quot;: &amp;quot;02b77e32-794a-4102-ab1b-1b90e6d4d92f&amp;quot;,
+&amp;quot;invocation&amp;quot;: {
+&amp;quot;module_args&amp;quot;: {
+&amp;quot;cloud&amp;quot;: &amp;quot;testing&amp;quot;,
+&amp;quot;name&amp;quot;: &amp;quot;mynetwork&amp;quot;
+},
+&amp;quot;module_name&amp;quot;: &amp;quot;os_network&amp;quot;
+},
+&amp;quot;network&amp;quot;: {
+&amp;quot;admin_state_up&amp;quot;: true,
+&amp;quot;id&amp;quot;: &amp;quot;02b77e32-794a-4102-ab1b-1b90e6d4d92f&amp;quot;,
+&amp;quot;mtu&amp;quot;: 0,
+&amp;quot;name&amp;quot;: &amp;quot;mynetwork&amp;quot;,
+&amp;quot;provider:network_type&amp;quot;: &amp;quot;vxlan&amp;quot;,
+&amp;quot;provider:physical_network&amp;quot;: null,
+&amp;quot;provider:segmentation_id&amp;quot;: 79,
+&amp;quot;router:external&amp;quot;: false,
+&amp;quot;shared&amp;quot;: false,
+&amp;quot;status&amp;quot;: &amp;quot;ACTIVE&amp;quot;,
+&amp;quot;subnets&amp;quot;: [],
+&amp;quot;tenant_id&amp;quot;: &amp;quot;349a8b95c5ad4a3383149f65f8c44cff&amp;quot;
+}
+}
+}
+&lt;/code>&lt;/pre>
+&lt;h2 id="examples">Examples&lt;/h2>
+&lt;p>I have written a set of basic &lt;a href="https://github.com/ansible/ansible/pull/12875">integration tests&lt;/a> for these modules.
+I hope the pull request is merged, but even if not it provides an
+example of how to make use of many of these new modules.&lt;/p>
+&lt;p>I&amp;rsquo;d like to present a few brief examples here to give you a sense of
+what working with the new modules is like.&lt;/p>
+&lt;h3 id="uploading-an-image-to-glance">Uploading an image to Glance&lt;/h3>
+&lt;p>The &lt;a href="http://docs.ansible.com/ansible/os_image_module.html">os_image&lt;/a> module is used to upload an image to Glance. Assuming
+that you have file named &lt;code>cirros.qcow2&lt;/code> available locally, this will
+create an image named &lt;code>cirros&lt;/code> in Glance:&lt;/p>
+&lt;pre>&lt;code>- os_image:
+cloud: testing
+name: cirros
+state: present
+disk_format: qcow2
+container_format: bare
+filename: cirros.qcow2
+&lt;/code>&lt;/pre>
+&lt;h3 id="booting-a-nova-server">Booting a Nova server&lt;/h3>
+&lt;p>The &lt;a href="http://docs.ansible.com/ansible/os_server_module.html">os_server&lt;/a> module, which is used for booting virtual servers
+(&amp;ldquo;instances&amp;rdquo;) in Nova, replaces the &lt;a href="http://docs.ansible.com/ansible/nova_compute_module.html">nova_compute&lt;/a> module available
+in Ansible versions before 2.0:&lt;/p>
+&lt;pre>&lt;code>- name: create a nova server
+os_server:
+cloud: testing
+name: myserver
+state: present
+nics:
+- net-name: private
+image: cirros
+flavor: m1.small
+key_name: my_ssh_key
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>nics&lt;/code> parameter can accept net names, net ids, port names, and
+port ids. So you could also do this (assuming you were attaching your
+server to two different tenant networks):&lt;/p>
+&lt;pre>&lt;code>nics:
+- net-id: c875770c-a20b-45b5-a9da-5aca97153053
+- net-name: private
+&lt;/code>&lt;/pre>
+&lt;p>The above examples are using a YAML list of dictionaries to provide
+the information. You can also pass in a comma-delimited key=value
+string, like this:&lt;/p>
+&lt;pre>&lt;code>nics: net-name=private,net-name=database
+&lt;/code>&lt;/pre>
+&lt;p>This syntax is particular useful if you are running ad-hoc commands on
+the command line:&lt;/p>
+&lt;pre>&lt;code>ansible localhost -m os_server -a '
+cloud=testing name=myserver nics=net-name=private
+image=cirros flavor=m1.small key_name=my_ssh_key'
+&lt;/code>&lt;/pre>
+&lt;h3 id="adding-a-nova-server-to-your-ansible-inventory">Adding a Nova server to your Ansible inventory&lt;/h3>
+&lt;p>I&amp;rsquo;d like to conclude this post with a longer example, that
+demonstrates how you can use the &lt;a href="http://docs.ansible.com/ansible/add_host_module.html">add_host&lt;/a> module to add a freshly
+created server to your inventory, and then target that new server in
+your playbook. I&amp;rsquo;ve split up this playbook with commentary; in
+practice, the pre-formatted text in this section would all be in a
+single playbook (like &lt;a href="https://blog.oddbit.com/assets/2015/10/26/playbook.yml">this&lt;/a>).&lt;/p>
+&lt;pre>&lt;code>- hosts: localhost
+tasks:
+&lt;/code>&lt;/pre>
+&lt;p>This first task boots the server. The values for &lt;code>image&lt;/code>, &lt;code>nics&lt;/code>, and
+`key_name will need to be adjusted for your environment.&lt;/p>
+&lt;pre>&lt;code> - os_server:
+cloud: testing
+name: myserver
+image: centos-7-atomic
+nics:
+- net-name: private
+flavor: m1.small
+key_name: lars
+auto_ip: true
+register: myserver
+&lt;/code>&lt;/pre>
+&lt;p>This &lt;code>debug&lt;/code> entry simply shows us what values were returned in the
+&lt;code>myserver&lt;/code> variable.&lt;/p>
+&lt;pre>&lt;code> - debug:
+var: myserver
+&lt;/code>&lt;/pre>
+&lt;p>Now we add the new host to our Ansible inventory. For this to work,
+you need to have assigned a floating ip to the server (either using
+&lt;code>auto_ip&lt;/code>, as in this example, or by assigning one explicitly), and
+you need to be running this playbook somewhere that has a route to the
+floating ip address.&lt;/p>
+&lt;pre>&lt;code> - add_host:
+name: myserver
+groups: openstack
+ansible_host: &amp;quot;{{myserver.server.public_v4}}&amp;quot;
+ansible_user: centos
+ansible_become: true
+&lt;/code>&lt;/pre>
+&lt;p>Note that in the above play you can&amp;rsquo;t use information from the
+inventory because that new host won&amp;rsquo;t exist in the inventory until
+&lt;em>after&lt;/em> this play completes.&lt;/p>
+&lt;p>We&amp;rsquo;ll need to wait for the server to finish booting and provisioning
+before we are able to target it with ansible. A typical cloud image
+is configured to run &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> when it boots, which will take
+care of a number of initial configuration tasks, including
+provisioning the ssh key we configured using &lt;code>os_server&lt;/code>. Until this
+process is complete, we won&amp;rsquo;t have remote access to the server.&lt;/p>
+&lt;p>We can&amp;rsquo;t use the &lt;code>wait_for&lt;/code> module because that will only
+check for an open port. Instead, we use a &lt;a href="http://docs.ansible.com/ansible/playbooks_loops.html#do-until-loops">do-until loop&lt;/a> to
+wait until we are able to successfully run a command on the server via
+ssh.&lt;/p>
+&lt;pre>&lt;code> - command: &amp;gt;
+ssh -o BatchMode=yes
+centos@{{myserver.server.public_v4}} true
+register: result
+until: result|success
+retries: 300
+delay: 5
+&lt;/code>&lt;/pre>
+&lt;p>Now that we have added the new server to our inventory
+we can target it in subsequent plays (such as this one):&lt;/p>
+&lt;pre>&lt;code>- hosts: myserver
+tasks:
+- service:
+name: docker
+state: running
+enabled: true
+&lt;/code>&lt;/pre></content></item><item><title>Stupid Ansible Tricks: Running a role from the command line</title><link>https://blog.oddbit.com/posts/stupid-ansible-tricks-running-/</link><pubDate>Mon, 19 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/stupid-ansible-tricks-running-/</guid><description>When writing Ansible roles I occasionally want a way to just run a role from the command line, without having to muck about with a playbook. I&amp;rsquo;ve seen similar requests on the mailing lists and on irc.
+I&amp;rsquo;ve thrown together a quick wrapper that will allow you (and me!) to do exactly that, called ansible-role. The --help output looks like this:
+usage: ansible-role [-h] [--verbose] [--gather] [--no-gather] [--extra-vars EXTRA_VARS] [-i INVENTORY] [--hosts HOSTS] [--sudo] [--become] [--user USER] role positional arguments: role optional arguments: -h, --help show this help message and exit --verbose, -v --gather, -g --no-gather, -G --extra-vars EXTRA_VARS, -e EXTRA_VARS Inventory: -i INVENTORY, --inventory INVENTORY --hosts HOSTS, -H HOSTS Identity: --sudo, -s --become, -b --user USER, -u USER Example If you have a role roles/testrole that contains the following in tasks/main.</description><content>&lt;p>When writing &lt;a href="http://www.ansible.com/">Ansible&lt;/a> roles I occasionally want a way to just run a
+role from the command line, without having to muck about with a
+playbook. I&amp;rsquo;ve seen &lt;a href="https://groups.google.com/forum/#!topic/ansible-project/h-SGLuPDRrs">similar&lt;/a> &lt;a href="https://groups.google.com/forum/#!topic/ansible-devel/GqzZ6zsn6eY">requests&lt;/a> on the mailing lists
+and on irc.&lt;/p>
+&lt;p>I&amp;rsquo;ve thrown together a quick wrapper that will allow you (and me!) to
+do exactly that, called &lt;a href="http://github.com/larsks/ansible-role">ansible-role&lt;/a>. The &lt;code>--help&lt;/code> output looks
+like this:&lt;/p>
+&lt;pre>&lt;code>usage: ansible-role [-h] [--verbose] [--gather] [--no-gather]
+[--extra-vars EXTRA_VARS] [-i INVENTORY] [--hosts HOSTS]
+[--sudo] [--become] [--user USER]
+role
+positional arguments:
+role
+optional arguments:
+-h, --help show this help message and exit
+--verbose, -v
+--gather, -g
+--no-gather, -G
+--extra-vars EXTRA_VARS, -e EXTRA_VARS
+Inventory:
+-i INVENTORY, --inventory INVENTORY
+--hosts HOSTS, -H HOSTS
+Identity:
+--sudo, -s
+--become, -b
+--user USER, -u USER
+&lt;/code>&lt;/pre>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>If you have a role &lt;code>roles/testrole&lt;/code> that contains the following in
+&lt;code>tasks/main.yml&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>- name: figure out who I am
+command: whoami
+register: whoami
+- name: show who I am
+debug:
+msg: &amp;quot;I am {{whoami.stdout}}&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>You could run it like this:&lt;/p>
+&lt;pre>&lt;code>$ ansible-role testrole -i localhost,
+&lt;/code>&lt;/pre>
+&lt;p>Which would get you:&lt;/p>
+&lt;pre>&lt;code>PLAY ***************************************************************************
+TASK [setup] *******************************************************************
+ok: [localhost -&amp;gt; localhost]
+TASK [testrole : figure out who I am] ******************************************
+changed: [localhost -&amp;gt; localhost]
+TASK [testrole : show who I am] ************************************************
+ok: [localhost -&amp;gt; localhost] =&amp;gt; {
+&amp;quot;changed&amp;quot;: false,
+&amp;quot;msg&amp;quot;: &amp;quot;I am lars&amp;quot;
+}
+PLAY RECAP *********************************************************************
+localhost : ok=3 changed=1 unreachable=0 failed=0
+&lt;/code>&lt;/pre>
+&lt;p>You can use the &lt;code>-b&lt;/code> (formerly &lt;code>-s&lt;/code>) flag to enable privilege
+escalation via &lt;code>sudo&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ ansible-role testrole -i localhost, -s
+&lt;/code>&lt;/pre>
+&lt;p>Which will work as expected:&lt;/p>
+&lt;pre>&lt;code>TASK [testrole : show who I am] ************************************************
+ok: [localhost -&amp;gt; localhost] =&amp;gt; {
+&amp;quot;changed&amp;quot;: false,
+&amp;quot;msg&amp;quot;: &amp;quot;I am root&amp;quot;
+}
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>ansible-role&lt;/code> command does not currently provide proxy arguments
+for &lt;em>all&lt;/em> of the options supported by &lt;code>ansible-playbook&lt;/code>, but
+hopefully it supports enough to be useful. If you have bug reports or
+pull requests, feel free to leave them &lt;a href="http://github.com/larsks/ansible-role/issues">on the GitHub
+repository&lt;/a>.&lt;/p></content></item><item><title>Bootstrapping Ansible on Fedora 23</title><link>https://blog.oddbit.com/posts/bootstrapping-ansible-on-fedor/</link><pubDate>Thu, 15 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/bootstrapping-ansible-on-fedor/</guid><description>If you&amp;rsquo;ve tried running Ansible against a Fedora 23 system, you may have run into the following problem:
+fatal: [myserver]: FAILED! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;failed&amp;quot;: true, &amp;quot;msg&amp;quot;: &amp;quot;/bin/sh: /usr/bin/python: No such file or directory\r\n&amp;quot;, &amp;quot;parsed&amp;quot;: false} Fedora has recently made the switch to only including Python 3 on the base system (at least for the cloud variant), while Ansible still requires Python 2. With Fedora 23, Python 3 is available as /usr/bin/python3, and /usr/bin/python is only available if you have installed the Python 2 interpreter.</description><content>&lt;p>If you&amp;rsquo;ve tried running &lt;a href="http://ansible.com/">Ansible&lt;/a> against a &lt;a href="http://fedoraproject.org/">Fedora&lt;/a> 23 system,
+you may have run into the following problem:&lt;/p>
+&lt;pre>&lt;code>fatal: [myserver]: FAILED! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;failed&amp;quot;: true,
+&amp;quot;msg&amp;quot;: &amp;quot;/bin/sh: /usr/bin/python: No such file or directory\r\n&amp;quot;,
+&amp;quot;parsed&amp;quot;: false}
+&lt;/code>&lt;/pre>
+&lt;p>Fedora has recently made the switch to only including Python 3 on the
+base system (at least for the &lt;a href="https://getfedora.org/en/cloud/prerelease/">cloud&lt;/a> variant), while Ansible still
+requires Python 2. With Fedora 23, Python 3 is available as
+&lt;code>/usr/bin/python3&lt;/code>, and &lt;code>/usr/bin/python&lt;/code> is only available if you
+have installed the Python 2 interpreter.&lt;/p>
+&lt;p>This is not an insurmountable problem; Ansible&amp;rsquo;s &lt;a href="http://docs.ansible.com/ansible/raw_module.html">raw&lt;/a> module can be
+used to run arbitrary commands on a remote host without requiring an
+installed Python interpreter. This gives us everything we need to
+bootstrap the remote environment.&lt;/p>
+&lt;p>The simplest playbook might look something like:&lt;/p>
+&lt;pre>&lt;code>- hosts: all
+tasks:
+- name: install packages for ansible support
+raw: dnf -y -e0 -d0 install python python-dnf
+&lt;/code>&lt;/pre>
+&lt;p>(The &lt;code>python-dnf&lt;/code> package is required if you want to install packages
+using the &lt;code>dnf&lt;/code> module.)&lt;/p>
+&lt;p>So you drop this into a playbook and run it and&amp;hellip;it still fails, with
+the same error. This is because Ansible will, by default, attempt to
+gather facts from the remote host by running the &lt;code>setup&lt;/code> module, which
+requires Python. So we modify our playbook to look like this:&lt;/p>
+&lt;pre>&lt;code>- hosts: all
+gather_facts: false
+tasks:
+- name: install packages for ansible support
+raw: dnf -y -e0 -d0 install python python-dnf
+&lt;/code>&lt;/pre>
+&lt;p>Setting &lt;code>gather_facts: false&lt;/code> inhibits this initial fact collection;
+with this change, the playbook should run successfully:&lt;/p>
+&lt;pre>&lt;code>$ ansible-playbook playbook.yml
+PLAY ***************************************************************************
+TASK [install packages for ansible support] ************************************
+ok: [myserver -&amp;gt; localhost]
+PLAY RECAP *********************************************************************
+myserver : ok=1 changed=0 unreachable=0 failed=0
+&lt;/code>&lt;/pre>
+&lt;p>Having installed the basics, you can now use many of the standard
+Ansible modules:&lt;/p>
+&lt;pre>&lt;code>- hosts: all
+gather_facts: true
+tasks:
+- lineinefile:
+dest: /etc/hosts
+line: &amp;quot;{{ansible_eth0.ipv4.address}} {{inventory_hostname}}&amp;quot;
+regexp: &amp;quot;{{inventory_hostname}}&amp;quot;
+- package:
+name: git
+state: present
+&lt;/code>&lt;/pre>
+&lt;p>As the above example demonstrates, now that the necessary Python stack
+is installed on the remote Fedora 23 host, Ansible is is able to
+gather &lt;a href="http://docs.ansible.com/ansible/playbooks_variables.html#information-discovered-from-systems-facts">facts&lt;/a> about the host that can be used in tasks, templates,
+etc.&lt;/p>
+&lt;p>Note that with the &lt;code>raw&lt;/code> module I had to use the &lt;code>dnf&lt;/code> command
+explicitly, while in the above playbook I can use the &lt;code>package&lt;/code> module
+for package installation, which relies on available facts to determine
+the correct package module.&lt;/p></content></item><item><title>Ansible 2.0: The Docker connection driver</title><link>https://blog.oddbit.com/posts/ansible-20-the-docker-connecti/</link><pubDate>Tue, 13 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/ansible-20-the-docker-connecti/</guid><description>As the release of Ansible 2.0 draws closer, I&amp;rsquo;d like to take a look at some of the new features that are coming down the pipe. In this post, we&amp;rsquo;ll look at the docker connection driver.
+A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to your target hosts. These days it uses ssh by default (which relies on the OpenSSH command line client for connectivity), and it also offers the Paramiko library as an alternative ssh implementation (this was in fact the default driver in earlier versions of Ansible).</description><content>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
+look at some of the new features that are coming down the pipe. In
+this post, we&amp;rsquo;ll look at the &lt;code>docker&lt;/code> connection driver.&lt;/p>
+&lt;p>A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to
+your target hosts. These days it uses &lt;code>ssh&lt;/code> by default (which relies
+on the OpenSSH command line client for connectivity), and it also
+offers the &lt;a href="http://www.paramiko.org/">Paramiko&lt;/a> library as an alternative ssh implementation
+(this was in fact the default driver in earlier versions of Ansible).
+Alternative drivers offered by recent versions of ansible included the
+&lt;code>winrm&lt;/code> driver, for accessing Windows hosts, the &lt;code>fireball&lt;/code> driver, a
+(deprecated) driver that used &lt;a href="http://zeromq.org/">0mq&lt;/a> for communication, and &lt;code>jail&lt;/code>, a
+driver for connecting to FreeBSD jails.&lt;/p>
+&lt;p>Ansible 2.0 will offer a &lt;code>docker&lt;/code> connection driver, which can be used
+to connect to Docker containers via the &lt;code>docker exec&lt;/code> command.
+Assuming you have a running container named &lt;code>target&lt;/code>, you can run an
+ad-hoc command like this:&lt;/p>
+&lt;pre>&lt;code>$ ansible all -i target, -c docker -m command -a 'uptime'
+target | SUCCESS | rc=0 &amp;gt;&amp;gt;
+03:54:21 up 7 days, 15:00, 0 users, load average: 0.81, 0.60, 0.46
+&lt;/code>&lt;/pre>
+&lt;p>You can specify the connection driver as part of a play in your
+playbook:&lt;/p>
+&lt;pre>&lt;code>- hosts: target
+connection: docker
+tasks:
+- package:
+name: git
+state: latest
+&lt;/code>&lt;/pre>
+&lt;p>Or as a variable in your inventory. Here&amp;rsquo;s an example that has both a
+docker container and an ssh-accessible host:&lt;/p>
+&lt;pre>&lt;code>target ansible_connection=docker
+server ansible_host=192.168.1.20 ansible_user=root
+&lt;/code>&lt;/pre>
+&lt;p>Given the following playbook:&lt;/p>
+&lt;pre>&lt;code>- hosts: all
+tasks:
+- ping:
+&lt;/code>&lt;/pre>
+&lt;p>If we run it like this, assuming the above inventory is in the file
+&lt;code>inventory&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>$ ansible-playbook -i inventory playbook.yml
+&lt;/code>&lt;/pre>
+&lt;p>The output will look something like:&lt;/p>
+&lt;pre>&lt;code>TASK [ping] ********************************************************************
+&amp;lt;192.168.1.20&amp;gt; ESTABLISH SSH CONNECTION FOR USER: root
+&amp;lt;192.168.1.20&amp;gt; SSH: EXEC ssh -C -q -o ControlMaster=auto -o ControlPersist=60s ... 192.168.1.20 ...
+&amp;lt;192.168.1.20&amp;gt; PUT /tmp/tmpbtrmo5 TO /root/.ansible/tmp/ansible-tmp-1444795190.49-64658551273604/ping
+&amp;lt;192.168.1.20&amp;gt; SSH: EXEC sftp -b - -C -o ControlMaster=auto -o ControlPersist=60s ... 192.168.1.20 ...
+ESTABLISH DOCKER CONNECTION FOR USER: lars
+&amp;lt;target&amp;gt; EXEC ['/usr/bin/docker', 'exec', '-i', u'target', '/bin/sh', '-c', ...
+&amp;lt;target&amp;gt; PUT /tmp/tmpNmcPTf TO /root/.ansible/tmp/ansible-tmp-1444795190.53-251446545325875/ping
+&amp;lt;192.168.1.20&amp;gt; ESTABLISH SSH CONNECTION FOR USER: root
+&amp;lt;192.168.1.20&amp;gt; SSH: EXEC ssh -C -q -o ControlMaster=auto -o ControlPersist=60s ... 192.168.1.20 ...
+ok: [server -&amp;gt; localhost] =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;ping&amp;quot;: &amp;quot;pong&amp;quot;}
+&amp;lt;target&amp;gt; EXEC ['/usr/bin/docker', 'exec', '-i', u'target', '/bin/sh', '-c', ...
+ok: [target -&amp;gt; localhost] =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;ping&amp;quot;: &amp;quot;pong&amp;quot;}
+PLAY RECAP *********************************************************************
+server : ok=2 changed=0 unreachable=0 failed=0
+target : ok=2 changed=0 unreachable=0 failed=0
+&lt;/code>&lt;/pre>
+&lt;p>Now you have a unified mechanism for managing configuration changes in
+traditional hosts as well as in Docker containers.&lt;/p></content></item></channel></rss>

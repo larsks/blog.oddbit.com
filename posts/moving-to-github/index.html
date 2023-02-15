@@ -1,0 +1,129 @@
+<!doctype html><html lang=en><head><title>Moving to GitHub :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This blog has been hosted on scriptogram for the past year or so. Unfortunately, while I like the publish-via-Dropbox mechanism, there have been enough problems recently that I&amp;rsquo;ve finally switched over to using GitHub Pages for hosting. I&amp;rsquo;ve been thinking about doing this for a while, but the things that finally pushed me to make the change were:
+Sync problems that would prevent new posts from appearing (and that at least once caused posts to disappear)."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/moving-to-github/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Moving to GitHub"><meta property="og:description" content="This blog has been hosted on scriptogram for the past year or so. Unfortunately, while I like the publish-via-Dropbox mechanism, there have been enough problems recently that I&amp;rsquo;ve finally switched over to using GitHub Pages for hosting. I&amp;rsquo;ve been thinking about doing this for a while, but the things that finally pushed me to make the change were:
+Sync problems that would prevent new posts from appearing (and that at least once caused posts to disappear)."><meta property="og:url" content="https://blog.oddbit.com/posts/moving-to-github/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2013-11-13 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/moving-to-github/>Moving to GitHub</a></h1><div class=post-meta><time class=post-date>2013-11-13 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/blog/>blog</a>&nbsp;</span><div class=post-content><div><p>This blog has been hosted on <a href=http://scriptogr.am/>scriptogram</a> for the past year or so.
+Unfortunately, while I like the publish-via-Dropbox mechanism, there
+have been enough problems recently that I&rsquo;ve finally switched over to
+using <a href=http://pages.github.com/>GitHub Pages</a> for hosting. I&rsquo;ve been thinking about doing
+this for a while, but the things that finally pushed me to make the
+change were:</p><ul><li>Sync problems that would prevent new posts from appearing (and that
+at least once caused posts to disappear).</li><li>Lack of any response to bug reports by the site maintainers.</li></ul><p>A benefit of the publish-via-Dropbox mechanism is, of course, that I
+already had all the data and didn&rsquo;t need to go through any sort of
+export process.</p><h2 id=fixing-metadata>Fixing metadata<a href=#fixing-metadata class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Like <a href=http://scriptogr.am/>scriptogram</a>, <a href=http://pages.github.com/>GitHub Pages</a> is also a Markdown-based
+solution. GitHub uses <a href=http://jekyllrb.com/>Jekyll</a> to render Markdown to HTML, which
+requires some metadata at the beginning of each post. On
+<a href=http://scriptogr.am/>scriptogram</a> the file headers looked like this:</p><pre><code>Title: A random collection of OpenStack Tools
+Date: 2013-11-12
+Tags: openstack
+</code></pre><p>Whereas the corresponding header for GitHub would look like this:</p><pre><code>---
+layout: post
+title: A random collection of OpenStack Tools
+date: 2013-11-12
+tags:
+  - openstack
+---
+</code></pre><p>I was able to generally automate this with the following script:</p><pre><code>#!/bin/sh
+
+for post in &quot;$@&quot;; do
+  sed -i '
+  1,/^$/ {
+    1 i\---
+    1 i\layout: post
+
+    s/Title:/title:/
+    s/Date:/date:/
+    s/Tags:/tags:/
+
+    /^$/ i\---
+  }
+  ' $post
+done
+</code></pre><p>The <code>tags:</code> header need further processing to transform them into a
+<a href=http://en.wikipedia.org/wiki/YAML>YAML</a> list. That means something like:</p><pre><code>tags: foo,bar,baz
+</code></pre><p>Would need to end up looking like:</p><pre><code>tags:
+  - foo
+  - bar
+  - baz
+</code></pre><p>While that&rsquo;s not entirely accurate &ndash; YAML supports multiple list
+syntaxes and I could have just expressed that as <code>[foo,bar,baz]</code> &ndash; I
+prefer this extended syntax and got there via the following <code>awk</code>
+script:</p><pre><code>BEGIN {state=0}
+
+state == 1 &amp;&amp; /^tags:/ {
+  tags=$2
+  next
+}
+
+state == 1 &amp;&amp; /^---$/ {
+  if (tags) {
+    split(tags, taglist, &quot;,&quot;)
+    print &quot;tags:&quot;
+    for (t in taglist)
+      print &quot;  -&quot;, taglist[t]
+  }
+
+  state=2
+}
+
+state == 0 &amp;&amp; /^---$/ { state=1 }
+
+{print}
+</code></pre><p>(This would process a single post; I wrapped it in a shell script to
+run it across all the posts.)</p><h1 id=redirecting-legacy-links>Redirecting legacy links<a href=#redirecting-legacy-links class=hanchor arialabel=Anchor>&#8983;</a></h1><p>In order to preserve links pointing at the old blog I needed to generate
+a bunch of HTML redirect files. <a href=http://scriptogr.am/>Scriptogram</a> posts had permalinks
+of the form <code>/post/&lt;slug></code>, where <code>&lt;slug></code> was computed from the post
+aliases: ["/2013/11/13/moving-to-github/"]
+title. GitHub posts (with <code>permalinks: pretty</code>) have the form
+<code>/&lt;year>/&lt;month>/&lt;day>/&lt;title></code>, where <code>&lt;title></code> comes from the
+filename rather than the post metadata.</p><p>I automated the generation of redirects with the following script:</p><pre><code>#!/bin/sh
+
+for post in _posts/*; do
+  # read the title from the post metadata
+  title=$(grep '^title:' $post)
+  title=${title/title: /}
+
+  # convert the title from the metadata into the slug
+  # used by scriptogram
+  slug=${title,,}
+  slug=${slug// /-}
+  slug=${slug//[.,:?\/\'\&quot;]/}
+
+  # parse the post filename into year, month, day, and title
+  # as used by github
+  post_name=${post/_posts\//}
+  post_date=${post_name:0:10}
+  post_title=${post_name:11}
+  post_title=${post_title:0:$(( ${#post_title} - 3))}
+  post_year=${post_date%%-*}
+  tmp=${post_date#*-}
+  post_month=${tmp%%-*}
+  post_day=${post_date##*-}
+
+  # the url at which the post is available on github
+  new_url=&quot;/$post_year/$post_month/$post_day/$post_title/&quot;
+  
+  # generate the html redirect file
+  mkdir -p post/$slug
+  sed &quot;s|URL|$new_url|g&quot; redirect.html &gt; post/$slug/index.html
+done
+</code></pre><p>Where <code>redirect.html</code> looks like this:</p><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;link rel=&quot;canonical&quot; href=&quot;URL&quot;/&gt;
+&lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+&lt;meta http-equiv=&quot;refresh&quot; content=&quot;0;url=URL&quot; /&gt;
+&lt;/head&gt;
+&lt;/html&gt;
+</code></pre><p>So given a file <code>_posts/2013-11-12-a-random-collection.md</code>, this would
+result in a new file
+<code>post/a-random-collection-of-openstack-tools/index.html</code> with the
+following content:</p><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;link rel=&quot;canonical&quot; href=&quot;/2013/11/12/a-random-collection/&quot;/&gt;
+&lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+&lt;meta http-equiv=&quot;refresh&quot; content=&quot;0;url=/2013/11/12/a-random-collection/&quot; /&gt;
+&lt;/head&gt;
+&lt;/html&gt;
+</code></pre><p>With this in place, a URL such as <a href=http://blog.oddbit.com/post/a-random-collection-of-openstack-tools>http://blog.oddbit.com/post/a-random-collection-of-openstack-tools</a> goes to the right place.</p><p><strong>Update</strong>: It turns out that it has been almost exactly a year since
+I <a href=http://blog.oddbit.com/2012/11/06/moving-from-blogger/>moved from Blogger to Scriptogram</a>.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

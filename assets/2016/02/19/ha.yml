@@ -1,0 +1,15 @@
+# clean up and redeploy virtual environment
+- hosts: virthost
+  roles:
+    - libvirt/teardown
+    - libvirt/setup
+
+# update ansible inventory with virtual hosts
+- hosts: localhost
+  roles:
+    - rebuild-inventory
+
+# install undercloud and overcloud
+- hosts: undercloud
+  roles:
+    - overcloud

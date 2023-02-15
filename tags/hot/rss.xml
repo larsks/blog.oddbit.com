@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>hot on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/hot/</link><description>Recent content in hot on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 11 Aug 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/hot/rss.xml" rel="self" type="application/rss+xml"/><item><title>Exploring YAQL Expressions</title><link>https://blog.oddbit.com/posts/exploring-yaql-expressions/</link><pubDate>Thu, 11 Aug 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/exploring-yaql-expressions/</guid><description>The Newton release of Heat adds support for a yaql intrinsic function, which allows you to evaluate yaql expressions in your Heat templates. Unfortunately, the existing yaql documentation is somewhat limited, and does not offer examples of many of yaql&amp;rsquo;s more advanced features.
+I am working on a Fluentd composable service for TripleO. I want to allow each service to specify a logging source configuration fragment, for example:
+parameters: NovaAPILoggingSource: type: json description: Fluentd logging configuration for nova-api.</description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
+in your Heat templates. Unfortunately, the existing yaql
+documentation is somewhat limited, and does not offer examples of many
+of yaql&amp;rsquo;s more advanced features.&lt;/p>
+&lt;p>I am working on a &lt;a href="http://www.fluentd.org/">Fluentd&lt;/a> composable service for &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a>. I
+want to allow each service to specify a logging source configuration
+fragment, for example:&lt;/p>
+&lt;pre>&lt;code>parameters:
+NovaAPILoggingSource:
+type: json
+description: Fluentd logging configuration for nova-api.
+default:
+tag: openstack.nova.api
+type: tail
+format: |
+/(?&amp;lt;time&amp;gt;\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+) (?&amp;lt;pid&amp;gt;\d+) (?&amp;lt;priority&amp;gt;\S+) (?&amp;lt;message&amp;gt;.*)/
+path: /var/log/nova/nova-api.log
+pos_file: /var/run/fluentd/openstack.nova.api.pos
+&lt;/code>&lt;/pre>
+&lt;p>This generally works, but several parts of this fragment are going to
+be the same across all OpenStack services. I wanted to reduce the
+above to just the unique attributes, which would look something like:&lt;/p>
+&lt;pre>&lt;code>parameters:
+NovaAPILoggingSource:
+type: json
+description: Fluentd logging configuration for nova-api.
+default:
+tag: openstack.nova.api
+path: /var/log/nova/nova-api.log
+&lt;/code>&lt;/pre>
+&lt;p>This would ultimately give me a list of dictionaries of the form:&lt;/p>
+&lt;pre>&lt;code>[
+{
+&amp;quot;tag&amp;quot;: &amp;quot;openstack.nova.api&amp;quot;,
+&amp;quot;path&amp;quot;: &amp;quot;/var/log/nova/nova-api.log&amp;quot;
+},
+{
+&amp;quot;tag&amp;quot;: &amp;quot;openstack.nova.scheduler&amp;quot;,
+&amp;quot;path&amp;quot;: &amp;quot;/var/log/nova/nova-scheduler.log&amp;quot;
+}
+]
+&lt;/code>&lt;/pre>
+&lt;p>I want to iterate over this list, adding default values for attributes
+that are not explicitly provided.&lt;/p>
+&lt;p>The yaql language has a &lt;code>select&lt;/code> function, somewhat analagous to the
+SQL &lt;code>select&lt;/code> statement, that can be used to construct a new data
+structure from an existing one. For example, given the above data in
+a parameter called &lt;code>sources&lt;/code>, I could write:&lt;/p>
+&lt;pre>&lt;code>outputs:
+sources:
+yaql:
+data:
+sources: {get_param: sources}
+expression: &amp;gt;
+$.data.sources.select({
+'path' =&amp;gt; $.path,
+'tag' =&amp;gt; $.tag,
+'type' =&amp;gt; $.get('type', 'tail')})
+&lt;/code>&lt;/pre>
+&lt;p>This makes use of the &lt;code>.get&lt;/code> method to insert a default value of
+&lt;code>tail&lt;/code> for the &lt;code>type&lt;/code> attribute for items that don&amp;rsquo;t specify it
+explicitly. This would produce a list that looks like:&lt;/p>
+&lt;pre>&lt;code>[
+{
+&amp;quot;path&amp;quot;: &amp;quot;/var/log/nova/nova-api.log&amp;quot;,
+&amp;quot;tag&amp;quot;: &amp;quot;openstack.nova.api&amp;quot;,
+&amp;quot;type&amp;quot;: &amp;quot;tail&amp;quot;
+},
+{
+&amp;quot;path&amp;quot;: &amp;quot;/var/log/nova/nova-scheduler.log&amp;quot;,
+&amp;quot;tag&amp;quot;: &amp;quot;openstack.nova.scheduler&amp;quot;,
+&amp;quot;type&amp;quot;: &amp;quot;tail&amp;quot;
+}
+]
+&lt;/code>&lt;/pre>
+&lt;p>That works fine, but what if I want to parameterize the default value
+such that it can be provided as part of the template? I wanted to be
+able to pass the yaql expression something like this&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>outputs:
+sources:
+yaql:
+data:
+sources: {get_param: sources}
+default_type: tail
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and then within the yaql expression, insert the value of
+&lt;code>default_type&lt;/code> into items that don&amp;rsquo;t provide an explicit value for the
+&lt;code>type&lt;/code> attribute.&lt;/p>
+&lt;p>This is trickier than it might sound at first because within the
+context of the &lt;code>select&lt;/code> method, &lt;code>$&lt;/code> is bound to the &lt;em>local&lt;/em> context,
+which will be an individual item from the list. So while I can ask
+for &lt;code>$.path&lt;/code>, there&amp;rsquo;s no way to refer to items from the top-level
+context. Or is there?&lt;/p>
+&lt;p>The &lt;a href="https://yaql.readthedocs.io/en/latest/getting_started.html#operators">operators&lt;/a> documentation for yaql mentions the &amp;ldquo;context pass&amp;rdquo;
+operator, &lt;code>-&amp;gt;&lt;/code>, but doesn&amp;rsquo;t provide any examples of how it can be
+used. It turns out that this operator will be the key to our solution.
+But before we look at that in more detail, we need to introduce the
+&lt;code>let&lt;/code> statement, which can be used to define variables. The &lt;code>let&lt;/code>
+statement isn&amp;rsquo;t mentioned in the documentation at all, but it looks
+like this:&lt;/p>
+&lt;pre>&lt;code>let(var =&amp;gt; value, ...)
+&lt;/code>&lt;/pre>
+&lt;p>By itself, this isn&amp;rsquo;t particularly useful. In fact, if you were to
+type a bare &lt;code>let&lt;/code> statement in a yaql evaluator, you would get an
+error:&lt;/p>
+&lt;pre>&lt;code>yaql&amp;gt; let(foo =&amp;gt; 10, bar =&amp;gt; 20)
+Execution exception: &amp;lt;yaql.language.contexts.Context object at 0x7fbaf9772e50&amp;gt; is not JSON serializable
+&lt;/code>&lt;/pre>
+&lt;p>This is where the &lt;code>-&amp;gt;&lt;/code> operator comes into play. We use that to pass
+the context created by the &lt;code>let&lt;/code> statement into a yaql expression. For
+example:&lt;/p>
+&lt;pre>&lt;code>yaql&amp;gt; let(foo =&amp;gt; 10, bar =&amp;gt; 20) -&amp;gt; $foo
+10
+yaql&amp;gt; let(foo =&amp;gt; 10, bar =&amp;gt; 20) -&amp;gt; $bar
+20
+&lt;/code>&lt;/pre>
+&lt;p>With that in mind, we can return to our earlier task, and rewrite the
+yaql expression like this:&lt;/p>
+&lt;pre>&lt;code>outputs:
+sources:
+yaql:
+data:
+sources: {get_param: sources}
+default_type: tail
+expression: &amp;gt;
+let(default_type =&amp;gt; $.data.default_type) -&amp;gt;
+$.data.sources.select({
+'path' =&amp;gt; $.path,
+'tag' =&amp;gt; $.tag,
+'type' =&amp;gt; $.get('type', $default_type)})
+&lt;/code>&lt;/pre>
+&lt;p>Which will give us exactly what we want. This can of course be
+extended to support additional default values:&lt;/p>
+&lt;pre>&lt;code>outputs:
+sources:
+yaql:
+data:
+sources: {get_param: sources}
+default_type: tail
+default_format: &amp;gt;
+/some regular expression/
+expression: &amp;gt;
+let(
+default_type =&amp;gt; $.data.default_type,
+default_format =&amp;gt; $.data.default_format
+) -&amp;gt;
+$.data.sources.select({
+'path' =&amp;gt; $.path,
+'tag' =&amp;gt; $.tag,
+'type' =&amp;gt; $.get('type', $default_type),
+'format' =&amp;gt; $.get('format', $default_format)
+})
+&lt;/code>&lt;/pre>
+&lt;p>Going out on a bit of a tangent, there is another statement not
+mentioned in the documentation: the &lt;code>def&lt;/code> statement lets you defined a
+yaql function. The general format is:&lt;/p>
+&lt;pre>&lt;code>def(func_name, func_body)
+&lt;/code>&lt;/pre>
+&lt;p>Where &lt;code>func_body&lt;/code> is a yaql expresion. For example:&lt;/p>
+&lt;pre>&lt;code>def(upperpath, $.path.toUpper()) -&amp;gt;
+$.data.sources.select(upperpath($))
+&lt;/code>&lt;/pre>
+&lt;p>Which would generate:&lt;/p>
+&lt;pre>&lt;code>[
+&amp;quot;/VAR/LOG/NOVA/NOVA-API.LOG&amp;quot;,
+&amp;quot;/VAR/LOG/NOVA/NOVA-SCHEDULER.LOG&amp;quot;
+]
+&lt;/code>&lt;/pre>
+&lt;p>This obviously becomes more useful as you use user-defined functions
+to encapsulate more complex yaql expressions for re-use.&lt;/p>
+&lt;p>Thanks to &lt;a href="https://github.com/sergmelikyan">sergmelikyan&lt;/a> for his help figuring this out.&lt;/p></content></item></channel></rss>

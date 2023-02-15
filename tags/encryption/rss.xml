@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>encryption on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/encryption/</link><description>Recent content in encryption on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 05 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/encryption/rss.xml" rel="self" type="application/rss+xml"/><item><title>A note about running gpgv</title><link>https://blog.oddbit.com/posts/a-note-about-running-gpgv/</link><pubDate>Mon, 05 Oct 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/a-note-about-running-gpgv/</guid><description>I found the following error from gpgv to be a little opaque:
+gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39; gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error gpgv: Can&amp;#39;t check signature: No public key It turns out that&amp;rsquo;s gpg-speak for &amp;ldquo;your trustedkeys.kbx keyring doesn&amp;rsquo;t exist&amp;rdquo;. That took longer to figure out than I care to admit. To get a key from your regular public keyring into your trusted keyring, you can run something like the following:</description><content>&lt;p>I found the following error from &lt;code>gpgv&lt;/code> to be a little opaque:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39;
+gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error
+gpgv: Can&amp;#39;t check signature: No public key
+&lt;/code>&lt;/pre>&lt;p>It turns out that&amp;rsquo;s gpg-speak for &amp;ldquo;your &lt;code>trustedkeys.kbx&lt;/code> keyring doesn&amp;rsquo;t
+exist&amp;rdquo;. That took longer to figure out than I care to admit. To get a key
+from your regular public keyring into your trusted keyring, you can run
+something like the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpg --export -a lars@oddbit.com |
+gpg --no-default-keyring --keyring ~/.gnupg/trustedkeys.kbx --import
+&lt;/code>&lt;/pre>&lt;p>After which &lt;code>gpgv&lt;/code> works as expected:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ echo hello world | gpg -s -u lars@oddbit.com | gpgv
+gpgv: Signature made Mon 05 Oct 2020 07:44:22 PM EDT
+gpgv: using RSA key FDE8364F7FEA3848EF7AD3A6042DF6CF74E4B84C
+gpgv: issuer &amp;#34;lars@oddbit.com&amp;#34;
+gpgv: Good signature from &amp;#34;Lars Kellogg-Stedman &amp;lt;lars@oddbit.com&amp;gt;&amp;#34;
+gpgv: aka &amp;#34;keybase.io/larsks &amp;lt;larsks@keybase.io&amp;gt;&amp;#34;
+&lt;/code>&lt;/pre></content></item></channel></rss>

@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>openshift-and-cnv on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openshift-and-cnv/</link><description>Recent content in openshift-and-cnv on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 10 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openshift-and-cnv/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenShift and CNV: MAC address management in CNV 2.4</title><link>https://blog.oddbit.com/posts/mac-address-management-in-cnv/</link><pubDate>Mon, 10 Aug 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/mac-address-management-in-cnv/</guid><description>This is part of a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll look at how the recently released CNV 2.4 resolves some issues in managing virtual machines that are attached directly to local layer 2 networks
+In an earlier post, I discussed some issues around the management of virtual machine MAC addresses in CNV 2.3: in particular, that virtual machines are assigned a random MAC address not just at creation time but every time they boot.</description><content>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
+&lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll look at how the
+recently released CNV 2.4 resolves some issues in managing virtual
+machines that are attached directly to local layer 2 networks&lt;/p>
+&lt;p>In &lt;a href="https://blog.oddbit.com/posts/openshift-and-cnv-part-2-expos/">an earlier post&lt;/a>, I discussed some issues around the
+management of virtual machine MAC addresses in CNV 2.3: in particular,
+that virtual machines are assigned a random MAC address not just at
+creation time but every time they boot. CNV 2.4 (re-)introduces &lt;a href="https://docs.openshift.com/container-platform/4.5/virt/virtual_machines/vm_networking/virt-using-mac-address-pool-for-vms.html">MAC
+address pools&lt;/a> to alleviate these issues. The high level description
+reads:&lt;/p>
+&lt;blockquote>
+&lt;p>The KubeMacPool component provides a MAC address pool service for
+virtual machine NICs in designated namespaces.&lt;/p>
+&lt;/blockquote>
+&lt;p>In more specific terms, that means that if you enable MAC address
+pools on a namespace, when you create create virtual machine network
+interfaces they will receive a MAC address from the pool. This is
+associated with the &lt;code>VirtualMachine&lt;/code> resource, &lt;strong>not&lt;/strong> the
+&lt;code>VirtualMachineInstance&lt;/code> resource, which means that the MAC address
+will persist across reboots.&lt;/p>
+&lt;p>This solves one of the major pain points of using CNV-managed virtual
+machines attached to host networks.&lt;/p>
+&lt;p>To enable MAC address pools for a given namespace, set the
+&lt;code>mutatevirtualmachines.kubemacpool.io&lt;/code> label to &lt;code>allocate&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>oc label namespace &amp;lt;namespace&amp;gt; mutatevirtualmachines.kubemacpool.io=allocate
+&lt;/code>&lt;/pre></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/posts/openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/openshift-and-cnv-part-2-expos/</guid><description>This is the second in a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll be taking a look at how to expose services on a virtual machine once you&amp;rsquo;ve git it up and running.
+TL;DR Overview Connectivity options Direct attachment Using an OpenShift Service Exposing services on NodePorts Exposing services on cluster external IPso Exposing services using a LoadBalancer TL;DR Networking seems to be a weak area for CNV right now.</description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
+at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
+and running.&lt;/p>
+&lt;nav id="TableOfContents">
+&lt;ul>
+&lt;li>&lt;a href="#tldr">TL;DR&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#overview">Overview&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#connectivity-options">Connectivity options&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#direct-attachment">Direct attachment&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#exposing-services-on-nodeports">Exposing services on NodePorts&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-on-cluster-external-ipso">Exposing services on cluster external IPso&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-using-a-loadbalancer">Exposing services using a LoadBalancer&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/nav>
+&lt;h2 id="tldr">TL;DR&lt;/h2>
+&lt;p>Networking seems to be a weak area for CNV right now. Out of the box,
+your options for exposing a service on a virtual machine on a public
+address at a well known port are slim.&lt;/p>
+&lt;h2 id="overview">Overview&lt;/h2>
+&lt;p>We&amp;rsquo;re hoping to use OpenShift + CNV as an alternative to existing
+hypervisor platforms, primarily to reduce the number of complex,
+distributed projects we need to manage. If we can have a single
+control plane for both containerized and virtualized workloads, it
+seems like a win for everyone.&lt;/p>
+&lt;p>In order to support the most common use case for our virtualization
+platforms, consumers of this service need to be able to:&lt;/p>
+&lt;ul>
+&lt;li>Start a virtual machine using an image of their choice&lt;/li>
+&lt;li>Expose services on that virtual machine using well-known ports
+on a routeable ip address&lt;/li>
+&lt;/ul>
+&lt;p>All of the above should be self service (that is, none of those steps
+should requiring opening a support ticket or otherwise require
+administrative assistance).&lt;/p>
+&lt;h2 id="connectivity-options">Connectivity options&lt;/h2>
+&lt;p>There are broadly two major connectivity models available to CNV
+managed virtual machines:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>We&amp;rsquo;re going to start with the direct attachment model, since this may
+be familiar to people coming to CNV from other hypervisor platforms.&lt;/p>
+&lt;h2 id="direct-attachment">Direct attachment&lt;/h2>
+&lt;p>With a little configuration, it is possible to attach virtual machines
+directly to an existing layer two network.&lt;/p>
+&lt;p>When running CNV, you can affect the network configuration of your
+OpenShift hosts by creating &lt;code>NodeNetworkConfigurationPolicy&lt;/code>
+objects. Support for this is provided by &lt;code>nmstate&lt;/code>, which is packaged
+with CNV. For details, see &amp;ldquo;&lt;a href="https://docs.openshift.com/container-platform/4.4/cnv/cnv_node_network/cnv-updating-node-network-config.html">Updating node network configuration&lt;/a>&amp;rdquo; in
+the OpenShift documentation.&lt;/p>
+&lt;p>For example, if we want to create a bridge interface on our nodes to
+permit CNV managed virtual machines to attach to the network
+associated with interface &lt;code>eth1&lt;/code>, we might submit the following
+configuration:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: nmstate.io/v1alpha1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+name: br-example-policy
+spec:
+nodeSelector:
+node-role.kubernetes.io/worker: &amp;#34;&amp;#34;
+desiredState:
+interfaces:
+- name: br-example
+type: linux-bridge
+state: up
+ipv4:
+dhcp: true
+enabled: true
+bridge:
+options:
+stp:
+enabled: false
+port:
+- name: eth1
+&lt;/code>&lt;/pre>&lt;p>This would create a Linux bridge device &lt;code>br-example&lt;/code> with interface
+&lt;code>eth1&lt;/code> as a member. In order to expose this bridge to virtual
+machines, we need to create a &lt;code>NetworkAttachmentDefinition&lt;/code> (which can
+be abbreviated as &lt;code>net-attach-def&lt;/code>, but not as &lt;code>nad&lt;/code> for reasons that
+may be obvious to English speakers or readers of Urban Dictionary).&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+name: example
+namespace: default
+spec:
+config: &amp;gt;-
+{
+&amp;#34;name&amp;#34;: &amp;#34;example&amp;#34;,
+&amp;#34;cniVersion&amp;#34;: &amp;#34;0.3.1&amp;#34;,
+&amp;#34;plugins&amp;#34;: [
+{
+&amp;#34;type&amp;#34;: &amp;#34;cnv-bridge&amp;#34;,
+&amp;#34;bridge&amp;#34;: &amp;#34;br-example&amp;#34;,
+&amp;#34;ipam&amp;#34;: {}
+},
+{
+&amp;#34;type&amp;#34;: &amp;#34;cnv-tuning&amp;#34;
+}
+]
+}
+&lt;/code>&lt;/pre>&lt;p>Once you have the above definitions in place, it&amp;rsquo;s easy to select this
+network when adding interfaces to a virtual machine. Actually making
+use of these connections can be a little difficult.&lt;/p>
+&lt;p>In a situation that may remind of you of &lt;a href="https://blog.oddbit.com/posts/openshift-and-cnv-part-1-worki/">some issues we had with the
+installer&lt;/a>, your virtual machine will boot with a randomly
+generated MAC address. Under CNV, generated MAC addresses are
+associated with &lt;code>VirtualMachineInstance&lt;/code> resources, which represents
+currently running virtual machines. Your &lt;code>VirtualMachine&lt;/code> object is
+effectively a template used to generate a new &lt;code>VirtualMachineInstance&lt;/code>
+each time it boots. Because the address is associated with the
+&lt;em>instance&lt;/em>, you get a new MAC address every time you boot the virtual
+machine. That makes it very difficult to associate a static IP address
+with your CNV managed virtual machine.&lt;/p>
+&lt;p>It is possible to manually assign a MAC address to the virtual machine
+when you create, but now you have a bevy of new problems:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Anybody who wants to deploy a virtual machine needs to know what a
+MAC address looks like (you laugh, but this isn&amp;rsquo;t something people
+generally have to think about).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You probably need some way to track MAC address allocation to avoid
+conflicts when everyone chooses &lt;code>DE:AD:BE:EF:CA:FE&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="using-an-openshift-service">Using an OpenShift Service&lt;/h2>
+&lt;p>Out of the box, your virtual machines can attach to the default pod
+network, which is private network that provides masqueraded outbound
+access and no direct inbound access. In this situation, your virtual
+machine behaves much more like a container from a network perspective,
+and you have access to many of the same network primitives available
+to pods. You access these mechanisms by creating an OpenShift
+&lt;code>Service&lt;/code> resource.&lt;/p>
+&lt;p>Under OpenShift, a &lt;code>Service&lt;/code> is used to &amp;ldquo;expose an application running
+on a set of &lt;code>Pods&lt;/code> as a network service (from &lt;a href="https://kubernetes.io/docs/concepts/services-networking/service/">the Kubernetes
+documentation&lt;/a>&amp;rdquo;. From the perspective of OpenShift, your
+virtual machine is just another application running in a Pod, so we
+can use Service resources to expose applications running on your
+virtual machine.&lt;/p>
+&lt;p>In order to manage these options, you&amp;rsquo;ll want to install the
+&lt;code>virtctl&lt;/code> client. You can grab an &lt;a href="https://github.com/kubevirt/kubevirt/releases">upstream release&lt;/a> from the
+&lt;a href="https://github.com/kubevirt/kubevirt">kubevirt&lt;/a> project, or you can &lt;a href="https://docs.openshift.com/container-platform/4.2/cnv/cnv_install/cnv-installing-virtctl.html">enable the appropriate
+repositories&lt;/a> and install the &lt;code>kubevirt-virtctl&lt;/code> package.&lt;/p>
+&lt;h3 id="exposing-services-on-nodeports">Exposing services on NodePorts&lt;/h3>
+&lt;p>A &lt;code>NodePort&lt;/code> lets you expose a service on a random port associated
+with the ip addresses of your OpenShift nodes. If you have a virtual
+machine named &lt;code>test-vm-1&lt;/code> and you want to access the SSH service on
+port 22, you can use the &lt;code>virtctl&lt;/code> command like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virtctl expose vm test-vm-1 --port=22 --name=myvm-ssh-np --type=NodePort
+&lt;/code>&lt;/pre>&lt;p>This will result in &lt;code>Service&lt;/code> that looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ oc get service myvm-ssh-np
+NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE
+myvm-ssh-np NodePort 172.30.4.25 &amp;lt;none&amp;gt; 22:31424/TCP 42s
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>CLUSTER-IP&lt;/code> in the above output is a cluster internal IP address
+that can be used to connect to your server from other containers or
+virtual machines. The &lt;code>22:31424/TCP&lt;/code> entry tells us that port &lt;code>31424&lt;/code>
+on our OpenShift hosts now maps to port &lt;code>22&lt;/code> in our virtual machine.&lt;/p>
+&lt;p>You can connect to your virtual machine with an &lt;code>ssh&lt;/code> command line
+along the lines of:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ssh -p 31424 someuser@hostname.of.a.node
+&lt;/code>&lt;/pre>&lt;p>You can use the hostname of any node in your OpenShift cluster.&lt;/p>
+&lt;p>This is fine for testing things out, but it doesn&amp;rsquo;t allow you to
+expose services on a well known port, and the cluster administrator
+may be uncomfortable with services like this using the ip addresses of
+cluster hosts.&lt;/p>
+&lt;h3 id="exposing-services-on-cluster-external-ipso">Exposing services on cluster external IPso&lt;/h3>
+&lt;p>It is possible to manually assign an external ip address to an
+OpenShift service. For example:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virtctl expose vm test-vm-1 --port 22 --name myvm-ssh-ext --external-ip 192.168.185.18
+&lt;/code>&lt;/pre>&lt;p>Which results in the follow service:&lt;/p>
+&lt;pre tabindex="0">&lt;code>NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE
+myvm-ssh-ext ClusterIP 172.30.224.127 192.168.185.18 22/TCP 47s
+&lt;/code>&lt;/pre>&lt;p>While this sounds promising at first, there are several caveats:&lt;/p>
+&lt;ul>
+&lt;li>We once again find ourselves needing to manually manage a pool of
+addresses.&lt;/li>
+&lt;li>By default, assigning an external ip address requires cluster-admin
+privileges.&lt;/li>
+&lt;li>Once an external ip is assigned to a service, OpenShift doesn&amp;rsquo;t
+actually take care of configuring that address on any host
+interfaces: it is up to the local administrator to arrange for
+traffic to that address to arrive at the cluster.&lt;/li>
+&lt;/ul>
+&lt;p>The practical impact of setting an external ip on a service is to
+instantiate netfilter rules equivalent to the following:&lt;/p>
+&lt;pre tabindex="0">&lt;code>-d 192.168.185.18/32 -p tcp --dport 22 -j DNAT --to-destination 10.129.2.11:22
+&lt;/code>&lt;/pre>&lt;p>If you configure the address &lt;code>192.168.185.18&lt;/code> on a host interface (or
+otherwise arrange for traffic to that address to reach your host),
+these rules take care of directing the connection to your virtual
+machine.&lt;/p>
+&lt;h3 id="exposing-services-using-a-loadbalancer">Exposing services using a LoadBalancer&lt;/h3>
+&lt;p>Historically, OpenShift was designed to run in cloud environments such
+as OpenStack, AWS, Google Cloud Engine, and so forth. These platforms
+provide integrated load balancer mechanisms that OpenShift was able to
+leverage to expose services. Creating a &lt;code>LoadBalancer&lt;/code> service would
+instruct the platform to (a) allocate an address, (b) create a load
+balancer, and (c) direct traffic from the load balancer to the target
+of your service.&lt;/p>
+&lt;p>We can request a &lt;code>LoadBalancer&lt;/code> using &lt;code>virtctl&lt;/code> like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>virtctl expose vm test-vm-1 --port=22 --name=myvm-ssh-np --type=LoadBalancer
+&lt;/code>&lt;/pre>&lt;p>Unfortunately, OpenShift for baremetal hosts does not include a load
+balancer out of the box. This is a shame, because the &lt;code>LoadBalancer&lt;/code>
+solution hits just about all of our requirements:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>It automatically assigns ip addresses from a configured pool, so
+consumers of the environment don&amp;rsquo;t need to manage either ip- or
+MAC-address assignment on their own.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>It doesn&amp;rsquo;t require special privileges or administrator intervention
+(other than for the initial configuration).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>It lets you expose services on ports of your choice, rather than
+random ports.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>There are some solutions out there that will provide an integrated
+load balancer implementation for your baremetal cluster. I&amp;rsquo;ve looked
+at:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/redhat-cop/keepalived-operator">keepalived-operator&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://metallb.universe.tf/">metallb&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>I hope we see an integrated LoadBalancer mechanism available for OpenShift on
+baremetal in a near-future release.&lt;/p></content></item><item><title>OpenShift and CNV: Installer network requirements</title><link>https://blog.oddbit.com/posts/openshift-and-cnv-part-1-worki/</link><pubDate>Thu, 30 Jul 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/openshift-and-cnv-part-1-worki/</guid><description>This is the first in a series of posts about my experience working with OpenShift and CNV (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a technology that allows you to use OpenShift to manage virtualized workloads in addition to the containerized workloads for which OpenShift is known). In this post, I&amp;rsquo;ll be taking a look at the installation experience, and in particular at how restrictions in our local environment interacted with the network requirements of the installer.</description><content>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a> (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a
+technology that allows you to use OpenShift to manage virtualized
+workloads in addition to the containerized workloads for which
+OpenShift is known). In this post, I&amp;rsquo;ll be taking a look at the
+installation experience, and in particular at how restrictions in our
+local environment interacted with the network requirements of the installer.&lt;/p>
+&lt;nav id="TableOfContents">
+&lt;ul>
+&lt;li>&lt;a href="#overview">Overview&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#the-problem">The problem&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#attempted-solution-1">Attempted solution #1&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#attempted-solution-2">Attempted solution #2&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#how-we-actually-solved-the-problem">How we actually solved the problem&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#what-i-would-like-to-see">What I would like to see&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/nav>
+&lt;h2 id="overview">Overview&lt;/h2>
+&lt;p>We&amp;rsquo;re installing OpenShift on baremetal hosts using the IPI installer.
+&amp;ldquo;IPI&amp;rdquo; stands for &amp;ldquo;Installer Provisioned Infrastructure&amp;rdquo;, which means
+that the OpenShift installer is responsible for provisioning an
+operating system onto your hardware and managing the system
+configuration. This is in contrast to UPI (&amp;ldquo;User Provisioned
+Infrastructure&amp;rdquo;), in which you pre-provision the hosts using whatever
+tools you&amp;rsquo;re comfortable with and then point the installer and the
+hardware once things are up and running.&lt;/p>
+&lt;p>In the environment I&amp;rsquo;m working with, we had a few restrictions that I
+suspect are relatively common:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>The network we were using as our &amp;ldquo;baremetal&amp;rdquo; network (for the
+purposes of this article you can read that as &amp;ldquo;public&amp;rdquo; network) does
+not have a dynamic pool of leases. There is DHCP, but all addresses
+are statically assigned.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Both the installer and the &lt;a href="https://metal3.io/">Metal3&lt;/a> service use &lt;a href="https://en.wikipedia.org/wiki/Intelligent_Platform_Management_Interface">IPMI&lt;/a> to manage
+the power of the OpenShift nodes. Access to our IPMI network
+requires that a static route exist on the host.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Access to the IPMI network also requires a firewall exception for
+the host IP address.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>When you&amp;rsquo;re reading through the installer documentation, the above
+requirements don&amp;rsquo;t seem problematic at first. Looking at the
+&lt;a href="https://openshift-kni.github.io/baremetal-deploy/4.4/Deployment.html#network-requirements_ipi-install-prerequisites">network requirements&lt;/a>, you&amp;rsquo;ll see that the install calls for static
+addressing of all the hardware involved in the install:&lt;/p>
+&lt;blockquote>
+&lt;p>Reserving IP Addresses for Nodes with the DHCP Server&lt;/p>
+&lt;p>For the baremetal network, a network administrator must reserve a
+number of IP addresses, including:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Three virtual IP addresses.&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>1 IP address for the API endpoint&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>1 IP address for the wildcard ingress endpoint&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>1 IP address for the name server&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>One IP Address for the Provisioning node.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>One IP address for each Control Plane (Master) node.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>One IP address for each worker node.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/blockquote>
+&lt;p>The &amp;ldquo;provisioning node&amp;rdquo; is the host on which you run the OpenShift
+installer. What the documentation fails to mention is that the
+services that manage the install don&amp;rsquo;t actually run on the
+provisioning node itself: instead, the installer starts up a
+&amp;ldquo;bootstrap virtual machine&amp;rdquo; on the provisioning node, and manages the
+install from there.&lt;/p>
+&lt;h2 id="the-problem">The problem&lt;/h2>
+&lt;p>The bootstrap vm is directly attached to both the baremetal and the
+provisioning networks. It is created with a random MAC address, and
+relies on DHCP for configuring the baremetal interface. This means
+that:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>It&amp;rsquo;s not possible to create a static DHCP lease for it, since you
+don&amp;rsquo;t know the MAC address ahead of time.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Since you can&amp;rsquo;t create a static DHCP lease, you can&amp;rsquo;t give it a
+static IP address.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Since you can&amp;rsquo;t give it a static IP address, you can&amp;rsquo;t create a
+firewall exception for access to the IPMI network.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>And lastly, since you can&amp;rsquo;t create a static DHCP lease, you can&amp;rsquo;t
+conveniently use DHCP to assign the static route to the IPMI
+network.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>This design decision &amp;ndash; the use of a bootstrap vm with a random MAC
+address and no facility for assigning a static ip address &amp;ndash; is what
+complicated our lives when we first set out to install OpenShift.&lt;/p>
+&lt;p>I&amp;rsquo;d like to emphasize that other than the issues discussed in the
+remainder of this article, the install process has been relatively
+smooth. We&amp;rsquo;re able to go from zero to a completely installed OpenShift
+cluster in just a few hours. There were some documentation issues
+early on, but I think most of those have already been resolved.&lt;/p>
+&lt;h2 id="attempted-solution-1">Attempted solution #1&lt;/h2>
+&lt;p>OpenShift uses &lt;a href="https://github.com/coreos/ignition">Ignition&lt;/a> for performing host configuration tasks.
+If you&amp;rsquo;re familiar with &lt;a href="https://cloudinit.readthedocs.io/en/latest/">cloud-init&lt;/a>, Ignition is doing something
+very similar. One of the first things we tried was passing in a static
+network configuration using Ignition. By running
+&lt;code>openshift-baremetal-install create ignition-configs&lt;/code>, it&amp;rsquo;s possible
+to modify the ignition configuration passed into the bootstrap vm.
+Unfortunately, it turns out that prior to loading the ignition
+configuration, the bootstrap vm image will attempt to configure all
+system interfaces using DHCP&amp;hellip;and if it fails to acquire any
+addresses, it just gives up.&lt;/p>
+&lt;p>In that case, it never gets as far as attempting to apply the ignition
+configuration, so this option didn&amp;rsquo;t work out.&lt;/p>
+&lt;h2 id="attempted-solution-2">Attempted solution #2&lt;/h2>
+&lt;p>It is possible to pass a static ip configuration into the bootstrap vm
+by modifying the kernel command line parameters. There are several
+steps involved in creating a custom image:&lt;/p>
+&lt;ul>
+&lt;li>Parse through a JSON file to get URLs for the relevant images&lt;/li>
+&lt;li>Download the images&lt;/li>
+&lt;li>Uncompress the bootstrap image&lt;/li>
+&lt;li>Use &lt;code>virt-edit&lt;/code> to modify the grub configuration&lt;/li>
+&lt;li>Calculate the uncompressed image checksum&lt;/li>
+&lt;li>Re-compress the image&lt;/li>
+&lt;/ul>
+&lt;p>This also requires configuring your &lt;code>install-config.yaml&lt;/code> to use the
+new image, and finding an appropriate place to host it.&lt;/p>
+&lt;p>This mechanism &lt;em>does&lt;/em> work, but there are a lot of moving parts and in
+particular it seems like modifying the grub configuration could be a
+little tricky if the command line in the original image were to change
+in unexpected ways.&lt;/p>
+&lt;h2 id="how-we-actually-solved-the-problem">How we actually solved the problem&lt;/h2>
+&lt;p>We ended up taking advantage of the fact that while we didn&amp;rsquo;t know the
+MAC address ahead of time, we &lt;em>did&lt;/em> know the MAC address &lt;em>prefix&lt;/em>
+ahead of time, so we created a small dynamic range (6 addresses)
+limited to that MAC prefix (which would match pretty much anything
+started by libvirt, but the only libvirt managed virtual machines
+attached to this network were OpenShift bootstrap vms). We were able
+to (a) attach the static route declaration to this small dynamic
+range, and (b) grant firewall exceptions for these specific addresses.
+The relevant lines in our &lt;a href="http://www.thekelleys.org.uk/dnsmasq/doc.html">dnsmasq&lt;/a> configuration look something like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>dhcp-host=52:54:00:*:*:*,set:libvirt,set:ocp
+dhcp-range=tag:libvirt,10.1.2.130,10.1.2.135,255.255.255.0
+dhcp-option=tag:ocp,option:classless-static-route,10.0.0.0/19,10.1.2.101
+&lt;/code>&lt;/pre>&lt;p>It&amp;rsquo;s not perfect, but it&amp;rsquo;s working fine.&lt;/p>
+&lt;h2 id="what-i-would-like-to-see">What I would like to see&lt;/h2>
+&lt;p>The baremetal installer should allow the deployer to pass in a
+static address configuration for the bootstrap vm using the
+&lt;code>install-config.yaml&lt;/code> file. The bootstrap vm should continue to boot
+even if it can&amp;rsquo;t initially configure an interface using DHCP (one
+should be able to disable that initial DHCP attempt).&lt;/p></content></item></channel></rss>

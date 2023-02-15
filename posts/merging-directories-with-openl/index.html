@@ -1,0 +1,92 @@
+<!doctype html><html lang=en><head><title>Merging directories with OpenLDAP's Meta backend :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This document provides an example of using OpenLDAP&amp;rsquo;s meta backend to provide a unified view of two distinct LDAP directory trees. I was frustrated by the lack of simple examples available when I went looking for information on this topic, so this is my attempt to make life easier for the next person looking to do the same thing.
+The particular use case that motiviated my interest in this topic was the need to configure web applications to (a) authenticate against an existing Active Directory server while (b) also allowing new accounts to be provisioned quickly and without granting any access in the AD environment."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/merging-directories-with-openl/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Merging directories with OpenLDAP's Meta backend"><meta property="og:description" content="This document provides an example of using OpenLDAP&amp;rsquo;s meta backend to provide a unified view of two distinct LDAP directory trees. I was frustrated by the lack of simple examples available when I went looking for information on this topic, so this is my attempt to make life easier for the next person looking to do the same thing.
+The particular use case that motiviated my interest in this topic was the need to configure web applications to (a) authenticate against an existing Active Directory server while (b) also allowing new accounts to be provisioned quickly and without granting any access in the AD environment."><meta property="og:url" content="https://blog.oddbit.com/posts/merging-directories-with-openl/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2010-02-16 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/merging-directories-with-openl/>Merging directories with OpenLDAP&rsquo;s Meta backend</a></h1><div class=post-meta><time class=post-date>2010-02-16 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/meta/>meta</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/proxy/>proxy</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openldap/>openldap</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/active_directory/>active_directory</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/ldap/>ldap</a>&nbsp;</span><div class=post-content><div><p>This document provides an example of using OpenLDAP&rsquo;s meta backend to provide a unified view of two distinct LDAP directory trees. I was frustrated by the lack of simple examples available when I went looking for information on this topic, so this is my attempt to make life easier for the next person looking to do the same thing.</p><p>The particular use case that motiviated my interest in this topic was the need to configure web applications to (a) authenticate against an existing Active Directory server while (b) also allowing new accounts to be provisioned quickly and without granting any access in the AD environment. A complicating factor is that the group managing the AD server(s) was not the group implementing the web applications.</p><h1 id=assumptions>Assumptions<a href=#assumptions class=hanchor arialabel=Anchor>&#8983;</a></h1><p>I&rsquo;m making several assumptions while writing this document:</p><ul><li>You have root access on your system and are able to modify files in /etc/openldap and elsewhere on the filesystem.</li><li>You are somewhat familiar with LDAP.</li><li>You are somewhat familiar with OpenLDAP.</li></ul><h1 id=set-up-backend-directories>Set up backend directories<a href=#set-up-backend-directories class=hanchor arialabel=Anchor>&#8983;</a></h1><h2 id=configure-slapd>Configure slapd<a href=#configure-slapd class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;ll first create two &ldquo;backend&rdquo; LDAP directories. These will represent the directories you&rsquo;re trying to merge. For the purposes of this example we&rsquo;ll use the ldif backend, which stores data in LDIF format on the filesystem. This is great for testing (it&rsquo;s simple and easy to understand), but not so great for performance.</p><p>We define one backend like this in /etc/openldap/slapd-be-1.conf:</p><pre><code>database        ldif
+suffix          &quot;ou=backend1&quot;
+directory       &quot;/var/lib/ldap/backend1&quot;
+rootdn          &quot;cn=ldif-admin,ou=backend1&quot;
+rootpw          &quot;LDIF&quot;
+</code></pre><p>And a second backend like this in /etc/openldap/slapd-be-2.conf:</p><pre><code>database        ldif
+suffix          &quot;ou=backend2&quot;
+directory       &quot;/var/lib/ldap/backend2&quot;
+rootdn          &quot;cn=ldif-admin,ou=backend2&quot;
+rootpw          &quot;LDIF&quot;
+</code></pre><p>Now, we need to load these configs into the main slapd configuration file. Open slapd.conf, and look for the following comment:</p><pre><code>#######################################################################
+# ldbm and/or bdb database definitions
+#######################################################################
+</code></pre><p>Remove anything below this comment and then add the following lines:</p><pre><code>include /etc/openldap/slapd-be-1.conf
+include /etc/openldap/slapd-be-2.conf
+</code></pre><h2 id=start-up-slapd>Start up slapd<a href=#start-up-slapd class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Start up your LDAP service:</p><pre><code># slapd -f slapd.conf -h ldap://localhost/
+</code></pre><p>And check to make sure it&rsquo;s running:</p><pre><code># ps -fe | grep slapd
+root 15087 1 0 22:48 ? 00:00:00 slapd -f slapd.conf -h ldap://localhost/
+</code></pre><h2 id=populate-backends-with-sample-data>Populate backends with sample data<a href=#populate-backends-with-sample-data class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We need to populate the directories with something to query.</p><p>Put this in backend1.ldif:</p><pre><code>dn: ou=backend1
+objectClass: top
+objectClass: organizationalUnit
+ou: backend1
+
+dn: ou=people,ou=backend1
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+dn: cn=user1,ou=people,ou=backend1
+objectClass: inetOrgPerson
+cn: user1
+givenName: user1
+sn: Somebodyson
+mail: user1@example.com
+</code></pre><p>And this in backend2.ldif:</p><pre><code>dn: ou=backend2
+objectClass: top
+objectClass: organizationalUnit
+ou: backend2
+
+dn: ou=people,ou=backend2
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+dn: cn=user2,ou=people,ou=backend2
+objectClass: inetOrgPerson
+cn: user2
+givenName: user2
+sn: Somebodyson
+mail: user2@example.com
+</code></pre><p>And then load the data into the backends:</p><pre><code>ldapadd -x -H ldap://localhost -D cn=ldif-admin,ou=backend1 \
+  -w LDIF -f backend1.ldif
+</code></pre><p>And:</p><pre><code>ldapadd -x -H ldap://localhost -D cn=ldif-admin,ou=backend2 \
+  -w LDIF -f backend2.ldif
+</code></pre><p>You can verify that the data loaded correctly by issuing a query to the backends. E.g.:</p><pre><code>ldapsearch -x -H ldap://localhost -b ou=backend1 -LLL
+</code></pre><p>This should give you something that looks very much like the contents of backend1.ldif. You can do the same thing for backend2.</p><h1 id=set-up-meta-database>Set up meta database<a href=#set-up-meta-database class=hanchor arialabel=Anchor>&#8983;</a></h1><p>We&rsquo;re now going to configure OpenLDAP&rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the <a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&apropos=0&sektion=0&manpath=OpenLDAP+2.4-Release&format=html">slapd-meta man page</a>.</p><p>Put the following into a file called slapd-frontend.conf (we&rsquo;ll discuss the details in moment):</p><pre><code>database        meta
+suffix          &quot;dc=example,dc=com&quot;
+
+uri             &quot;ldap://localhost/ou=backend1,dc=example,dc=com&quot;
+suffixmassage   &quot;ou=backend1,dc=example,dc=com&quot; &quot;ou=backend1&quot;
+
+uri             &quot;ldap://localhost/ou=backend2,dc=example,dc=com&quot;
+suffixmassage   &quot;ou=backend2,dc=example,dc=com&quot; &quot;ou=backend2&quot;
+</code></pre><p>And then add to slapd.conf:</p><pre><code>include /etc/openldap/slapd-frontend.conf
+</code></pre><p>Restart slapd. Let&rsquo;s do a quick search to see exactly what we&rsquo;ve accomplished:</p><pre><code>$ ldapsearch -x -H 'ldap://localhost/' \
+  -b dc=example,dc=com objectclass=inetOrgPerson -LLL
+dn: cn=user1,ou=people,ou=backend1,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: user1
+givenName: user1
+sn: Somebodyson
+mail: user1@example.com
+
+dn: cn=user2,ou=people,ou=backend2,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: user2
+givenName: user2
+sn: Somebodyson
+mail: user2@example.com
+</code></pre><p>As you can see from the output above, a single query is now returning results from both backends, merged into the dc=example,dc=com hierarchy.</p><h2 id=a-closer-look>A closer look<a href=#a-closer-look class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Let&rsquo;s take a closer look at the meta backend configuration.</p><pre><code>database        meta
+suffix          &quot;dc=example,dc=com&quot;
+</code></pre><p>The database statement begins a new database definition. The suffix statement identifies the namespace that will be served by this particular database.</p><p>Here is the proxy for backend1 (the entry for backend2 is virtually identical):</p><pre><code>uri             &quot;ldap://localhost/ou=backend1,dc=example,dc=com&quot;
+suffixmassage   &quot;ou=backend1,dc=example,dc=com&quot; &quot;ou=backend1&quot;
+</code></pre><p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the <a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&apropos=0&sektion=0&manpath=OpenLDAP+2.4-Release&format=html">slapd-meta man page</a>; what we have here is a very simple example. The <em>naming context</em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.</p><p>The suffixmassage statement performs simple rewriting on distinguished names. It directs <em>slapd</em> to replace ou=backend1,dc=example,dc=com with ou=backend1 when communicating with the backend directory (and vice-versa).</p><p>You can perform simple rewriting of attribute and object classes with the map statement. For example, if backend1 used a sAMAccountName attribute and our application was expecting a uid attribute, we could add this after the suffixmassage statement:</p><pre><code>map attribute uid sAMAccountName
+</code></pre><h1 id=conclusion>Conclusion<a href=#conclusion class=hanchor arialabel=Anchor>&#8983;</a></h1><p>The sample configuration files, data, and code referenced in this post are available online in <a href=http://github.com/larsks/OpenLDAP-Metadirectory-Example>a github repository</a>:</p><blockquote><p><a href=http://github.com/larsks/OpenLDAP-Metadirectory-Example>http://github.com/larsks/OpenLDAP-Metadirectory-Example</a></p></blockquote><p>I hope you&rsquo;ve found this post useful, or at least informative. If you have any comments or questions regarding this post, please log them as issues on GitHub. This will make them easier for me to track.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,78 @@
+<!doctype html><html lang=en><head><title>Converting OpenSSH public keys :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I&amp;rsquo;ve posted a followup to this article that discusses ssh-agent.
+For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7EZn/BzP26AWk/Ts2ymjpTXuXRiEWIWn HFTilOTcuJ/P1HfOwiy4RHC1rv59Yh/E6jbTx623+OGySJWh1IS3dAEaHhcGKnJaikrBn3c cdoNVkAAuL/YD7FMG1Z0SjtcZS6MoO8Lb9pkq6R+Ok6JQjwCEsB+OaVwP9RnVA+HSYeyCVE 0KakLCbBJcD1U2aHP4+IH4OaXhZacpb9Ueja6NNfGrv558xTgfZ+fLdJ7cpg6wU8UZnVM1B JiUW5KFasc+2IuZR0+g/oJXaYwvW2T6XsMgipetCEtQoMAJ4zmugzHSQuFRYHw/7S6PUI2U 03glFmULvEV+qIxsVFT1ng3pj lars@tiamat.house To this:
+-----BEGIN RSA PUBLIC KEY----- MIIBCgKCAQEA+xGZ/wcz9ugFpP07Nspo6U17l0YhFiFpxxU4pTk3Lifz9R3zsIsu ERwta7+fWIfxOo208ett/jhskiVodSEt3QBGh4XBipyWopKwZ93HHaDVZAALi/2A +xTBtWdEo7XGUujKDvC2/aZKukfjpOiUI8AhLAfjmlcD/UZ1QPh0mHsglRNCmpCw mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P +0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB -----END RSA PUBLIC KEY----- If you have a recent version of OpenSSH (where recent means 5."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/converting-openssh-public-keys/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Converting OpenSSH public keys"><meta property="og:description" content="I&amp;rsquo;ve posted a followup to this article that discusses ssh-agent.
+For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7EZn/BzP26AWk/Ts2ymjpTXuXRiEWIWn HFTilOTcuJ/P1HfOwiy4RHC1rv59Yh/E6jbTx623+OGySJWh1IS3dAEaHhcGKnJaikrBn3c cdoNVkAAuL/YD7FMG1Z0SjtcZS6MoO8Lb9pkq6R+Ok6JQjwCEsB+OaVwP9RnVA+HSYeyCVE 0KakLCbBJcD1U2aHP4+IH4OaXhZacpb9Ueja6NNfGrv558xTgfZ+fLdJ7cpg6wU8UZnVM1B JiUW5KFasc+2IuZR0+g/oJXaYwvW2T6XsMgipetCEtQoMAJ4zmugzHSQuFRYHw/7S6PUI2U 03glFmULvEV+qIxsVFT1ng3pj lars@tiamat.house To this:
+-----BEGIN RSA PUBLIC KEY----- MIIBCgKCAQEA+xGZ/wcz9ugFpP07Nspo6U17l0YhFiFpxxU4pTk3Lifz9R3zsIsu ERwta7+fWIfxOo208ett/jhskiVodSEt3QBGh4XBipyWopKwZ93HHaDVZAALi/2A +xTBtWdEo7XGUujKDvC2/aZKukfjpOiUI8AhLAfjmlcD/UZ1QPh0mHsglRNCmpCw mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P +0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB -----END RSA PUBLIC KEY----- If you have a recent version of OpenSSH (where recent means 5."><meta property="og:url" content="https://blog.oddbit.com/posts/converting-openssh-public-keys/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2011-05-08 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/converting-openssh-public-keys/>Converting OpenSSH public keys</a></h1><div class=post-meta><time class=post-date>2011-05-08 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openssl/>openssl</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openssh/>openssh</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/rsa/>rsa</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/cryptography/>cryptography</a>&nbsp;</span><div class=post-content><div><blockquote><p>I&rsquo;ve posted a <a href=http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/>followup</a> to this article that discusses ssh-agent.</p></blockquote><p>For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:</p><pre><code>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7EZn/BzP26AWk/Ts2ymjpTXuXRiEWIWn
+HFTilOTcuJ/P1HfOwiy4RHC1rv59Yh/E6jbTx623+OGySJWh1IS3dAEaHhcGKnJaikrBn3c
+cdoNVkAAuL/YD7FMG1Z0SjtcZS6MoO8Lb9pkq6R+Ok6JQjwCEsB+OaVwP9RnVA+HSYeyCVE
+0KakLCbBJcD1U2aHP4+IH4OaXhZacpb9Ueja6NNfGrv558xTgfZ+fLdJ7cpg6wU8UZnVM1B
+JiUW5KFasc+2IuZR0+g/oJXaYwvW2T6XsMgipetCEtQoMAJ4zmugzHSQuFRYHw/7S6PUI2U
+03glFmULvEV+qIxsVFT1ng3pj lars@tiamat.house
+</code></pre><p>To this:</p><pre><code>-----BEGIN RSA PUBLIC KEY-----
+MIIBCgKCAQEA+xGZ/wcz9ugFpP07Nspo6U17l0YhFiFpxxU4pTk3Lifz9R3zsIsu
+ERwta7+fWIfxOo208ett/jhskiVodSEt3QBGh4XBipyWopKwZ93HHaDVZAALi/2A
++xTBtWdEo7XGUujKDvC2/aZKukfjpOiUI8AhLAfjmlcD/UZ1QPh0mHsglRNCmpCw
+mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN
+QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P
++0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB
+-----END RSA PUBLIC KEY-----
+</code></pre><p>If you have a recent version of OpenSSH (where recent means 5.6 or later), you can just do this:</p><pre><code>ssh-keygen -f key.pub -e -m pem
+</code></pre><p>If you don&rsquo;t have that, read on.</p><h1 id=openssh-public-key-format>OpenSSH Public Key Format<a href=#openssh-public-key-format class=hanchor arialabel=Anchor>&#8983;</a></h1><p>The OpenSSH public key format is fully documented <a href=http://tools.ietf.org/html/rfc4253#section-6.6>RFC 4253</a>. Briefly, an OpenSSH public key consists of three fields:</p><ul><li>The key type</li><li>A chunk of PEM-encoded data</li><li>A comment</li></ul><p>What, you may ask, is PEM encoding? <a href=http://en.wikipedia.org/wiki/Base64#Privacy-enhanced_mail>Privacy Enhanced Mail</a> (PEM) is a specific type of <a href=http://en.wikipedia.org/wiki/Base64>Base64</a> encoding&mldr;which is to say it is a way of representing binary data using only printable ASCII characters.</p><p>For an ssh-rsa key, the PEM-encoded data is a series of (length, data) pairs. The length is encoded as four octets (in big-endian order). The values encoded are:</p><ol><li>algorithm name (one of (ssh-rsa, ssh-dsa)). This duplicates the key type in the first field of the public key.</li><li>RSA exponent</li><li>RSA modulus</li></ol><p>For more information on how RSA works and what the exponent and modulus are used for, read the Wikipedia article on <a href=http://en.wikipedia.org/wiki/RSA>RSA</a>.</p><p>We can read this in with the following Python code:</p><pre><code>import sys
+import base64
+import struct
+
+# get the second field from the public key file.
+keydata = base64.b64decode(
+  open('key.pub').read().split(None)[1])
+
+parts = []
+while keydata:
+    # read the length of the data
+    dlen = struct.unpack('&gt;I', keydata[:4])[0]
+
+    # read in &lt;length&gt; bytes
+    data, keydata = keydata[4:dlen+4], keydata[4+dlen:]
+
+    parts.append(data)
+</code></pre><p>This leaves us with an array that, for an RSA key, will look like:</p><pre><code>['ssh-rsa', '...bytes in exponent...', '...bytes in modulus...']
+</code></pre><p>We need to convert the character buffers currently holding <em>e</em> (the exponent) and <em>n</em> (the modulus) into numeric types. There may be better ways to do this, but this works:</p><pre><code>e_val = eval('0x' + ''.join(['%02X' % struct.unpack('B', x)[0] for x in
+    parts[1]]))
+n_val = eval('0x' + ''.join(['%02X' % struct.unpack('B', x)[0] for x in
+    parts[2]]))
+</code></pre><p>We now have the RSA public key. The next step is to produce the appropriate output format.</p><h1 id=pkcs1-public-key-format>PKCS#1 Public Key Format<a href=#pkcs1-public-key-format class=hanchor arialabel=Anchor>&#8983;</a></h1><p>Our target format is a PEM-encoded PKCS#1 public key.</p><p>PKCS#1 is &ldquo;the first of a family of standards called Public-Key Cryptography Standards (PKCS), published by RSA Laboratories.&rdquo; (<a href=http://en.wikipedia.org/wiki/PKCS1>Wikipedia</a>). You can identify a PKCS#1 PEM-encoded public key by the markers used to delimit the base64 encoded data:</p><pre><code>-----BEGIN RSA PUBLIC KEY-----
+...
+-----END RSA PUBLIC KEY-----
+</code></pre><p>This is different from an x.509 public key, which looks like this:</p><pre><code>-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----
+</code></pre><p>The x.509 format may be used to store keys generated using algorithms other than RSA.</p><p>The data in a PKCS#1 key is encoded using DER, which is a set of rules for serializing ASN.1 data. For more information see:</p><ul><li>The WikiPedia entry for <a href=http://en.wikipedia.org/wiki/Distinguished_Encoding_Rules>Distinguished Encoding Rules</a></li><li><a href=http://luca.ntop.org/Teaching/Appunti/asn1.html>A Layman&rsquo;s Guide to a Subset of ASN.1, BER, and DER</a></li></ul><p>Basically, ASN.1 is a standard for describing abstract data types, and DER is a set of rules for transforming an ASN.1 data type into a series of octets.</p><p>According to the <a href=ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.asn>ASN module for PKCS#1</a>, a PKCS#1 public key looks like this:</p><pre><code>RSAPublicKey ::= SEQUENCE {
+    modulus           INTEGER,  -- n
+    publicExponent    INTEGER   -- e
+}
+</code></pre><p>We can generate this from our key data using Python&rsquo;s <a href=http://pyasn1.sourceforge.net/>PyASN1</a> module:</p><pre><code>from pyasn1.type import univ
+
+pkcs1_seq = univ.Sequence()
+pkcs1_seq.setComponentByPosition(0, univ.Integer(n_val))
+pkcs1_seq.setComponentByPosition(1, univ.Integer(e_val))
+</code></pre><h1 id=generating-the-output>Generating the output<a href=#generating-the-output class=hanchor arialabel=Anchor>&#8983;</a></h1><p>Now that we have the DER encoded key, generating the output is easy:</p><pre><code>from pyasn1.codec.der import encoder as der_encoder
+
+print '-----BEGIN RSA PUBLIC KEY-----'
+print base64.encodestring(der_encoder.encode(pkcs1_seq))
+print '-----END RSA PUBLIC KEY-----'
+</code></pre><h1 id=appendix-openssh-private-key-format>Appendix: OpenSSH private key format<a href=#appendix-openssh-private-key-format class=hanchor arialabel=Anchor>&#8983;</a></h1><p>Whereas the OpenSSH public key format is effectively &ldquo;proprietary&rdquo; (that is, the format is used only by OpenSSH), the private key is already stored as a PKCS#1 private key. This means that the private key can be manipulated using the OpenSSL command line tools.</p><p>The clever folks among you may be wondering if, assuming we have the private key available, we could have skipped this whole exercise and simply extracted the public key in the correct format using the openssl command. We can come very close&mldr;the following demonstrates how to extract the public key from the private key using openssl:</p><pre><code>$ openssl rsa -in key -pubout
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+xGZ/wcz9ugFpP07Nspo
+6U17l0YhFiFpxxU4pTk3Lifz9R3zsIsuERwta7+fWIfxOo208ett/jhskiVodSEt
+3QBGh4XBipyWopKwZ93HHaDVZAALi/2A+xTBtWdEo7XGUujKDvC2/aZKukfjpOiU
+I8AhLAfjmlcD/UZ1QPh0mHsglRNCmpCwmwSXA9VNmhz+PiB+Dml4WWnKW/VHo2uj
+TXxq7+efMU4H2fny3Se3KYOsFPFGZ1TNQSYlFuShWrHPtiLmUdPoP6CV2mML1tk+
+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P+0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6
+YwIDAQAB
+-----END PUBLIC KEY-----
+</code></pre><p>So close! But this is in x.509 format, and even though the OpenSSL library supports PKCS#1 encoding, there is no mechanism to make the command line tools cough up this format.</p><p>Additionally, I am trying for a solution that does not require the private key to be available, which means that in any case I will still have to parse the OpenSSH public key format.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

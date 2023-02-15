@@ -1,0 +1,103 @@
+<!doctype html><html lang=en><head><title>Using a TM1637 LED module with CircuitPython :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="CircuitPython is &amp;ldquo;an education friendly open source derivative of MicroPython&amp;rdquo;. MicroPython is a port of Python to microcontroller environments; it can run on boards with very few resources such as the ESP8266. I&amp;rsquo;ve recently started experimenting with CircuitPython on a Wemos D1 mini, which is a small form-factor ESP8266 board.
+I had previously been using Mike Causer&amp;rsquo;s micropython-tm1637 for MicroPython to drive a 4 digit LED display. I was hoping to get the same code working under CircuitPython, but when I tried to build an image that included the tm1637 module I ran into:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/using-a-tm-led-module-with-cir/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Using a TM1637 LED module with CircuitPython"><meta property="og:description" content="CircuitPython is &amp;ldquo;an education friendly open source derivative of MicroPython&amp;rdquo;. MicroPython is a port of Python to microcontroller environments; it can run on boards with very few resources such as the ESP8266. I&amp;rsquo;ve recently started experimenting with CircuitPython on a Wemos D1 mini, which is a small form-factor ESP8266 board.
+I had previously been using Mike Causer&amp;rsquo;s micropython-tm1637 for MicroPython to drive a 4 digit LED display. I was hoping to get the same code working under CircuitPython, but when I tried to build an image that included the tm1637 module I ran into:"><meta property="og:url" content="https://blog.oddbit.com/posts/using-a-tm-led-module-with-cir/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2018-05-03 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/using-a-tm-led-module-with-cir/>Using a TM1637 LED module with CircuitPython</a></h1><div class=post-meta><time class=post-date>2018-05-03 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/python/>python</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/esp8266/>esp8266</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/circuitpython/>circuitpython</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/micropython/>micropython</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/adafruit/>adafruit</a>&nbsp;</span><div class=post-content><div><p><a href=https://learn.adafruit.com/welcome-to-circuitpython/overview>CircuitPython</a> is &ldquo;an education friendly open source derivative of
+<a href=https://micropython.org/>MicroPython</a>&rdquo;. MicroPython is a port of Python to microcontroller
+environments; it can run on boards with very few resources such as the
+<a href=https://en.wikipedia.org/wiki/ESP8266>ESP8266</a>. I&rsquo;ve recently started experimenting with CircuitPython
+on a <a href=https://wiki.wemos.cc/products:d1:d1_mini>Wemos D1 mini</a>, which is a small form-factor ESP8266 board.</p><p>I had previously been using Mike Causer&rsquo;s <a href=https://github.com/mcauser/micropython-tm1637/>micropython-tm1637</a> for
+MicroPython to drive a <a href=http://a.co/gQVPtPr>4 digit LED display</a>. I was hoping to
+get the same code working under CircuitPython, but when I tried to
+build an image that included the <code>tm1637</code> module I ran into:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span> <span style=color:#f92672>import</span> tm1637
+</span></span><span style=display:flex><span>Traceback (most recent call last):
+</span></span><span style=display:flex><span>  File <span style=color:#e6db74>&#34;&lt;stdin&gt;&#34;</span>, line <span style=color:#ae81ff>1</span>, <span style=color:#f92672>in</span> <span style=color:#f92672>&lt;</span>module<span style=color:#f92672>&gt;</span>
+</span></span><span style=display:flex><span>  File <span style=color:#e6db74>&#34;tm1637.py&#34;</span>, line <span style=color:#ae81ff>6</span>, <span style=color:#f92672>in</span> <span style=color:#f92672>&lt;</span>module<span style=color:#f92672>&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>ImportError</span>: cannot <span style=color:#f92672>import</span> name sleep_us
+</span></span></code></pre></div><p>One of CircuitPython&rsquo;s goals is to be as close to CPython as possible.
+This means that in many cases that the CircuitPython folks have
+re-implemented MicroPython modules to have syntax that is more a
+strict subset of the CPython equivalent, and the MicroPython <code>time</code>
+module as impacted by this change. With stock MicroPython, the <code>time</code>
+module has:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span> print(<span style=color:#e6db74>&#39;</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#39;</span><span style=color:#f92672>.</span>join(dir(time)))
+</span></span><span style=display:flex><span>__class__
+</span></span><span style=display:flex><span>__name__
+</span></span><span style=display:flex><span>localtime
+</span></span><span style=display:flex><span>mktime
+</span></span><span style=display:flex><span>sleep
+</span></span><span style=display:flex><span>sleep_ms
+</span></span><span style=display:flex><span>sleep_us
+</span></span><span style=display:flex><span>ticks_add
+</span></span><span style=display:flex><span>ticks_cpu
+</span></span><span style=display:flex><span>ticks_diff
+</span></span><span style=display:flex><span>ticks_ms
+</span></span><span style=display:flex><span>ticks_us
+</span></span><span style=display:flex><span>time
+</span></span></code></pre></div><p>But the corresponding CircuitPython module has:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span> print(<span style=color:#e6db74>&#39;</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#39;</span><span style=color:#f92672>.</span>join(dir(time)))
+</span></span><span style=display:flex><span>__name__
+</span></span><span style=display:flex><span>monotonic
+</span></span><span style=display:flex><span>sleep
+</span></span><span style=display:flex><span>struct_time
+</span></span><span style=display:flex><span>localtime
+</span></span><span style=display:flex><span>mktime
+</span></span><span style=display:flex><span>time
+</span></span></code></pre></div><p>It turns out that the necessary functions are defined in the <code>utime</code>
+module, which is implemented by <code>ports/esp8266/modutime.c</code>, but this
+module is not included in the CircuitPython build. How do we fix that?</p><p>The most obvious change is to add <code>modutime.c</code> to the <code>SRC_C</code> variable
+in <code>ports/esp8266/Makefile</code>, which gets us:</p><pre tabindex=0><code>SRC_C = \
+        [...]
+        modesp.c \
+        modnetwork.c \
+        modutime.c \
+        [...]
+</code></pre><p>After making this change and trying to build CircuitPython, I
+hit 70 or so lines like:</p><pre tabindex=0><code>Generating build/genhdr/mpversion.h
+In file included from ../../py/mpstate.h:35:0,
+                 from ../../py/runtime.h:29,
+                 from modutime.c:32:
+modutime.c:109:50: error: &#39;MP_QSTR_utime&#39; undeclared here (not in a function)
+     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_utime) },
+                                                  ^
+</code></pre><p>The <code>MP_QSTR_</code> macros are sort of magical: they are generated during
+the build process by scanning for references of the form
+<code>MP_QSTR_utime</code> and creating definitions that look like this:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#a6e22e>QDEF</span>(MP_QSTR_utime, (<span style=color:#66d9ef>const</span> byte<span style=color:#f92672>*</span>)<span style=color:#e6db74>&#34;</span><span style=color:#ae81ff>\xe5\x9d\x05</span><span style=color:#e6db74>&#34;</span> <span style=color:#e6db74>&#34;utime&#34;</span>)
+</span></span></code></pre></div><p>But&mldr;and this is the immediate problem&mldr;this generation only happens
+with a clean build. Running <code>make clean</code> and then re-running the
+build yields:</p><pre tabindex=0><code>build/shared-bindings/time/__init__.o:(.rodata.time_localtime_obj+0x0): multiple definition of `time_localtime_obj&#39;
+build/modutime.o:(.rodata.time_localtime_obj+0x0): first defined here
+build/shared-bindings/time/__init__.o:(.rodata.time_mktime_obj+0x0): multiple definition of `time_mktime_obj&#39;
+build/modutime.o:(.rodata.time_mktime_obj+0x0): first defined here
+build/shared-bindings/time/__init__.o:(.rodata.time_time_obj+0x0): multiple definition of `time_time_obj&#39;
+build/modutime.o:(.rodata.time_time_obj+0x0): first defined here
+</code></pre><p>The above errors show a conflict between the structures defined in
+<code>utime</code>, which have just activated, and the existing <code>time</code>
+module. A simple rename will take care of that problem; instead of:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#a6e22e>MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN</span>(time_localtime_obj, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>1</span>, time_localtime);
+</span></span></code></pre></div><p>We want:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#a6e22e>MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN</span>(utime_localtime_obj, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>1</span>, time_localtime);
+</span></span></code></pre></div><p>And so forth. At this point, everything builds correctly, but if we
+deploy the image to our board and try to import the <code>utime</code> module, we
+see:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span> <span style=color:#f92672>import</span> utime
+</span></span><span style=display:flex><span>Traceback (most recent call last):
+</span></span><span style=display:flex><span>  File <span style=color:#e6db74>&#34;&lt;stdin&gt;&#34;</span>, line <span style=color:#ae81ff>1</span>, <span style=color:#f92672>in</span> <span style=color:#f92672>&lt;</span>module<span style=color:#f92672>&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>ImportError</span>: no module named <span style=color:#e6db74>&#39;utime&#39;</span>
+</span></span></code></pre></div><p>The final piece of this puzzle is that there is a list of built-in
+modules defined in <code>mpconfigport.h</code>. We need to add our <code>utime</code>
+module to that list:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#75715e>#define MICROPY_PORT_BUILTIN_MODULES \
+</span></span></span><span style=display:flex><span><span style=color:#75715e>    [...]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    { <span style=color:#a6e22e>MP_ROM_QSTR</span>(MP_QSTR_utime), <span style=color:#a6e22e>MP_ROM_PTR</span>(<span style=color:#f92672>&amp;</span>utime_module) }, \
+</span></span><span style=display:flex><span>    [...]
+</span></span></code></pre></div><p>If we build and deploy our image, we&rsquo;re now able to use the methods
+from the <code>utime</code> module:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>Adafruit CircuitPython <span style=color:#ae81ff>3.0.0</span><span style=color:#f92672>-</span>alpha<span style=color:#ae81ff>.6</span><span style=color:#f92672>-</span><span style=color:#ae81ff>42</span><span style=color:#f92672>-</span>gb46567004 on <span style=color:#ae81ff>2018</span><span style=color:#f92672>-</span><span style=color:#ae81ff>05</span><span style=color:#f92672>-</span><span style=color:#ae81ff>06</span>; ESP module <span style=color:#66d9ef>with</span> ESP8266
+</span></span><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span> <span style=color:#f92672>import</span> utime
+</span></span><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span> utime<span style=color:#f92672>.</span>sleep_ms(<span style=color:#ae81ff>1000</span>)
+</span></span><span style=display:flex><span><span style=color:#f92672>&gt;&gt;&gt;</span>
+</span></span></code></pre></div><p>We need to make one final change to the <code>tm1637</code> module, since as
+written it imports methods from the <code>time</code> module. Instead of:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>from</span> time <span style=color:#f92672>import</span> sleep_us, sleep_ms
+</span></span></code></pre></div><p>We have to modify it to read:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>from</span> time <span style=color:#f92672>import</span> sleep_us, sleep_ms
+</span></span><span style=display:flex><span><span style=color:#66d9ef>except</span> <span style=color:#a6e22e>ImportError</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>from</span> utime <span style=color:#f92672>import</span> sleep_us, sleep_ms
+</span></span></code></pre></div><p>With our working <code>utime</code> module and the modified <code>tm1637</code> module, we
+are now able to drive our display:</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

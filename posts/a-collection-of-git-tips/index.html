@@ -1,0 +1,56 @@
+<!doctype html><html lang=en><head><title>A collection of git tips :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is a small collection of simple git tips and tricks I use to make my life easier.
+Quickly amend an existing commit with new files I have this alias in place that will amend the current commit while automatically re-using the existing commit message:
+alias.fix=commit --amend -C HEAD With this in place, fixing a review becomes:
+$ vim some/file/somewhere $ git add -u $ git fix Which I find much more convenient than git commit --amend, following by saving the commit message."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/a-collection-of-git-tips/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="A collection of git tips"><meta property="og:description" content="This is a small collection of simple git tips and tricks I use to make my life easier.
+Quickly amend an existing commit with new files I have this alias in place that will amend the current commit while automatically re-using the existing commit message:
+alias.fix=commit --amend -C HEAD With this in place, fixing a review becomes:
+$ vim some/file/somewhere $ git add -u $ git fix Which I find much more convenient than git commit --amend, following by saving the commit message."><meta property="og:url" content="https://blog.oddbit.com/posts/a-collection-of-git-tips/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2016-02-19 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/a-collection-of-git-tips/>A collection of git tips</a></h1><div class=post-meta><time class=post-date>2016-02-19 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/git/>git</a>&nbsp;</span><div class=post-content><div><p>This is a small collection of simple <code>git</code> tips and tricks I use to
+make my life easier.</p><h2 id=quickly-amend-an-existing-commit-with-new-files>Quickly amend an existing commit with new files<a href=#quickly-amend-an-existing-commit-with-new-files class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I have this alias in place that will amend the current commit while
+automatically re-using the existing commit message:</p><pre><code>alias.fix=commit --amend -C HEAD
+</code></pre><p>With this in place, fixing a review becomes:</p><pre><code>$ vim some/file/somewhere
+$ git add -u
+$ git fix
+</code></pre><p>Which I find much more convenient than <code>git commit --amend</code>, following
+by saving the commit message.</p><h2 id=what-files-have-changed>What files have changed?<a href=#what-files-have-changed class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Sometimes, I just want to know what files were changed in a commit. I
+have the following alias, because I have a hard time remembering
+whether I want <code>--name-only</code> or <code>--names-only</code> or <code>--only-names</code>&mldr;</p><pre><code>alias.changed=show --name-only
+</code></pre><p>Which gets me the commit message and a list of changed files:</p><pre><code>$ git changed
+commit 8c2a00809817a047bf312b72f390b5cb50ef9819
+Author: Lars Kellogg-Stedman &lt;lars@redhat.com&gt;
+Date:   Wed Feb 17 11:11:02 2016 -0500
+
+    yet another attempt at fixing image fetching
+    
+    this uses curl rather than wget, because wget chokes on file:// urls
+    which makes it difficult to cache images locally.  curl supports
+    resuming downloads, but explicitly rather than implicitly like wget,
+    so we need a do/until loop.
+    
+    Change-Id: Ibd3c524ea6ddfd423aec439f9eb7fffa62dfe818
+
+:100644 100644 342a002... 2b9f9cb... M  playbooks/roles/libvirt/setup/undercloud/tasks/main.yml
+:100644 000000 d22cb99... 0000000... D  playbooks/roles/libvirt/setup/undercloud/templates/get-undercloud.sh.j2
+</code></pre><h2 id=getting-the-name-of-the-current-branch>Getting the name of the current branch<a href=#getting-the-name-of-the-current-branch class=hanchor arialabel=Anchor>&#8983;</a></h2><p>For scripting purposes I often want the name of the current branch.
+Rather than reading <code>git rev-parse --help</code> every time, I have this
+alias:</p><pre><code>alias.branch-name=rev-parse --abbrev-ref --symbolic-full-name HEAD
+</code></pre><p>Which gets me:</p><pre><code>$ git branch-name
+master
+$ git checkout bug/missing-become
+$ git branch-name
+bug/missing-become
+</code></pre><h2 id=prevent-accidental-commits-on-master>Prevent accidental commits on master<a href=#prevent-accidental-commits-on-master class=hanchor arialabel=Anchor>&#8983;</a></h2><p>When working on upstream projects I always want to be working on a
+feature branch. To prevent accidental commits on master I drop the
+following script into <code>.git/hooks/pre-commit</code>:</p><pre><code>#!/bin/sh
+
+current_branch=$(git branch-name)
+
+if [ &quot;$current_branch&quot; = &quot;master&quot; ]; then
+  echo &quot;*** DO NOT COMMIT ON MASTER&quot;
+  exit 1
+fi
+
+exit 0
+</code></pre><p>If I try to commit to my local <code>master</code> branch, I get:</p><pre><code>$ git ci -m 'made a nifty change'
+*** DO NOT COMMIT ON MASTER
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

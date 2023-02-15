@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>qemu on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/qemu/</link><description>Recent content in qemu on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 07 Feb 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/qemu/rss.xml" rel="self" type="application/rss+xml"/><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/posts/systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/systemd-nspawn-for-fun-and-wel/</guid><description>systemd-nspawn has been called &amp;ldquo;chroot on steroids&amp;rdquo;, but if you think of it as Docker with a slightly different target you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers on your host, and has a variety of options for configuring the containerized environment through the use of private networking, bind mounts, capability controls, and a variety of other facilities that give you flexible container management.
+There are many different ways in which it can be used.</description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
+you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
+on your host, and has a variety of options for configuring the
+containerized environment through the use of private networking, bind
+mounts, capability controls, and a variety of other facilities that
+give you flexible container management.&lt;/p>
+&lt;p>There are many different ways in which it can be used. I&amp;rsquo;m going to
+focus on one that&amp;rsquo;s a bit of a corner use case that I find
+particularly interesting. In this article we&amp;rsquo;re going to explore how
+we can use &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> to spawn lightweight containers for
+architectures other than that of our host system.&lt;/p>
+&lt;h2 id="why-systemd-nspawn">Why systemd-nspawn?&lt;/h2>
+&lt;p>While everything described in this article could be accomplished
+through the use of &lt;code>chroot&lt;/code> and a chunk of additional configuration,
+using &lt;code>systemd-nspawn&lt;/code> makes it much easier. For example,
+&lt;code>systemd-nspawn&lt;/code> takes care of making virtual filesystems like
+&lt;code>/proc&lt;/code>, &lt;code>/sys&lt;/code>, and a minimal &lt;code>/dev&lt;/code> available inside the container
+(without which some programs simply won&amp;rsquo;t work). And of course
+&lt;code>systemd-nspawn&lt;/code> takes care of cleaning up these mounts when the
+container exits. For a simple container, this:&lt;/p>
+&lt;pre>&lt;code># systemd-nspawn -D /mnt /some/command
+&lt;/code>&lt;/pre>
+&lt;p>Is roughly equivalent to:&lt;/p>
+&lt;pre>&lt;code># mount -o bind /proc /mnt/proc
+# mount -o bind /sys /mnt/sys
+# mount -t tmpfs tmpfs /mnt/run
+# mount -t tmpfs tmpfs /mnt/dev
+# ...populate /mnt/dev here...
+# chroot /mnt /some/command
+# umount /mnt/dev
+# umount /mnt/run
+# umount /mnt/sys
+# umount /mnt/proc
+&lt;/code>&lt;/pre>
+&lt;p>&lt;code>systemd-nspawn&lt;/code> does all of this for us, and does much of it via
+private mount namespaces so that the temporary filesystems aren&amp;rsquo;t
+visible from the host.&lt;/p>
+&lt;h2 id="in-which-we-perform-magic">In which we perform magic&lt;/h2>
+&lt;p>Linux allows you to run binaries intended for other architectures
+via the &lt;a href="https://www.kernel.org/doc/Documentation/binfmt_misc.txt">binfmt-misc&lt;/a> subsystem, which allows you to use bits at the
+beginning of a file to match against an appropriate interpreter. This
+can be used, for example, to make Java binaries directly executable.
+We&amp;rsquo;re going to use this technique to accomplish the following:&lt;/p>
+&lt;ul>
+&lt;li>Teach our system how to run Raspberry Pi ARM binaries, and&lt;/li>
+&lt;li>Allow us to spawn a &lt;code>systemd-nspawn&lt;/code> container into a Raspberry Pi
+filesystem.&lt;/li>
+&lt;/ul>
+&lt;p>When a &lt;code>systemd&lt;/code>-based system boots, the &lt;a href="https://www.freedesktop.org/software/systemd/man/binfmt.d.html">systemd-binfmt&lt;/a> service
+(if it&amp;rsquo;s enabled) will automatically register configurations found in
+&lt;code>/etc/binfmt.d&lt;/code> or &lt;code>/usr/lib/binfmt.d&lt;/code>. You can set these up by hand,
+of course, but we&amp;rsquo;re going to take the easy route and install the
+&lt;code>qemu-user-static&lt;/code> package, which includes both the necessary &lt;code>binfmt.d&lt;/code>
+configuration files as well as the associated emulators:&lt;/p>
+&lt;pre>&lt;code># dnf -y install qemu-user-static
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>qemu-user-static&lt;/code> package on my system has installed, among other files,
+&lt;code>/usr/lib/binfmt.d/qemu-arm.conf&lt;/code>, which looks like this:&lt;/p>
+&lt;pre>&lt;code>:qemu-arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:
+&lt;/code>&lt;/pre>
+&lt;p>This gets registered with &lt;code>/proc/sys/fs/binfmt_misc/register&lt;/code> and
+informs the kernel that there is a new binfmt called &lt;code>qemu-arm&lt;/code>, and
+that files that contain the specified byte pattern in the header
+should be handled with &lt;code>/usr/bin/qemu-arm-static&lt;/code>.&lt;/p>
+&lt;p>With all this set up, we can mount a Raspberry Pi filesystem (I&amp;rsquo;m
+starting with &lt;a href="https://minibianpi.wordpress.com/">minibian&lt;/a>)&amp;hellip;&lt;/p>
+&lt;pre>&lt;code># tar xf 2015-11-12-jessie-minibian.tar.gz
+# losetup -fP --show 2015-11-12-jessie-minibian.img
+/dev/loop1
+# mount /dev/loop1p2 /mnt
+# mount /dev/loop1p1 /mnt/boot
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and then start up a process in it:&lt;/p>
+&lt;pre>&lt;code># systemd-nspawn -D /mnt
+Spawning container mnt on /mnt.
+Press ^] three times within 1s to kill container.
+root@mnt:~#
+&lt;/code>&lt;/pre>
+&lt;p>And there we are! We&amp;rsquo;re now running a shell inside a container
+running an ARM userspace. We can modify the image by installing or
+udpating packages or making any other necessary configuration changes:&lt;/p>
+&lt;pre>&lt;code>root@mnt:/# apt-get install raspberrypi-bootloader
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+libraspberrypi-bin libraspberrypi0
+The following packages will be upgraded:
+libraspberrypi-bin libraspberrypi0 raspberrypi-bootloader
+3 upgraded, 0 newly installed, 0 to remove and 34 not upgraded.
+Need to get 32.5 MB of archives.
+After this operation, 827 kB of additional disk space will be used.
+Do you want to continue? [Y/n]
+&lt;/code>&lt;/pre>
+&lt;p>When we&amp;rsquo;re done, we exit our container:&lt;/p>
+&lt;pre>&lt;code>root#mnt:/# exit
+&lt;/code>&lt;/pre>
+&lt;p>Unmount the directory:o&lt;/p>
+&lt;pre>&lt;code># umount /mnt
+&lt;/code>&lt;/pre>
+&lt;p>And finally clean up the loopback device:&lt;/p>
+&lt;pre>&lt;code># losetup -d /dev/loop1
+&lt;/code>&lt;/pre>
+&lt;p>Now we have an updated image file that we can write to an SD card and
+use to boot our Raspberry Pi.&lt;/p>
+&lt;p>&lt;strong>NB&lt;/strong> You&amp;rsquo;ll note that in this document I&amp;rsquo;m mounting &lt;code>loop1p2&lt;/code> on &lt;code>/&lt;/code>
+and &lt;code>loop1p1&lt;/code> on &lt;code>/boot&lt;/code>. You obviously don&amp;rsquo;t need &lt;code>/boot&lt;/code> in your
+container in order for things to run, but you will regret not mounting
+it if you happen to install an updated kernel package, which needs to
+populate &lt;code>/boot&lt;/code> with the new kernel image.&lt;/p>
+&lt;h2 id="bonus-growing-the-image">Bonus: growing the image&lt;/h2>
+&lt;p>The stock &lt;a href="https://minibianpi.wordpress.com/">minibian&lt;/a> image doesn&amp;rsquo;t have much free space on it; this
+is intentional, and in general you&amp;rsquo;re expected to grow the root
+partition and resize the filesystem after booting on your Pi.
+However, if we&amp;rsquo;re going to use the above process to pre-configure our
+image, there&amp;rsquo;s a good chance we&amp;rsquo;ll need more space immediately. We
+start by growing the size of the image file itself; you can that with
+&lt;code>qemu-img&lt;/code>, like this:&lt;/p>
+&lt;pre>&lt;code># qemu-img resize 2015-11-12-jessie-minibian.img 2G
+&lt;/code>&lt;/pre>
+&lt;p>Or by using &lt;code>truncate&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># truncate -s 2G 2015-11-12-jessie-minibian.img
+&lt;/code>&lt;/pre>
+&lt;p>Or by using &lt;code>dd&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># dd of=2015-11-12-jessie-minibian.img if=/dev/zero \
+count=0 bs=1G seek=2
+&lt;/code>&lt;/pre>
+&lt;p>Once the file has been extended, we need to grow the corresponding
+partition. Assuming that you have a recent version of &lt;code>util-linux&lt;/code>
+(where &amp;ldquo;recent&amp;rdquo; means &amp;ldquo;at least &lt;a href="http://karelzak.blogspot.com/2015/05/resize-by-sfdisk.html">v2.26.2&lt;/a>) installed, this is easy:&lt;/p>
+&lt;pre>&lt;code># echo &amp;quot;, +&amp;quot; | sfdisk -N 2 2015-11-12-jessie-minibian.img
+&lt;/code>&lt;/pre>
+&lt;p>And lastly, we need to grow the filesystem. This requires
+attaching the image to a loop device:&lt;/p>
+&lt;pre>&lt;code># losetup -fP --show 2015-11-12-jessie-minibian.img
+/dev/loop1
+&lt;/code>&lt;/pre>
+&lt;p>And then:&lt;/p>
+&lt;pre>&lt;code># e2fsck -f /dev/loop1p2
+# resize2fs /dev/loop1p2
+&lt;/code>&lt;/pre>
+&lt;p>Now when we mount the filesystem:&lt;/p>
+&lt;pre>&lt;code># mount /dev/loop1p2 /mnt
+# mount /dev/loop1p1 /mnt/boot
+&lt;/code>&lt;/pre>
+&lt;p>We see that there is more space available:&lt;/p>
+&lt;pre>&lt;code># df -h /mnt
+Filesystem Size Used Avail Use% Mounted on
+/dev/loop1p2 1.9G 432M 1.4G 24% /mnt
+&lt;/code>&lt;/pre>
+&lt;h2 id="bonus-static-qemu-arm-binaries">Bonus: Static qemu-arm binaries&lt;/h2>
+&lt;p>Earlier we saw that it was necessary to mount &lt;code>/lib64&lt;/code> into my
+Raspberry Pi container because the &lt;code>qemu-arm&lt;/code> binary was dynamically
+linked. You can acquire statically built versions of the QEMU
+binaries from the Debian project, e.g., &lt;a href="https://packages.debian.org/sid/amd64/qemu-user-static/download">here&lt;/a>:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://packages.debian.org/sid/amd64/qemu-user-static/download">https://packages.debian.org/sid/amd64/qemu-user-static/download&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Then unpack the &lt;code>.deb&lt;/code> file and extract the &lt;code>qemu-arm-static&lt;/code> binary:&lt;/p>
+&lt;pre>&lt;code>$ ar xv qemu-user-static_2.5+dfsg-5_amd64.deb
+x - debian-binary
+x - control.tar.gz
+x - data.tar.xz
+$ tar xf data.tar.xz ./usr/bin/qemu-arm-static
+&lt;/code>&lt;/pre>
+&lt;p>And copy it into place:&lt;/p>
+&lt;pre>&lt;code># cp qemu-arm-static /usr/bin/qemu-arm
+&lt;/code>&lt;/pre>
+&lt;p>And now our earlier command will work without further modification:&lt;/p>
+&lt;pre>&lt;code># systemd-nspawn -q --bind /usr/bin/qemu-arm -D /mnt /bin/bash
+root@mnt:/#
+&lt;/code>&lt;/pre></content></item></channel></rss>

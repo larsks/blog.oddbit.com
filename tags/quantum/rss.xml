@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>quantum on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/quantum/</link><description>Recent content in quantum on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 14 Nov 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/quantum/rss.xml" rel="self" type="application/rss+xml"/><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/posts/quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/quantum-in-too-much-detail/</guid><description>I originally posted this article on the RDO website.
+The players This document describes the architecture that results from a particular OpenStack configuration, specifically:
+Quantum networking using GRE tunnels; A dedicated network controller; A single instance running on a compute host Much of the document will be relevant to other configurations, but details will vary based on your choice of layer 2 connectivity, number of running instances, and so forth.</description><content>&lt;blockquote>
+&lt;p>I originally posted this article on
+the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
+website.&lt;/p>
+&lt;/blockquote>
+&lt;h1 id="the-players">The players&lt;/h1>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p>
+&lt;ul>
+&lt;li>Quantum networking using GRE tunnels;&lt;/li>
+&lt;li>A dedicated network controller;&lt;/li>
+&lt;li>A single instance running on a compute host&lt;/li>
+&lt;/ul>
+&lt;p>Much of the document will be relevant to other configurations, but
+details will vary based on your choice of layer 2 connectivity, number
+of running instances, and so forth.&lt;/p>
+&lt;p>The examples in this document were generated on a system with Quantum
+networking but will generally match what you see under Neutron as
+well, if you replace &lt;code>quantum&lt;/code> by &lt;code>neutron&lt;/code> in names. The OVS flow
+rules under Neutron are somewhat more complex and I will cover those
+in another post.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h1 id="the-lay-of-the-land">The lay of the land&lt;/h1>
+&lt;p>This is a simplified architecture diagram of network connectivity in a
+quantum/neutron managed world:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="https://blog.oddbit.com/assets/2013/11/14/quantum-gre.svg" />
+&lt;/figure>
+&lt;p>Section names in this document include
+parenthetical references to the nodes on the map relevant to that
+particular section.&lt;/p>
+&lt;h1 id="compute-host-instance-networking-abc">Compute host: instance networking (A,B,C)&lt;/h1>
+&lt;p>An outbound packet starts on &lt;code>eth0&lt;/code> of the virtual instance, which is
+connected to a &lt;code>tap&lt;/code> device on the host, &lt;code>tap7c7ae61e-05&lt;/code>. This &lt;code>tap&lt;/code>
+device is attached to a Linux bridge device, &lt;code>qbr7c7ae61e-05&lt;/code>. What is
+this bridge device for? From the &lt;a href="http://docs.openstack.org/network-admin/admin/content/under_the_hood_openvswitch.html">OpenStack Networking Administration
+Guide&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>Ideally, the TAP device vnet0 would be connected directly to the
+integration bridge, br-int. Unfortunately, this isn&amp;rsquo;t possible because
+of how OpenStack security groups are currently implemented. OpenStack
+uses iptables rules on the TAP devices such as vnet0 to implement
+security groups, and Open vSwitch is not compatible with iptables
+rules that are applied directly on TAP devices that are connected to
+an Open vSwitch port.&lt;/p>
+&lt;/blockquote>
+&lt;p>Because this bridge device exists primarily to support firewall rules,
+I&amp;rsquo;m going to refer to it as the &amp;ldquo;firewall bridge&amp;rdquo;.&lt;/p>
+&lt;p>If you examine the firewall rules on your compute host, you will find
+that there are several rules associated with this &lt;code>tap&lt;/code> device:&lt;/p>
+&lt;pre>&lt;code># iptables -S | grep tap7c7ae61e-05
+-A quantum-openvswi-FORWARD -m physdev --physdev-out tap7c7ae61e-05 --physdev-is-bridged -j quantum-openvswi-sg-chain
+-A quantum-openvswi-FORWARD -m physdev --physdev-in tap7c7ae61e-05 --physdev-is-bridged -j quantum-openvswi-sg-chain
+-A quantum-openvswi-INPUT -m physdev --physdev-in tap7c7ae61e-05 --physdev-is-bridged -j quantum-openvswi-o7c7ae61e-0
+-A quantum-openvswi-sg-chain -m physdev --physdev-out tap7c7ae61e-05 --physdev-is-bridged -j quantum-openvswi-i7c7ae61e-0
+-A quantum-openvswi-sg-chain -m physdev --physdev-in tap7c7ae61e-05 --physdev-is-bridged -j quantum-openvswi-o7c7ae61e-0
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>quantum-openvswi-sg-chain&lt;/code> is where &lt;code>neutron&lt;/code>-managed security
+groups are realized. The &lt;code>quantum-openvswi-o7c7ae61e-0&lt;/code> chain
+controls outbound traffic FROM the instance, and by default looks like
+this:&lt;/p>
+&lt;pre>&lt;code>-A quantum-openvswi-o7c7ae61e-0 -m mac ! --mac-source FA:16:3E:03:00:E7 -j DROP
+-A quantum-openvswi-o7c7ae61e-0 -p udp -m udp --sport 68 --dport 67 -j RETURN
+-A quantum-openvswi-o7c7ae61e-0 ! -s 10.1.0.2/32 -j DROP
+-A quantum-openvswi-o7c7ae61e-0 -p udp -m udp --sport 67 --dport 68 -j DROP
+-A quantum-openvswi-o7c7ae61e-0 -m state --state INVALID -j DROP
+-A quantum-openvswi-o7c7ae61e-0 -m state --state RELATED,ESTABLISHED -j RETURN
+-A quantum-openvswi-o7c7ae61e-0 -j RETURN
+-A quantum-openvswi-o7c7ae61e-0 -j quantum-openvswi-sg-fallback
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>quantum-openvswi-i7c7ae61e-0&lt;/code> chain controls inbound traffic TO
+the instance. After opening up port 22 in the default security group:&lt;/p>
+&lt;pre>&lt;code># neutron security-group-rule-create --protocol tcp \
+--port-range-min 22 --port-range-max 22 --direction ingress default
+&lt;/code>&lt;/pre>
+&lt;p>The rules look like this:&lt;/p>
+&lt;pre>&lt;code>-A quantum-openvswi-i7c7ae61e-0 -m state --state INVALID -j DROP
+-A quantum-openvswi-i7c7ae61e-0 -m state --state RELATED,ESTABLISHED -j RETURN
+-A quantum-openvswi-i7c7ae61e-0 -p icmp -j RETURN
+-A quantum-openvswi-i7c7ae61e-0 -p tcp -m tcp --dport 22 -j RETURN
+-A quantum-openvswi-i7c7ae61e-0 -p tcp -m tcp --dport 80 -j RETURN
+-A quantum-openvswi-i7c7ae61e-0 -s 10.1.0.3/32 -p udp -m udp --sport 67 --dport 68 -j RETURN
+-A quantum-openvswi-i7c7ae61e-0 -j quantum-openvswi-sg-fallback
+&lt;/code>&lt;/pre>
+&lt;p>A second interface attached to the bridge, &lt;code>qvb7c7ae61e-05&lt;/code>, attaches
+the firewall bridge to the integration bridge, typically named
+&lt;code>br-int&lt;/code>.&lt;/p>
+&lt;h1 id="compute-host-integration-bridge-de">Compute host: integration bridge (D,E)&lt;/h1>
+&lt;p>The integration bridge, &lt;code>br-int&lt;/code>, performs VLAN tagging and un-tagging
+for traffic coming from and to your instances. At this moment,
+&lt;code>br-int&lt;/code> looks something like this:&lt;/p>
+&lt;pre>&lt;code># ovs-vsctl show
+Bridge br-int
+Port &amp;quot;qvo7c7ae61e-05&amp;quot;
+tag: 1
+Interface &amp;quot;qvo7c7ae61e-05&amp;quot;
+Port patch-tun
+Interface patch-tun
+type: patch
+options: {peer=patch-int}
+Port br-int
+Interface br-int
+type: internal
+&lt;/code>&lt;/pre>
+&lt;p>The interface &lt;code>qvo7c7ae61e-05&lt;/code> is the other end of &lt;code>qvb7c7ae61e-05&lt;/code>,
+and carries traffic to and from the firewall bridge. The &lt;code>tag: 1&lt;/code> you
+see in the above output integrates that this is an access port
+attached to VLAN 1. Untagged outbound traffic from this instance will be
+assigned VLAN ID 1, and inbound traffic with VLAN ID 1 will
+stripped of it&amp;rsquo;s VLAN tag and sent out this port.&lt;/p>
+&lt;p>Each network you create (with &lt;code>neutron net-create&lt;/code>) will be assigned a
+different VLAN ID.&lt;/p>
+&lt;p>The interface named &lt;code>patch-tun&lt;/code> connects the integration bridge to the
+tunnel bridge, &lt;code>br-tun&lt;/code>.&lt;/p>
+&lt;h1 id="compute-host-tunnel-bridge-fg">Compute host: tunnel bridge (F,G)&lt;/h1>
+&lt;p>The tunnel bridge translates VLAN-tagged traffic from the
+integration bridge into &lt;code>GRE&lt;/code> tunnels. The translation between VLAN
+IDs and tunnel IDs is performed by OpenFlow rules installed on
+&lt;code>br-tun&lt;/code>. Before creating any instances, the flow rules on the bridge
+look like this:&lt;/p>
+&lt;pre>&lt;code># ovs-ofctl dump-flows br-tun
+NXST_FLOW reply (xid=0x4):
+cookie=0x0, duration=871.283s, table=0, n_packets=4, n_bytes=300, idle_age=862, priority=1 actions=drop
+&lt;/code>&lt;/pre>
+&lt;p>There is a single rule that causes the bridge to drop all traffic.
+Afrer you boot an instance on this compute node, the rules are
+modified to look something like:&lt;/p>
+&lt;pre>&lt;code># ovs-ofctl dump-flows br-tun
+NXST_FLOW reply (xid=0x4):
+cookie=0x0, duration=422.158s, table=0, n_packets=2, n_bytes=120, idle_age=55, priority=3,tun_id=0x2,dl_dst=01:00:00:00:00:00/01:00:00:00:00:00 actions=mod_vlan_vid:1,output:1
+cookie=0x0, duration=421.948s, table=0, n_packets=64, n_bytes=8337, idle_age=31, priority=3,tun_id=0x2,dl_dst=fa:16:3e:dd:c1:62 actions=mod_vlan_vid:1,NORMAL
+cookie=0x0, duration=422.357s, table=0, n_packets=82, n_bytes=10443, idle_age=31, priority=4,in_port=1,dl_vlan=1 actions=set_tunnel:0x2,NORMAL
+cookie=0x0, duration=1502.657s, table=0, n_packets=8, n_bytes=596, idle_age=423, priority=1 actions=drop
+&lt;/code>&lt;/pre>
+&lt;p>In general, these rules are responsible for mapping traffic between
+VLAN ID 1, used by the integration bridge, and tunnel id 2, used by
+the GRE tunnel.&lt;/p>
+&lt;p>The first rule&amp;hellip;&lt;/p>
+&lt;pre>&lt;code> cookie=0x0, duration=422.158s, table=0, n_packets=2, n_bytes=120, idle_age=55, priority=3,tun_id=0x2,dl_dst=01:00:00:00:00:00/01:00:00:00:00:00 actions=mod_vlan_vid:1,output:1
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;matches all multicast traffic (see &lt;a href="http://openvswitch.org/cgi-bin/ovsman.cgi?page=utilities%2Fovs-ofctl.8">ovs-ofctl(8)&lt;/a>)
+on tunnel id 2 (&lt;code>tun_id=0x2&lt;/code>), tags the ethernet frame with VLAN ID
+1 (&lt;code>actions=mod_vlan_vid:1&lt;/code>), and sends it out port 1. We can see
+from &lt;code>ovs-ofctl show br-tun&lt;/code> that port 1 is &lt;code>patch-int&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># ovs-ofctl show br-tun
+OFPT_FEATURES_REPLY (xid=0x2): dpid:0000068df4e44a49
+n_tables:254, n_buffers:256
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS ARP_MATCH_IP
+actions: OUTPUT SET_VLAN_VID SET_VLAN_PCP STRIP_VLAN SET_DL_SRC SET_DL_DST SET_NW_SRC SET_NW_DST SET_NW_TOS SET_TP_SRC SET_TP_DST ENQUEUE
+1(patch-int): addr:46:3d:59:17:df:62
+config: 0
+state: 0
+speed: 0 Mbps now, 0 Mbps max
+2(gre-2): addr:a2:5f:a1:92:29:02
+config: 0
+state: 0
+speed: 0 Mbps now, 0 Mbps max
+LOCAL(br-tun): addr:06:8d:f4:e4:4a:49
+config: 0
+state: 0
+speed: 0 Mbps now, 0 Mbps max
+OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0
+&lt;/code>&lt;/pre>
+&lt;p>The next rule&amp;hellip;&lt;/p>
+&lt;pre>&lt;code> cookie=0x0, duration=421.948s, table=0, n_packets=64, n_bytes=8337, idle_age=31, priority=3,tun_id=0x2,dl_dst=fa:16:3e:dd:c1:62 actions=mod_vlan_vid:1,NORMAL
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;matches traffic coming in on tunnel 2 (&lt;code>tun_id=0x2&lt;/code>) with an
+ethernet destination of &lt;code>fa:16:3e:dd:c1:62&lt;/code>
+(&lt;code>dl_dst=fa:16:3e:dd:c1:62&lt;/code>) and tags the ethernet frame with VLAN
+ID 1 (&lt;code>actions=mod_vlan_vid:1&lt;/code>) before sending it out &lt;code>patch-int&lt;/code>.&lt;/p>
+&lt;p>The following rule&amp;hellip;&lt;/p>
+&lt;pre>&lt;code> cookie=0x0, duration=422.357s, table=0, n_packets=82, n_bytes=10443, idle_age=31, priority=4,in_port=1,dl_vlan=1 actions=set_tunnel:0x2,NORMAL
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;matches traffic coming in on port 1 (&lt;code>in_port=1&lt;/code>) with VLAN ID 1
+(&lt;code>dl_vlan=1&lt;/code>) and set the tunnel id to 2 (&lt;code>actions=set_tunnel:0x2&lt;/code>)
+before sending it out the GRE tunnel.&lt;/p>
+&lt;h1 id="network-host-tunnel-bridge-hi">Network host: tunnel bridge (H,I)&lt;/h1>
+&lt;p>Traffic arrives on the network host via the GRE tunnel attached to
+&lt;code>br-tun&lt;/code>. This bridge has a flow table very similar to &lt;code>br-tun&lt;/code> on
+the compute host:&lt;/p>
+&lt;pre>&lt;code># ovs-ofctl dump-flows br-tun
+NXST_FLOW reply (xid=0x4):
+cookie=0x0, duration=1239.229s, table=0, n_packets=23, n_bytes=4246, idle_age=15, priority=3,tun_id=0x2,dl_dst=01:00:00:00:00:00/01:00:00:00:00:00 actions=mod_vlan_vid:1,output:1
+cookie=0x0, duration=524.477s, table=0, n_packets=15, n_bytes=3498, idle_age=10, priority=3,tun_id=0x2,dl_dst=fa:16:3e:83:69:cc actions=mod_vlan_vid:1,NORMAL
+cookie=0x0, duration=1239.157s, table=0, n_packets=50, n_bytes=4565, idle_age=148, priority=3,tun_id=0x2,dl_dst=fa:16:3e:aa:99:3c actions=mod_vlan_vid:1,NORMAL
+cookie=0x0, duration=1239.304s, table=0, n_packets=76, n_bytes=9419, idle_age=10, priority=4,in_port=1,dl_vlan=1 actions=set_tunnel:0x2,NORMAL
+cookie=0x0, duration=1527.016s, table=0, n_packets=12, n_bytes=880, idle_age=527, priority=1 actions=drop
+&lt;/code>&lt;/pre>
+&lt;p>As on the compute host, the first rule maps multicast traffic on
+tunnel ID 2 to VLAN 1.&lt;/p>
+&lt;p>The second rule&amp;hellip;&lt;/p>
+&lt;pre>&lt;code> cookie=0x0, duration=524.477s, table=0, n_packets=15, n_bytes=3498, idle_age=10, priority=3,tun_id=0x2,dl_dst=fa:16:3e:83:69:cc actions=mod_vlan_vid:1,NORMAL
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;matches traffic on the tunnel destined for the DHCP server at
+&lt;code>fa:16:3e:83:69:cc&lt;/code>. This is a &lt;code>dnsmasq&lt;/code> process running inside a
+network namespace, the details of which we will examine shortly.&lt;/p>
+&lt;p>The next rule&amp;hellip;&lt;/p>
+&lt;pre>&lt;code> cookie=0x0, duration=1239.157s, table=0, n_packets=50, n_bytes=4565, idle_age=148, priority=3,tun_id=0x2,dl_dst=fa:16:3e:aa:99:3c actions=mod_vlan_vid:1,NORMAL
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;matches traffic on tunnel ID 2 destined for the router at &lt;code>fa:16:3e:aa:99:3c&lt;/code>, which is an interface in another network namespace.&lt;/p>
+&lt;p>The following rule&amp;hellip;&lt;/p>
+&lt;pre>&lt;code> cookie=0x0, duration=1239.304s, table=0, n_packets=76, n_bytes=9419, idle_age=10, priority=4,in_port=1,dl_vlan=1 actions=set_tunnel:0x2,NORMAL
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;simply maps outbound traffic on VLAN ID 1 to tunnel ID 2.&lt;/p>
+&lt;h1 id="network-host-integration-bridge-jkm">Network host: integration bridge (J,K,M)&lt;/h1>
+&lt;p>The integration bridge on the network controller serves to connect
+instances to network services, such as routers and DHCP servers.&lt;/p>
+&lt;pre>&lt;code># ovs-vsctl show
+.
+.
+.
+Bridge br-int
+Port patch-tun
+Interface patch-tun
+type: patch
+options: {peer=patch-int}
+Port &amp;quot;tapf14c598d-98&amp;quot;
+tag: 1
+Interface &amp;quot;tapf14c598d-98&amp;quot;
+Port br-int
+Interface br-int
+type: internal
+Port &amp;quot;tapc2d7dd02-56&amp;quot;
+tag: 1
+Interface &amp;quot;tapc2d7dd02-56&amp;quot;
+.
+.
+.
+&lt;/code>&lt;/pre>
+&lt;p>It connects to the tunnel bridge, &lt;code>br-tun&lt;/code>, via a patch interface,
+&lt;code>patch-tun&lt;/code>.&lt;/p>
+&lt;h1 id="network-host-dhcp-server-m">Network host: DHCP server (M)&lt;/h1>
+&lt;p>Each network for which DHCP is enabled has a DHCP server running on
+the network controller. The DHCP server is an instance of &lt;a href="http://www.thekelleys.org.uk/dnsmasq/doc.html">dnsmasq&lt;/a>
+running inside a &lt;em>network namespace&lt;/em>. A &lt;em>network namespace&lt;/em> is a
+Linux kernel facility that allows groups of processes to have a
+network stack (interfaces, routing tables, iptables rules) distinct
+from that of the host.&lt;/p>
+&lt;p>You can see a list of network namespace with the &lt;code>ip netns&lt;/code> command,
+which in our configuration will look something like this:&lt;/p>
+&lt;pre>&lt;code># ip netns
+qdhcp-88b1609c-68e0-49ca-a658-f1edff54a264
+qrouter-2d214fde-293c-4d64-8062-797f80ae2d8f
+&lt;/code>&lt;/pre>
+&lt;p>The first of these (&lt;code>qdhcp...&lt;/code>) is the DHCP server namespace for our private
+subnet, while the second (&lt;code>qrouter...&lt;/code>) is the router.&lt;/p>
+&lt;p>You can run a command inside a network namespace using the &lt;code>ip netns exec&lt;/code> command. For example, to see the interface configuration inside
+the DHCP server namespace (&lt;code>lo&lt;/code> removed for brevity):&lt;/p>
+&lt;pre>&lt;code># ip netns exec qdhcp-88b1609c-68e0-49ca-a658-f1edff54a264 ip addr
+71: tapf14c598d-98: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+link/ether fa:16:3e:10:2f:03 brd ff:ff:ff:ff:ff:ff
+inet 10.1.0.3/24 brd 10.1.0.255 scope global ns-f14c598d-98
+inet6 fe80::f816:3eff:fe10:2f03/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>
+&lt;p>Note the MAC address on interface &lt;code>tapf14c598d-98&lt;/code>; this matches the MAC address in the flow rule we saw on the tunnel bridge.&lt;/p>
+&lt;p>You can find the &lt;code>dnsmasq&lt;/code> process associated with this namespace by
+search the output of &lt;code>ps&lt;/code> for the id (the number after &lt;code>qdhcp-&lt;/code> in the
+namespace name):&lt;/p>
+&lt;pre>&lt;code># ps -fe | grep 88b1609c-68e0-49ca-a658-f1edff54a264
+nobody 23195 1 0 Oct26 ? 00:00:00 dnsmasq --no-hosts --no-resolv --strict-order --bind-interfaces --interface=ns-f14c598d-98 --except-interface=lo --pid-file=/var/lib/quantum/dhcp/88b1609c-68e0-49ca-a658-f1edff54a264/pid --dhcp-hostsfile=/var/lib/quantum/dhcp/88b1609c-68e0-49ca-a658-f1edff54a264/host --dhcp-optsfile=/var/lib/quantum/dhcp/88b1609c-68e0-49ca-a658-f1edff54a264/opts --dhcp-script=/usr/bin/quantum-dhcp-agent-dnsmasq-lease-update --leasefile-ro --dhcp-range=tag0,10.1.0.0,static,120s --conf-file= --domain=openstacklocal
+root 23196 23195 0 Oct26 ? 00:00:00 dnsmasq --no-hosts --no-resolv --strict-order --bind-interfaces --interface=ns-f14c598d-98 --except-interface=lo --pid-file=/var/lib/quantum/dhcp/88b1609c-68e0-49ca-a658-f1edff54a264/pid --dhcp-hostsfile=/var/lib/quantum/dhcp/88b1609c-68e0-49ca-a658-f1edff54a264/host --dhcp-optsfile=/var/lib/quantum/dhcp/88b1609c-68e0-49ca-a658-f1edff54a264/opts --dhcp-script=/usr/bin/quantum-dhcp-agent-dnsmasq-lease-update --leasefile-ro --dhcp-range=tag0,10.1.0.0,static,120s --conf-file= --domain=openstacklocal
+&lt;/code>&lt;/pre>
+&lt;h1 id="network-host-router-kl">Network host: Router (K,L)&lt;/h1>
+&lt;p>A router is a network namespace with a set of routing tables
+and iptables rules that performs the routing between subnets. Recall
+that we saw two network namespaces in our configuration:&lt;/p>
+&lt;pre>&lt;code># ip netns
+qdhcp-88b1609c-68e0-49ca-a658-f1edff54a264
+qrouter-2d214fde-293c-4d64-8062-797f80ae2d8f
+&lt;/code>&lt;/pre>
+&lt;p>Using the &lt;code>ip netns exec&lt;/code> command, we can inspect the interfaces
+associated with the router (&lt;code>lo&lt;/code> removed for brevity):&lt;/p>
+&lt;pre>&lt;code># ip netns exec qrouter-2d214fde-293c-4d64-8062-797f80ae2d8f ip addr
+66: qg-d48b49e0-aa: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+link/ether fa:16:3e:5c:a2:ac brd ff:ff:ff:ff:ff:ff
+inet 172.24.4.227/28 brd 172.24.4.239 scope global qg-d48b49e0-aa
+inet 172.24.4.228/32 brd 172.24.4.228 scope global qg-d48b49e0-aa
+inet6 fe80::f816:3eff:fe5c:a2ac/64 scope link
+valid_lft forever preferred_lft forever
+68: qr-c2d7dd02-56: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000
+link/ether fa:16:3e:ea:64:6e brd ff:ff:ff:ff:ff:ff
+inet 10.1.0.1/24 brd 10.1.0.255 scope global qr-c2d7dd02-56
+inet6 fe80::f816:3eff:feea:646e/64 scope link
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>
+&lt;p>The first interface, &lt;code>qg-d48b49e0-aa&lt;/code>, connects the router to the
+gateway set by the &lt;code>router-gateway-set&lt;/code> command. The second
+interface, &lt;code>qr-c2d7dd02-56&lt;/code>, is what connects the router to the
+integration bridge.&lt;/p>
+&lt;p>Looking at the routing tables inside the router, we see that there is
+a default gateway pointing to the &lt;code>.1&lt;/code> address of our external
+network, and the expected network routes for directly attached
+networks:&lt;/p>
+&lt;pre>&lt;code># ip netns exec qrouter-2d214fde-293c-4d64-8062-797f80ae2d8f ip route
+172.24.4.224/28 dev qg-d48b49e0-aa proto kernel scope link src 172.24.4.227
+10.1.0.0/24 dev qr-c2d7dd02-56 proto kernel scope link src 10.1.0.1
+default via 172.24.4.225 dev qg-d48b49e0-aa
+&lt;/code>&lt;/pre>
+&lt;p>The netfilter &lt;code>nat&lt;/code> table inside the router namespace is responsible
+for associating floating IP addresses with your instances. For
+example, after associating the address &lt;code>172.24.4.228&lt;/code> with our
+instance, the &lt;code>nat&lt;/code> table looks like this:&lt;/p>
+&lt;pre>&lt;code># ip netns exec qrouter-2d214fde-293c-4d64-8062-797f80ae2d8f iptables -t nat -S
+-P PREROUTING ACCEPT
+-P POSTROUTING ACCEPT
+-P OUTPUT ACCEPT
+-N quantum-l3-agent-OUTPUT
+-N quantum-l3-agent-POSTROUTING
+-N quantum-l3-agent-PREROUTING
+-N quantum-l3-agent-float-snat
+-N quantum-l3-agent-snat
+-N quantum-postrouting-bottom
+-A PREROUTING -j quantum-l3-agent-PREROUTING
+-A POSTROUTING -j quantum-l3-agent-POSTROUTING
+-A POSTROUTING -j quantum-postrouting-bottom
+-A OUTPUT -j quantum-l3-agent-OUTPUT
+-A quantum-l3-agent-OUTPUT -d 172.24.4.228/32 -j DNAT --to-destination 10.1.0.2
+-A quantum-l3-agent-POSTROUTING ! -i qg-d48b49e0-aa ! -o qg-d48b49e0-aa -m conntrack ! --ctstate DNAT -j ACCEPT
+-A quantum-l3-agent-PREROUTING -d 169.254.169.254/32 -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 9697
+-A quantum-l3-agent-PREROUTING -d 172.24.4.228/32 -j DNAT --to-destination 10.1.0.2
+-A quantum-l3-agent-float-snat -s 10.1.0.2/32 -j SNAT --to-source 172.24.4.228
+-A quantum-l3-agent-snat -j quantum-l3-agent-float-snat
+-A quantum-l3-agent-snat -s 10.1.0.0/24 -j SNAT --to-source 172.24.4.227
+-A quantum-postrouting-bottom -j quantum-l3-agent-snat
+&lt;/code>&lt;/pre>
+&lt;p>There are &lt;code>SNAT&lt;/code> and &lt;code>DNAT&lt;/code> rules to map traffic between the floating
+address, &lt;code>172.24.4.228&lt;/code>, and the private address &lt;code>10.1.0.2&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>-A quantum-l3-agent-OUTPUT -d 172.24.4.228/32 -j DNAT --to-destination 10.1.0.2
+-A quantum-l3-agent-PREROUTING -d 172.24.4.228/32 -j DNAT --to-destination 10.1.0.2
+-A quantum-l3-agent-float-snat -s 10.1.0.2/32 -j SNAT --to-source 172.24.4.228
+&lt;/code>&lt;/pre>
+&lt;p>When you associate a floating ip address with an instance, similar
+rules will be created in this table.&lt;/p>
+&lt;p>There is also an &lt;code>SNAT&lt;/code> rule that NATs all outbound traffic from our
+private network to &lt;code>172.24.4.227&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>-A quantum-l3-agent-snat -s 10.1.0.0/24 -j SNAT --to-source 172.24.4.227
+&lt;/code>&lt;/pre>
+&lt;p>This permits instances to have outbound connectivity even without a
+public ip address.&lt;/p>
+&lt;h1 id="network-host-external-traffic-l">Network host: External traffic (L)&lt;/h1>
+&lt;p>&amp;ldquo;External&amp;rdquo; traffic flows through &lt;code>br-ex&lt;/code> via the &lt;code>qg-d48b49e0-aa&lt;/code>
+interface in the router name space.&lt;/p>
+&lt;pre>&lt;code>Bridge br-ex
+Port &amp;quot;qg-d48b49e0-aa&amp;quot;
+Interface &amp;quot;qg-d48b49e0-aa&amp;quot;
+Port br-ex
+Interface br-ex
+type: internal
+&lt;/code>&lt;/pre>
+&lt;p>What happens when traffic gets this far depends on your local
+configuration.&lt;/p>
+&lt;h2 id="nat-to-host-address">NAT to host address&lt;/h2>
+&lt;p>If you assign the gateway address for your public network to &lt;code>br-ex&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># ip addr add 172.24.4.225/28 dev br-ex
+&lt;/code>&lt;/pre>
+&lt;p>Then you can create forwarding and NAT rules that will cause
+&amp;ldquo;external&amp;rdquo; traffic from your instances to get rewritten to your
+network controller&amp;rsquo;s ip address and sent out on the network:&lt;/p>
+&lt;pre>&lt;code># iptables -A FORWARD -d 172.24.4.224/28 -j ACCEPT
+# iptables -A FORWARD -s 172.24.4.224/28 -j ACCEPT
+# iptables -t nat -I POSTROUTING 1 -s 172.24.4.224/28 -j MASQUERADE
+&lt;/code>&lt;/pre>
+&lt;h2 id="direct-network-connection">Direct network connection&lt;/h2>
+&lt;p>If you have an external router that will act as a gateway for your
+public network, you can add an interface on that network to the
+bridge. For example, assuming that &lt;code>eth2&lt;/code> was on the same network as
+&lt;code>172.24.4.225&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># ovs-vsctl add-port br-ex eth2
+&lt;/code>&lt;/pre></content></item></channel></rss>

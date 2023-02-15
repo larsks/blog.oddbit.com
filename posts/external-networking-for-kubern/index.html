@@ -1,0 +1,110 @@
+<!doctype html><html lang=en><head><title>External networking for Kubernetes services :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is, &amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of Kubernetes (running on bare metal), which means I suddenly had to confront the question of how to provide external access to Kubernetes hosted services. Kubernetes provides two solutions to this problem, neither of which is particularly attractive out of the box:
+There is a field createExternalLoadBalancer that can be set in a service description."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/external-networking-for-kubern/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="External networking for Kubernetes services"><meta property="og:description" content="I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is, &amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of Kubernetes (running on bare metal), which means I suddenly had to confront the question of how to provide external access to Kubernetes hosted services. Kubernetes provides two solutions to this problem, neither of which is particularly attractive out of the box:
+There is a field createExternalLoadBalancer that can be set in a service description."><meta property="og:url" content="https://blog.oddbit.com/posts/external-networking-for-kubern/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-02-10 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/external-networking-for-kubern/>External networking for Kubernetes services</a></h1><div class=post-meta><time class=post-date>2015-02-10 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kubernetes/>kubernetes</a>&nbsp;</span><div class=post-content><div><p>I have recently started running some &ldquo;real&rdquo; services (that is,
+&ldquo;services being consumed by someone other than myself&rdquo;) on top of
+Kubernetes (running on bare metal), which means I suddenly had to
+confront the question of how to provide external access to Kubernetes
+hosted services. Kubernetes provides two solutions to this problem,
+neither of which is particularly attractive out of the box:</p><ol><li><p>There is a field <code>createExternalLoadBalancer</code> that can be set in a
+service description. This is meant to integrate with load
+balancers provided by your local cloud environment, but at the
+moment there is only support for this when running under <a href=https://cloud.google.com/compute/>GCE</a>.</p></li><li><p>A service description can have a list of public IP addresses
+associated with it in the <code>publicIPS</code> field. This will cause
+<code>kube-proxy</code> to create rules in the <code>KUBE-PROXY</code> chain of your
+<code>nat</code> table to direct traffic inbound to those addresses to the
+appropriate local <code>kube-proxy</code> port.</p></li></ol><p>The second option is a good starting point, since if you were to
+simply list the public IP addresses of your Kubernetes minions in the
+<code>publicIPs</code> field, everything would Just Work. That is, inbound
+traffic to the appropriate port on your minions would get directed to
+<code>kube-proxy</code> by the <code>nat</code> rules. That&rsquo;s great for simple cases, but
+in practice it means that you cannot have more that <em>N</em> services
+exposed on a given port where <em>N</em> is the number of minions in your
+cluster. That limit is difficult if you &ndash; like I do &ndash; have an
+all-in-one (e.g., on a single host) Kubernetes deployment on which you
+wish to host multiple web services exposed on port 80 (and even in a
+larger environment, you really don&rsquo;t want &ldquo;number of things on port
+XX&rdquo; tightly coupled to &ldquo;number of minions&rdquo;).</p><h2 id=introducing-kiwi>Introducing Kiwi<a href=#introducing-kiwi class=hanchor arialabel=Anchor>&#8983;</a></h2><p>To overcome this problem, I wrote <a href=http://github.com/larsks/kiwi/>Kiwi</a>, a service that listens to
+Kubernetes for events concerning new/modified/deleted services, and in
+response to those events manages (a) the assignment of IP addresses to
+network interfaces on your minions and (b) creating additional
+firewall rules to permit traffic inbound to your services to pass a
+default-deny firewall configuration.</p><p>Kiwi uses <a href=https://github.com/coreos/etcd>etcd</a> to coordinate ownership of IP addresses between
+minions in your Kubernetes cluster.</p><h2 id=how-it-works>How it works<a href=#how-it-works class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Kiwi listens to event streams from both Kubernetes and Etcd.</p><p>On the Kubernetes side, Kiwi listens to <code>/api/v1beta/watch/services</code>,
+which produces events in response to new, modified, or deleted
+services. The Kubernetes API uses a server-push model, in which a
+client makes a single HTTP request and then receives a series of
+events over the same connection. A event looks something like:</p><pre><code>{
+  &quot;type&quot;: &quot;ADDED&quot;,
+  &quot;object&quot;: {
+    &quot;portalIP&quot;: &quot;10.254.93.176&quot;,
+    &quot;containerPort&quot;: 80,
+    &quot;publicIPs&quot;: [
+      &quot;192.168.1.100&quot;
+    ],
+    &quot;selector&quot;: {
+      &quot;name&quot;: &quot;test-web&quot;
+    },
+    &quot;protocol&quot;: &quot;TCP&quot;,
+    &quot;port&quot;: 8080,
+    &quot;kind&quot;: &quot;Service&quot;,
+    &quot;id&quot;: &quot;test-web&quot;,
+    &quot;uid&quot;: &quot;72bc1286-a440-11e4-b83e-20cf30467e62&quot;,
+    &quot;creationTimestamp&quot;: &quot;2015-01-24T22:15:43-05:00&quot;,
+    &quot;selfLink&quot;: &quot;/api/v1beta1/services/test-web&quot;,
+    &quot;resourceVersion&quot;: 245,
+    &quot;apiVersion&quot;: &quot;v1beta1&quot;,
+    &quot;namespace&quot;: &quot;default&quot;
+  }
+}
+</code></pre><p>I am using the Python <a href=http://docs.python-requests.org/en/latest/>requests</a> library, which it turns out <a href=https://github.com/kennethreitz/requests/issues/2433>has a
+bug</a> in its handling of streaming server responses, but I was
+able to work around that issue once I realized what was going on.</p><p>On the Etcd side, Kiwi uses keys under the <code>/kiwi/publicips</code> prefix to
+coordinate address ownership among Kiwi instances. It listens to
+events from Etcd regarding key create/delete/set/etc operations in
+this prefix by calling
+<code>/v2/keys/kiwi/publicips?watch=true&recursive=true</code>. This is a
+long-poll request, rather than a streaming request: that means that a
+request will only ever receive a single event, but it may need to wait
+for a while before it receives that response. This model worked well
+with the <code>requests</code> library out of the box.</p><p>After receiving an event from Kubernetes, Kiwi iterates over the
+public IP addresses in the <code>publicIPs</code> key, and for any address that
+is not already being manged by the local instance it makes a claim on
+that address by attempting to atomically create a key in etcd under
+<code>/kiwi/publicips/</code> (such as <code>/kiwi/publicips/192.168.1.100</code>). If this
+attempt succeeds, Kiwi on the local minion has claimed that address
+and proceeds to assign it to the local interface. If the attempt to
+set that key does not succeed, it means the address is already being
+managed by Kiwi on another minion.</p><p>The address keys are set with a TTL of 20 seconds, after which they
+will be expired. If an address expires, other Kiwi instances will
+receive notification from Etcd and ownership of that address will
+transfer to another Kiwi instance.</p><h2 id=getting-started-with-kiwi>Getting started with Kiwi<a href=#getting-started-with-kiwi class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The easiest way to get started with Kiwi is to use the <a href=https://registry.hub.docker.com/u/larsks/kiwi/>larsks/kiwi</a>
+Docker image that is automatically built from the <a href=http://github.com/larsks/kiwi/>Git
+repository</a>. For example, if you want to host public ip
+addresses on <code>eth0</code> in the range <code>192.168.1.32/28</code>, you would start it
+like this:</p><pre><code>docker run --privileged --net=host larsks/kiwi \
+  --interface eth0 \
+  --range 192.168.1.32/28
+</code></pre><p>You need both <code>--privileged</code> and <code>--net=host</code> in order for Kiwi to
+assign addresses to your host interfaces and to manage the iptables
+configuration.</p><h2 id=an-example>An Example<a href=#an-example class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Start Kiwi as described above. Next, plae the following content in a
+file called <code>service.yaml</code>:</p><pre><code>kind: Service
+apiVersion: v1beta1
+id: test-web
+port: 8888
+selector:
+  name: test-web
+containerPort: 80
+publicIPs:
+  - 192.168.1.100
+</code></pre><p>Create the service using <code>kubectl</code>:</p><pre><code>kubectl create -f service.yaml
+</code></pre><p>After a short pause, you should see the address show up on interface
+<code>eth0</code>; the entry will look something like:</p><pre><code>inet 192.168.1.100/32 scope global dynamic eth0:kube
+       valid_lft 17sec preferred_lft 17sec
+</code></pre><p>The <code>eth0:kube</code> is a label applied to the address; this allows Kiwi to
+clean up these addresses at startup (by getting a list of
+Kiwi-configured addresses with <code>ip addr show label eth0:kube</code>).</p><p>The <code>valid_lft</code> and <code>preferred_lft</code> fields control the lifetime of the
+interface. When these counters reach 0, the addresses are removed by
+the kernel. This ensure that if Kiwi dies, the addresses can
+successfully be re-assigned on another node.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,186 @@
+<!doctype html><html lang=en><head><title>Diagnosing problems with an OpenStack deployment :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I recently had the chance to help a colleague debug some problems in his OpenStack installation. The environment was unique because it was booting virtualized aarch64 instances, which at the time did not have any PCI bus support&amp;hellip;which in turn precluded things like graphic consoles (i.e., VNC or SPICE consoles) for the Nova instances.
+This post began life as an email summarizing the various configuration changes we made on the systems to get things up and running."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/diagnosing-problems-with-an-op/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Diagnosing problems with an OpenStack deployment"><meta property="og:description" content="I recently had the chance to help a colleague debug some problems in his OpenStack installation. The environment was unique because it was booting virtualized aarch64 instances, which at the time did not have any PCI bus support&amp;hellip;which in turn precluded things like graphic consoles (i.e., VNC or SPICE consoles) for the Nova instances.
+This post began life as an email summarizing the various configuration changes we made on the systems to get things up and running."><meta property="og:url" content="https://blog.oddbit.com/posts/diagnosing-problems-with-an-op/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-03-09 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/diagnosing-problems-with-an-op/>Diagnosing problems with an OpenStack deployment</a></h1><div class=post-meta><time class=post-date>2015-03-09 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;</span><div class=post-content><div><figure class=left><img src=/assets/2015/03/09/lucy.jpg></figure><p>I recently had the chance to help a colleague debug some problems in
+his OpenStack installation. The environment was unique because it was
+booting virtualized <a href=https://fedoraproject.org/wiki/Architectures/AArch64>aarch64</a> instances, which at the time did not
+have any PCI bus support&mldr;which in turn precluded things like graphic
+consoles (i.e., VNC or SPICE consoles) for the Nova instances.</p><p>This post began life as an email summarizing the various configuration
+changes we made on the systems to get things up and running. After
+writing it, I decided it presented an interesting summary of some
+common (and maybe not-so-common) issues, so I am posting it here in
+the hopes that other folks will find it interesting.</p><h2 id=serial-console-configuration>Serial console configuration<a href=#serial-console-configuration class=hanchor arialabel=Anchor>&#8983;</a></h2><h3 id=the-problem>The problem<a href=#the-problem class=hanchor arialabel=Anchor>&#8983;</a></h3><p>We needed console access to the Nova instances in order to diagnose
+some networking issues, but there was no VGA console support in the
+virtual machines. Recent versions of Nova provide serial console
+support, but do not provide any client-side tool for <em>accessing</em> the
+serial console.</p><p>We wanted to:</p><ul><li>Correctly configure Nova to provide serial console support, and</li><li>Get the <a href=https://github.com/larsks/novaconsole>novaconsole</a> tool installed in order to access the serial
+consoles.</li></ul><h3 id=making-novaconsole-work>Making novaconsole work<a href=#making-novaconsole-work class=hanchor arialabel=Anchor>&#8983;</a></h3><p>In order to get <code>novaconsole</code> installed we needed the
+<code>websocket-client</code> library, which is listed in <code>requirements.txt</code> at
+the top level of the <code>novaconsole</code> source. Normally one would just
+<code>pip install .</code> from the source directory, but <code>python-pip</code> was not
+available on our platform.</p><p>That wasn&rsquo;t a big issue because we <em>did</em> have <code>python-setuptools</code>
+available, so I was able to simply run (inside the <code>novaconsole</code>
+source directory):</p><pre><code>python setup.py install
+</code></pre><p>And now we had a <code>/usr/bin/novaconsole</code> script, and we were able to
+use it like this to connect to the console of a nova instance named
+&ldquo;test0&rdquo;:</p><pre><code>novaconsole test0
+</code></pre><p>(For this to work you need appropriate Keystone credentials loaded in
+your environment. You can also provide a websocket URL in lieu of an
+instance name.)</p><h3 id=configuration-changes-on-the-controller>Configuration changes on the controller<a href=#configuration-changes-on-the-controller class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The controller did not have the <code>openstack-nova-serialproxy</code> package
+installed, which provides the <code>nova-serialproxy</code> service. This service
+provides the websocket endpoint used by clients, so without this
+service you you won&rsquo;t be able to connect to serial consoles.</p><p>Installing the service was a simple matter of:</p><pre><code>yum -y install openstack-nova-serialproxy
+systemctl enable openstack-nova-serialproxy
+systemctl start openstack-nova-serialproxy
+</code></pre><h3 id=configuration-changes-on-the-compute-nodes>Configuration changes on the compute nodes<a href=#configuration-changes-on-the-compute-nodes class=hanchor arialabel=Anchor>&#8983;</a></h3><p>We also need to enable the serial console support on our compute nodes,
+and we need to change the following configuration options in
+<code>nova.conf</code> in the <code>serial_console</code> section:</p><pre><code># Set this to 'true' to enable serial console support.
+enabled=true
+
+# Enabling serial console support means that spawning an instance
+# causes qemu to open up a listening TCP socket for the serial
+# console.  This socket binds to the `listen` address.  It
+# defaults to 127.0.0.1, which will not permit a remote host --
+# such as your controller -- from connecting to the port.  Setting
+# this to 0.0.0.0 means &quot;listen on all available addresses&quot;, which
+# is *usually* what you want.
+listen=0.0.0.0 
+
+# `proxyclient_address` is the address to which the
+# nova-serialproxy service will connect to access serial consoles
+# of instances located on this physical host.  That means it needs
+# to be an address of a local interface (and so this value will be
+# unique to each compute host).
+proxyclient_address=10.16.184.118
+</code></pre><p>In a production deployment, we would also need to modify the
+<code>base_url</code> option in this section, which is used to generate the URLs
+provided via the <code>nova get-serial-console</code> command. With the default
+configuration, the URLs will point to 127.0.0.1, which is fine as long
+as we are running <code>novaconsole</code> on the same host as
+<code>nova-serialproxy</code>.</p><p>After making these changes, we need to restart nova-compute on all the
+compute hosts:</p><pre><code># openstack-service restart nova
+</code></pre><p><em>And</em> we will need to re-deploy any running instances, because they
+will still have sockets listening on 127.0.0.1.</p><p>The network ports opened for the serial console service are controlled
+by the <code>port_range</code> setting in the <code>serial_console</code> section. We must
+permit connections to these ports from our controller. I added the
+following rule with iptables:</p><pre><code># iptables -I INPUT 1 -p tcp --dport 10000:20000 -j ACCEPT
+</code></pre><p>In practice, we would probably want to limit this specifically to our
+controller(s).</p><h2 id=networking-on-the-controller>Networking on the controller<a href=#networking-on-the-controller class=hanchor arialabel=Anchor>&#8983;</a></h2><h3 id=the-problem-1>The problem<a href=#the-problem-1 class=hanchor arialabel=Anchor>&#8983;</a></h3><p>Nova instances were not successfully obtaining ip addresses from the
+Nova-managed DHCP service.</p><h3 id=selinux-and-the-case-of-the-missing-interfaces>Selinux and the case of the missing interfaces<a href=#selinux-and-the-case-of-the-missing-interfaces class=hanchor arialabel=Anchor>&#8983;</a></h3><p>When I first looked at the system, it was obvious that something
+fundamental was broken because the Neutron routers were missing
+interfaces.</p><p>Each neutron router is realized as a network namespace on the
+network host. We can see these namespaces with the <code>ip netns</code>
+command:</p><pre><code># ip netns
+qrouter-42389195-c8c1-4d68-a16c-3937453f149d
+qdhcp-d2719d67-fd00-4620-be00-ea8525dc6524
+</code></pre><p>We can use the <code>ip netns exec</code> command to run commands inside the
+router namespace. For instance, we can run the following to see a
+list of network interfaces inside the namespace:</p><pre><code># ip netns exec qrouter-42389195-c8c1-4d68-a16c-3937453f149d \
+  ip addr show
+</code></pre><p>For a router we would expect to see something like this:</p><pre><code>1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+18: qr-b3cd13d6-94: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UNKNOWN 
+    link/ether fa:16:3e:61:89:49 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.0.1/24 brd 10.0.0.255 scope global qr-b3cd13d6-94
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f816:3eff:fe61:8949/64 scope link 
+       valid_lft forever preferred_lft forever
+19: qg-89591203-47: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UNKNOWN 
+    link/ether fa:16:3e:30:b5:05 brd ff:ff:ff:ff:ff:ff
+    inet 172.24.4.231/28 brd 172.24.4.239 scope global qg-89591203-47
+       valid_lft forever preferred_lft forever
+    inet 172.24.4.232/32 brd 172.24.4.232 scope global qg-89591203-47
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f816:3eff:fe30:b505/64 scope link 
+       valid_lft forever preferred_lft forever
+</code></pre><p>But all I found was the loopback interface:</p><pre><code>1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+</code></pre><p>After a few attempts to restore the router to health through API commands (such
+as by clearing and re-setting the network gateway), I looked in the
+logs for the <code>neutron-l3-agent</code> service, which is the service
+responsible for configuring the routers. There I found:</p><pre><code>2015-02-20 17:16:52.324 22758 TRACE neutron.agent.l3_agent Stderr:
+'Error: argument &quot;qrouter-42389195-c8c1-4d68-a16c-3937453f149d&quot; is
+wrong: Invalid &quot;netns&quot; value\n\n'
+</code></pre><p>This is weird because clearly a network namespace with a matching name
+was available. When weird inexplicable errors happen, we often look
+first to selinux, and indeed, running <code>audit2allow -a</code> showed us that
+neutron was apparently missing a privilege:</p><pre><code>#============= neutron_t ==============
+allow neutron_t unlabeled_t:file { read open };
+</code></pre><p>After putting selinux in permissive mode<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup> and restarting neutron
+services, things looked a lot better. To completely restart neutron,
+I usually do:</p><pre><code>openstack-service stop neutron
+neutron-ovs-cleanup
+neutron-netns-cleanup
+openstack-service start neutron
+</code></pre><p>The <code>openstack-service</code> command is a wrapper over <code>systemctl</code> or
+<code>chkconfig</code> and <code>service</code> that operates on whatever openstack services
+you have enabled on your host. Providing a additional arguments
+limits the action to services that match that name, so in addition to
+<code>openstack-service stop neutron</code> you can do something like
+<code>openstack-service stop nova glance</code> to stop all Nova and Glance
+services, etc.</p><h3 id=iptables-and-the-case-of-the-missing-packets>Iptables and the case of the missing packets<a href=#iptables-and-the-case-of-the-missing-packets class=hanchor arialabel=Anchor>&#8983;</a></h3><p>After diagnosing the selinux issue noted above, virtual networking
+layer looked fine, but we still weren&rsquo;t able to get traffic between
+the test instance and the router/dhcp server on the controller.</p><p>Traffic was clearly traversing the VXLAN tunnels, as revealed by
+running <code>tcpdump</code> on both ends of the tunnel (where 4789 is the vxlan
+port):</p><pre><code>tcpdump -i eth0 -n port 4789
+</code></pre><p>But that traffic was never reaching, e.g., the dhcp namespace.
+Investigating the Open vSwitch (OVS) configuration on our host showed
+that everything look correct; commands I use to look at things were:</p><ul><li><p><code>ovs-vsctl show</code> to look at the basic layout of switches and
+interfaces,</p></li><li><p><code>ovs-ofctl dump-flows &lt;bridge></code> to look at the openflow rules
+associated with a particular OVS switch, and</p></li><li><p><code>ovs-dpctl-top</code>, which provides a top-like view of flow activity on
+the OVS bridges.</p></li></ul><p>Ultimately, it turns out that there were some iptables rule missing
+from our configuration. On the host, looking for rules that match
+vxlan traffic I found a single rule for vxlan traffic:</p><pre><code># iptables -S | grep 4789
+-A INPUT -s 10.16.184.117/32 -p udp -m multiport --dports 4789 ...
+</code></pre><p>The compute node we were operating with was 10.16.184.118 (which is
+not the address listed in the above rule), so vxlan traffic from this
+host was being rejected by the kernel. I added a new rule to match
+vxlan traffic from the compute host:</p><pre><code># iptables -I INPUT 18 -s 10.16.184.118/32 -p udp -m multiport --dports 4789 ...
+</code></pre><p>This seemed to take care of things, but it&rsquo;s a bit of a mystery why
+this wasn&rsquo;t configured for us in the first place by the installer.
+This may have been a bug in <a href=https://wiki.openstack.org/wiki/Packstack>packstack</a>; we would need to do clean
+re-deploy to verify this behavior.</p><h3 id=access-to-floating-ip-addresses>Access to floating ip addresses<a href=#access-to-floating-ip-addresses class=hanchor arialabel=Anchor>&#8983;</a></h3><p>In order to access our instances using their floating ip addresses
+from our host, we need a route to the floating ip network. The
+easiest way to do this in a test environment, if you are happy with
+host-only networking, is to assign interface <code>br-ex</code> the address of
+the default gateway for your floating ip network. The default
+floating ip network configured by <code>packstack</code> is 172.24.4.224/28, and
+the gateway for that network is <code>172.24.24.225</code>. We can assign this
+address to <code>br-ex</code> like this:</p><pre><code># ip addr add 172.24.4.225/28 dev br-ex
+</code></pre><p>With this in place, connections to floating ips will route via br-ex,
+which in turn is bridged to the external interface of your neutron
+router.</p><p>Setting the address by hand like this means it will be lost next time
+we reboot. We can make this configuration persistent by modifying (or
+creating)
+<code>/etc/sysconfig/network-scripts/ifcfg-br-ex</code> so that it looks like this:</p><pre><code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+BOOTPROT=static
+IPADDR=172.24.4.225
+NETMASK=255.255.255.240
+ONBOOT=yes
+</code></pre><p>If you&rsquo;re not able to map CIDR prefixes to dotted-quad netmasks in
+your head, the <code>ipcalc</code> tool is useful:</p><pre><code>$ ipcalc -m 172.24.4.224/28
+NETMASK=255.255.255.240
+</code></pre><h2 id=the-state-of-things>The state of things<a href=#the-state-of-things class=hanchor arialabel=Anchor>&#8983;</a></h2><p>With all the above changes in place, we had a functioning OpenStack
+environment.</p><p>We could spawn an instance as the &ldquo;demo&rdquo; user:</p><pre><code># . keystonerc_demo
+# nova boot --image &quot;rhelsa&quot; --flavor m1.small example
+</code></pre><p>Create a floating ip address:</p><pre><code># nova floating-ip-create public
++--------------+-----------+----------+--------+
+| Ip           | Server Id | Fixed Ip | Pool   |
++--------------+-----------+----------+--------+
+| 172.24.4.233 | -         | -        | public |
++--------------+-----------+----------+--------+
+</code></pre><p>Assign that address to our instance:</p><pre><code># nova floating-ip-associate example 172.4.4.233
+</code></pre><p>And finally we were able to access services on that instance (provided
+that our security groups (and local iptables configuration on the
+instance) permit access to that service).</p><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p>&mldr;as a temporary measure, pending opening a bug report to get
+things corrected so that this step would no longer be necessary.&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

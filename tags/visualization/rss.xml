@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>visualization on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/visualization/</link><description>Recent content in visualization on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 24 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/visualization/rss.xml" rel="self" type="application/rss+xml"/><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/posts/visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/visualizing-pacemaker-constrai/</guid><description>If a picture is worth a thousand words, then code that generates pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that produces dot output from Pacemaker start and colocation constraints:
+https://github.com/larsks/pacemaker-tools/
+You can pass this output to graphviz to create visualizations of your Pacemaker resource constraints.
+The graph-constraints.py script in that repository consumes the output of cibadmin -Q and can produce output for either start constraints (-S, the default) or colocation constraints (-C).</description><content>&lt;p>If a picture is worth a thousand words, then code that generates
+pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that
+produces &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> output from Pacemaker start and colocation
+constraints:&lt;/p>
+&lt;p>&lt;a href="https://github.com/larsks/pacemaker-tools/">https://github.com/larsks/pacemaker-tools/&lt;/a>&lt;/p>
+&lt;p>You can pass this output to &lt;a href="http://www.graphviz.org/">graphviz&lt;/a> to create visualizations of
+your Pacemaker resource constraints.&lt;/p>
+&lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
+output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
+constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p>
+&lt;p>Given a document like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.xml">this&lt;/a>, if you run:&lt;/p>
+&lt;pre>&lt;code>cibadmin -Q |
+python graph-constraints.py -o cib.svg
+&lt;/code>&lt;/pre>
+&lt;p>You get a graph like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.svg">this&lt;/a>:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="https://blog.oddbit.com/assets/2015/02/24/cib.svg" />
+&lt;/figure>
+&lt;p>Nodes are colored by their tag (so, &lt;code>primitive&lt;/code>, &lt;code>clone&lt;/code>, etc).&lt;/p></content></item><item><title>Apache virtual host statistics</title><link>https://blog.oddbit.com/posts/apache-virtual-host-statistics/</link><pubDate>Fri, 19 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/apache-virtual-host-statistics/</guid><description>As part of a project I&amp;rsquo;m working on I wanted to get a rough idea of the activity of the Apache virtual hosts on the system. I wasn&amp;rsquo;t able to find exactly what I wanted, so I refreshed my memory of curses to bring you vhoststats.
+This tools reads an Apache log file (with support for arbitrary formats) and generates a dynamic bar chart showing the activity (in number of requests and bytes transferred) of hosts on the system.</description><content>&lt;p>As part of a project I&amp;rsquo;m working on I wanted to get a rough idea of the activity of the Apache virtual hosts on the system. I wasn&amp;rsquo;t able to find exactly what I wanted, so I refreshed my memory of curses to bring you &lt;em>vhoststats&lt;/em>.&lt;/p>
+&lt;p>This tools reads an Apache log file (with support for arbitrary formats) and generates a dynamic bar chart showing the activity (in number of requests and bytes transferred) of hosts on the system. The output might look something like this (but with colors):&lt;/p>
+&lt;pre>&lt;code>[2010/02/19 20:21:32] Hosts: 7 [Displayed: 7] Requests: 104
+host1.companyA.com [R:1 ] #
+[B:3 ]
+devel.internal [R:1 ] #
+[B:208 ]
+host2.companyA.com [R:1 ] #
+[B:4499 ]
+A-truncated-host-nam [R:10 ] ############
+[B:65380 ] #
+host1.companyB.com [R:21 ] ##########################
+[B:166715 ] ####
+www.google.com [R:32 ] #################################
+[B:1566614 ] ####################################
+&lt;/code>&lt;/pre>
+&lt;p>The tool keeps running totals over a five minute window, but you can change the window size on the command line. You can tail your active access log to see live results, or for a more exciting display you can just pipe in an existing log.&lt;/p>
+&lt;p>It&amp;rsquo;s not &lt;a href="http://code.google.com/p/logstalgia/">pong&lt;/a>, but I&amp;rsquo;ve found it useful.&lt;/p>
+&lt;p>You can download the code from the &lt;a href="http://github.com/larsks/vhoststats/">project page&lt;/a> on GitHub.&lt;/p></content></item></channel></rss>

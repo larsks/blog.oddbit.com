@@ -1,0 +1,53 @@
+<!doctype html><html lang=en><head><title>Document classification with POPFile :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I recently embarked upon a quest to categorize a year&amp;rsquo;s worth of trouble tickets (around 15000 documents total). We wanted to see what sort of things are generating the most work for our helpdesk staff so that we can identify areas in which improvements would have the biggest impact. One of my colleagues took a first pass at the data by manually categorizing the tickets based on their subject. This resulted in some useful data, but in the end just over 40% of the tickets are still uncategorized."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/popfile-document-classificatio/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Document classification with POPFile"><meta property="og:description" content="I recently embarked upon a quest to categorize a year&amp;rsquo;s worth of trouble tickets (around 15000 documents total). We wanted to see what sort of things are generating the most work for our helpdesk staff so that we can identify areas in which improvements would have the biggest impact. One of my colleagues took a first pass at the data by manually categorizing the tickets based on their subject. This resulted in some useful data, but in the end just over 40% of the tickets are still uncategorized."><meta property="og:url" content="https://blog.oddbit.com/posts/popfile-document-classificatio/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2012-11-08 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/popfile-document-classificatio/>Document classification with POPFile</a></h1><div class=post-meta><time class=post-date>2012-11-08 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/bayes/>bayes</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/analytics/>analytics</a>&nbsp;</span><div class=post-content><div><p>I recently embarked upon a quest to categorize a year&rsquo;s worth of
+trouble tickets (around 15000 documents total). We wanted to see what
+sort of things are generating the most work for our helpdesk staff so
+that we can identify areas in which improvements would have the
+biggest impact. One of my colleagues took a first pass at the data by
+manually categorizing the tickets based on their subject. This
+resulted in some useful data, but in the end just over 40% of the
+tickets are still uncategorized.</p><p>I was convinced that we could do better than that by taking into
+account the actual content of the trouble tickets. This seemed like a
+good task for a <a href=https://en.wikipedia.org/wiki/Bayesian_spam_filtering>Bayesian filter</a> &ndash; a tool that uses the
+statistical probability of words to categorize documents, and is most
+commonly used to differentiate &ldquo;spam&rdquo; from &ldquo;non-spam&rdquo; messages in
+email. Because of this common use case, many of the tools out there
+are built explicitly to make binary (spam/not-spam) determinations,
+while for my purposes I needed something that was capable for sorting
+documents into multiple categories.</p><p>I finally stumbled across <a href=http://getpopfile.org/>POPFile</a>, a tool that does almost exactly
+what I want. Out of the box, POPFile is designed to act as a proxy
+between you and a POP mailbox, categorizing messages as your mail
+client retrieves them from a server. While this is tremendously
+convenient for use categorizing email, it would be a sub-optimal
+interface for categorizing a collection of existing documents.</p><p>Fortunately, POPFile offers an <a href=http://getpopfile.org/docs/popfilemodules:xmlrpc#popfile_xml-rpc_api>XML-RPC API</a> that allows programmatic
+interaction with the classification engine. Usage is relatively
+simple; first you acquire a connection to the XML-RPC API and
+establish a session key:</p><pre><code>popfile = ServerProxy(&quot;http://localhost:8081&quot;)
+api = popfile.POPFile.API
+session = api.get_session_key('admin', '')
+</code></pre><p>And then for each document, perform whatever transformations you wish
+to make (I&rsquo;m building a minimal mail header) and then pass it to the
+<code>handle_message()</code> method:</p><pre><code>with tempfile.NamedTemporaryFile() as fd:
+    fd.write('Subject: %s [%s]\n' % (subject, id))
+    fd.write('Message-ID: &lt;%s@localhost&gt;\n' % id)
+    fd.write('\n')
+    fd.write('\n'.join(text))
+    fd.flush()
+
+    # Pass file to POPFile service.
+    bucket = api.handle_message(session, fd.name, '/dev/null')
+</code></pre><p>The <code>handle_message()</code> call takes three parameters:</p><ul><li>The session key,</li><li>A path to the input file,</li><li>A path to the output file (POPFile returns the message with header
+modifications)</li></ul><p>In this example, I&rsquo;m passing <code>/dev/null</code> as the third parameter
+because I don&rsquo;t care about the data returned from POPFile.</p><p>Initially, POPFile will not perform any categorization of documents.
+After manually categorizing just a few documents, two things happen:</p><ul><li>POPFile will start using any <a href=http://getpopfile.org/docs/glossary:amagnet>magnets</a> you have defined, which are
+keyword rules that automatically assign documents to a given
+category.</li><li>For documents that do not match any magnet rules, POPFile will
+attempt to categorize them using the Bayesian inference engine.</li></ul><p>POPFile provides a web interface for interacting with the
+classification engine. In particular, this is where you go to
+manually classify documents, which further enhances the accuracy of
+the Bayesian filters. I got bored after manually categorizing on the
+order of 300 or 400 tickets and just fed the rest of the collection
+into the filter. I suspect the accuracy of the system is somewhere
+between 70% and 80% (based on POPFiles&rsquo;s estimates of accuracy while I
+was manually categorizing documents).</p><p>For more information:</p><ul><li><a href=http://getpopfile.org/>POPFile</a> website</li></ul></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

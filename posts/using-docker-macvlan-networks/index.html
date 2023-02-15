@@ -1,0 +1,66 @@
+<!doctype html><html lang=en><head><title>Using Docker macvlan networks :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="A question that crops up regularly on #docker is &amp;ldquo;How do I attach a container directly to my local network?&amp;rdquo; One possible answer to that question is the macvlan network type, which lets you create &amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach containers directly to your local network. For the most part it works great, but it does come with some minor caveats and limitations."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/using-docker-macvlan-networks/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Using Docker macvlan networks"><meta property="og:description" content="A question that crops up regularly on #docker is &amp;ldquo;How do I attach a container directly to my local network?&amp;rdquo; One possible answer to that question is the macvlan network type, which lets you create &amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach containers directly to your local network. For the most part it works great, but it does come with some minor caveats and limitations."><meta property="og:url" content="https://blog.oddbit.com/posts/using-docker-macvlan-networks/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2018-03-12 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/using-docker-macvlan-networks/>Using Docker macvlan networks</a></h1><div class=post-meta><time class=post-date>2018-03-12 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;</span><div class=post-content><div><p>A question that crops up regularly on <a href=https://docs.docker.com/opensource/ways/#docker-users>#docker</a> is &ldquo;How do I attach
+a container directly to my local network?&rdquo; One possible answer to that
+question is the <a href=https://docs.docker.com/network/macvlan/>macvlan</a> network type, which lets you create
+&ldquo;clones&rdquo; of a physical interface on your host and use that to attach
+containers directly to your local network. For the most part it works
+great, but it does come with some minor caveats and limitations. I
+would like to explore those here.</p><p>For the purpose of this example, let&rsquo;s say we have a host interface
+<code>eno1</code> that looks like this:</p><pre><code>2: eno1: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 64:00:6a:7d:06:1a brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.24/24 brd 192.168.1.255 scope global dynamic eno1
+       valid_lft 73303sec preferred_lft 73303sec
+    inet6 fe80::b2c9:3793:303:2a55/64 scope link 
+       valid_lft forever preferred_lft forever
+</code></pre><p>To create a macvlan network named <code>mynet</code> attached to that interface,
+you might run something like this:</p><pre><code>docker network create -d macvlan -o parent=eno1 \
+  --subnet 192.168.1.0/24 \
+  --gateway 192.168.1.1 \
+  mynet
+</code></pre><p>&mldr;but don&rsquo;t do that.</p><h2 id=address-assignment>Address assignment<a href=#address-assignment class=hanchor arialabel=Anchor>&#8983;</a></h2><p>When you create a container attached to your macvlan network, Docker
+will select an address from the subnet range and assign it to your
+container. This leads to the potential for conflicts: if Docker picks
+an address that has already been assigned to another host on your
+network, you have a problem!</p><p>You can avoid this by reserving a portion of the subnet range for use
+by Docker. There are two parts to this solution:</p><ul><li><p>You must configure any DHCP service on your network such that it
+will not assign addresses in a given range.</p></li><li><p>You must tell Docker about that reserved range of addresses.</p></li></ul><p>How you accomplish the former depends entirely on your local network
+infrastructure and is beyond the scope of this document. The latter
+task is accomplished with the <code>--ip-range</code> option to <code>docker network create</code>.</p><p>On my local network, my DHCP server will not assign any addresses
+above <code>192.168.1.190</code>. I have decided to assign to Docker the subset
+<code>192.168.1.192/27</code>, which is a range of 32 address starting at
+192.168.1.192 and ending at 192.168.1.223. The corresponding <code>docker network create</code> command would be:</p><pre><code>docker network create -d macvlan -o parent=eno1 \
+  --subnet 192.168.1.0/24 \
+  --gateway 192.168.1.1 \
+  --ip-range 192.168.1.192/27 \
+  mynet
+</code></pre><p>Now it is possible to create containers attached to my local network
+without worrying about the possibility of ip address conflicts.</p><h2 id=host-access>Host access<a href=#host-access class=hanchor arialabel=Anchor>&#8983;</a></h2><p>With a container attached to a macvlan network, you will find that
+while it can contact other systems on your local network without a
+problem, the container will not be able to connect to your host (and
+your host will not be able to connect to your container). This is a
+limitation of macvlan interfaces: without special support from a
+network switch, your host is unable to send packets to its own macvlan
+interfaces.</p><p>Fortunately, there is a workaround for this problem: you can create
+another macvlan interface on your host, and use that to communicate
+with containers on the macvlan network.</p><p>First, I&rsquo;m going to reserve an address from our network range for use
+by the host interface by using the <code>--aux-address</code> option to <code>docker network create</code>. That makes our final command line look like:</p><pre><code>docker network create -d macvlan -o parent=eno1 \
+  --subnet 192.168.1.0/24 \
+  --gateway 192.168.1.1 \
+  --ip-range 192.168.1.192/27 \
+  --aux-address 'host=192.168.1.223' \
+  mynet
+</code></pre><p>This will prevent Docker from assigning that address to a container.</p><p>Next, we create a new macvlan interface on the host. You can call it
+whatever you want, but I&rsquo;m calling this one <code>mynet-shim</code>:</p><pre><code>ip link add mynet-shim link eno1 type macvlan  mode bridge
+</code></pre><p>Now we need to configure the interface with the address we reserved
+and bring it up:</p><pre><code>ip addr add 192.168.1.223/32 dev mynet-shim
+ip link set mynet-shim up
+</code></pre><p>The last thing we need to do is to tell our host to use that interface
+when communicating with the containers. This is relatively easy
+because we have restricted our containers to a particular CIDR subset
+of the local network; we just add a route to that range like this:</p><pre><code>ip route add 192.168.1.192/27 dev mynet-shim
+</code></pre><p>With that route in place, your host will automatically use ths
+<code>mynet-shim</code> interface when communicating with containers on the
+<code>mynet</code> network.</p><p>Note that the interface and routing configuration presented here is
+not persistent &ndash; you will lose if if you were to reboot your host.
+How to make it persistent is distribution dependent.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

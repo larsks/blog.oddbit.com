@@ -1,0 +1,14 @@
+.archive-nav {
+	list-style: none;
+	padding: 0;
+}
+
+.archive-nav li {
+	padding: 0 1ex 0 1ex;
+	display: inline-block;
+	border-left: thin solid white;
+}
+
+.archive-nav li:first-child {
+	border-left: none;
+}

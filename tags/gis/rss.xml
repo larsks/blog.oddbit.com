@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>gis on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gis/</link><description>Recent content in gis on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gis/rss.xml" rel="self" type="application/rss+xml"/><item><title>Animating a map of Covid in the Northeast US</title><link>https://blog.oddbit.com/posts/animating-a-map-of-covid-in-th/</link><pubDate>Sun, 13 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/animating-a-map-of-covid-in-th/</guid><description>I recently put together a short animation showing the spread of Covid throughout the Northeast United States:
+I thought it might be interesting to walk through the process I used to create the video. The steps described in this article aren&amp;rsquo;t exactly what I used (I was dealing with data in a PostGIS database, and in the interests of simplicity I wanted instructions that can be accomplished with just QGIS), but they end up in the same place.</description><content>&lt;p>I recently put together a short animation showing the spread of Covid
+throughout the Northeast United States:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/zGN_zEzd_TE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>I thought it might be interesting to walk through the process I used to
+create the video. The steps described in this article aren&amp;rsquo;t exactly
+what I used (I was dealing with data in a &lt;a href="https://postgis.net/">PostGIS&lt;/a> database, and in
+the interests of simplicity I wanted instructions that can be
+accomplished with just QGIS), but they end up in the same place.&lt;/p>
+&lt;h2 id="data-sources">Data sources&lt;/h2>
+&lt;p>Before creating the map, I had to find appropriate sources of data. I
+needed three key pieces of information:&lt;/p>
+&lt;ol>
+&lt;li>State and county outlines&lt;/li>
+&lt;li>Information about population by county&lt;/li>
+&lt;li>Information about Covid cases over time by county&lt;/li>
+&lt;/ol>
+&lt;h3 id="us-census-data">US Census Data&lt;/h3>
+&lt;p>I was able to obtain much of the data from the US Census website,
+&lt;a href="https://data.census.gov">https://data.census.gov&lt;/a>. Here I was able to find both tabular
+demographic data (population information) and geographic data (state
+and county cartographic borders):&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv">Population estimates&lt;/a>&lt;/p>
+&lt;p>This dataset contains population estimates by county from 2010
+through 2019. This comes from the US Census &amp;ldquo;&lt;a href="https://www.census.gov/programs-surveys/popest.html">Population Estimates
+Program&lt;/a>&amp;rdquo; (PEP).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_county_5m.zip">County outlines&lt;/a>&lt;/p>
+&lt;p>This dataset contains US county outlines provided by the US Census.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_5m.zip">State outlines&lt;/a>&lt;/p>
+&lt;p>This dataset contains US state outlines provided by the US Census.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>The tabular data is provided in &lt;a href="https://en.wikipedia.org/wiki/Comma-separated_values">CSV&lt;/a> (comma-separated value)
+format, which is a simple text-only format that can be read by a
+variety of software (including spreadsheet software such as Excel or
+Google Sheets).&lt;/p>
+&lt;p>The geographic data is available as both a &lt;a href="https://en.wikipedia.org/wiki/Shapefile">shapefile&lt;/a> and as a
+&lt;a href="https://en.wikipedia.org/wiki/Keyhole_Markup_Language">KML&lt;/a> file. A &lt;em>shapefile&lt;/em> is a relatively standard format for
+exchanging geographic data. You generally need some sort of &lt;a href="https://en.wikipedia.org/wiki/Geographic_information_system">GIS
+software&lt;/a> in order to open and manipulate a shapefile (a topic that
+I will cover later on in this article). KML is another format for
+sharing geographic data that was developed by Google as part of Google
+Earth.&lt;/p>
+&lt;h3 id="new-york-times-covid-data">New York Times Covid Data&lt;/h3>
+&lt;p>The New York Times maintains a &lt;a href="https://github.com/nytimes/covid-19-data">Covid dataset&lt;/a> (because our
+government is both unable and unwilling to perform this basic public
+service) in CSV format that tracks Covid cases and deaths in the
+United States, broken down both by state and by county.&lt;/p>
+&lt;h2 id="software">Software&lt;/h2>
+&lt;p>In order to build something like this map you need a Geographic
+Information System (GIS) software package. The 800 pound gorilla of
+GIS software is &lt;a href="https://www.esri.com/en-us/arcgis/about-arcgis/overview">ArcGIS&lt;/a>, a capable but pricey commercial package
+that may cost more than the casual GIS user is willing to pay.
+Fortunately, there are some free alternatives available.&lt;/p>
+&lt;p>Google&amp;rsquo;s &lt;a href="https://www.google.com/earth/versions/#earth-pro">Google Earth Pro&lt;/a> has a different focus from most other
+GIS software (it is designed more for exploration/educational use than
+actual GIS work), but it is able to open and display a variety of GIS
+data formats, including the shapefiles used in this project.&lt;/p>
+&lt;p>&lt;a href="https://qgis.org/en/site/">QGIS&lt;/a> is a highly capable &lt;a href="https://www.redhat.com/en/topics/open-source/what-is-open-source">open source&lt;/a> GIS package, available
+for free for a variety of platforms including MacOS, Windows, and
+Linux. This is the software that I used to create the animated map,
+and the software we&amp;rsquo;ll be working with in the rest of this article.&lt;/p>
+&lt;h2 id="preparing-the-data">Preparing the data&lt;/h2>
+&lt;h3 id="geographic-filtering">Geographic filtering&lt;/h3>
+&lt;p>I was initially planning on creating a map for the entire United
+States, but I immediately ran into a problem: with over 3,200 counties
+in the US and upwards of 320 data points per county in the Covid
+dataset, that was going to result in over 1,000,000 geographic
+features. On my computer, QGIS wasn&amp;rsquo;t able to handle a dataset of
+that size. So the first step is limiting the data we&amp;rsquo;re manipulating
+to something smaller; I chose New York and New England.&lt;/p>
+&lt;p>We start by adding the &lt;code>cb_2018_us_state_5m&lt;/code> map to QGIS. This gives
+us all 50 states (and a few territories):&lt;/p>
+&lt;figure class="left" >
+&lt;img src="states-unfiltered.png" />
+&lt;/figure>
+&lt;p>To limit this to our target geography, we can select &amp;ldquo;Filter&amp;hellip;&amp;rdquo; from
+the layer context menu and apply the following filter:&lt;/p>
+&lt;pre tabindex="0">&lt;code>&amp;#34;NAME&amp;#34; in (
+&amp;#39;New York&amp;#39;,
+&amp;#39;Massachusetts&amp;#39;,
+&amp;#39;Rhode Island&amp;#39;,
+&amp;#39;Connecticut&amp;#39;,
+&amp;#39;New Hampshire&amp;#39;,
+&amp;#39;Vermont&amp;#39;,
+&amp;#39;Maine&amp;#39;
+)
+&lt;/code>&lt;/pre>&lt;p>This gives us:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="states-filtered.png" />
+&lt;/figure>
+&lt;p>Next, we need to load in the county outlines that cover the same
+geographic area. We start by adding the &lt;code>cb_2018_us_county_5m&lt;/code>
+dataset to QGIS, which gets us:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="counties-unfiltered.png" />
+&lt;/figure>
+&lt;p>There are several ways we could limit the counties to just those in
+our target geography. One method is to use the &amp;ldquo;Clip&amp;hellip;&amp;rdquo; feature in
+the &amp;ldquo;Vector-&amp;gt;Geoprocessing Tools&amp;rdquo; menu. This allows to &amp;ldquo;clip&amp;rdquo; one
+vector layer (such as our county outlines) using another layer (our
+filtered state layer).&lt;/p>
+&lt;p>We select &amp;ldquo;Vector-&amp;gt;Geoprocessing Tools-&amp;gt;Clip&amp;hellip;&amp;rdquo;, and then fill
+in in the resulting dialog as follows:&lt;/p>
+&lt;ul>
+&lt;li>For &amp;ldquo;Input layer&amp;rdquo;, select &lt;code>cb_2018_us_county_5m&lt;/code>.&lt;/li>
+&lt;li>For &amp;ldquo;Overlay layer&amp;rdquo;, select &lt;code>cb_2018_us_state_5m&lt;/code>.&lt;/li>
+&lt;/ul>
+&lt;p>Now select the &amp;ldquo;Run&amp;rdquo; button. You should end up with a new layer named
+&lt;code>Clipped&lt;/code>. Hide the original &lt;code>cb_2018_us_county_5m&lt;/code> layer, and rename
+&lt;code>Clipped&lt;/code> to &lt;code>cb_2018_us_county_5m_clipped&lt;/code>. This gives us:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="counties-clipped.png" />
+&lt;/figure>
+&lt;p>Instead of using the &amp;ldquo;Clip&amp;hellip;&amp;rdquo; algorithm, we could have created a
+&lt;a href="https://docs.qgis.org/3.16/en/docs/user_manual/managing_data_source/create_layers.html#creating-virtual-layers">virtual layer&lt;/a> and performed a &lt;a href="http://wiki.gis.com/wiki/index.php/Spatial_Join#:~:text=A%20Spatial%20join%20is%20a,spatially%20to%20other%20feature%20layers.">spatial join&lt;/a> between the state
+and county layers; unfortunately, due to issue &lt;a href="https://github.com/qgis/QGIS/issues/40503">#40503&lt;/a>, it&amp;rsquo;s not
+possible to use virtual layers with this dataset (or really any
+dataset, if you have numeric data you care about).&lt;/p>
+&lt;h3 id="merging-population-data-with-our-geographic-data">Merging population data with our geographic data&lt;/h3>
+&lt;p>Add the population estimates to our project. Select &amp;ldquo;Layer-&amp;gt;Add
+Layer-&amp;gt;Add Delimited Text Layer&amp;hellip;&amp;rdquo;, find the
+&lt;code>co-est2019-alldata.csv&lt;/code> dataset and add it to the project. This layer
+doesn&amp;rsquo;t have any geographic data of its own; we need to associate it
+with one of our other layers in order to make use of it. We can this
+by using a &lt;a href="https://www.qgistutorials.com/en/docs/3/performing_table_joins.html">table join&lt;/a>.&lt;/p>
+&lt;p>In order to perform a table join, we need a single field in each layer
+that corresponds to a field value in the other layer. The counties
+dataset has a &lt;code>GEOID&lt;/code> field that combines the state and county &lt;a href="https://transition.fcc.gov/oet/info/maps/census/fips/fips.txt">FIPS
+codes&lt;/a>, but the population dataset has only individual state and
+county codes. We can create a new &lt;a href="https://docs.qgis.org/3.16/en/docs/user_manual/working_with_vector/attribute_table.html#creating-a-virtual-field">virtual field&lt;/a> in the population
+layer that combines these two values in order to provide an
+appropriate target field for the table join.&lt;/p>
+&lt;p>Open the attribute table for population layer, and click on the &amp;ldquo;Open
+field calculator&amp;rdquo; button (it looks like an abacus). Enter &lt;code>geoid&lt;/code> for
+the field name, select the &amp;ldquo;Create virtual field&amp;rdquo; checkbox, and select
+&amp;ldquo;Text (string)&amp;rdquo; for the field type. In the &amp;ldquo;Expression&amp;rdquo; field, enter:&lt;/p>
+&lt;pre tabindex="0">&lt;code>lpad(to_string(&amp;#34;STATE&amp;#34;), 2, &amp;#39;0&amp;#39;) || lpad(to_string(&amp;#34;COUNTY&amp;#34;), 3, &amp;#39;0&amp;#39;)
+&lt;/code>&lt;/pre>
+&lt;figure class="left" >
+&lt;img src="create-virtual-field.png" />
+&lt;/figure>
+&lt;p>When you return the to attribute table, you will see a new &lt;code>geoid&lt;/code>
+field that contains our desired value. We can now perform the table
+join.&lt;/p>
+&lt;p>Open the properties for the &lt;code>cb_2018_us_county_5m_clipped&lt;/code> layer we
+created earlier, and select the &amp;ldquo;Joins&amp;rdquo; tab. Click on the &amp;ldquo;+&amp;rdquo; button.
+For &amp;ldquo;Join layer&amp;rdquo;, select &lt;code>co-est2019-alldata&lt;/code>. Select &lt;code>geoid&lt;/code> for
+&amp;ldquo;Join field&amp;rdquo; and &lt;code>GEOID&lt;/code> for target field. Lastly, select the &amp;ldquo;Custom
+field name prefix&amp;rdquo; checkbox and enter &lt;code>pop_&lt;/code> in the field, then click
+&amp;ldquo;OK&amp;rdquo;.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="county-join-population.png" />
+&lt;/figure>
+&lt;p>If you examine the attribute table for the layer, you will see the
+each county feature is now linked to the appropriate population
+data for that county.&lt;/p>
+&lt;h3 id="merging-covid-data-with-our-geographic-data">Merging Covid data with our geographic data&lt;/h3>
+&lt;p>This is another table join operation, but the process is going to be a
+little different. The previous process assumes a 1-1 mapping between
+features in the layers being joined, but the Covid dataset has many
+data points for each county. We need a solution that will produce the
+desired 1-many mapping.&lt;/p>
+&lt;p>We can achieve this using the &amp;ldquo;Join attributes by field value&amp;rdquo;
+action in the &amp;ldquo;Processing&amp;rdquo; toolbox.&lt;/p>
+&lt;p>Start by adding the &lt;code>us-counties.csv&lt;/code> file from the NYT covid dataset
+to the project.&lt;/p>
+&lt;p>Select &amp;ldquo;Toolbox-&amp;gt;Processing&amp;rdquo; to show the Processing toolbox, if
+it&amp;rsquo;s not already visible. In the &amp;ldquo;Search&amp;rdquo; field, enter &amp;ldquo;join&amp;rdquo;, and
+then look for &amp;ldquo;Join attributes by field value&amp;rdquo; in the &amp;ldquo;Vector general&amp;rdquo;
+section.&lt;/p>
+&lt;p>Double click on this to open the input dialog. For &amp;ldquo;Input layer&amp;rdquo;,
+select &lt;code>cb_2018_us_county_5m_clipped&lt;/code>, and &amp;ldquo;Table field&amp;rdquo; select
+&lt;code>GEOID&lt;/code>. For &amp;ldquo;Input layer 2&amp;rdquo;, select &lt;code>us-counties&lt;/code>, and for &amp;ldquo;Table
+field 2&amp;rdquo; select &lt;code>fips&lt;/code>. In the &amp;ldquo;Join type&amp;rdquo; menu, select &amp;ldquo;Create
+separate feature for each matching feature (one-to-many)&amp;rdquo;. Ensure the
+&amp;ldquo;Discard records which could not be joined&amp;rdquo; is checked. Enter &lt;code>covid_&lt;/code>
+in the &amp;ldquo;Joined field prefix [optional]&amp;rdquo; field (this will cause the
+fields in the resulting layer to have names like &lt;code>covid_date&lt;/code>,
+&lt;code>covid_cases&lt;/code>, etc). Click the &amp;ldquo;Run&amp;rdquo; button to create the new layer.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="county-join-covid.png" />
+&lt;/figure>
+&lt;p>You will end up with a new layer named &amp;ldquo;Joined layer&amp;rdquo;. I suggest
+renaming this to &lt;code>cb_2018_us_county_5m_covid&lt;/code>. If you enable the &amp;ldquo;show
+feature count&amp;rdquo; checkbox for your layers, you will see that while the
+&lt;code>cb_2018_us_county_5m_clipped&lt;/code> has 129 features, the new
+&lt;code>cb_2018_us_county_5m_covid&lt;/code> layer has over 32,000 features. That&amp;rsquo;s because
+for each county, there are around 320 data points tracking Covid cases
+(etc) over time.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="layers-feature-count.png" />
+&lt;/figure>
+&lt;h2 id="styling">Styling&lt;/h2>
+&lt;h3 id="creating-outlines">Creating outlines&lt;/h3>
+&lt;p>The only layer on our map that should have filled features will be the
+covid data layer. We want to configure our other layers to only
+display outlines.&lt;/p>
+&lt;p>First, arrange the layers in the following order (from top to bottom):&lt;/p>
+&lt;ol>
+&lt;li>cb_2018_us_state_5m&lt;/li>
+&lt;li>cb_2018_us_county_5m_clipped&lt;/li>
+&lt;li>cb_2018_us_county_5m_covid&lt;/li>
+&lt;/ol>
+&lt;p>The order of the csv layers doesn&amp;rsquo;t matter, and if you still have the
+original &lt;code>cb_2018_us_county_5m&lt;/code> layer in your project it should be
+hidden.&lt;/p>
+&lt;p>Configure the state layer to display outlines. Right click on the
+layer and select &amp;ldquo;Properties&amp;rdquo;, then select the &amp;ldquo;Symbology&amp;rdquo; tab. Click
+on the &amp;ldquo;Simple Fill&amp;rdquo; item at the top, then in the &amp;ldquo;Symbol layer type&amp;rdquo;
+menu select &amp;ldquo;Simple Line&amp;rdquo;. Set the stroke width to 0.66mm.&lt;/p>
+&lt;p>As long as we&amp;rsquo;re here, let&amp;rsquo;s also enable labels for the state layer.
+Select the &amp;ldquo;Labels&amp;rdquo; tab, then set the menu at the top to &amp;ldquo;Single
+Labels&amp;rdquo;. Set the &amp;ldquo;Value&amp;rdquo; field to &amp;ldquo;Name&amp;rdquo;. Click the &amp;ldquo;Apply&amp;rdquo; button to
+show the labels on the map without closing the window; now adjust the
+font size (and click &amp;ldquo;Apply&amp;rdquo; again) until things look the way you
+want. To make the labels a bit easier to read, select the &amp;ldquo;Buffer&amp;rdquo;
+panel, and check the &amp;ldquo;Draw text buffer&amp;rdquo; checkbox.&lt;/p>
+&lt;p>Now do the same thing (except don&amp;rsquo;t enable labels) with the
+&lt;code>cb_2018_us_county_5m_clipped&lt;/code> layer, but set the stroke width to
+0.46mm.&lt;/p>
+&lt;p>If you hide the the Covid layer, your map should look like this (don&amp;rsquo;t
+forget to unhide the Covid layer for the next step):&lt;/p>
+&lt;figure class="left" >
+&lt;img src="map-outlines.png" />
+&lt;/figure>
+&lt;h3 id="creating-graduated-colors">Creating graduated colors&lt;/h3>
+&lt;p>Open the properties for the &lt;code>cb_2018_us_county_5m_covid&lt;/code> layer, and
+select the &amp;ldquo;Symbology&amp;rdquo; tab. At the top of the symbology panel is a
+menu currently set to &amp;ldquo;Single Symbol&amp;rdquo;. Set this to &amp;ldquo;Graduated&amp;rdquo;.&lt;/p>
+&lt;p>Open the expression editor for the &amp;ldquo;Value&amp;rdquo; field, and set it to:&lt;/p>
+&lt;pre tabindex="0">&lt;code>(to_int(&amp;#34;cases&amp;#34;) / &amp;#34;pop_POPESTIMATE2019&amp;#34;) * 1000000
+&lt;/code>&lt;/pre>&lt;p>Set the &amp;ldquo;Color ramp&amp;rdquo; to &amp;ldquo;Spectral&amp;rdquo;, and then select &amp;ldquo;Invert color
+ramp&amp;rdquo;.&lt;/p>
+&lt;p>Ensure the &amp;ldquo;Mode&amp;rdquo; menu is set to &amp;ldquo;Equal count (Quantile)&amp;rdquo;, and then
+set &amp;ldquo;Classes&amp;rdquo; to 15. This will give a set of graduated categories that
+looks like this:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="graduated-categories.png" />
+&lt;/figure>
+&lt;p>Close the properties window. Your map should look something like this:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="map-graduated-1.png" />
+&lt;/figure>
+&lt;p>That&amp;rsquo;s not very exciting yet, is it? Let&amp;rsquo;s move on to the final
+section of this article.&lt;/p>
+&lt;h2 id="animating-the-data">Animating the data&lt;/h2>
+&lt;p>For this final step, we need to enable the QGIS &lt;a href="https://plugins.qgis.org/plugins/timemanager/">TimeManager&lt;/a>
+plugin. Install the TimeManager plugin if it&amp;rsquo;s not already installed:
+open the plugin manager (&amp;ldquo;Plugins-&amp;gt;Manage and Install Plugins&amp;hellip;&amp;rdquo;),
+and ensure both that TimeManager is installed and that it is enabled
+(the checkbox to the left of the plugin name is checked).&lt;/p>
+&lt;p>Return to the project and open the TimeManger panel: select
+&amp;ldquo;Plugins-&amp;gt;TimeManager-&amp;gt;Toggle visbility&amp;rdquo;. This will display the
+following panel below the map:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-panel-initial.png" />
+&lt;/figure>
+&lt;p>Make sure that the &amp;ldquo;Time frame size&amp;rdquo; is set to &amp;ldquo;1 days&amp;rdquo;.&lt;/p>
+&lt;p>Click the &amp;ldquo;Settings&amp;rdquo; button to open the TimeManager settings window,
+then select the &amp;ldquo;Add layer&amp;rdquo; button. In the resulting window, select
+the &lt;code>cb_2018_us_county_5m_covid&lt;/code> layer in the &amp;ldquo;Layer&amp;rdquo; menu, the select
+the &lt;code>covid_date&lt;/code> column in the &amp;ldquo;Start time&amp;rdquo; menu. Leave all other
+values at their defaults and click &amp;ldquo;OK&amp;rdquo; to return to the TimeManager
+settings.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-add-layer.png" />
+&lt;/figure>
+&lt;p>You will see the layer we just added listed in the &amp;ldquo;Layers&amp;rdquo; list. Look
+for the &amp;ldquo;Time Format&amp;rdquo; column in this list, which will say &amp;ldquo;TO BE
+INFERRED&amp;rdquo;. Click in this column and change the value to &lt;code>%Y-%m-%d&lt;/code> to
+match the format of the dates in the &lt;code>covid_date&lt;/code> field.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-settings-final.png" />
+&lt;/figure>
+&lt;p>You may want to change &amp;ldquo;Show frame for&amp;rdquo; setting from the default to
+something like 50 milliseconds. Leave everything else at the defaults
+and click the &amp;ldquo;OK&amp;rdquo; button.&lt;/p>
+&lt;p>Ensure that the TimeManager is enabled by clicking on the &amp;ldquo;power
+button&amp;rdquo; in the TimeManager panel. TimeManager is enabled when the
+power button is green.&lt;/p>
+&lt;p>Disabled:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-disabled.png" />
+&lt;/figure>
+&lt;p>Enabled:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-enabled.png" />
+&lt;/figure>
+&lt;p>Once TimeManager is enabled, you should be able to use the slider to
+view the map at different times. For example, here&amp;rsquo;s the map in early
+May:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-early-may.png" />
+&lt;/figure>
+&lt;p>And here it is in early November:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="timemanager-early-november.png" />
+&lt;/figure>
+&lt;p>To animate the map, click the play button in the bottom left of the
+TimeManager panel.&lt;/p>
+&lt;p>You can export the animation to a video using the &amp;ldquo;Export Video&amp;rdquo;
+button. Assuming that you have &lt;a href="https://ffmpeg.org/">ffmpeg&lt;/a> installed, you can select an
+output directory, select the &amp;ldquo;Video (required ffmpeg &amp;hellip;)&amp;rdquo; button,
+then click &amp;ldquo;OK&amp;rdquo;. You&amp;rsquo;ll end up with (a) a PNG format image file for
+each frame and (b) a file named &lt;code>out.mp4&lt;/code> containing the exported
+video.&lt;/p>
+&lt;h2 id="datasets">Datasets&lt;/h2>
+&lt;p>I have made all the data referenced in this post available at
+&lt;a href="https://github.com/larsks/ne-covid-map">https://github.com/larsks/ne-covid-map&lt;/a>.&lt;/p></content></item><item><title>Installing pyspatialite on Fedora</title><link>https://blog.oddbit.com/posts/installing-pyspatialite-on-fed/</link><pubDate>Tue, 17 Nov 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/installing-pyspatialite-on-fed/</guid><description>If you should find yourself wanting to install pyspatialite on Fedora &amp;ndash; perhaps because you want to use the Processing plugin for QGIS &amp;ndash; you will first need to install the following dependencies:
+gcc python-devel sqlite-devel geos-devel proj-devel python-pip redhat-rpm-config After which you can install pyspatialite using pip by running:
+CFLAGS=-I/usr/include pip install pyspatialite At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.</description><content>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
+Fedora &amp;ndash; perhaps because you want to use the &lt;a href="https://plugins.qgis.org/plugins/processing/">Processing plugin&lt;/a>
+for &lt;a href="http://www.qgis.org/">QGIS&lt;/a> &amp;ndash; you will first need to install the following
+dependencies:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>gcc&lt;/code>&lt;/li>
+&lt;li>&lt;code>python-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>sqlite-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>geos-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>proj-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>python-pip&lt;/code>&lt;/li>
+&lt;li>&lt;code>redhat-rpm-config&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>After which you can install &lt;code>pyspatialite&lt;/code> using &lt;code>pip&lt;/code> by running:&lt;/p>
+&lt;pre>&lt;code>CFLAGS=-I/usr/include pip install pyspatialite
+&lt;/code>&lt;/pre>
+&lt;p>At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.&lt;/p></content></item></channel></rss>

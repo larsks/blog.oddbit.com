@@ -1,0 +1,129 @@
+<!doctype html><html lang=en><head><title>Fun with devicemapper snapshots :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I find myself working with Raspbian disk images fairly often. A typical workflow is:
+Download the disk image. Mount the filesystem somewhere to check something. Make some changes or install packages just to check something else. Crap I&amp;rsquo;ve made changes. &amp;hellip;at which point I need to fetch a new copy of the image next time I want to start fresh.
+Sure, I could just make a copy of the image and work from there, but what fun is that?"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/fun-with-devicemapper-snapshot/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Fun with devicemapper snapshots"><meta property="og:description" content="I find myself working with Raspbian disk images fairly often. A typical workflow is:
+Download the disk image. Mount the filesystem somewhere to check something. Make some changes or install packages just to check something else. Crap I&amp;rsquo;ve made changes. &amp;hellip;at which point I need to fetch a new copy of the image next time I want to start fresh.
+Sure, I could just make a copy of the image and work from there, but what fun is that?"><meta property="og:url" content="https://blog.oddbit.com/posts/fun-with-devicemapper-snapshot/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2018-01-25 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/fun-with-devicemapper-snapshot/>Fun with devicemapper snapshots</a></h1><div class=post-meta><time class=post-date>2018-01-25 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/storage/>storage</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/devicemapper/>devicemapper</a>&nbsp;</span><div class=post-content><div><p>I find myself working with <a href=https://www.raspberrypi.org/downloads/raspbian/>Raspbian</a> disk images fairly often. A
+typical workflow is:</p><ul><li>Download the disk image.</li><li>Mount the filesystem somewhere to check something.</li><li>Make some changes or install packages just to check something else.</li><li>Crap I&rsquo;ve made changes.</li></ul><p>&mldr;at which point I need to fetch a new copy of the image next time I
+want to start fresh.</p><p>Sure, I could just make a copy of the image and work from there, but
+what fun is that? This seemed like a perfect opportunity to learn more
+about the <a href=https://www.kernel.org/doc/Documentation/device-mapper/>device mapper</a> and in particular how the <a href=https://www.kernel.org/doc/Documentation/device-mapper/snapshot.txt>snapshot</a>
+target works.</p><h2 id=making-sure-we-have-a-block-device>Making sure we have a block device<a href=#making-sure-we-have-a-block-device class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The device mapper only operates on block devices, so the first thing
+we need to do is to make the source image available as a block device.
+We can do that with the <a href=http://manpages.ubuntu.com/manpages/xenial/man8/losetup.8.html>losetup</a> command, which maps a file to a
+virtual block device (or <em>loop</em> device).</p><p>I run something like this:</p><pre><code>losetup --find --show --read-only 2017-11-29-raspbian-stretch-lite.img
+</code></pre><p>This will find the first available block device, and then use it make
+my disk image available in read-only mode. Those of you who are
+familiar with <code>losetup</code> may be thinking, &ldquo;you know, <code>losetup</code> knows
+how to handle partitioned devices&rdquo;, but I am ignoring that for the
+purpose of using device mapper to solve things.</p><h2 id=mapping-a-partition>Mapping a partition<a href=#mapping-a-partition class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;ve just mapped the entire disk image to a block device. We can&rsquo;t
+use this directly because the image has multiple partitions:</p><pre><code># sfdisk -l /dev/loop0
+Disk /dev/loop0: 1.7 GiB, 1858076672 bytes, 3629056 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x37665771
+
+Device       Boot Start     End Sectors  Size Id Type
+/dev/loop0p1       8192   93236   85045 41.5M  c W95 FAT32 (LBA)
+/dev/loop0p2      94208 3629055 3534848  1.7G 83 Linux
+</code></pre><p>We want to expose partition 2, which contains the root filesystem. We
+can see from the above output that partition 2 starts at sector
+<code>94208</code> and extends for <code>3534848</code> sectors (where a <em>sector</em> is for our
+purposes 512 bytes). If you need to get at this information
+programatically, <code>sfdisk</code> has <code>--json</code> option that can be useful; for
+example:</p><pre><code># p_start=$(sfdisk --json /dev/loop0 |
+  jq &quot;.partitiontable.partitions[1].start&quot;)
+# echo $p_start
+94208
+</code></pre><p>We want to expose this partition as a distinct block device. We&rsquo;re
+going to do this by creating a device mapper <code>linear</code> target. To
+create device mapper devices, we use the <code>dmsetup</code> command; the basic
+syntax is:</p><pre><code>dmsetup create &lt;name&gt;
+</code></pre><p>By default, this expects to read a table describing the device on
+<code>stdin</code>, although it is also possible to specify one on the command
+line. A table consists of one or more lines of the format:</p><pre><code>&lt;base&gt; &lt;length&gt; &lt;target&gt; [&lt;options&gt;]
+</code></pre><p>Where <code>&lt;base></code> is the starting offset in sectors for this particular
+segment, <code>&lt;length></code> is the length, <code>&lt;target></code> is the target type
+(linear, snapshot, zero, etc), and the option are specific to the
+particular target in use.</p><p>To create a device exposing partition 2 of our image, we run:</p><pre><code># dmsetup create base &lt;&lt;EOF
+0 3534848 linear /dev/loop0 94208
+EOF
+</code></pre><p>This creates a device named <code>/dev/mapper/base</code>. Sectors <code>0</code> through
+<code>3534848</code> of this device will be provided by <code>/dev/loop0</code>, starting at
+offset <code>94208</code>. At this point, we can actually mount the filesystem:</p><pre><code># mount -o ro /dev/mapper/base /mnt
+# ls /mnt
+bin   dev  home  lost+found  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media       opt  root  sbin  sys  usr
+# umount /mnt
+</code></pre><p>But wait, there&rsquo;s a problem! These disk images usually have very
+little free space. We&rsquo;re going to want to extend the length of our
+base device by some amount so that we have room for new packages and
+so forth. Fortunately, since our goal is that all writes are going to
+a snapshot, we don&rsquo;t need to use <em>real</em> space. We can add another
+segment to our table that uses the <a href=https://www.kernel.org/doc/Documentation/device-mapper/zero.txt>zero</a> target.</p><p>Let&rsquo;s first get rid of the device we just created:</p><pre><code># dmsetup remove base
+</code></pre><p>And create a new one:</p><pre><code># dmsetup create base &lt;&lt;EOF
+0 3534848 linear /dev/loop0 94208
+3534848 6950912 zero
+EOF
+</code></pre><p>This extends our <code>base</code> device out to 5G (or a total of <code>10485760</code>
+sectors), although attempting to read from anything beyond sector
+<code>3534848</code> will return zeros, and writes will be discarded. But that&rsquo;s
+okay, because the space available for writes is going to come from a
+COW (&ldquo;copy-on-write&rdquo;) device associated with our snapshot: in other
+words, the capacity of our snapshot will be linked to size of our COW
+device, rather than the size of the underlying base image.</p><h2 id=creating-a-snapshot>Creating a snapshot<a href=#creating-a-snapshot class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Now that we&rsquo;ve sorted out our base image it&rsquo;s time to create the
+snapshot device. According to <a href=https://www.kernel.org/doc/Documentation/device-mapper/snapshot.txt>the documentation</a>, the
+table entry for a snapshot looks like:</p><pre><code>snapshot &lt;origin&gt; &lt;COW device&gt; &lt;persistent?&gt; &lt;chunksize&gt;
+</code></pre><p>We have our <code>&lt;origin></code> (that&rsquo;s the base image we created in the
+previous step), but what are we going to use as our <code>&lt;COW device></code>?
+This is a chunk of storage that will receive any writes to the
+snapshot device. This could be any block device (another loop device,
+an LVM volume, a spare disk partition), but for my purposes it seemed
+convenient to use a RAM disk, since I had no need for persistent
+changes. We can use the <a href=https://www.kernel.org/doc/Documentation/blockdev/zram.txt>zram</a> kernel module for that. Let&rsquo;s start
+by loading the module:</p><pre><code># modprobe zram
+</code></pre><p>Without any additional parameters this will create a single RAM disk,
+<code>/dev/zram0</code>. Initially, it&rsquo;s not very big:</p><pre><code># blockdev --getsz /dev/zram0
+0
+</code></pre><p>But we can change that using the <code>sysfs</code> interface provided in
+<code>/sys/block/zram0/</code>. The <code>disksize</code> option controls the size of the
+disk. Let&rsquo;s say we want to handle up to 512M of writes; that means we
+need to write the value <code>512M</code> to <code>/sys/block/zram0/disksize</code>:</p><pre><code>echo 512M &gt; /sys/block/zram0/disksize
+</code></pre><p>And now:</p><pre><code># blockdev --getsz /dev/zram0
+1048576
+</code></pre><p>We now have all the requirements to create our snapshot device:</p><pre><code>dmsetup create snap &lt;&lt;EOF
+0 10485760 snapshot /dev/mapper/base /dev/zram0 N 16
+EOF
+</code></pre><p>This creates a device named <code>/dev/mapper/snap</code>. It is a 5G block
+device backed by <code>/dev/mapper/base</code>, with changes written to
+<code>/dev/zram0</code>. We can mount it:</p><pre><code># mount /dev/mapper/snap /mnt
+# df -h /mnt
+Filesystem        Size  Used Avail Use% Mounted on
+/dev/mapper/snap  1.7G  943M  623M  61% /mnt
+</code></pre><p>And we can resize it:</p><pre><code># resize2fs !$
+resize2fs /dev/mapper/snap
+resize2fs 1.43.3 (04-Sep-2016)
+Filesystem at /dev/mapper/snap is mounted on /mnt; on-line resizing required
+old_desc_blocks = 1, new_desc_blocks = 1
+The filesystem on /dev/mapper/snap is now 1310720 (4k) blocks long.
+
+# df -h /mnt
+Filesystem        Size  Used Avail Use% Mounted on
+/dev/mapper/snap  4.9G  944M  3.8G  20% /mnt
+</code></pre><p>You&rsquo;ll note here that it looks like we have a 5G device, because
+that&rsquo;s the size of our base image. Because we&rsquo;ve only allocated
+<code>512M</code> to our COW device, we can actually only handle up to 512M of
+writes before we invalidate the snapshot.</p><p>We can inspect the amount of our COW device that has been consumed by
+changes by using <code>dmsetup status</code>:</p><pre><code># dmsetup status snap
+0 10485760 snapshot 107392/1048576 0
+</code></pre><p>This tells us that <code>107392</code> sectors of <code>1048576</code> total have been
+consumed so far (in other words, about 54M out of 512M). We can get
+similar information from the perspective of the <code>zram</code> module using
+<code>zramctl</code>:</p><pre><code># zramctl
+NAME       ALGORITHM DISKSIZE  DATA COMPR TOTAL STREAMS MOUNTPOINT
+/dev/zram0 lzo           512M 52.4M   34K   72K       4
+</code></pre><p>This information is also available in <code>/sys/block/zram0/mm_stat</code>, but
+without any labels.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

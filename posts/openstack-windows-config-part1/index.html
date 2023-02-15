@@ -1,0 +1,90 @@
+<!doctype html><html lang=en><head><title>Automatic configuration of Windows instances in OpenStack, part 1 :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is the first of two articles in which I discuss my work in getting some Windows instances up and running in our OpenStack environment. This article is primarily about problems I encountered along the way.
+Motivations Like many organizations, we have a mix of Linux and Windows in our environment. Some folks in my group felt that it would be nice to let our Windows admins take advantage of OpenStack for prototyping and sandboxing in the same ways our Linux admins can use it."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/openstack-windows-config-part1/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Automatic configuration of Windows instances in OpenStack, part 1"><meta property="og:description" content="This is the first of two articles in which I discuss my work in getting some Windows instances up and running in our OpenStack environment. This article is primarily about problems I encountered along the way.
+Motivations Like many organizations, we have a mix of Linux and Windows in our environment. Some folks in my group felt that it would be nice to let our Windows admins take advantage of OpenStack for prototyping and sandboxing in the same ways our Linux admins can use it."><meta property="og:url" content="https://blog.oddbit.com/posts/openstack-windows-config-part1/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2012-11-04 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/openstack-windows-config-part1/>Automatic configuration of Windows instances in OpenStack, part 1</a></h1><div class=post-meta><time class=post-date>2012-11-04 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/windows/>windows</a>&nbsp;</span><div class=post-content><div><p>This is the first of two articles in which I discuss my work in
+getting some Windows instances up and running in our <a href=http://www.openstack.org/>OpenStack</a>
+environment. This article is primarily about problems I encountered
+along the way.</p><h2 id=motivations>Motivations<a href=#motivations class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Like many organizations, we have a mix of Linux and Windows in our
+environment. Some folks in my group felt that it would be nice to let
+our Windows admins take advantage of OpenStack for prototyping and
+sandboxing in the same ways our Linux admins can use it.</p><p>While it is trivial to get Linux instances running in
+OpenStack (there are downloadable images from several distributions that
+will magically configure themselves on first boot), getting Windows
+systems set up is a little trickier. There are no pre-configured
+images to download, and it looks as if there aren&rsquo;t that many people
+trying to run Windows under OpenStack right now so there is a lot less
+common experience to reference.</p><h2 id=like-the-cool-kids-do-it>Like the cool kids do it<a href=#like-the-cool-kids-do-it class=hanchor arialabel=Anchor>&#8983;</a></h2><p>My first approach to this situation was to set up our Windows
+instances to act just like our Linux instances:</p><ul><li>Install <a href=http://cygwin.com/>Cygwin</a>.</li><li>Run an SSH server.</li><li>Have the system pull down an SSH public key on first boot and use
+this for administrative access.</li></ul><p>This worked reasonably well, but many people felt that this wasn&rsquo;t a
+great solution because it wouldn&rsquo;t feel natural to a typical Windows
+administrator. It also required a full Cygwin install to drive
+things, which isn&rsquo;t terrible but still feels like a pretty big hammer.</p><p>As an alternative, we decided we needed some way to either (a) allow
+the user to pass a password into the instance environment, or (b)
+provide some way for the instance to communicate a generated password
+back to the user.</p><h2 id=how-about-user-data>How about user-data?<a href=#how-about-user-data class=hanchor arialabel=Anchor>&#8983;</a></h2><p>One of my colleagues suggested that we could allow people to pass an
+administrative password into the environment via the <code>user-data</code>
+attribute available from the <a href=http://docs.openstack.org/trunk/openstack-compute/admin/content/metadata-service.html>metadata service</a>. While this sounds
+like a reasonable idea at first, it has one major flaw: data from the
+metadata service is available to anyone on the system who is able to
+retrieve a URL. This would make it trivial for anyone on the instance
+to retrieve the administrator password.</p><h2 id=how-about-adminpass>How about adminPass?<a href=#how-about-adminpass class=hanchor arialabel=Anchor>&#8983;</a></h2><p>When you boot an instance using the nova command line tools&mldr;</p><pre><code>nova boot ...
+</code></pre><p>You get back a chunk of metadata, including an <code>adminPass</code> key, which
+is a password randomly generated by OpenStack and availble during the
+instance provisioning process:</p><pre><code>+------------------------+--------------------------------------+
+|        Property        |                Value                 |
++------------------------+--------------------------------------+
+...
+| adminPass              | RBiWrSNYqK5R                         |
+...
++------------------------+--------------------------------------+
+</code></pre><p>This would be an ideal solution, if only I were able to figure out how
+OpenStack made this value available to the instance. After asking
+around on <a href=http://wiki.openstack.org/UsingIRC>#openstack</a> it turns
+out that not many people were even aware this feature exists, so
+information was hard to come by. I ran across some <a href=http://docs.openstack.org/trunk/openstack-compute/admin/content/hypervisor-configuration-basics.html>documentation</a>
+that mentioned the <code>libvirt_inject_password</code> option in <code>nova.conf</code>
+with the following description:</p><blockquote><p>(BoolOpt) Inject the admin password at boot time, without an agent.</p></blockquote><p>&mldr;but that still didn&rsquo;t actually explain how it worked, so I went
+diving through the code. The <code>libvirt_inject_password</code> option appears
+in only a single file, <code>nova/virt/libvirt/connection.py</code>, so I knew
+where to start. This led me to the <code>_create_image</code> method, which
+grabs the <code>admin_pass</code> generated by OpenStack:</p><pre><code>if FLAGS.libvirt_inject_password:
+    admin_pass = instance.get('admin_pass')
+else:
+    admin_pass = None
+</code></pre><p>And then passes it to the <code>inject_data</code> method:</p><pre><code>disk.inject_data(injection_path,
+                 key, net, metadata, admin_pass, files,
+                 partition=target_partition,
+                 use_cow=FLAGS.use_cow_images,
+                 config_drive=config_drive)
+</code></pre><p>The <code>inject_data</code> method comes from <code>nova/virt/disk/api.py</code>, which is
+where things get interesting: it turns out that the injection
+mechanism works by:</p><ul><li>Mounting the root filesystem,</li><li>Copying out <code>/etc/passwd</code> and <code>/etc/shadow</code>,</li><li>Modifying them, and</li><li>Copying them back.</li></ul><p>Like this:</p><pre><code>passwd_path = _join_and_check_path_within_fs(fs, 'etc', 'passwd')
+shadow_path = _join_and_check_path_within_fs(fs, 'etc', 'shadow')
+
+utils.execute('cp', passwd_path, tmp_passwd, run_as_root=True)
+utils.execute('cp', shadow_path, tmp_shadow, run_as_root=True)
+_set_passwd(admin_user, admin_passwd, tmp_passwd, tmp_shadow)
+utils.execute('cp', tmp_passwd, passwd_path, run_as_root=True)
+os.unlink(tmp_passwd)
+utils.execute('cp', tmp_shadow, shadow_path, run_as_root=True)
+os.unlink(tmp_shadow)
+</code></pre><p>Do you see a problem here, given that I&rsquo;m working with a Windows
+instance? First, it&rsquo;s possible that the host will be unable to mount
+the NTFS filesystem, and secondly, there are no <code>passwd</code> or <code>shadow</code>
+files of any use on the target.</p><p>You can pass <code>--config-drive=True</code> to <code>nova boot</code> and it will use a
+configuration drive (a whole-disk FAT filesystem) for configuration
+data (and make this available as a block device when the system
+boots), but this fails, hard: most of the code treats this as being
+identical to the original root filesystem, so it still tries to
+perform the modifications to <code>/etc/passwd</code> and <code>/etc/shadow</code> which, of
+course, don&rsquo;t exist.</p><p>I whipped some quick
+<a href=https://github.com/seas-computing/nova/commits/lars/admin_pass>patches</a>
+that would write the configuration data (such as <code>admin_pass</code>) to
+simple files at the root of the configuration drive&mldr;but then I ran
+into a new problem:</p><p>Windows doesn&rsquo;t know how to deal with whole-disk filesystems (nor,
+apparently, do many <a href=http://serverfault.com/questions/444446/mounting-whole-disk-filesystems-in-windows-2008/444448#comment481758_444448>windows
+admins</a>).
+In the absence of a partition map, Windows assumes that the device is
+empty.</p><p>Oops. At this point it was obvious I was treading on ground best left
+undisturbed.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

@@ -1,0 +1,77 @@
+<!doctype html><html lang=en><head><title>AVR micro-optimization: Avr-gcc and --short-enums :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="How big is an enum? I noticed something odd while browsing through the assembly output of some AVR C code I wrote recently. In the code, I have the following expression:
+int main() { setup(); while (state != STATE_QUIT) { loop(); } } Here, state is a variable of type enum STATE, which looks something like this (not exactly like this; there are actually 19 possible values but I didn&amp;rsquo;t want to clutter this post with unnecessary code listings):"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/avr-gcc-short-enums/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="AVR micro-optimization: Avr-gcc and --short-enums"><meta property="og:description" content="How big is an enum? I noticed something odd while browsing through the assembly output of some AVR C code I wrote recently. In the code, I have the following expression:
+int main() { setup(); while (state != STATE_QUIT) { loop(); } } Here, state is a variable of type enum STATE, which looks something like this (not exactly like this; there are actually 19 possible values but I didn&amp;rsquo;t want to clutter this post with unnecessary code listings):"><meta property="og:url" content="https://blog.oddbit.com/posts/avr-gcc-short-enums/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2019-01-28 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/avr-gcc-short-enums/>AVR micro-optimization: Avr-gcc and &ndash;short-enums</a></h1><div class=post-meta><time class=post-date>2019-01-28 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/avr/>avr</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/attiny85/>attiny85</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/avr-gcc/>avr-gcc</a>&nbsp;</span><div class=post-content><div><h2 id=how-big-is-an-enum>How big is an enum?<a href=#how-big-is-an-enum class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I noticed something odd while browsing through the assembly output of some AVR C code <a href=https://blog.oddbit.com/posts/pipower-a-raspberry-pi-ups/>I wrote recently</a>. In the code, I have the following expression:</p><pre><code>int main() {
+    setup();
+
+    while (state != STATE_QUIT) {
+        loop();
+    }
+}
+</code></pre><p>Here, <code>state</code> is a variable of type <code>enum STATE</code>, which looks something like this (not exactly like this; there are actually <a href=https://github.com/larsks/pipower/blob/master/states.h>19 possible values</a> but I didn&rsquo;t want to clutter this post with unnecessary code listings):</p><pre><code>enum STATE {
+    STATE_0,
+    STATE_1,
+    STATE_QUIT
+};
+</code></pre><p>Now, if you do a little research, you&rsquo;ll find that the size of an <code>enum</code> is unspecified by the C standard: it is implementation dependent. You will also find <a href=https://www.embedded.fm/blog/2016/6/28/how-big-is-an-enum>articles</a> that say:</p><blockquote><p>The GCC C compiler will allocate enough memory for an enum to hold any of the values that you have declared. So, if your code only uses values below 256, your enum should be 8 bits wide.</p></blockquote><p>The boolean expression in the <code>while</code> loop gets translated as:</p><pre><code>  lds r24,state
+  lds r25,state+1
+  sbiw r24,2
+  brne .L9
+</code></pre><p>In other words, that statement about the GCC compiler doesn&rsquo;t appear to be true: We can see that the compiler is treating the <code>state</code> variable as a 16-bit integer despite the <code>enum</code> have only three values, which means that (a) two <code>lds</code> operations are required to load the value into registers, and (b) it&rsquo;s using <code>sbiw</code>, which takes 2 clock cycles, rather than the <code>cpi</code> operand, which only takes a single clock cycle. We see similar behavior in a <code>switch</code> statement inside the <code>loop()</code> function:</p><pre><code>void loop() {
+    switch(state) {
+        case STATE_0:
+            state = STATE_1;
+            break;
+
+        case STATE_1:
+            state = STATE_QUIT;
+            break;
+
+        case STATE_QUIT:
+            break;
+    }
+}
+</code></pre><p>The generated assembly for this includes the following:</p><pre><code>  lds r24,state
+  lds r25,state+1
+  cpi r24,1
+  cpc r25,__zero_reg__
+  breq .L3
+  sbiw r24,1
+  brsh .L6
+  ldi r24,lo8(1)
+  ldi r25,0
+  sts state+1,r25
+  sts state,r24
+</code></pre><p>As before, this requires two <code>lds</code> instructions to load a value from the <code>state</code> variable:</p><pre><code>  lds r24,state
+  lds r25,state+1
+</code></pre><p>And two <code>ldi</code> + two <code>sts</code> instructions to store a new value into the <code>state</code> variable:</p><pre><code>  ldi r24,lo8(1)
+  ldi r25,0
+  sts state+1,r25
+  sts state,r24
+</code></pre><p>And either multiple instructions (<code>cpi</code> + <code>cpc</code>) or multi-cycle instructions (<code>sbiw</code>) to compare the value in the <code>state</code> variable to constant values.</p><p>The code we&rsquo;re looking at here isn&rsquo;t at all performance sensitive, but I figured that there had to be a way to get <code>avr-gcc</code> to use a smaller data size for this <code>enum</code>. While searching for a solution I stumbled across Rafael Baptista&rsquo;s &ldquo;<a href=https://oroboro.com/short-enum/>The trouble with GCC&rsquo;s &ndash;short-enums flag</a>&rdquo;, which is an interesting read all by itself but also introduced me to the <code>--short-enums</code> flag, which does this:</p><blockquote><p>Allocate to an &ldquo;enum&rdquo; type only as many bytes as it needs for the declared range
+of possible values. Specifically, the &ldquo;enum&rdquo; type is equivalent to the smallest
+integer type that has enough room.</p></blockquote><p>That sure sounds like exactly what I want. After rebuilding the code using <code>--short-enums</code>, the generated assembly for <code>main()</code> becomes:</p><pre><code>  lds r24,state
+  cpi r24,lo8(2)
+  brne .L10
+</code></pre><p>The original code required six cycles (<code>lds</code> + <code>lds</code> + <code>sbiw</code>), but this code only takes three (<code>lds</code> + <code>cpi</code>). The <code>loop()</code> function becomes:</p><pre><code>  lds r24,state
+  mov r24,r24
+  ldi r25,0
+  cpi r24,1
+  cpc r25,__zero_reg__
+  breq .L3
+  cpi r24,2
+  cpc r25,__zero_reg__
+  breq .L6
+  or r24,r25
+  breq .L5
+  rjmp .L7
+.L5:
+  ldi r24,lo8(1)
+  sts state,r24
+</code></pre><p>While the compiler is still performing comparisons on 16 bit values&mldr;</p><pre><code>  cpi r24,1
+  cpc r25,__zero_reg__
+</code></pre><p>&mldr;it now only requires a single instruction to load or store values from/to the <code>state</code> variable:</p><pre><code>  ldi r24,lo8(1)
+  sts state,r24
+</code></pre><p>So, the tl;dr is that the <code>--short-enums</code> flag makes a lot of sense when compiling code for an 8-bit device, and arguably makes the compiler generate code that is more intuitive.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

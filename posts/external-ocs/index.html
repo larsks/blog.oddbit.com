@@ -1,0 +1,376 @@
+<!doctype html><html lang=en><head><title>Connecting OpenShift to an External Ceph Cluster :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Red Hat&amp;rsquo;s OpenShift Data Foundation (formerly &amp;ldquo;OpenShift Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically set up a Ceph cluster as an application running on your OpenShift cluster, or (b) connect your OpenShift cluster to an externally managed Ceph cluster. While setting up Ceph as an OpenShift application is a relatively polished experienced, connecting to an external cluster still has some rough edges.
+NB I am not a Ceph expert."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/external-ocs/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Connecting OpenShift to an External Ceph Cluster"><meta property="og:description" content="Red Hat&amp;rsquo;s OpenShift Data Foundation (formerly &amp;ldquo;OpenShift Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically set up a Ceph cluster as an application running on your OpenShift cluster, or (b) connect your OpenShift cluster to an externally managed Ceph cluster. While setting up Ceph as an OpenShift application is a relatively polished experienced, connecting to an external cluster still has some rough edges.
+NB I am not a Ceph expert."><meta property="og:url" content="https://blog.oddbit.com/posts/external-ocs/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2021-08-23 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/external-ocs/>Connecting OpenShift to an External Ceph Cluster</a></h1><div class=post-meta><time class=post-date>2021-08-23 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ceph/>ceph</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/openshift/>openshift</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/ocs/>ocs</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/odf/>odf</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kubernetes/>kubernetes</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/storage/>storage</a>&nbsp;</span><div class=post-content><div><p>Red Hat&rsquo;s <a href=https://www.redhat.com/en/technologies/cloud-computing/openshift-data-foundation>OpenShift Data Foundation</a> (formerly &ldquo;OpenShift
+Container Storage&rdquo;, or &ldquo;OCS&rdquo;) allows you to either (a) automatically
+set up a Ceph cluster as an application running on your OpenShift
+cluster, or (b) connect your OpenShift cluster to an externally
+managed Ceph cluster. While setting up Ceph as an OpenShift
+application is a relatively polished experienced, connecting to an
+external cluster still has some rough edges.</p><p><strong>NB</strong> I am not a Ceph expert. If you read this and think I&rsquo;ve made a
+mistake with respect to permissions or anything else, please feel free
+to leave a comment and I will update the article as necessary. In
+particular, I think it may be possible to further restrict the <code>mgr</code>
+permissions shown in this article and I&rsquo;m interested in feedback on
+that topic.</p><h2 id=installing-ocs>Installing OCS<a href=#installing-ocs class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Regardless of which option you choose, you start by installing the
+&ldquo;OpenShift Container Storage&rdquo; operator (the name change apparently
+hasn&rsquo;t made it to the Operator Hub yet). When you select &ldquo;external
+mode&rdquo;, you will be given the opportunity to download a Python script
+that you are expected to run on your Ceph cluster. This script will
+create some Ceph authentication principals and will emit a block of
+JSON data that gets pasted into the OpenShift UI to configure the
+external StorageCluster resource.</p><p>The script has a single required option, <code>--rbd-data-pool-name</code>, that
+you use to provide the name of an existing pool. If you run the script
+with only that option, it will create the following ceph principals
+and associated capabilities:</p><ul><li><p><code>client.csi-rbd-provisioner</code></p><pre tabindex=0><code>caps mgr = &#34;allow rw&#34;
+caps mon = &#34;profile rbd&#34;
+caps osd = &#34;profile rbd&#34;
+</code></pre></li><li><p><code>client.csi-rbd-node</code></p><pre tabindex=0><code>caps mon = &#34;profile rbd&#34;
+caps osd = &#34;profile rbd&#34;
+</code></pre></li><li><p><code>client.healthchecker</code></p><pre tabindex=0><code>caps mgr = &#34;allow command config&#34;
+caps mon = &#34;allow r, allow command quorum_status, allow command version&#34;
+caps osd = &#34;allow rwx pool=default.rgw.meta, allow r pool=.rgw.root, allow rw pool=default.rgw.control, allow rx pool=default.rgw.log, allow x pool=default.rgw.buckets.index&#34;
+</code></pre><p>This account is used to verify the health of the ceph cluster.</p></li></ul><p>If you also provide the <code>--cephfs-filesystem-name</code> option, the script
+will also create:</p><ul><li><p><code>client.csi-cephfs-provisioner</code></p><pre tabindex=0><code>caps mgr = &#34;allow rw&#34;
+caps mon = &#34;allow r&#34;
+caps osd = &#34;allow rw tag cephfs metadata=*&#34;
+</code></pre></li><li><p><code>client.csi-cephfs-node</code></p><pre tabindex=0><code>caps mds = &#34;allow rw&#34;
+caps mgr = &#34;allow rw&#34;
+caps mon = &#34;allow r&#34;
+caps osd = &#34;allow rw tag cephfs *=*&#34;
+</code></pre></li></ul><p>If you specify <code>--rgw-endpoint</code>, the script will create a RGW user
+named <code>rgw-admin-ops-user</code>with administrative access to the default
+RGW pool.</p><h2 id=so-whats-the-problem>So what&rsquo;s the problem?<a href=#so-whats-the-problem class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The above principals and permissions are fine if you&rsquo;ve created an
+external Ceph cluster explicitly for the purpose of supporting a
+single OpenShift cluster.</p><p>In an environment where a single Ceph cluster is providing storage to
+multiple OpenShift clusters, and <em>especially</em> in an environment where
+administration of the Ceph and OpenShift environments are managed by
+different groups, the process, principals, and permissions create a
+number of problems.</p><p>The first and foremost is that the script provided by OCS both (a)
+gathers information about the Ceph environment, and (b) <em>makes changes
+to that environment</em>. If you are installing OCS on OpenShift and want
+to connect to a Ceph cluster over which you do not have administrative
+control, you may find yourself stymied when the storage administrators
+refuse to run your random Python script on the Ceph cluster.</p><p>Ideally, the script would be read-only, and instead of <em>making</em>
+changes to the Ceph cluster it would only <em>validate</em> the cluster
+configuration, and inform the administrator of what changes were
+necessary. There should be complete documentation that describes the
+necessary configuration scripts so that a Ceph cluster can be
+configured correctly without running <em>any</em> script, and OCS should
+provide something more granular than &ldquo;drop a blob of JSON here&rdquo; for
+providing the necessary configuration to OpenShift.</p><p>The second major problem is that while the script creates several
+principals, it only allows you to set the name of one of them. The
+script has a <code>--run-as-user</code> option, which at first sounds promising,
+but ultimately is of questionable use: it only allows you set the Ceph
+principal used for cluster health checks.</p><p>There is no provision in the script to create separate principals for
+each OpenShift cluster.</p><p>Lastly, the permissions granted to the principals are too broad. For
+example, the <code>csi-rbd-node</code> principal has access to <em>all</em> RBD pools on
+the cluster.</p><h2 id=how-can-we-work-around-it>How can we work around it?<a href=#how-can-we-work-around-it class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If you would like to deploy OCS in an environment where the default
+behavior of the configuration script is inappropriate you can work
+around this problem by:</p><ul><li><p>Manually generating the necessary principals (with more appropriate
+permissions), and</p></li><li><p>Manually generating the JSON data for input into OCS</p></li></ul><h3 id=create-the-storage>Create the storage<a href=#create-the-storage class=hanchor arialabel=Anchor>&#8983;</a></h3><p>I&rsquo;ve adopted the following conventions for naming storage pools and
+filesystems:</p><ul><li><p>All resources are prefixed with the name of the cluster (represented
+here by <code>${clustername}</code>).</p></li><li><p>The RBD pool is named <code>${clustername}-rbd</code>. I create it like this:</p><pre tabindex=0><code>  ceph osd pool create ${clustername}-rbd
+  ceph osd pool application enable ${clustername}-rbd rbd
+</code></pre></li><li><p>The CephFS filesystem (if required) is named
+<code>${clustername}-fs</code>, and I create it like this:</p><pre tabindex=0><code>  ceph fs volume create ${clustername}-fs
+</code></pre><p>In addition to the filesystem, this creates two pools:</p><ul><li><code>cephfs.${clustername}-fs.meta</code></li><li><code>cephfs.${clustername}-fs.data</code></li></ul></li></ul><h3 id=creating-the-principals>Creating the principals<a href=#creating-the-principals class=hanchor arialabel=Anchor>&#8983;</a></h3><p>Assuming that you have followed the same conventions and have an RBD
+pool named <code>${clustername}-rbd</code> and a CephFS filesystem named
+<code>${clustername}-fs</code>, the following set of <code>ceph auth add</code> commands
+should create an appropriate set of principals (with access limited to
+just those resources that belong to the named cluster):</p><pre tabindex=0><code>ceph auth add client.healthchecker-${clustername} \
+        mgr &#34;allow command config&#34; \
+        mon &#34;allow r, allow command quorum_status, allow command version&#34;
+
+ceph auth add client.csi-rbd-provisioner-${clustername} \
+        mgr &#34;allow rw&#34; \
+        mon &#34;profile rbd&#34; \
+        osd &#34;profile rbd pool=${clustername}-rbd&#34;
+
+ceph auth add client.csi-rbd-node-${clustername} \
+        mon &#34;profile rbd&#34; \
+        osd &#34;profile rbd pool=${clustername}-rbd&#34;
+
+ceph auth add client.csi-cephfs-provisioner-${clustername} \
+        mgr &#34;allow rw&#34; \
+        mds &#34;allow rw fsname=${clustername}-fs&#34; \
+        mon &#34;allow r fsname=${clustername}-fs&#34; \
+        osd &#34;allow rw tag cephfs metadata=${clustername}-fs&#34;
+
+ceph auth add client.csi-cephfs-node-${clustername} \
+        mgr &#34;allow rw&#34; \
+        mds &#34;allow rw fsname=${clustername}-fs&#34; \
+        mon &#34;allow r fsname=${clustername}-fs&#34; \
+        osd &#34;allow rw tag cephfs data=${clustername}-fs&#34;
+</code></pre><p>Note that I&rsquo;ve excluded the RGW permissions here; in our OpenShift
+environments, we typically rely on the object storage interface
+provided by <a href=https://www.noobaa.io/>Noobaa</a> so I haven&rsquo;t spent time investigating
+permissions on the RGW side.</p><h3 id=create-the-json>Create the JSON<a href=#create-the-json class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The final step is to create the JSON blob that you paste into the OCS
+installation UI. I use the following script which calls <code>ceph -s</code>,
+<code>ceph mon dump</code>, and <code>ceph auth get-key</code> to get the necessary
+information from the cluster:</p><pre tabindex=0><code>#!/usr/bin/python3
+
+import argparse
+import json
+import subprocess
+from urllib.parse import urlparse
+
+usernames = [
+        &#39;healthchecker&#39;,
+        &#39;csi-rbd-node&#39;,
+        &#39;csi-rbd-provisioner&#39;,
+        &#39;csi-cephfs-node&#39;,
+        &#39;csi-cephfs-provisioner&#39;,
+        ]
+
+
+def parse_args():
+    p = argparse.ArgumentParser()
+
+    p.add_argument(&#39;--use-cephfs&#39;, action=&#39;store_true&#39;, dest=&#39;use_cephfs&#39;)
+    p.add_argument(&#39;--no-use-cephfs&#39;, action=&#39;store_false&#39;, dest=&#39;use_cephfs&#39;)
+
+    p.add_argument(&#39;instance_name&#39;)
+
+    p.set_defaults(use_rbd=True, use_cephfs=True)
+
+    return p.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    cluster_status = json.loads(subprocess.check_output([&#39;ceph&#39;, &#39;-s&#39;, &#39;-f&#39;, &#39;json&#39;]))
+    mon_status = json.loads(subprocess.check_output([&#39;ceph&#39;, &#39;mon&#39;, &#39;dump&#39;, &#39;-f&#39;, &#39;json&#39;]))
+
+    users = {}
+    for username in usernames:
+        key = subprocess.check_output([&#39;ceph&#39;, &#39;auth&#39;, &#39;get-key&#39;, &#39;client.{}-{}&#39;.format(username, args.instance_name)])
+        users[username] = {
+                &#39;name&#39;: &#39;client.{}-{}&#39;.format(username, args.instance_name),
+                &#39;key&#39;: key.decode(),
+                }
+
+    mon_name = mon_status[&#39;mons&#39;][0][&#39;name&#39;]
+    mon_ip = [
+            addr for addr in
+            mon_status[&#39;mons&#39;][0][&#39;public_addrs&#39;][&#39;addrvec&#39;]
+            if addr[&#39;type&#39;] == &#39;v1&#39;
+            ][0][&#39;addr&#39;]
+    prom_url = urlparse(cluster_status[&#39;mgrmap&#39;][&#39;services&#39;][&#39;prometheus&#39;])
+    prom_ip, prom_port = prom_url.netloc.split(&#39;:&#39;)
+
+    output = [
+            {
+                &#34;name&#34;: &#34;rook-ceph-mon-endpoints&#34;,
+                &#34;kind&#34;: &#34;ConfigMap&#34;,
+                &#34;data&#34;: {
+                    &#34;data&#34;: &#34;{}={}&#34;.format(mon_name, mon_ip),
+                    &#34;maxMonId&#34;: &#34;0&#34;,
+                    &#34;mapping&#34;: &#34;{}&#34;
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;rook-ceph-mon&#34;,
+                &#34;kind&#34;: &#34;Secret&#34;,
+                &#34;data&#34;: {
+                    &#34;admin-secret&#34;: &#34;admin-secret&#34;,
+                    &#34;fsid&#34;: cluster_status[&#39;fsid&#39;],
+                    &#34;mon-secret&#34;: &#34;mon-secret&#34;
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;rook-ceph-operator-creds&#34;,
+                &#34;kind&#34;: &#34;Secret&#34;,
+                &#34;data&#34;: {
+                    &#34;userID&#34;: users[&#39;healthchecker&#39;][&#39;name&#39;],
+                    &#34;userKey&#34;: users[&#39;healthchecker&#39;][&#39;key&#39;],
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;ceph-rbd&#34;,
+                &#34;kind&#34;: &#34;StorageClass&#34;,
+                &#34;data&#34;: {
+                    &#34;pool&#34;: &#34;{}-rbd&#34;.format(args.instance_name),
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;monitoring-endpoint&#34;,
+                &#34;kind&#34;: &#34;CephCluster&#34;,
+                &#34;data&#34;: {
+                    &#34;MonitoringEndpoint&#34;: prom_ip,
+                    &#34;MonitoringPort&#34;: prom_port,
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;rook-csi-rbd-node&#34;,
+                &#34;kind&#34;: &#34;Secret&#34;,
+                &#34;data&#34;: {
+                    &#34;userID&#34;: users[&#39;csi-rbd-node&#39;][&#39;name&#39;].replace(&#39;client.&#39;, &#39;&#39;),
+                    &#34;userKey&#34;: users[&#39;csi-rbd-node&#39;][&#39;key&#39;],
+                    }
+                },
+            {
+                    &#34;name&#34;: &#34;rook-csi-rbd-provisioner&#34;,
+                    &#34;kind&#34;: &#34;Secret&#34;,
+                    &#34;data&#34;: {
+                        &#34;userID&#34;: users[&#39;csi-rbd-provisioner&#39;][&#39;name&#39;].replace(&#39;client.&#39;, &#39;&#39;),
+                        &#34;userKey&#34;: users[&#39;csi-rbd-provisioner&#39;][&#39;key&#39;],
+                        }
+                    }
+            ]
+
+    if args.use_cephfs:
+        output.extend([
+            {
+                &#34;name&#34;: &#34;rook-csi-cephfs-provisioner&#34;,
+                &#34;kind&#34;: &#34;Secret&#34;,
+                &#34;data&#34;: {
+                    &#34;adminID&#34;: users[&#39;csi-cephfs-provisioner&#39;][&#39;name&#39;].replace(&#39;client.&#39;, &#39;&#39;),
+                    &#34;adminKey&#34;: users[&#39;csi-cephfs-provisioner&#39;][&#39;key&#39;],
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;rook-csi-cephfs-node&#34;,
+                &#34;kind&#34;: &#34;Secret&#34;,
+                &#34;data&#34;: {
+                    &#34;adminID&#34;: users[&#39;csi-cephfs-node&#39;][&#39;name&#39;].replace(&#39;client.&#39;, &#39;&#39;),
+                    &#34;adminKey&#34;: users[&#39;csi-cephfs-node&#39;][&#39;key&#39;],
+                    }
+                },
+            {
+                &#34;name&#34;: &#34;cephfs&#34;,
+                &#34;kind&#34;: &#34;StorageClass&#34;,
+                &#34;data&#34;: {
+                    &#34;fsName&#34;: &#34;{}-fs&#34;.format(args.instance_name),
+                    &#34;pool&#34;: &#34;cephfs.{}-fs.data&#34;.format(args.instance_name),
+                    }
+                }
+            ])
+
+    print(json.dumps(output, indent=2))
+
+
+
+if __name__ == &#39;__main__&#39;:
+    main()
+</code></pre><p>If you&rsquo;d prefer a strictly manual process, you can fill in the
+necessary values yourself. The JSON produced by the above script
+looks like the following, which is invalid JSON because I&rsquo;ve use
+inline comments to mark all the values which you would need to
+provide:</p><pre tabindex=0><code>[
+  {
+    &#34;name&#34;: &#34;rook-ceph-mon-endpoints&#34;,
+    &#34;kind&#34;: &#34;ConfigMap&#34;,
+    &#34;data&#34;: {
+      # The format is &lt;mon_name&gt;=&lt;mon_endpoint&gt;, and you only need to
+      # provide a single mon address.
+      &#34;data&#34;: &#34;ceph0=192.168.122.140:6789&#34;,
+      &#34;maxMonId&#34;: &#34;0&#34;,
+      &#34;mapping&#34;: &#34;{}&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;rook-ceph-mon&#34;,
+    &#34;kind&#34;: &#34;Secret&#34;,
+    &#34;data&#34;: {
+      # Fill in the fsid of your Ceph cluster.
+      &#34;fsid&#34;: &#34;c9c32c73-dac4-4cc9-8baa-d73b96c135f4&#34;,
+
+      # Do **not** fill in these values, they are unnecessary. OCS
+      # does not require admin access to your Ceph cluster.
+      &#34;admin-secret&#34;: &#34;admin-secret&#34;,
+      &#34;mon-secret&#34;: &#34;mon-secret&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;rook-ceph-operator-creds&#34;,
+    &#34;kind&#34;: &#34;Secret&#34;,
+    &#34;data&#34;: {
+      # Fill in the  name and key for your healthchecker principal.
+      # Note that here, unlike elsewhere in this JSON, you must
+      # provide the &#34;client.&#34; prefix to the principal name.
+      &#34;userID&#34;: &#34;client.healthchecker-mycluster&#34;,
+      &#34;userKey&#34;: &#34;&lt;key&gt;&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;ceph-rbd&#34;,
+    &#34;kind&#34;: &#34;StorageClass&#34;,
+    &#34;data&#34;: {
+      # Fill in the name of your RBD pool.
+      &#34;pool&#34;: &#34;mycluster-rbd&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;monitoring-endpoint&#34;,
+    &#34;kind&#34;: &#34;CephCluster&#34;,
+    &#34;data&#34;: {
+      # Fill in the address and port of the Ceph cluster prometheus 
+      # endpoint.
+      &#34;MonitoringEndpoint&#34;: &#34;192.168.122.140&#34;,
+      &#34;MonitoringPort&#34;: &#34;9283&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;rook-csi-rbd-node&#34;,
+    &#34;kind&#34;: &#34;Secret&#34;,
+    &#34;data&#34;: {
+      # Fill in the name and key of the csi-rbd-node principal.
+      &#34;userID&#34;: &#34;csi-rbd-node-mycluster&#34;,
+      &#34;userKey&#34;: &#34;&lt;key&gt;&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;rook-csi-rbd-provisioner&#34;,
+    &#34;kind&#34;: &#34;Secret&#34;,
+    &#34;data&#34;: {
+      # Fill in the name and key of your csi-rbd-provisioner
+      # principal.
+      &#34;userID&#34;: &#34;csi-rbd-provisioner-mycluster&#34;,
+      &#34;userKey&#34;: &#34;&lt;key&gt;&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;rook-csi-cephfs-provisioner&#34;,
+    &#34;kind&#34;: &#34;Secret&#34;,
+    &#34;data&#34;: {
+      # Fill in the name and key of your csi-cephfs-provisioner
+      # principal.
+      &#34;adminID&#34;: &#34;csi-cephfs-provisioner-mycluster&#34;,
+      &#34;adminKey&#34;: &#34;&lt;key&gt;&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;rook-csi-cephfs-node&#34;,
+    &#34;kind&#34;: &#34;Secret&#34;,
+    &#34;data&#34;: {
+      # Fill in the name and key of your csi-cephfs-node principal.
+      &#34;adminID&#34;: &#34;csi-cephfs-node-mycluster&#34;,
+      &#34;adminKey&#34;: &#34;&lt;key&gt;&#34;
+    }
+  },
+  {
+    &#34;name&#34;: &#34;cephfs&#34;,
+    &#34;kind&#34;: &#34;StorageClass&#34;,
+    &#34;data&#34;: {
+      # Fill in the name of your CephFS filesystem and the name of the
+      # associated data pool.
+      &#34;fsName&#34;: &#34;mycluster-fs&#34;,
+      &#34;pool&#34;: &#34;cephfs.mycluster-fs.data&#34;
+    }
+  }
+]
+</code></pre><h2 id=associated-bugs>Associated Bugs<a href=#associated-bugs class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I&rsquo;ve opened several bug reports to see about adressing some of these
+issues:</p><ul><li><a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996833">#1996833</a>
+&ldquo;ceph-external-cluster-details-exporter.py should have a read-only
+mode&rdquo;</li><li><a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996830">#1996830</a> &ldquo;OCS
+external mode should allow specifying names for all Ceph auth
+principals&rdquo;</li><li><a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996829">#1996829</a>
+&ldquo;Permissions assigned to ceph auth principals when using external
+storage are too broad&rdquo;</li></ul></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

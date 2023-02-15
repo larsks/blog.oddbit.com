@@ -1,0 +1,56 @@
+<!doctype html><html lang=en><head><title>Firewalld, NetworkManager, and OpenStack :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="These are my notes on making OpenStack play well with firewalld and NetworkManager.
+NetworkManager By default, NetworkManager attempts to start a DHCP client on every new available interface. Since booting a single instance in OpenStack can result in the creation of several virtual interfaces, this results in a lot of:
+May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt; Activation (qvb512640bd-ee) starting connection 'Wired connection 2' You can disable this behavior by adding the following to /etc/NetworkManager/NetworkManager."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/firewalld-and-openstack/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Firewalld, NetworkManager, and OpenStack"><meta property="og:description" content="These are my notes on making OpenStack play well with firewalld and NetworkManager.
+NetworkManager By default, NetworkManager attempts to start a DHCP client on every new available interface. Since booting a single instance in OpenStack can result in the creation of several virtual interfaces, this results in a lot of:
+May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt; Activation (qvb512640bd-ee) starting connection 'Wired connection 2' You can disable this behavior by adding the following to /etc/NetworkManager/NetworkManager."><meta property="og:url" content="https://blog.oddbit.com/posts/firewalld-and-openstack/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-05-20 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/firewalld-and-openstack/>Firewalld, NetworkManager, and OpenStack</a></h1><div class=post-meta><time class=post-date>2014-05-20 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/firewalld/>firewalld</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networkmanager/>NetworkManager</a>&nbsp;</span><div class=post-content><div><p>These are my notes on making OpenStack play well with <a href=https://fedoraproject.org/wiki/FirewallD>firewalld</a>
+and <a href=https://wiki.gnome.org/Projects/NetworkManager>NetworkManager</a>.</p><h2 id=networkmanager>NetworkManager<a href=#networkmanager class=hanchor arialabel=Anchor>&#8983;</a></h2><p>By default, NetworkManager attempts to start a DHCP client on every
+new available interface. Since booting a single instance in OpenStack
+can result in the creation of several virtual interfaces, this results
+in a lot of:</p><pre><code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &lt;info&gt;
+  Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
+</code></pre><p>You can disable this behavior by adding the following to
+<code>/etc/NetworkManager/NetworkManager.conf</code>:</p><pre><code>[main]
+no-auto-default=*
+</code></pre><p>From <code>NetworkManager.conf(5)</code>:</p><blockquote><p>Comma-separated list of devices for which NetworkManager shouldn&rsquo;t
+create default wired connection (Auto eth0). By default,
+NetworkManager creates a temporary wired connection for any
+Ethernet device that is managed and doesn&rsquo;t have a connection
+configured. List a device in this option to inhibit creating the
+default connection for the device. May have the special value * to
+apply to all devices.</p></blockquote><h2 id=firewalld>FirewallD<a href=#firewalld class=hanchor arialabel=Anchor>&#8983;</a></h2><p><a href=https://fedoraproject.org/wiki/FirewallD>FirewallD</a> is the firewall manager recently introduced in Fedora
+(and soon to be appearing in RHEL 7).</p><p>I start by creating a new zone named <code>openstack</code> by creating the file
+<code>/etc/firewalld/zones/openstack.xml</code> with the following content:</p><pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;zone&gt;
+  &lt;short&gt;OpenStack&lt;/short&gt;
+  &lt;description&gt;For OpenStack services&lt;/description&gt;
+&lt;/zone&gt;
+</code></pre><p>After populating this file, you need to run <code>firewall-cmd --reload</code>
+to make the zone available. Note that if you&rsquo;re already running
+OpenStack this will hose any rules set up by Neutron or Nova, so
+you&rsquo;ll probably want to restart those services:</p><pre><code># openstack-service restart nova neutron
+</code></pre><p>I then add <code>br-ex</code> to this zone, where <code>br-ex</code> is the OVS bridge my
+OpenStack environment uses for external connectivity:</p><pre><code># echo ZONE=openstack &gt;&gt; /etc/sysconfig/network-scripts/ifcfg-br-ex
+</code></pre><p>I run a <code>dnsmasq</code> instance on my laptop to which I expect OpenStack
+instances to connect, so I need to add the <code>dns</code> service to this zone:</p><pre><code># firewall-cmd --zone openstack --add-service dns
+# firewall-cmd --zone openstack --add-service dns --permanent
+</code></pre><p>I&rsquo;m running <code>firewall-cmd</code> twice here: the first time modifies the
+currently running configuration, while the second makes the change
+persistent across reboots.</p><p>On my laptop, I handle external connectivity through NAT rather than
+placing floating ips on a &ldquo;real&rdquo; network. To make this work, I add my
+ethernet and wireless interfaces to the <code>external</code> zone, which already
+has ip masquerading enabled, by adding a <code>ZONE</code> directive to the
+appropriate interface configuration file:</p><pre><code># echo ZONE=external &gt;&gt; /etc/sysconfig/network-scripts/ifcfg-em1
+</code></pre><p>After a reboot, things look like this:</p><pre><code># firewall-cmd --get-active-zones
+openstack
+  interfaces: br-ex
+external
+  interfaces: em1
+public
+  interfaces: int-br-ex phy-br-ex qvb58cc67ca-06 qvo58cc67ca-06
+# firewall-cmd --zone openstack --list-services
+dns
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

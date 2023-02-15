@@ -1,0 +1,50 @@
+<!doctype html><html lang=en><head><title>Adding support for privilege escalation to Ansible's docker connection driver :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Update 2019-05-09 Pull request #55816 has merged, so you can now use sudo with the docker connection driver even when sudo is configured to require a password.
+I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:
+--- - hosts: all gather_facts: false become: true tasks: - ping: And an inventory like this:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/adding-support-for-privilege-e/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Adding support for privilege escalation to Ansible's docker connection driver"><meta property="og:description" content="Update 2019-05-09 Pull request #55816 has merged, so you can now use sudo with the docker connection driver even when sudo is configured to require a password.
+I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:
+--- - hosts: all gather_facts: false become: true tasks: - ping: And an inventory like this:"><meta property="og:url" content="https://blog.oddbit.com/posts/adding-support-for-privilege-e/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2019-04-26 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/adding-support-for-privilege-e/>Adding support for privilege escalation to Ansible&rsquo;s docker connection driver</a></h1><div class=post-meta><time class=post-date>2019-04-26 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/pull-request/>pull-request</a>&nbsp;</span><div class=post-content><div><p><strong>Update 2019-05-09</strong> Pull request
+<a href=https://github.com/ansible/ansible/pull/55816 class=pull-request>#55816</a>
+has merged, so you can now use <code>sudo</code> with the <code>docker</code> connection driver even when <code>sudo</code> is configured to require a password.</p><hr><p>I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:</p><pre><code>---
+- hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - ping:
+</code></pre><p>And an inventory like this:</p><pre><code>all:
+  vars:
+    ansible_user: example
+    ansible_connection: docker
+  hosts:
+    server1:
+      ansible_host: sudostuff_server1_1
+    server2:
+      ansible_host: sudostuff_server2_1
+    server3:
+      ansible_host: sudostuff_server3_1
+</code></pre><p>And containers with <code>sudo</code> configured to require a password, Ansible would fail like this (note that I&rsquo;ve configured Ansible to use the <code>debug</code> plugin for <code>stdout_callback</code>):</p><pre tabindex=0><code>fatal: [server1]: FAILED! =&gt; {
+    &#34;changed&#34;: false,
+    &#34;rc&#34;: 1
+}
+
+MSG:
+
+MODULE FAILURE
+See stdout/stderr for the exact error
+
+
+MODULE_STDERR:
+
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo via ansible, key=rzrfiifcqoggklmehivtcrrlnnbphwbp] password:
+</code></pre><p>In the above output, you&rsquo;ll note that there are no actual errors, but unexpectedly we&rsquo;re seeing the privilege escalation prompt show up in the <code>stderr</code> of the command. A quick search revealed bugs <a href=https://github.com/ansible/ansible/issues/31759>#31759</a> and <a href=https://github.com/ansible/ansible/issues/53385>#53385</a>, both of which confirm that privilege escalation simply doesn&rsquo;t work using the <code>docker</code> connection plugin.</p><h2 id=use-the-source-luke>Use the source, Luke<a href=#use-the-source-luke class=hanchor arialabel=Anchor>&#8983;</a></h2><figure class=left><img src=/assets/2019/04/26/sausage.jpg><figcaption class=center>Discovering how the sausage is made...</figcaption></figure><p>Looking at the source, I was surprised: while Ansible has individual plugins for different privilege escalation methods, it is entirely up to the individual connection plugin to implement the logic necessary to make use of these mechanisms. I had expected privilege escalation support to be implemented in the base connection plugin (<code>ConnectionBase</code> in <code>lib/ansible/plugins/connection/__init__.py</code>), but it&rsquo;s not. So while the <a href=https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/ssh.py>ssh plugin</a> has a fairly complex set of logic for handing the <code>become</code> prompt, and the <a href=https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/local.py>local plugin</a> had a relatively simple solution, the <code>docker</code> connection had none.</p><p>Fortunately, in many ways the <code>docker</code> plugin is almost identical to the <code>local</code> plugin, which means that rather than doing actual work I was able to largely cut-and-paste the privilege escalation support from the <code>local</code> plugin into the <code>docker</code> plugin. You can find this work in pull request
+<a href=https://github.com/ansible/ansible/pull/55816 class=pull-request>#55816</a>
+.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

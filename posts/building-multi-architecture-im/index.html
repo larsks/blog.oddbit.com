@@ -1,0 +1,217 @@
+<!doctype html><html lang=en><head><title>Building multi-architecture images with GitHub Actions :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="At work we have a cluster of IBM Power 9 systems running OpenShift. The problem with this environment is that nobody runs Power 9 on their desktop, and Docker Hub only offers automatic build support for the x86 architecture. This means there&amp;rsquo;s no convenient options for building Power 9 Docker images&amp;hellip;or so I thought.
+It turns out that Docker provides GitHub actions that make the process of producing multi-architecture images quite simple."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/building-multi-architecture-im/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Building multi-architecture images with GitHub Actions"><meta property="og:description" content="At work we have a cluster of IBM Power 9 systems running OpenShift. The problem with this environment is that nobody runs Power 9 on their desktop, and Docker Hub only offers automatic build support for the x86 architecture. This means there&amp;rsquo;s no convenient options for building Power 9 Docker images&amp;hellip;or so I thought.
+It turns out that Docker provides GitHub actions that make the process of producing multi-architecture images quite simple."><meta property="og:url" content="https://blog.oddbit.com/posts/building-multi-architecture-im/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2020-09-25 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/building-multi-architecture-im/>Building multi-architecture images with GitHub Actions</a></h1><div class=post-meta><time class=post-date>2020-09-25 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;</span><div class=post-content><div><p>At work we have a cluster of IBM Power 9 systems running OpenShift. The
+problem with this environment is that nobody runs Power 9 on their desktop,
+and Docker Hub only offers automatic build support for the x86
+architecture. This means there&rsquo;s no convenient options for building Power 9
+Docker images&mldr;or so I thought.</p><p>It turns out that <a href=https://github.com/docker>Docker</a> provides <a href=https://github.com/features/actions>GitHub actions</a> that make the process
+of producing multi-architecture images quite simple.</p><p>The code demonstrated in this post can be found in my <a href=https://github.com/larsks/hello-flask>hello-flask</a>
+GitHub repository.</p><h2 id=configuring-secrets>Configuring secrets<a href=#configuring-secrets class=hanchor arialabel=Anchor>&#8983;</a></h2><p>There is some information we need to provide to our workflow that we don&rsquo;t
+want to hardcode into configuration files, both for reasons of security (we
+don&rsquo;t want to expose passwords in the repository) and convenience (we want
+other people to be able to fork this repository and run the workflow
+without needing to make any changes to the code).</p><p>We can do this by configuring &ldquo;secrets&rdquo; in the repository on GitHub. You
+can configure secrets by visiting the &ldquo;Secrets&rdquo; tab in your repository
+settings (<code>https://github.com/&lt;USERNAME>/&lt;REPOSITORY>/settings/secrets</code>),</p><p>For this workflow, we&rsquo;re going to need two secrets:</p><ul><li><p><code>DOCKER_USERNAME</code> &ndash; this is our Docker Hub username; we&rsquo;ll need this
+both for authentication and to set the namespace for the images we&rsquo;re
+building.</p></li><li><p><code>DOCKER_PASSWORD</code> &ndash; this is our Docker Hub password, used for
+authentication.</p></li></ul><p>Within a workflow, we can refer to these secrets using syntax like <code>${{ secrets.DOCKER_USERNAME }}</code> (you&rsquo;ll see example of this later on).</p><h2 id=creating-a-workflow>Creating a workflow<a href=#creating-a-workflow class=hanchor arialabel=Anchor>&#8983;</a></h2><p>In the repository containing your <code>Dockerfile</code>, create a
+<code>.github/workflows</code> directory. This is where we will place the files that
+configure GitHub actions. In this directory, create a file called
+<code>build_images.yml</code> (the particular name isn&rsquo;t important, but it&rsquo;s nice to
+make names descriptive).</p><p>We&rsquo;ll first give this workflow a name and configure it to run for pushes on
+our <code>master</code> branch by adding the following to our <code>build_images.yml</code> file:</p><pre tabindex=0><code>---
+name: &#39;build images&#39;
+
+on:
+  push:
+    branches:
+      - master
+</code></pre><h2 id=setting-up-jobs>Setting up jobs<a href=#setting-up-jobs class=hanchor arialabel=Anchor>&#8983;</a></h2><p>With that boilerplate out of the way, we can start configuring the jobs
+that will comprise our workflow. Jobs are defined in the <code>jobs</code> section of
+the configuration file, which is a dictionary that maps job names to their
+definition. A job can have multiple actions. For this example, we&rsquo;re going
+to set up a <code>docker</code> job that will perform the following steps:</p><ul><li>check out the repository</li><li>prepare some parameters</li><li>set up qemu, which is used to provide emulated environments for
+building on architecture other than the host arch</li><li>configure the docker builders</li><li>authenticate to docker hub</li><li>build and push the images to docker hub</li></ul><p>We start by providing a name for our job and configuring the machine on
+which the jobs will run. In this example, we&rsquo;re using <code>ubuntu-latest</code>;
+other options include some other Ubuntu variants, Windows, and MacOS (and
+you are able to host your own custom builders, but that&rsquo;s outside the scope
+of this article).</p><pre tabindex=0><code>jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+</code></pre><h3 id=checking-out-the-repository>Checking out the repository<a href=#checking-out-the-repository class=hanchor arialabel=Anchor>&#8983;</a></h3><p>In our first step, we use the standard <a href=https://github.com/actions/checkout>actions/checkout</a>
+action to check out the repository:</p><pre tabindex=0><code>      - name: Checkout
+        uses: actions/checkout@v2
+</code></pre><h3 id=preparing-parameters>Preparing parameters<a href=#preparing-parameters class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The next step is a simple shell script that sets some output parameters we
+will be able to consume in subsequent steps. A script can set parameters by
+generating output in the form:</p><pre tabindex=0><code>::set-output name=&lt;name&gt;::&lt;value&gt;
+</code></pre><p>In other steps, we can refer to these parameters using the syntax
+<code>${{ steps.&lt;step_name>.output.&lt;name> }}</code> (e.g. <code>${{ steps.prep.output.tags }}</code>).</p><p>We&rsquo;re going to use this step to set things like the image name (using our
+<code>DOCKER_USERNAME</code> secret to set the namespace), and to set up several tags
+for the image:</p><ul><li>By default, we tag it <code>latest</code></li><li>If we&rsquo;re building from a git tag, use the tag name instead of <code>latest</code>.
+Note that here we&rsquo;re assuming that git tags are of the form <code>v1.0</code>, so we
+strip off that initial <code>v</code> to get a Docker tag that is just the version
+number.</li><li>We also tag the image with the short commit id</li></ul><pre tabindex=0><code>      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
+          VERSION=latest
+          SHORTREF=${GITHUB_SHA::8}
+
+          # If this is git tag, use the tag name as a docker tag
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          TAGS=&#34;${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}&#34;
+
+          # If the VERSION looks like a version number, assume that
+          # this is the most recent version of the image and also
+          # tag it &#39;latest&#39;.
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS=&#34;$TAGS,${DOCKER_IMAGE}:latest&#34;
+          fi
+
+          # Set output parameters.
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=docker_image::${DOCKER_IMAGE}
+</code></pre><h3 id=set-up-qemu>Set up QEMU<a href=#set-up-qemu class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The <a href=https://github.com/docker/setup-qemu-action>docker/setup-qemu</a> action installs QEMU <a href=https://wiki.debian.org/QemuUserEmulation>static binaries</a>, which
+are used to run builders for architectures other than the host.</p><pre tabindex=0><code>      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
+</code></pre><h3 id=set-up-docker-builders>Set up Docker builders<a href=#set-up-docker-builders class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The <a href=https://github.com/docker/setup-buildx-action>docker/setup-buildx</a> action configures <a href=https://github.com/docker/buildx>buildx</a>, which is a Docker
+CLI plugin that provides enhanced build capabilities. This is the
+infrastructure that the following step will use for actually building
+images.</p><pre tabindex=0><code>      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+</code></pre><h3 id=authenticate-to-docker-hub>Authenticate to Docker Hub<a href=#authenticate-to-docker-hub class=hanchor arialabel=Anchor>&#8983;</a></h3><p>In order to push images to Docker Hub, we use the <a href=https://github.com/docker/login-action>docker/login-action</a>
+action to authenticate. This uses the <code>DOCKER_USERNAME</code> and
+<code>DOCKER_PASSWORD</code> secrets we created earlier in order to establish
+credentials for use in subsequent steps.</p><pre tabindex=0><code>      - name: Login to DockerHub
+        if: github.event_name != &#39;pull_request&#39;
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+</code></pre><h3 id=build-and-push-the-images>Build and push the images<a href=#build-and-push-the-images class=hanchor arialabel=Anchor>&#8983;</a></h3><p>This final step uses the [docker/build-push-action][] to build the images
+and push them to Docker Hub using the tags we defined in the <code>prep</code> step.
+In this example, we&rsquo;re building images for <code>amd64</code>, <code>arm64</code>, and <code>ppc64le</code>
+architectures.</p><pre tabindex=0><code>      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
+</code></pre><h2 id=the-complete-workflow>The complete workflow<a href=#the-complete-workflow class=hanchor arialabel=Anchor>&#8983;</a></h2><p>When we put all of the above together, we get:</p><pre tabindex=0><code>---
+name: &#39;build images&#39;
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
+          VERSION=latest
+          SHORTREF=${GITHUB_SHA::8}
+
+          # If this is git tag, use the tag name as a docker tag
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          TAGS=&#34;${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}&#34;
+
+          # If the VERSION looks like a version number, assume that
+          # this is the most recent version of the image and also
+          # tag it &#39;latest&#39;.
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS=&#34;$TAGS,${DOCKER_IMAGE}:latest&#34;
+          fi
+
+          # Set output parameters.
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=docker_image::${DOCKER_IMAGE}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Login to DockerHub
+        if: github.event_name != &#39;pull_request&#39;
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
+</code></pre><p>You can grab the <a href=https://github.com/larsks/hello-flask>hello-flask</a> repository and try this out yourself.
+You&rsquo;ll need to set up the secrets described earlier in this article, but
+then for each commit to the <code>master</code> branch you will end up a new image,
+tagged both as <code>latest</code> and with the short git commit id.</p><h2 id=the-results>The results<a href=#the-results class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We can use the <code>docker manifest inspect</code> command to inspect the output of
+the build step. In the output below, you can see the images build for our
+three target architectures:</p><pre tabindex=0><code>$ docker manifest inspect !$
+docker manifest inspect larsks/hello-flask
+{
+   &#34;schemaVersion&#34;: 2,
+   &#34;mediaType&#34;: &#34;application/vnd.docker.distribution.manifest.list.v2+json&#34;,
+   &#34;manifests&#34;: [
+      {
+         &#34;mediaType&#34;: &#34;application/vnd.docker.distribution.manifest.v2+json&#34;,
+         &#34;size&#34;: 3261,
+         &#34;digest&#34;: &#34;sha256:c6bab778a9fd0dc7bf167a5a49281bcd5ebc5e762ceeb06791aff8f0fbd15325&#34;,
+         &#34;platform&#34;: {
+            &#34;architecture&#34;: &#34;amd64&#34;,
+            &#34;os&#34;: &#34;linux&#34;
+         }
+      },
+      {
+         &#34;mediaType&#34;: &#34;application/vnd.docker.distribution.manifest.v2+json&#34;,
+         &#34;size&#34;: 3261,
+         &#34;digest&#34;: &#34;sha256:3c02f36562fcf8718a369a78054750382aba5706e1e9164b76bdc214591024c4&#34;,
+         &#34;platform&#34;: {
+            &#34;architecture&#34;: &#34;arm64&#34;,
+            &#34;os&#34;: &#34;linux&#34;
+         }
+      },
+      {
+         &#34;mediaType&#34;: &#34;application/vnd.docker.distribution.manifest.v2+json&#34;,
+         &#34;size&#34;: 3262,
+         &#34;digest&#34;: &#34;sha256:192fc9acd658edd6b7f2726f921cba2582fb1101d929800dff7fb53de951dd76&#34;,
+         &#34;platform&#34;: {
+            &#34;architecture&#34;: &#34;ppc64le&#34;,
+            &#34;os&#34;: &#34;linux&#34;
+         }
+      }
+   ]
+}
+</code></pre><h2 id=caveats>Caveats<a href=#caveats class=hanchor arialabel=Anchor>&#8983;</a></h2><p>This process assumes, of course, that your base image of choice is available for your selected architectures. <a href=https://docs.docker.com/docker-for-mac/multi-arch/>According to Docker</a>:</p><blockquote><p>Most of the official images on Docker Hub provide a variety of architectures.
+For example, the busybox image supports amd64, arm32v5, arm32v6, arm32v7,
+arm64v8, i386, ppc64le, and s390x.</p></blockquote><p>So if you are starting from one of the official images, you&rsquo;ll probably be in good shape. On the other hand, if you&rsquo;re attempting to use a community image as a starting point, you might find that it&rsquo;s only available for a single architecture.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

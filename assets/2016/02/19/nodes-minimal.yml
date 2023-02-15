@@ -1,0 +1,9 @@
+control_memory: 6000
+compute_memory: 2048
+undercloud_vcpu: 4
+
+overcloud_nodes:
+  - name: control_0
+    flavor: control
+  - name: compute_0
+    flavor: compute

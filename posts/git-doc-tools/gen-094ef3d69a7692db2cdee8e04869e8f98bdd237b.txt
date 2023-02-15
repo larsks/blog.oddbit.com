@@ -1,0 +1,40 @@
+digraph git {
+	graph [rankdir=RL]
+	node [shape=circle]
+	{
+		node [group=master_commits]
+		"28f7b382a5" [label=H tooltip="28f7b382a52ac53f86314e5d608ebafd66de6c44"]
+		cabdedff95 [label=C tooltip=cabdedff957f7dec15f365e7c29eaead9930d618]
+		a5cbd99954 [label=B tooltip=a5cbd999545aeabc2e102a845aeb0466f01454a2]
+		d98f949840 [label=A tooltip=d98f94984057d760066ba0b300ab4930497bcba6]
+	}
+	{
+		node [group=topic1_commits]
+		"973437cb00" [label=E tooltip="973437cb007d2a69d6564fd7b30f3e8c347073c2"]
+		"2c0bd1c1df" [label=D tooltip="2c0bd1c1dfe9f76cd18b37bb0bc995e449e0094b"]
+	}
+	{
+		node [group=topic2_commits]
+		"93e1d18862" [label=G tooltip="93e1d18862102e044a4ec46bb189f5bca9ba0e05"]
+		"3ef811d426" [label=F tooltip="3ef811d426c09be792a0ff6564eca82a7bd105a9"]
+	}
+	{
+		node [color=black fontcolor=white group=heads shape=box style=filled]
+		master
+		topic1
+		topic2
+	}
+	{
+		edge [style=dashed]
+		topic2 -> "93e1d18862"
+		topic1 -> "973437cb00"
+		master -> "28f7b382a5"
+	}
+	a5cbd99954 -> d98f949840
+	"3ef811d426" -> "973437cb00"
+	"973437cb00" -> "2c0bd1c1df"
+	cabdedff95 -> a5cbd99954
+	"28f7b382a5" -> cabdedff95
+	"2c0bd1c1df" -> cabdedff95
+	"93e1d18862" -> "3ef811d426"
+}

@@ -1,0 +1,114 @@
+<!doctype html><html lang=en><head><title>Booting an instance with multiple fixed addresses :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This article expands on my answer to Add multiple specific IPs to instance, a question posted to ask.openstack.org.
+In order to serve out SSL services from an OpenStack instance, you will generally want one local ip address for each SSL virtual host you support. It is possible to create an instance with multiple fixed addresses, but there are a few complications to watch out for.
+Assumptions This article assumes that the following resources exist:"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/booting-an-instance-with-multi/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Booting an instance with multiple fixed addresses"><meta property="og:description" content="This article expands on my answer to Add multiple specific IPs to instance, a question posted to ask.openstack.org.
+In order to serve out SSL services from an OpenStack instance, you will generally want one local ip address for each SSL virtual host you support. It is possible to create an instance with multiple fixed addresses, but there are a few complications to watch out for.
+Assumptions This article assumes that the following resources exist:"><meta property="og:url" content="https://blog.oddbit.com/posts/booting-an-instance-with-multi/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2014-05-28 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/booting-an-instance-with-multi/>Booting an instance with multiple fixed addresses</a></h1><div class=post-meta><time class=post-date>2014-05-28 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/neutron/>neutron</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;</span><div class=post-content><div><p>This article expands on my answer to <a href=https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/>Add multiple specific IPs to
+instance</a>, a question posted to <a href=https://ask.openstack.org/>ask.openstack.org</a>.</p><p>In order to serve out SSL services from an OpenStack instance, you
+will generally want one local ip address for each SSL virtual host you
+support. It is possible to create an instance with multiple fixed
+addresses, but there are a few complications to watch out for.</p><h1 id=assumptions>Assumptions<a href=#assumptions class=hanchor arialabel=Anchor>&#8983;</a></h1><p>This article assumes that the following resources exist:</p><ul><li>a private network <code>net0</code>.</li><li>a private network <code>net0-subnet0</code>, associated with <code>net0</code>, assigned
+the range <code>10.0.0.0/24</code>.</li><li>a public network <code>external</code> assigned the range <code>192.168.200.0/24</code>.</li><li>an image named <code>fedora-20-x86_64</code>, with hopefully self-evident
+contents.</li></ul><h1 id=creating-a-port>Creating a port<a href=#creating-a-port class=hanchor arialabel=Anchor>&#8983;</a></h1><p>Start by creating a port in Neutron:</p><pre><code>$ neutron port-create net0 \
+  --fixed-ip subnet_id=net0-subnet0 \
+  --fixed-ip subnet_id=net0-subnet0
+</code></pre><p>This will create a neutron port to which have been allocated to fixed
+ip addresses from <code>net0-subnet0</code>:</p><pre><code>+-----------------------+----------------------------------------------------------------------------------+
+| Field                 | Value                                                                            |
++-----------------------+----------------------------------------------------------------------------------+
+| admin_state_up        | True                                                                             |
+| allowed_address_pairs |                                                                                  |
+| binding:vnic_type     | normal                                                                           |
+| device_id             |                                                                                  |
+| device_owner          |                                                                                  |
+| fixed_ips             | {&quot;subnet_id&quot;: &quot;f8ca90fd-cb82-4218-9627-6fa66e4c9c3c&quot;, &quot;ip_address&quot;: &quot;10.0.0.18&quot;} |
+|                       | {&quot;subnet_id&quot;: &quot;f8ca90fd-cb82-4218-9627-6fa66e4c9c3c&quot;, &quot;ip_address&quot;: &quot;10.0.0.19&quot;} |
+| id                    | 3c564dd5-fd45-4f61-88df-715f71667b3b                                             |
+| mac_address           | fa:16:3e:e1:15:7f                                                                |
+| name                  |                                                                                  |
+| network_id            | bb4e5e37-74e1-41bd-880e-b59e94236c5e                                             |
+| security_groups       | 52f7a87c-380f-4a07-a6ff-d64be495f25b                                             |
+| status                | DOWN                                                                             |
+| tenant_id             | 4dfe8e38f68449b6a0c9cd73037726f7                                                 |
++-----------------------+----------------------------------------------------------------------------------+
+</code></pre><p>If you want, you can specify an explicit set of addresses rather than
+having neutron allocate them for you:</p><pre><code>$ neutron port-create net0 \
+  --fixed-ip subnet_id=net0-subnet0,ip_address=10.0.0.18 \
+  --fixed-ip subnet_id=net0-subnet0,ip_address=10.0.0.19
+</code></pre><h1 id=boot-an-instance>Boot an instance<a href=#boot-an-instance class=hanchor arialabel=Anchor>&#8983;</a></h1><p>You can boot an instance using this port using the <code>port-id=...</code>
+parameter to the <code>--nic</code> option:</p><pre><code>$ nova boot \
+  --nic port-id=3c564dd5-fd45-4f61-88df-715f71667b3b \
+  --flavor m1.tiny \
+  --image fedora-20-x86_64 \
+  --key-name lars test0
+</code></pre><p>This is where the first complication arises: the instance will boot
+and receive a DHCP lease for one of the fixed addresses you created,
+but you don&rsquo;t know which one. This isn&rsquo;t an insurmountable problem;
+you can assign floating ips to each one and then try logging in to
+both and see which works.</p><p>Rather than playing network roulette, you can pass in a script via the
+<code>--user-data</code> option that will take care of configuring the network
+correctly. For example, something like this:</p><pre><code>#!/bin/sh
+
+cat &gt; /etc/sysconfig/network-scripts/ifcfg-eth0 &lt;&lt;EOF
+DEVICE=eth0
+BOOTPROTO=none
+IPADDR=10.0.0.18
+NETMASK=255.255.255.0
+GATEWAY=10.0.0.1
+ONBOOT=yes
+EOF
+
+cat &gt; /etc/sysconfig/network-scripts/ifcfg-eth0:0 &lt;&lt;EOF
+DEVICE=eth0:0
+BOOTPROTO=none
+IPADDR=10.0.0.19
+NETMASK=255.255.255.0
+GATEWAY=10.0.0.1
+ONBOOT=yes
+EOF
+
+ifdown eth0
+ifup eth0
+ifup eth0:0
+</code></pre><p>And boot the instance like this:</p><pre><code>$ nova boot --nic port-id=3c564dd5-fd45-4f61-88df-715f71667b3b \
+  --flavor m1.tiny --image fedora-20-x86_64 --key-name lars \
+  --user-data userdata.txt test0
+</code></pre><p>Assuming that your image uses <a href=http://cloudinit.readthedocs.org/en/latest/>cloud-init</a> or something similar, it
+should execute the <code>user-data</code> script at boot and set up the
+persistent network configuration.</p><p>At this stage, you can verify that both addresses have been assigned
+by using the <code>ip netns</code> command to run <code>ping</code> inside an appropriate
+namespace. Something like:</p><pre><code>$ sudo ip netns exec qdhcp-bb4e5e37-74e1-41bd-880e-b59e94236c5e ping -c1 10.0.0.18
+PING 10.0.0.18 (10.0.0.18) 56(84) bytes of data.
+64 bytes from 10.0.0.18: icmp_seq=1 ttl=64 time=1.60 ms
+
+--- 10.0.0.18 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.606/1.606/1.606/0.000 ms
+
+$ sudo ip netns exec qdhcp-bb4e5e37-74e1-41bd-880e-b59e94236c5e ping -c1 10.0.0.19
+PING 10.0.0.19 (10.0.0.19) 56(84) bytes of data.
+64 bytes from 10.0.0.19: icmp_seq=1 ttl=64 time=1.60 ms
+
+--- 10.0.0.19 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.701/1.701/1.701/0.000 ms
+</code></pre><p>This assumes that the UUID of the <code>net0</code> network is <code>bb4e5e37-74e1-41bd-880e-b59e94236c5e</code>. On your system, the namespace will be something different.</p><h1 id=assign-floating-ips>Assign floating ips<a href=#assign-floating-ips class=hanchor arialabel=Anchor>&#8983;</a></h1><p>Assign a floating ip address to each of the fixed addresses. You will
+need to use the <code>--fixed-address</code> option to <code>nova add-floating-ip</code>:</p><pre><code>$ nova add-floating-ip --fixed-address 10.0.0.19 test0 192.168.200.6
+$ nova add-floating-ip --fixed-address 10.0.0.18 test0 192.168.200.4
+</code></pre><p>With these changes in place, the system is accessible via either
+address:</p><pre><code>$ ssh fedora@192.168.200.4 uptime
+  14:51:52 up 4 min,  0 users,  load average: 0.00, 0.02, 0.02
+$ ssh fedora@192.168.200.6 uptime
+  14:51:54 up 4 min,  0 users,  load average: 0.00, 0.02, 0.02
+</code></pre><p>And looking at the network configuration on the system, we can see
+that both addresses have been assigned to <code>eth0</code> as expected:</p><pre><code>$ ssh fedora@192.168.200.4 /sbin/ip a
+[...]
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether fa:16:3e:bf:f9:6a brd ff:ff:ff:ff:ff:ff
+    inet 10.0.0.18/24 brd 10.0.0.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet 10.0.0.19/24 brd 10.0.0.255 scope global secondary eth0:0
+       valid_lft forever ...
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

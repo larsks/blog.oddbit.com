@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>arduino on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/arduino/</link><description>Recent content in arduino on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 07 Jun 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/arduino/rss.xml" rel="self" type="application/rss+xml"/><item><title>Grove Beginner Kit for Arduino (part 2): First look</title><link>https://blog.oddbit.com/posts/first-look-seed-grove-beginner/</link><pubDate>Sun, 07 Jun 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/first-look-seed-grove-beginner/</guid><description>The folks at Seeed Studio were kind enough to send me a Grove Beginner Kit for Arduino for review. That&amp;rsquo;s a mouthful of a name for a compact little kit!
+The Grove Beginner Kit for Arduino (henceforth &amp;ldquo;the Kit&amp;rdquo;, because ain&amp;rsquo;t nobody got time to type that out more than a few times in a single article) is about 8.5 x 5 x 1 inches. Closed, you could fit two of them on a piece of 8.</description><content>&lt;p>The folks at &lt;a href="https://seeedstudio.com">Seeed Studio&lt;/a> were kind enough to send me a &lt;a href="https://www.seeedstudio.com/Grove-Beginner-Kit-for-Arduino-p-4549.html">Grove
+Beginner Kit for Arduino&lt;/a> for review. That&amp;rsquo;s a mouthful of a name
+for a compact little kit!&lt;/p>
+&lt;p>The Grove Beginner Kit for Arduino (henceforth &amp;ldquo;the Kit&amp;rdquo;, because ain&amp;rsquo;t
+nobody got time to type that out more than a few times in a single
+article) is about 8.5 x 5 x 1 inches. Closed, you could fit two of
+them on a piece of 8.5x11 paper with a little room leftover.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-closed.jpg" />
+&lt;/figure>
+&lt;p>Opening the top of the box, we see the board itself. The kit is targeted
+straight at the STEM market, and as we&amp;rsquo;ll in the following paragraphs there are
+a number of features that make it particularly appropriate for this niche.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-open.jpg" />
+&lt;/figure>
+&lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
+the &lt;a href="#sensors">Sensors&lt;/a> and &lt;a href="#inputoutput">Input/Output&lt;/a> sections,
+below, for an overview). To make it easy to get started, everything
+you see is pre-wired (via traces on the PCB) to the microcontroller.
+That means you don&amp;rsquo;t need soldering or connection cables to use
+anything on the board.&lt;/p>
+&lt;p>Every sensor also has a &lt;a href="https://wiki.seeedstudio.com/Grove_System/">Grove&lt;/a> connector on it, and the main board
+&amp;ndash; in addition to Arduino-compatible headers &amp;ndash; has 12 Grove
+connectors. The individual sensor boards are designed so that you can
+cut them off the PCB and use them on their own. If you open the
+left-hand side of the kit, you&amp;rsquo;ll find a collection of six Grove
+connection cables if you choose to go this route.&lt;/p>
+&lt;p>Using the Grove connectors makes it very easy to add additional
+sensors to your projects (it looks like there are about &lt;a href="https://www.seeedstudio.com/category/Sensor-for-Grove-c-24.html.">150 sensor
+modules available&lt;/a> in the Seeed Studio store).&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-lh.jpg" />
+&lt;/figure>
+&lt;p>The right-hand side of the case contains a micro USB cable for power
+and for connecting the kit to your computer for programming using the
+Arduino IDE.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-rh.jpg" />
+&lt;/figure>
+&lt;!-- raw HTML omitted -->
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="sensors">Sensors&lt;/h2>
+&lt;p>The Kit ships with a variety of sensors. In addition to simple light
+and sound sensors, the kit also has:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>DHT11 Temperature and Humidity Sensor&lt;/p>
+&lt;p>The &lt;a href="DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
+DHT11 can measure temperature from 0-50 °C with an accuracy of ±2 °C,
+and humidity from 20-80% with an accuracy of ±5% (the DHT22, in
+comparison, has a slightly wider ranger for both temperature and
+humidity, and substantially better accuracy).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>BMP280 Air Pressure Sensor&lt;/p>
+&lt;p>The &lt;a href="Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
+above sea level, with a relative accuracy of ±1 m (that&amp;rsquo;s 300-1100 hPa
+with a relative accuracy of ±0.12 hPa). &amp;ldquo;Relative
+accuracy&amp;rdquo; means that it&amp;rsquo;s good at detecting pressure &lt;em>changes&lt;/em>, but
+it&amp;rsquo;s less accurate if your goal is to read the absolute air pressure
+(the accuracy in that case is ±1 hPa, or roughly ±8 m).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>LIS3DHTR 3-Axis Accelerometer&lt;/p>
+&lt;p>The &lt;a href="LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
+is capable of measuring accelerations with output data rates from 1
+Hz to 5.3 kHz.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="inputoutput">Input/Output&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>OLED Display&lt;/p>
+&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
+the SSD1315 chip. You can see this display in action &lt;a href="#video">at the bottom
+of this post&lt;/a>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>LED&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Buzzer&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Button&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Potentiometer&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="lcd-demo">LCD Demo&lt;/h2>
+&lt;p>In the next couple of weeks I hope to do something more interesting
+with this board, but as a first step I thought it would be fun to
+scroll something across the LCD screen. I slapped the following code
+together after reading the &lt;a href="https://github.com/olikraus/u8g2/wiki/u8g2reference">u8g2 docs&lt;/a> for a couple of minutes, so I
+can guarantee that it&amp;rsquo;s not optimal, but it&amp;rsquo;s a start:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;Arduino.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;U8g2lib.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#ifdef U8X8_HAVE_HW_SPI
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;SPI.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#ifdef U8X8_HAVE_HW_I2C
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#include&lt;/span> &lt;span style="color:#75715e">&amp;lt;Wire.h&amp;gt;&lt;/span>&lt;span style="color:#75715e">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>U8G2_SSD1306_128X64_NONAME_F_SW_I2C &lt;span style="color:#a6e22e">u8g2&lt;/span>(U8G2_R2, &lt;span style="color:#75715e">/* clock=*/&lt;/span> SCL, &lt;span style="color:#75715e">/* data=*/&lt;/span> SDA, &lt;span style="color:#75715e">/* reset=*/&lt;/span> U8X8_PIN_NONE);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">char&lt;/span> &lt;span style="color:#f92672">*&lt;/span>text &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;blog.oddbit.com&amp;#34;&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">setup&lt;/span>(&lt;span style="color:#66d9ef">void&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">setBusClock&lt;/span>(&lt;span style="color:#ae81ff">4000000&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">begin&lt;/span>();
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">setFontMode&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">loop&lt;/span>(&lt;span style="color:#66d9ef">void&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">u8g2_uint_t&lt;/span> x;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">firstPage&lt;/span>();
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">do&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">setFont&lt;/span>(u8g2_font_luBIS18_tf);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u8g2.&lt;span style="color:#a6e22e">drawStr&lt;/span>(x, &lt;span style="color:#ae81ff">40&lt;/span>, text);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> x &lt;span style="color:#f92672">-=&lt;/span> &lt;span style="color:#ae81ff">10&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> } &lt;span style="color:#66d9ef">while&lt;/span> (u8g2.&lt;span style="color:#a6e22e">nextPage&lt;/span>());
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;!-- raw HTML omitted --></content></item><item><title>Grove Beginner Kit for Arduino (part 1)</title><link>https://blog.oddbit.com/posts/grove-beginner-kit-for-arduino/</link><pubDate>Wed, 15 Apr 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/grove-beginner-kit-for-arduino/</guid><description>The folks at Seeed Studio have just released the Grove Beginner Kit for Arduino, and they asked if I would be willing to take a look at it in exchange for a free kit. At first glance it reminds me of the Radio Shack (remember when they were cool?) electronics kit I had when I was a kid &amp;ndash; but somewhat more advanced. I&amp;rsquo;m excited to take a closer look, but given shipping these days means it&amp;rsquo;s probably a month away at least.</description><content>&lt;p>The folks at &lt;a href="https://www.seeedstudio.com/">Seeed Studio&lt;/a> have just released the &lt;a href="https://www.seeedstudio.com/Grove-Beginner-Kit-for-Arduino-p-4549.html">Grove Beginner Kit for
+Arduino&lt;/a>, and they asked if I would be willing to take a look at it in
+exchange for a free kit. At first glance it reminds me of the Radio Shack
+(remember when they were cool?) electronics kit I had when I was a kid &amp;ndash; but
+somewhat more advanced. I&amp;rsquo;m excited to take a closer look, but given shipping
+these days means it&amp;rsquo;s probably a month away at least.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="grove-beginner-kit.png" />
+&lt;/figure>
+&lt;p>An interesting feature of the kit is that while everything is hardwired
+together (so you can use it &amp;ldquo;out of the box&amp;rdquo; without any jumper wires, etc),
+most of the components can be snapped out so that they can be used on their
+own. Once separated, components can be connected using a Grove connector on
+each piece.&lt;/p>
+&lt;p>The kit includes:&lt;/p>
+&lt;ul>
+&lt;li>A LED&lt;/li>
+&lt;li>A buzzer&lt;/li>
+&lt;li>A 0.96&amp;quot; OLED Display 0.96&amp;quot;&lt;/li>
+&lt;li>A button&lt;/li>
+&lt;li>A rotary potentiometer&lt;/li>
+&lt;li>A light&lt;/li>
+&lt;li>A sound sensor&lt;/li>
+&lt;li>A DHT11 temperature and humidity sensor&lt;/li>
+&lt;li>A BMP280 air pressure sensor&lt;/li>
+&lt;li>A 3LIS3DHTR 3-axis accelerometer&lt;/li>
+&lt;li>A &lt;a href="http://wiki.seeedstudio.com/Seeeduino_Lotus/">Seeduino Lotus&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>It seems like an interesting mix of sensors for someone just getting started with Arduino programming. I&amp;rsquo;ll let you know how it looks in practice as soon as it arrives.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/posts/i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/i-see-you-have-the-machine-tha/</guid><description>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and for me that means leaping at the chance to turn a small problem into a slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go into here I wanted to generate an alert when a certain WiFi BSSID becomes visible. A simple solution to this problem would have been a few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t about simple solutions!</description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+for me that means leaping at the chance to turn a small problem into a
+slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
+into here I wanted to generate an alert when a certain WiFi BSSID
+becomes visible. A simple solution to this problem would have been a
+few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t
+about simple solutions!&lt;/p>
+&lt;p>I thought it would be fun to put together a physical device of some
+sort that would sound an alarm when the network in question was
+visible. There weren&amp;rsquo;t too many options floating around the house &amp;ndash; I
+found a &lt;a href="https://www.amazon.com/RuiLing-Decibels-Continuous-Sounder-Electronic/dp/B07NK8MGL9">small buzzer&lt;/a>, but it wasn&amp;rsquo;t very loud so wasn&amp;rsquo;t much use
+unless I was right next to it. I needed something a little more
+dramatic, and found it in the old chime doorbell I had floating
+around the basement. This means the problem statement became:&lt;/p>
+&lt;blockquote>
+&lt;p>Design a device that will ring the doorbell chime when a given BSSID
+becomes visible.&lt;/p>
+&lt;/blockquote>
+&lt;p>(Why a BSSID? The BSSID is the hardware address of the access point.
+In most cases, it&amp;rsquo;s easy to change the name of a WiFi network &amp;ndash; the
+SSID &amp;ndash; but somewhat more difficult to change the BSSID.)&lt;/p>
+&lt;h1 id="tldr">TL;DR&lt;/h1>
+&lt;p>Before looking at the implementation in more detail, let&amp;rsquo;s take a look
+at the finished project. When the device detects a target BSSID, it
+rings the bell twice and lights the &lt;code>ALARM&lt;/code> LED:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/cT2JB-aDhTQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>After the initial alarm, the bell will ring once every five minutes
+while the alarm persists. Once the BSSID goes offline, the device
+cancels the alarm and extinguishes the &lt;code>ALARM&lt;/code> LED:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/XY6YKFK2qv4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>If the doorbell proves annoying, there&amp;rsquo;s a switch that activates
+silent mode:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/bgM7Asc4FD4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;p>When silent mode is active, the device will illuminate the &lt;code>ALARM&lt;/code> LED
+without sounding the bell:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/xRxxqKiiYVc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;h2 id="but-wait-theres-more">But wait, there&amp;rsquo;s more!&lt;/h2>
+&lt;p>There&amp;rsquo;s also a web interface that allows one to monitor and configure
+the device. The web interface allows one to:&lt;/p>
+&lt;ul>
+&lt;li>See a list of visible networks&lt;/li>
+&lt;li>Add a network to the list of targets&lt;/li>
+&lt;li>Remove a network from the list of targets&lt;/li>
+&lt;li>See whether or not the scanning &amp;ldquo;thread&amp;rdquo; is active&lt;/li>
+&lt;li>See whether or not there is currently an active alarm&lt;/li>
+&lt;/ul>
+&lt;p>Here&amp;rsquo;s a video of it in action:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/TtDwYMXy-b8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
+&lt;h2 id="and-thats-not-all">And that&amp;rsquo;s not all!&lt;/h2>
+&lt;p>In order to support the UI, there&amp;rsquo;s a simple HTTP API that permits
+programmatic interaction with the device. The API supports the
+following endpoints:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>GET /api/target&lt;/code> &amp;ndash; get a list of targets&lt;/li>
+&lt;li>`POST /api/target&amp;rsquo; &amp;ndash; add a BSSID to the list of targets&lt;/li>
+&lt;li>&lt;code>DELETE /api/target/&amp;lt;bssid&amp;gt;&lt;/code> &amp;ndash; remove a BSSID from the list of
+targets&lt;/li>
+&lt;li>&lt;code>GET /api/status&lt;/code> &amp;ndash; get the current alarm status and whether or not
+the scan is running&lt;/li>
+&lt;li>&lt;code>GET /api/scan/result&lt;/code> &amp;ndash; get list of visible networks&lt;/li>
+&lt;li>&lt;code>GET /api/scan/start&lt;/code> &amp;ndash; start the scan&lt;/li>
+&lt;li>&lt;code>GET /api/scan/stop&lt;/code> &amp;ndash; stop the scan&lt;/li>
+&lt;/ul>
+&lt;p>There are a couple of other methods, too, but they&amp;rsquo;re more for
+debugging than anything else.&lt;/p>
+&lt;h2 id="show-me-the-code">Show me the code!&lt;/h2>
+&lt;p>The code for this project is all online at
+&lt;a href="https://github.com/larsks/maxdetector">https://github.com/larsks/maxdetector&lt;/a>.&lt;/p>
+&lt;h1 id="implementation-details">Implementation details&lt;/h1>
+&lt;h2 id="software-notes">Software notes&lt;/h2>
+&lt;p>My initial inclination was to implement the entire solution in
+&lt;a href="https://micropython.org/">MicroPython&lt;/a> on an &lt;a href="https://docs.wemos.cc/en/latest/d1/d1_mini.html">Wemos D1 mini&lt;/a> (an &lt;a href="https://en.wikipedia.org/wiki/ESP8266">esp8266&lt;/a> development
+board), but this proved problematic: MicroPython&amp;rsquo;s &lt;code>network.WLAN.scan&lt;/code>
+method is a blocking operation, by which I mean it blocks
+&lt;em>everything&lt;/em>, including interrupt handling, timer tasks, etc. This
+made it difficult to handle some physical UI aspects, such as button
+debouncing, in a reliable fashion.&lt;/p>
+&lt;p>I ended up moving the physical UI aspects to an &lt;a href="https://store.arduino.cc/usa/arduino-uno-rev3">Arduino Uno&lt;/a>. The
+ESP8266 handles scanning for WiFi networks, and raises a signal to the
+Uno when an alarm is active. The Uno handles the silent mode button,
+the LEDs, and the relay attached to the doorbell.&lt;/p>
+&lt;p>After the initial implementation, I realized that it really need a web
+interface (because of course it does), so in addition to the WiFi
+scanning the ESP8266 now hosts a simple web server. Because of the
+blocking nature of the WiFi scan, this means the web server may
+occasionally pause for a few seconds, but this hasn&amp;rsquo;t proven to be a
+problem.&lt;/p>
+&lt;p>In the end, I have four major blocks of code in three different languages:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/maxdetector.py">maxdetector.py&lt;/a> implements the WiFi scanning&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/server.py">server.py&lt;/a> implements the server side of the web interface&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/static/md.js">md.js&lt;/a> implements the dynamic portion of the web interface&lt;/li>
+&lt;li>&lt;a href="https://github.com/larsks/maxdetector/blob/master/src/maxdetector.cpp">maxdetector.cpp&lt;/a> implements the physical UI and operates the doorbell&lt;/li>
+&lt;/ul>
+&lt;h3 id="wifi-scanning">Wifi scanning&lt;/h3>
+&lt;p>The WiFi scanning operation is implemented as a &amp;ldquo;background task&amp;rdquo;
+driven by a MicroPython &lt;a href="https://docs.micropython.org/en/latest/esp8266/quickref.html#timers">virtual timer&lt;/a>. The scanning task triggers
+once every 10 seconds (and takes a little over 2 seconds to complete).&lt;/p>
+&lt;h3 id="web-server">Web server&lt;/h3>
+&lt;p>The web server is a simple &lt;code>select.poll()&lt;/code> based server capable of
+servicing multiple clients (very, very slowly). I was interested in an
+&lt;code>asyncio&lt;/code> implementation, but at the time the only &lt;code>asyncio&lt;/code>
+module for MicroPython was the one in &lt;a href="https://github.com/micropython/micropython-lib">micropython-lib&lt;/a>, which
+hadn&amp;rsquo;t been touched in several years. A new &lt;code>asyncio&lt;/code> module has
+recently been &lt;a href="https://github.com/micropython/micropython/commit/1d4d688b3b251120f5827a3605ec232d977eaa0f">added to micropython&lt;/a>, but that post-dates the
+implementation of this project.&lt;/p>
+&lt;p>The server uses a very simple route-registration mechanism that should
+be familiar if you&amp;rsquo;ve worked with various other Python web frameworks.
+It would be relatively easy to repurpose it for something other than
+this project.&lt;/p>
+&lt;h2 id="the-hardware">The hardware&lt;/h2>
+&lt;p>Everything is bundled &amp;ldquo;neatly&amp;rdquo; (whereby &amp;ldquo;neatly&amp;rdquo; I mean &amp;ldquo;haphazardly&amp;rdquo;)
+into an old shoe box. On the outside, you can see the three LEDs (for
+the ACTIVE, SILENT, and ALARM signals), the SILENT switch, and the
+doorbell itself:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="detector-outside-labelled.png" />
+&lt;/figure>
+&lt;p>On the inside, you&amp;rsquo;ll find the Arduino Uno, the Wemos D1 mini, the
+relay, and a step-down converter:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="detector-inside-labelled.png" />
+&lt;/figure>
+&lt;p>The step-down converter isn&amp;rsquo;t actually necessary: when I put things
+together, I didn&amp;rsquo;t realize that the Uno would accept up to 12V into
+its regulator. Since I already had the step-down converter in place,
+I&amp;rsquo;m feeding about 7.5v to the Uno. The doorbell gets 12V.&lt;/p>
+&lt;p>I initially prototyped the circuit in &lt;a href="https://www.tinkercad.com/things/cpRuevAoV5L-max-detector">Tinkercad Circuits&lt;/a>, where
+everything worked just fine. But after wiring things up and testing out
+the device, it would start ringing endlessly. Upon inspection, this
+was because the Uno was resetting every time the doorbell chimed. This
+was due to flyback voltage from the relay, which is simple to fix if
+you happen to have an appropriate diode handy&amp;hellip;but if you don&amp;rsquo;t, it
+means calling around to all your aquaintenances to find someone who
+happens to have some lying around. With a diode in place, everything
+worked swimmingly.&lt;/p></content></item><item><title>PiPower: A Raspberry Pi UPS</title><link>https://blog.oddbit.com/posts/pipower-a-raspberry-pi-ups/</link><pubDate>Sat, 19 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/pipower-a-raspberry-pi-ups/</guid><description>I have a Raspberry Pi running RetroPie hooked up to a television. It&amp;rsquo;s powered from a USB port on the TV, which is convenient, but it means that whenever we shut off the TV we&amp;rsquo;re pulling the plug on the Pi. While there haven&amp;rsquo;t been any problems so far, this is a classic recipe for filesystem problems or data loss at some point. I started looking into UPS options to alleviate this issue.</description><content>
+&lt;figure class="left" >
+&lt;img src="pipower-top.jpg" />
+&lt;/figure>
+&lt;p>I have a Raspberry Pi running &lt;a href="https://retropie.org.uk/">RetroPie&lt;/a> hooked up to a television. It&amp;rsquo;s powered from a USB port on the TV, which is convenient, but it means that whenever we shut off the TV we&amp;rsquo;re pulling the plug on the Pi. While there haven&amp;rsquo;t been any problems so far, this is a classic recipe for filesystem problems or data loss at some point. I started looking into UPS options to alleviate this issue. I wanted something with the following features:&lt;/p>
+&lt;ul>
+&lt;li>Notify the Pi when external power is removed so that the Pi can shut down cleanly.&lt;/li>
+&lt;li>Power off the Pi after the Pi has shut down.&lt;/li>
+&lt;li>Boot the Pi when external power is restored.&lt;/li>
+&lt;/ul>
+&lt;p>There are several Pi UPS solutions out there, but most of them are designed for a different purpose: they will run your Pi from battery for as long as possible, and will notify your Pi when the battery level goes low. That&amp;rsquo;s great if you want a portable device, but isn&amp;rsquo;t the right solution for my situation. One notable exception is the &lt;a href="https://juice4halt.com/">juice4halt&lt;/a> product, which is a super-capacitor based unit that does pretty much exactly when I want. Unfortunately, it is somewhat pricey.&lt;/p>
+&lt;p>While looking at various solutions, I found the Adafruit &lt;a href="https://www.adafruit.com/product/2465">PowerBoost 1000c&lt;/a>. When external power is available, this device will charge a LIPO battery and provide power to your Pi at the same time. When external power is removed, this device will power your Pi from the battery. By itself it doesn&amp;rsquo;t have any facilities for communicating with your Pi, but it does provide several control lines which suggested some interesting possibilities.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="powerboost1000c.png" />
+&lt;/figure>
+&lt;p>Getting the Powerboost talking to the Pi seemed like a good job for a small microcontroller. I happen to have a few &lt;a href="https://www.microchip.com/wwwproducts/en/ATtiny85">attiny85&lt;/a>s kicking about, so I decided to use one of those.&lt;/p>
+&lt;h2 id="code">Code&lt;/h2>
+&lt;p>You can find all the code used in this project in &lt;a href="https://github.com/larsks/pipower">the GitHub repository&lt;/a>. The code is written in C, and can be compiled using &lt;code>avr-gcc&lt;/code>. It requires &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>.&lt;/p>
+&lt;h2 id="theory-of-operation">Theory of operation&lt;/h2>
+&lt;p>When everything first boots up, the microcontroller checks the &lt;code>USB&lt;/code> signal from the PowerBoost to see if external power is available. The &lt;code>USB&lt;/code> line must remain high for 1 second before it is considered valid (it turns out that the &lt;code>USB&lt;/code> can go high momentarily when things first come on, so this avoids erroneously powering up the Pi when external power isn&amp;rsquo;t available).&lt;/p>
+&lt;p>If power is available, the controller brings the &lt;code>EN&lt;/code> line high, which causes the PowerBoost to start supplying power to the Pi. The controller will wait for up to 30 seconds for the &lt;code>BOOT&lt;/code> line to go low. The Pi boots up, and the &lt;code>pipower-up&lt;/code> service (see below) brings the &lt;code>BOOT&lt;/code> line low to indicate that it has successfully booted. If the &lt;code>BOOT&lt;/code> line does not go low within 30 seconds, the controller assumes the Pi has failed to boot and disconnects the power, then enters the lower-power idle mode.&lt;/p>
+&lt;p>If you shut down the Pi manually, the &lt;code>pipower-up&lt;/code> service will set the &lt;code>BOOT&lt;/code> line high late in the shutdown sequence to indicate that the Pi is shutting down. The microcontroller will wait an additional 30 seconds and will then turn off power to the Pi. If the &lt;code>BOOT&lt;/code> line goes low again during this time (e.g, if you rebooted the Pi instead of shutting it down), the microcontroller will cancel the shutdown.&lt;/p>
+&lt;p>If while the Pi is running you press the power button on the board, this will set the &lt;code>SHUTDOWN&lt;/code> line high. The &lt;code>pipower-down&lt;/code> service will respond to this signal by starting a clean shut down. The controller will wait up to 30 seconds for the Pi to set the &lt;code>BOOT&lt;/code> line high, at which point it will wait another 30 seconds before removing power.&lt;/p>
+&lt;p>If while the Pi is running external power is removed, the microcontroller will set the &lt;code>SHUTDOWN&lt;/code> line high, and will follow the same logic as if you had pressed the power button.&lt;/p>
+&lt;p>If the microcontroller is in the idle state and external power is available, you can press the power button to boot the Pi. If external power is not available, then applying external power will cause the Pi to boot.&lt;/p>
+&lt;p>At any point, a long press (two seconds ore more) of the power button will immediately remove power from the Pi and place the controller in the idle state.&lt;/p>
+&lt;h2 id="notes-on-the-code">Notes on the code&lt;/h2>
+&lt;p>I initially started writing the code using the Arduino IDE, but I decided to switch to &lt;code>avr-gcc&lt;/code> early on because I found that easier to work with. Since various aspects of the code require tracking the passage of time, the first thing I had to do was implement a version of the &lt;code>millis()&lt;/code> function. You can see my implementation in &lt;a href="https://github.com/larsks/pipower/blob/master/millis.c">millis.c&lt;/a>. This uses &lt;code>TIMER0&lt;/code> on the attiny85 with a divider of 64 (&lt;code>TCCR0B = 3&amp;lt;&amp;lt;CS00&lt;/code>), since that should allow the code to work with processor running at 16Mhz.&lt;/p>
+&lt;p>I wrote debouncing code for the power button using the mechanism described by Elliot Williams in &amp;ldquo;&lt;a href="https://hackaday.com/2015/12/10/embed-with-elliot-debounce-your-noisy-buttons-part-ii/">Debounce your Noisy Buttons, Part II&lt;/a>&amp;rdquo;. I wrote an object-oriented implementation that you can find in &lt;a href="https://github.com/larsks/pipower/blob/master/button.c">button.c&lt;/a>.&lt;/p>
+&lt;p>Most of the implementation logic can be found in the state machine implemented as a &lt;code>switch&lt;/code> statement in &lt;a href="https://github.com/larsks/pipower/blob/master/pipower.c#L125-L245">lines 125-254 of pipower.c&lt;/a>.&lt;/p>
+&lt;p>I have documented the code using &lt;a href="http://www.doxygen.nl/">Doxygen&lt;/a>. If you have Doxygen installed, you can &lt;code>cd docs&lt;/code> and run &lt;code>make&lt;/code> to create the code documentation.&lt;/p>
+&lt;h2 id="pins">pins&lt;/h2>
+&lt;p>The attiny85 only has 5 available pins (6, if you&amp;rsquo;re either very confident or have a high voltage programmer available). I ended up setting things up like this:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>PB0&lt;/code> - connected to a momentary-contact switch&lt;/li>
+&lt;li>&lt;code>PB1&lt;/code> - connected to &lt;code>USB&lt;/code> signal from the powerboost&lt;/li>
+&lt;li>&lt;code>PB2&lt;/code> - connected to the &lt;code>EN&lt;/code> signal to the powerboost&lt;/li>
+&lt;li>&lt;code>PB3&lt;/code> - connected to the &lt;code>SHUTDOWN&lt;/code> signal to the Pi&lt;/li>
+&lt;li>&lt;code>PB4&lt;/code> - connected to the &lt;code>BOOT&lt;/code> signal from the Pi&lt;/li>
+&lt;li>&lt;code>VCC&lt;/code> - connected to the &lt;code>Vs&lt;/code> output from the powerboost&lt;/li>
+&lt;/ul>
+&lt;p>I am intentionally not using the low battery (&lt;code>LBO&lt;/code>) signal, since I&amp;rsquo;m not trying to run the Pi off the battery for an extended period of time. If I build or acquire a high voltage programmer, I might wire &lt;code>LBO&lt;/code> to &lt;code>PB5&lt;/code>, or just connect the &lt;code>BAT&lt;/code> signal and use &lt;code>PB5&lt;/code> as an analog Pin, and trigger a shutdown on a low-battery condition as well.&lt;/p>
+&lt;h2 id="systemd-units">systemd units&lt;/h2>
+&lt;p>The only software required on the Raspberry Pi is &lt;a href="http://wiringpi.com/">wiringPi&lt;/a>, a library and toolset for manipulating GPIO on your Raspberry Pi, and the following &lt;a href="https://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd.unit.html">units&lt;/a>. If you are building this yourself and disagree with my pin selections, you can create the file &lt;code>/etc/default/pipower&lt;/code> and set one or both of &lt;code>PIN_SHUTDOWN&lt;/code> and &lt;code>PIN_BOOT&lt;/code> to BCM GPIO pins of your choice.&lt;/p>
+&lt;h3 id="pipower-up">pipower-up&lt;/h3>
+&lt;p>At boot, the &lt;code>pipower-up&lt;/code> service configures &lt;code>PIN_BOOT&lt;/code> (defaults to BCM GPIO 4) as an output and then brings it low. This notifies the code running on the attiny85 that the Pi has successfully booted. When the Pi shuts down, the unit sets &lt;code>PIN_BOOT&lt;/code> high, which notifies the controller that the Pi is about to shut down.&lt;/p>
+&lt;p>This service is designed to run early in the boot process and late in the shutdown process.&lt;/p>
+&lt;pre>&lt;code>[Unit]
+Description=[pipower] Assert BOOT signal
+DefaultDependencies=no
+After=final.target systemd-journald.service
+[Service]
+Type=oneshot
+Environment=PIN_BOOT=4
+EnvironmentFile=-/etc/default/pipower
+RemainAfterExit=true
+ExecStartPre=/usr/bin/gpio -g mode $PIN_BOOT output
+ExecStart=/usr/bin/gpio -g write $PIN_BOOT 0
+ExecStopPost=/bin/sh -c &amp;quot;test -f /run/pipower/inhibit || /usr/bin/gpio -g write $PIN_BOOT 1&amp;quot;
+[Install]
+WantedBy=multi-user.target
+&lt;/code>&lt;/pre>
+&lt;h3 id="pipower-down">pipower-down&lt;/h3>
+&lt;p>At boot, the &lt;code>pipower-down&lt;/code> service configures &lt;code>PIN_SHUTDOWN&lt;/code> (defaults to BCM GPIO 17) as an input w/ the pulldown resistor enabled. It then uses the &lt;code>gpio&lt;/code> command to wait for a rising interrupt on &lt;code>PIN_SHUTDOWN&lt;/code>; when it receives one, it calls &lt;code>systemctl poweroff&lt;/code> to cleanly shut down the system.&lt;/p>
+&lt;pre>&lt;code>[Unit]
+Description=[pipower] Monitor SHUTDOWN signal
+[Service]
+Type=simple
+Environment=PIN_SHUTDOWN=17
+EnvironmentFile=-/etc/default/pipower
+ExecStartPre=/usr/bin/gpio -g mode $PIN_SHUTDOWN input
+ExecStartPre=/usr/bin/gpio -g mode $PIN_SHUTDOWN down
+ExecStart=/usr/bin/gpio -g wfi $PIN_SHUTDOWN rising
+ExecStopPost=/bin/sh -c &amp;quot;test -f /run/pipower/inhibit || /bin/systemctl poweroff&amp;quot;
+[Install]
+WantedBy=multi-user.target
+&lt;/code>&lt;/pre>
+&lt;h2 id="caveats">Caveats&lt;/h2>
+&lt;p>The PowerBoost 1000c does not provide adequate power for a Raspberry Pi 3B+. It seems to be just adequate for a Pi 2B.&lt;/p>
+&lt;p>If you stop either of the systemd units, your Pi will either shutdown (if you &lt;code>systemctl stop pipower-down&lt;/code>) or will simply lose power (if you &lt;code>systemctl stop pipower-up&lt;/code>). You can inhibit the &lt;code>ExecStop*&lt;/code> actions of both units by creating the file &lt;code>/run/pipower/inhibit&lt;/code>.&lt;/p>
+&lt;h2 id="todo">TODO&lt;/h2>
+&lt;p>With a few more pins available &amp;ndash; maybe an &lt;a href="https://www.microchip.com/wwwproducts/en/ATtiny84">attiny84&lt;/a> &amp;ndash; it might be fun to provide battery voltage and current measurements to the Pi via an i2c interface. I would probably also add a status LED to show the current state of the controller code.&lt;/p>
+&lt;figure class="left" >
+&lt;img src="pipower-eth-left.jpg" />
+&lt;/figure>
+&lt;figure class="left" >
+&lt;img src="pipower-eth-right.jpg" />
+&lt;/figure></content></item><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/posts/i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/i2c-on-the-raspberry/</guid><description>I&amp;rsquo;ve set up my Raspberry Pi to communicate with my Arduino via I2C. The Raspberry Pi is a 3.3v device and the Arduino is a 5v device. While in general this means that you need to use a level converter when connecting the two devices, you don&amp;rsquo;t need to use a level converter when connecting the Arduino to the Raspberry Pi via I2C.
+The design of the I2C bus is such that the only device driving a voltage on the bus is the master (in this case, the Raspberry Pi), via pull-up resistors.</description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
+device. While in general this means that you need to use a level
+converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
+level converter when connecting the Arduino to the Raspberry Pi via
+I2C.&lt;/strong>&lt;/p>
+&lt;p>The design of the I2C bus is such that the only device driving a
+voltage on the bus is the master (in this case, the Raspberry Pi), via
+pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
+the Pi, which is perfectly safe for the Arduino (and compatible with
+it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
+bus low by connecting it to ground. In other words, slave devices
+&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
+never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
+mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
+Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p>
+&lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
+Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
+&lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
+(&lt;code>SCL&lt;/code>):&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>For information about other boards and about the Arduino I2C API, see
+the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Controlling a servo with your Arduino</title><link>https://blog.oddbit.com/posts/controlling-a-servo/</link><pubDate>Thu, 07 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/controlling-a-servo/</guid><description>I&amp;rsquo;ve recently started playing with an Arduino kit I purchased a year ago (and only just now got around to unboxing). I purchased the kit from SparkFun, and it includes a motley collection of resistors, LEDs, a motor, a servo, and more.
+I was fiddling around with this exercise, which uses the SoftwareServo library to control a servo. Using this library, you just pass it an angle and the library takes care of everything else, e.</description><content>&lt;p>I&amp;rsquo;ve recently started playing with an &lt;a href="http://arduino.cc/">Arduino&lt;/a> kit I purchased a year
+ago (and only just now got around to unboxing). I purchased the kit
+from &lt;a href="https://www.sparkfun.com/">SparkFun&lt;/a>, and it includes a motley collection of resistors,
+LEDs, a motor, a servo, and more.&lt;/p>
+&lt;p>I was fiddling around with &lt;a href="http://oomlout.com/a/products/ardx/circ-04/">this exercise&lt;/a>, which uses the
+&lt;code>SoftwareServo&lt;/code> library to control a servo. Using this library,
+you just pass it an angle and the library takes care of everything
+else, e.g. to rotate to 90 degrees you would do this:&lt;/p>
+&lt;pre>&lt;code>myservo.write(90);
+&lt;/code>&lt;/pre>
+&lt;p>The exercise suggests trying to control the servo without using the
+library:&lt;/p>
+&lt;blockquote>
+&lt;p>While it is easy to control a servo using the Arduino’s included
+library sometimes it is fun to figure out how to program something
+yourself. Try it. We’re controlling the pulse directly so you could
+use this method to control servos on any of the Arduino’s 20
+available pins (you need to highly optimize this code before doing
+that).&lt;/p>
+&lt;/blockquote>
+&lt;p>It took me a few tries, and it looks as if the upper and lower limits
+for the servo pulses given in that documentation may not be 100%
+accurate. This is what I finally came with. As an added bonus, it
+writes position information to the serial port:&lt;/p>
+&lt;pre>&lt;code>int incomingByte = 0;
+int servo0 = 600;
+int servo180 = 2100;
+int inc = 20;
+int pos = servo0;
+int servoPin = 9;
+int pulseInterval=2000;
+void setup() {
+Serial.begin(9600); // opens serial port, sets data rate to 9600 bps
+pinMode(servoPin, OUTPUT);
+}
+void loop() {
+int i;
+pos += inc;
+if (pos &amp;gt; servo180) {
+Serial.println(&amp;quot;REVERSE!&amp;quot;);
+pos = servo180;
+inc *= -1;
+delay(500);
+} else if (pos &amp;lt; servo0) {
+Serial.println(&amp;quot;FORWARD!&amp;quot;);
+pos = servo0;
+inc *= -1;
+delay(500);
+}
+Serial.print(&amp;quot;pos = &amp;quot;);
+Serial.println(pos, DEC);
+digitalWrite(servoPin, HIGH);
+delayMicroseconds(pos);
+digitalWrite(servoPin, LOW);
+delay(20);
+}
+&lt;/code>&lt;/pre>
+&lt;p>Under Linux or OS X, you could view the serial output using &lt;code>screen&lt;/code>
+like this:&lt;/p>
+&lt;pre>&lt;code>screen /dev/tty.usbmodemfd12441 9600
+&lt;/code>&lt;/pre></content></item></channel></rss>

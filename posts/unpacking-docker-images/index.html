@@ -1,0 +1,94 @@
+<!doctype html><html lang=en><head><title>Unpacking Docker images with Undocker :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="In some ways, the most exciting thing about Docker isn&amp;rsquo;t the ability to start containers. That&amp;rsquo;s been around for a long time in various forms, such as LXC or OpenVZ. What Docker brought to the party was a convenient method of building and distributing the filesystems necessary for running containers. Suddenly, it was easy to build a containerized service and to share it with other people.
+I was taking a closer at the systemd-nspawn command, which it seems has been developing it&amp;rsquo;s own set of container-related superpowers recently, including a number of options for setting up the network environment of a container."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/unpacking-docker-images/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Unpacking Docker images with Undocker"><meta property="og:description" content="In some ways, the most exciting thing about Docker isn&amp;rsquo;t the ability to start containers. That&amp;rsquo;s been around for a long time in various forms, such as LXC or OpenVZ. What Docker brought to the party was a convenient method of building and distributing the filesystems necessary for running containers. Suddenly, it was easy to build a containerized service and to share it with other people.
+I was taking a closer at the systemd-nspawn command, which it seems has been developing it&amp;rsquo;s own set of container-related superpowers recently, including a number of options for setting up the network environment of a container."><meta property="og:url" content="https://blog.oddbit.com/posts/unpacking-docker-images/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-02-13 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/unpacking-docker-images/>Unpacking Docker images with Undocker</a></h1><div class=post-meta><time class=post-date>2015-02-13 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;</span><div class=post-content><div><p>In some ways, the most exciting thing about <a href=http://docker.com/>Docker</a> isn&rsquo;t the ability
+to start containers. That&rsquo;s been around for a long time in various
+forms, such as <a href=https://linuxcontainers.org/>LXC</a> or <a href=http://openvz.org/Main_Page>OpenVZ</a>. What Docker brought to the
+party was a convenient method of building and distributing the
+filesystems necessary for running containers. Suddenly, it was easy
+to build a containerized service <em>and</em> to share it with other people.</p><p>I was taking a closer at the <a href=http://www.freedesktop.org/software/systemd/man/systemd-nspawn.html>systemd-nspawn</a> command, which it
+seems has been developing it&rsquo;s own set of container-related
+superpowers recently, including a number of options for setting up the
+network environment of a container. Like Docker, <code>systemd-nspawn</code>
+needs a filesystem on which to operate, but <em>unlike</em> Docker, there is
+no convenient distribution mechanism and no ecosystem of existing
+images. In fact, the official documentation seems to assume that
+you&rsquo;ll be building your own from scratch. Ain&rsquo;t nobody got time for
+that&mldr;</p><p>&mldr;but with that attracting Docker image ecosystem sitting right next
+door, surely there was something we can do?</p><h2 id=the-format-of-a-docker-image>The format of a Docker image<a href=#the-format-of-a-docker-image class=hanchor arialabel=Anchor>&#8983;</a></h2><p>A Docker image is a tar archive that contains a top level
+<code>repositories</code> files, and then a number of layers stored as
+directories containing a <code>json</code> file with some metadata about the
+layer and a tar file named <code>layer.tar</code> with the layer content. For
+example, if you <code>docker save busybox</code>, you get:</p><pre><code>4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125/
+4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125/VERSION
+4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125/json
+4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125/layer.tar
+511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/
+511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/VERSION
+511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json
+511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/layer.tar
+df7546f9f060a2268024c8a230d8639878585defcc1bc6f79d2728a13957871b/
+df7546f9f060a2268024c8a230d8639878585defcc1bc6f79d2728a13957871b/VERSION
+df7546f9f060a2268024c8a230d8639878585defcc1bc6f79d2728a13957871b/json
+df7546f9f060a2268024c8a230d8639878585defcc1bc6f79d2728a13957871b/layer.tar
+ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2/
+ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2/VERSION
+ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2/json
+ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2/layer.tar
+repositories
+</code></pre><p>In order to re-create the filesystem that would result from starting a
+Docker container with this image, you need to unpack the <code>layer.tar</code>
+files from the bottom up. You can find the topmost layer in the
+<code>repositories</code> file, which looks like this:</p><p>{
+&ldquo;busybox&rdquo;: {
+&ldquo;latest&rdquo;: &ldquo;4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125&rdquo;
+}
+}</p><p>From there, you can investigate the <code>json</code> file for each layer looking
+for the <code>parent</code> tag.</p><h2 id=introducing-undocker>Introducing undocker<a href=#introducing-undocker class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I wrote the <a href=http://github.com/larsks/undocker/>undocker</a> command to extract all or part of the layers
+of a Docker image onto the local filesystem. In other words, if you
+want to use the <code>busybox</code> Docker image, you can fetch and unpack the
+image:</p><pre><code># docker pull busybox
+# docker save busybox | undocker -o busybox
+</code></pre><p>This will first look in the <code>repositories</code> file for the <code>busybox</code>
+entry with the <code>latest</code> tag, then build the necessary chain of layers
+and unpack them in the correct order.</p><p>Once you have the filesystem extracted, you can boot it with
+<code>systemd-nspawn</code>:</p><pre><code># systemd-nspawn -D busybox /bin/sh
+Spawning container busybox on /root/busybox.
+Press ^] three times within 1s to kill container.
+Timezone America/New_York does not exist in container, not updating container timezone.
+Failed to copy /etc/resolv.conf to /root/busybox/etc/resolv.conf: Too many levels of symbolic links
+/bin/sh: can't access tty; job control turned off
+/ # 
+</code></pre><p>Undocker is able to extract specific layers from the image as well.
+We can get a list of layers with the <code>--layers</code> option:</p><pre><code>$ docker save busybox | undocker --layers
+511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158
+df7546f9f060a2268024c8a230d8639878585defcc1bc6f79d2728a13957871b
+ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2
+4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125
+</code></pre><p>And we can extract one or more specific layers with the <code>--layer</code>
+(<code>-l</code>) option:</p><pre><code>$ docker save busybox |
+  undocker -vi -o busybox -l ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2
+INFO:undocker:extracting image busybox (4986bf8c15363d1c5d15512d5266f8777bfba4974ac56e3270e7760f6f0a8125)
+INFO:undocker:extracting layer ea13149945cb6b1e746bf28032f02e9b5a793523481a0a18645fc77ad53c4ea2
+</code></pre><p>I&rsquo;m using the <code>-i</code> (<code>--ignore-errors</code>) option here because this layer
+contains a device node (<code>/dev/console</code>), and I am running this as an
+unprivileged user. Without the <code>-i</code> option, we would see:</p><pre><code>OSError: [Errno 1] Operation not permitted
+</code></pre><p>A Docker image archive can actually contain multiple images, each with
+multiple tags. For a single image, <code>undocker</code> will default to
+extracting the <code>latest</code> tag. If the <code>latest</code> tag doesn&rsquo;t exist,
+you&rsquo;ll see:</p><pre><code># docker pull fedora:20
+# docker save fedora:20 | undocker -o fedora
+ERROR:undocker:failed to find image fedora with tag latest
+</code></pre><p>You can specify an explicit tag in the same way you provide one to
+Docker:</p><pre><code># docker save fedora:20 | undocker -o fedora fedora:20
+</code></pre><p>If an archive contains multiple images, you&rsquo;ll get a different error:</p><pre><code># docker save busybox larsks/thttpd | undocker -o busybox
+ERROR:undocker:No image name specified and multiple images contained in archive
+</code></pre><p>You can get a list of available images and tags with the <code>--list</code>
+option:</p><pre><code># docker save busybox larsks/thttpd | undocker --list
+larsks/thttpd: latest
+busybox: latest
+
+# docker save fedora | undocker --list
+fedora: heisenbug 20 21 rawhide latest
+</code></pre><p>You can specify the image (and tag) to extract on the command line:</p><pre><code># docker save busybox larsks/thttpd | undocker -o busybox busybox
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

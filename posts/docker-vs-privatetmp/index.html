@@ -1,0 +1,90 @@
+<!doctype html><html lang=en><head><title>Docker vs. PrivateTmp :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="While working with Docker the other day, I ran into an undesirable interaction between Docker and systemd services that utilize the PrivateTmp directive.
+The PrivateTmp directive, if true, &amp;ldquo;sets up a new file system namespace for the executed processes and mounts private /tmp and /var/tmp directories inside it that is not shared by processes outside of the namespace&amp;rdquo;. This is a great idea from a security perspective, but can cause some unanticipated consequences."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/posts/docker-vs-privatetmp/><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Docker vs. PrivateTmp"><meta property="og:description" content="While working with Docker the other day, I ran into an undesirable interaction between Docker and systemd services that utilize the PrivateTmp directive.
+The PrivateTmp directive, if true, &amp;ldquo;sets up a new file system namespace for the executed processes and mounts private /tmp and /var/tmp directories inside it that is not shared by processes outside of the namespace&amp;rdquo;. This is a great idea from a security perspective, but can cause some unanticipated consequences."><meta property="og:url" content="https://blog.oddbit.com/posts/docker-vs-privatetmp/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2015-01-18 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/posts/docker-vs-privatetmp/>Docker vs. PrivateTmp</a></h1><div class=post-meta><time class=post-date>2015-01-18 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/systemd/>systemd</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/namespaces/>namespaces</a>&nbsp;</span><div class=post-content><div><p>While working with Docker <a href=https://blog.oddbit.com/posts/running-novalibvirt-and-novado/>the other day</a>, I ran into an
+undesirable interaction between Docker and <a href=http://www.freedesktop.org/wiki/Software/systemd/>systemd</a> services that
+utilize the <code>PrivateTmp</code> directive.</p><p>The <a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp</a> directive, if <code>true</code>, &ldquo;sets up a new file system
+namespace for the executed processes and mounts private <code>/tmp</code> and
+<code>/var/tmp</code> directories inside it that is not shared by processes outside
+of the namespace&rdquo;. This is a great idea from a <a href=https://danwalsh.livejournal.com/51459.html>security
+perspective</a>, but can cause some unanticipated consequences.</p><h2 id=the-problem-in-a-nutshell>The problem in a nutshell<a href=#the-problem-in-a-nutshell class=hanchor arialabel=Anchor>&#8983;</a></h2><ol><li><p>Start a Docker container:</p><pre><code> # cid=$(docker run -d larsks/thttpd)
+ # echo $cid
+ e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62
+</code></pre></li><li><p>See the <code>devicemapper</code> mountpoint created by Docker for the
+container:</p><pre><code> # grep devicemapper/mnt /proc/mounts
+ /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>Now restart a service &ndash; any service! &ndash; that has
+<code>PrivateTmp=true</code>:</p><pre><code> # systemctl restart systemd-machined
+</code></pre></li><li><p>Get the PID for that service:</p><pre><code> # systemctl status systemd-machined | grep PID
+  Main PID: 18698 (systemd-machine
+</code></pre></li><li><p>And see that the mount created by the Docker &ldquo;devicemapper&rdquo; storage
+driver is visible inside the mount namespace for this process:</p><pre><code> # grep devicemapper/mnt /proc/18698/mounts
+ /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>Attempt to destroy the container:</p><pre><code> # docker rm -f $cid
+</code></pre></li><li><p>Watch Docker fail to destroy the container because it is unable to
+remove the mountpoint directory:</p><pre><code> Jan 17 22:43:03 pk115wp-lkellogg docker-1.4.1-dev[18239]:
+ time=&quot;2015-01-17T22:43:03-05:00&quot; level=&quot;error&quot; msg=&quot;Handler for DELETE
+ /containers/{name:.*} returned error: Cannot destroy container e68df3f45d61:
+ Driver devicemapper failed to remove root filesystem
+ e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62: Device is
+ Busy&quot;
+</code></pre></li><li><p>Because while that mount is gone from the global namespace:</p><pre><code> # grep devicemapper/mnt /proc/mounts
+</code></pre></li><li><p>It still exists inside the mount namespace for the service we restarted:</p><pre><code># grep devicemapper/mnt /proc/18698/mounts
+/dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>To resolve this problem, restart the service holding the mount open:</p><pre><code># systemctl restart systemd-machined
+</code></pre></li></ol><p>Now the mountpoint can be deleted.</p><h2 id=its-not-just-docker>It&rsquo;s not just Docker<a href=#its-not-just-docker class=hanchor arialabel=Anchor>&#8983;</a></h2><p>While I ran into this problem while working with Docker, there is
+nothing particularly Docker-specific about the problem. You can
+replicate this behavior by hand without involving either <code>systemd</code> or
+Docker:</p><ol><li><p>Create a parent mountpoint, and make it private:</p><pre><code> # mkdir /tmp/parent /tmp/parent-backing
+ # mount --bind --make-private /tmp/parent-backing /tmp/parent
+</code></pre></li><li><p>Create a private mount on a directory <em>inside</em> <code>/tmp/parent</code>:</p><pre><code> # mkdir /tmp/testmount /tmp/parent/mnt
+ # mount --bind --make-private /tmp/testmount /tmp/parent/mnt
+ # grep /tmp/parent/mnt /proc/self/mounts
+ tmpfs /tmp/parent/mnt tmpfs rw,seclabel 0 0
+</code></pre></li><li><p>In another window, create a new mount namespace using <code>unshare</code>:</p><pre><code> # unshare -m env PS1='unshare# ' bash
+ unshare#
+</code></pre></li><li><p>Unmount <code>/tmp/parent/mnt</code> in the global namespace:</p><pre><code> # umount /tmp/parent/mnt
+ # grep /tmp/parent/mnt /proc/self/mounts
+ #
+</code></pre></li><li><p>Try to delete the mountpoint directory:</p><pre><code> # rmdir /tmp/parent/mnt
+ rmdir: failed to remove ‘/tmp/parent/mnt’: Device or resource busy
+</code></pre></li><li><p>See that the mount still exists in your <code>unshare</code> namespace:</p><pre><code> unshare# grep /tmp/parent/mnt /proc/self/mounts
+ tmpfs /tmp/parent/mnt tmpfs rw,seclabel 0 0
+</code></pre></li></ol><h2 id=so-whats-going-on-here>So what&rsquo;s going on here?<a href=#so-whats-going-on-here class=hanchor arialabel=Anchor>&#8983;</a></h2><p>To understand what&rsquo;s going on in these examples, you probably want to
+start by at least glancing through the <a href=https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt>sharedsubtree.txt</a> kernel
+documentation.</p><p>The Docker <code>devicemapper</code> driver creates a <em>private</em> mount on
+<code>/var/lib/docker/devicemapper</code>. A <em>private</em> mount is one that does
+not propagate mount operations between parent and child mount
+namespaces.</p><p>Container filesystems are mounted underneath
+<code>/var/lib/docker/devicemapper/mnt</code>, e.g:</p><pre><code>    /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre><p>When you create a new mount namespace as a child of the global mount
+namespace, either via the <code>unshare</code> command or by starting a systemd
+service with <code>PrivateTmp=true</code>, it inherits these private mounts.
+When Docker unmounts the the container filesystem in the global
+namespace, the fact that the <code>/var/lib/docker/devicemapper</code> mountpoint
+is marked <em>private</em> means that the unmount operation does not
+propagate to other namespaces.</p><h2 id=the-solution>The solution<a href=#the-solution class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The simplest solution to this problem is to set the <code>MountFlags=slave</code>
+option in the <code>docker.service</code> file:</p><pre><code>MountFlags=slave
+</code></pre><p>This will cause SystemD to run Docker in a cloned mount namespace and
+sets the <code>MS_SLAVE</code> flag on all mountpoints; it is effectively
+equivalent to:</p><pre><code># unshare -m
+# mount --make-rslave /
+</code></pre><p>With this change, mounts performed by Docker will not be visible in
+the global mount namespace, and they will thus not propagate into the
+mount namespaces of other services.</p><h2 id=not-necessarily-the-solution>Not necessarily the solution<a href=#not-necessarily-the-solution class=hanchor arialabel=Anchor>&#8983;</a></h2><p>There was an <a href="http://pkgs.fedoraproject.org/cgit/docker-io.git/commit/?id=6c9e373ee06cb1aee07d3cae426c46002663010d">attempt to fix this problem</a> committed to the Fedora
+<code>docker-io</code> package that set <code>MountFlags=private</code>. This will prevent
+the symptoms I originally encountered, in which Docker is unable to
+remove a mountpoint because it is still held open by another mount
+namespace&mldr;</p><p>&mldr;but it will result in behavior that might be confusing to a system
+administrator. Specifically, mounts made in the global mount
+namespace after Docker starts will not be visible to Docker
+containers. This means that if you were to make a remote filesystem
+available on your Docker host:</p><pre><code># mount my-fileserver:/vol/webcontent /srv/content
+</code></pre><p>And then attempt to bind that into a Docker container as a volume:</p><pre><code># docker run -v /srv/content:/content larsks/thttpd -d /content
+</code></pre><p>Your content would not be visible. The mount of
+<code>my-fileserver:/vol/webcontent</code> would not propagate from the global
+namespace into the Docker mount namespace because of the <em>private</em>
+flag.</p><h2 id=thanks>Thanks<a href=#thanks class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I had some help figuring this out. Thanks to <a href=https://en.wikipedia.org/wiki/Lennart_Poettering>Lennart Poettering</a>,
+Andrey Borzenkov, and <a href=http://blog.verbum.org/>Colin Walters</a>.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

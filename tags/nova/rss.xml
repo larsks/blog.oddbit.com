@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>nova on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/nova/</link><description>Recent content in nova on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 26 Jun 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/nova/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenStack Networking without DHCP</title><link>https://blog.oddbit.com/posts/openstack-networking-without-d/</link><pubDate>Fri, 26 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/openstack-networking-without-d/</guid><description>In an OpenStack environment, cloud-init generally fetches information from the metadata service provided by Nova. It also has support for reading this information from a configuration drive, which under OpenStack means a virtual CD-ROM device attached to your instance containing the same information that would normally be available via the metadata service.
+It is possible to generate your network configuration from this configuration drive, rather than relying on the DHCP server provided by your OpenStack environment.</description><content>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
+information from the metadata service provided by Nova. It also has
+support for reading this information from a &lt;em>configuration drive&lt;/em>,
+which under OpenStack means a virtual CD-ROM device attached to your
+instance containing the same information that would normally be
+available via the metadata service.&lt;/p>
+&lt;p>It is possible to generate your network configuration from this
+configuration drive, rather than relying on the DHCP server provided
+by your OpenStack environment. In order to do this you will need to
+make the following changes to your Nova configuration:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>You must be using a subnet that does have a DHCP server. This
+means that you have created it using &lt;code>neutron subnet-create --disable-dhcp ...&lt;/code>, or that you disabled DHCP on an existing
+network using &lt;code>neutron net-update --disable-dhcp ...&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You must set &lt;code>flat_inject&lt;/code> to &lt;code>true&lt;/code> in &lt;code>/etc/nova/nova.conf&lt;/code>.
+This causes Nova to embed network configuration information in the
+meta-data embedded on the configuration drive.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>You must ensure that &lt;code>injected_network_template&lt;/code> in
+&lt;code>/etc/nova/nova.conf&lt;/code> points to an appropriately formatted
+template.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Cloud-init expects the network configuration information to be
+presented in the format of a Debian &lt;code>/etc/network/interfaces&lt;/code> file,
+even if you&amp;rsquo;re using it on RHEL (or a derivative). The template is
+rendered using the &lt;a href="http://jinja.pocoo.org/docs/dev/">Jinja2&lt;/a> template engine, and receives a
+top-level key called &lt;code>interfaces&lt;/code> that contains a list of
+dictionaries, one for each interface.&lt;/p>
+&lt;p>A template similar to the following ought to be sufficient:&lt;/p>
+&lt;pre>&lt;code>{% for interface in interfaces %}
+auto {{ interface.name }}
+iface {{ interface.name }} inet static
+address {{ interface.address }}
+netmask {{ interface.netmask }}
+broadcast {{ interface.broadcast }}
+gateway {{ interface.gateway }}
+dns-nameservers {{ interface.dns }}
+{% endfor %}
+&lt;/code>&lt;/pre>
+&lt;p>This will directly populate &lt;code>/etc/network/interfaces&lt;/code> on an Ubuntu
+system, or will get translated into
+&lt;code>/etc/sysconfig/network-scripts/ifcfg-eth0&lt;/code> on a RHEL system (a RHEL
+environment can only configure a single network interface using this
+mechanism).&lt;/p></content></item><item><title>Installing nova-docker on Fedora 21/RDO Juno</title><link>https://blog.oddbit.com/posts/installing-nova-docker-on-fedo/</link><pubDate>Fri, 06 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/installing-nova-docker-on-fedo/</guid><description>This post comes about indirectly by a request on IRC in #rdo for help getting nova-docker installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.
+Getting started I started with the Fedora 21 Cloud Image, because I&amp;rsquo;m installing onto OpenStack and the cloud images include some features that are useful in this environment.
+We&amp;rsquo;ll be using OpenStack packages from the RDO Juno repository.</description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+&lt;h2 id="getting-started">Getting started&lt;/h2>
+&lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
+installing onto OpenStack and the cloud images include
+some features that are useful in this environment.&lt;/p>
+&lt;p>We&amp;rsquo;ll be using OpenStack packages from the &lt;a href="https://repos.fedorapeople.org/repos/openstack/openstack-juno/">RDO Juno&lt;/a> repository.
+Because there is often some skew between the RDO packages and the
+current Fedora selinux policy, we&amp;rsquo;re going to start by putting SELinux
+into permissive mode (sorry, Dan):&lt;/p>
+&lt;pre>&lt;code># setenforce 0
+# sed -i '/^SELINUX=/ s/=.*/=permissive/' /etc/selinux/config
+&lt;/code>&lt;/pre>
+&lt;p>Next, install the RDO Juno repository:&lt;/p>
+&lt;pre>&lt;code># yum -y install \
+https://repos.fedorapeople.org/repos/openstack/openstack-juno/rdo-release-juno-1.noarch.rpm
+&lt;/code>&lt;/pre>
+&lt;p>And upgrade all our existing packages:&lt;/p>
+&lt;pre>&lt;code># yum -y upgrade
+&lt;/code>&lt;/pre>
+&lt;h2 id="install-openstack">Install OpenStack&lt;/h2>
+&lt;p>We&amp;rsquo;ll be using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a> to install OpenStack onto this host.
+Start by installing the package:&lt;/p>
+&lt;pre>&lt;code># yum -y install openstack-packstack
+&lt;/code>&lt;/pre>
+&lt;p>And then run a &lt;code>--allinone&lt;/code> install, which sets up all OpenStack
+services on a single host:&lt;/p>
+&lt;pre>&lt;code># packstack --allinone
+&lt;/code>&lt;/pre>
+&lt;h2 id="install-nova-docker-prequisites">Install nova-docker prequisites&lt;/h2>
+&lt;p>Once &lt;code>packstack&lt;/code> has completed successfully, we need to install some
+prerequisites for &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a>.&lt;/p>
+&lt;pre>&lt;code># yum -y install git python-pip python-pbr \
+docker-io fedora-repos-rawhide
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>fedora-repos-rawhide&lt;/code> package provides a yum configuration for the
+&lt;code>rawhide&lt;/code> repository (disabled by default). We&amp;rsquo;re going to need that
+to pick up more recent versions of &lt;code>systemd&lt;/code> (because of &lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1187882">this
+bug&lt;/a>) and
+&lt;code>python-six&lt;/code> (because &lt;code>nova-docker&lt;/code> needs the &lt;code>six.add_metaclass&lt;/code>
+method):&lt;/p>
+&lt;pre>&lt;code># yum --enablerepo=rawhide install python-six systemd
+&lt;/code>&lt;/pre>
+&lt;p>At this point, having upgraded &lt;code>systemd&lt;/code>, you should probably reboot:&lt;/p>
+&lt;pre>&lt;code># reboot
+&lt;/code>&lt;/pre>
+&lt;h2 id="configure-docker">Configure Docker&lt;/h2>
+&lt;p>Once things are up and running, we will expect the &lt;code>nova-compute&lt;/code>
+service to launch Docker containers. In order for this to work, the
+&lt;code>nova&lt;/code> user will need access to the Docker socket,
+&lt;code>/var/run/docker.sock&lt;/code>. By default, this is owned by &lt;code>root:root&lt;/code> and
+has mode &lt;code>660&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># ls -l /var/run/docker.sock
+srw-rw----. 1 root root 0 Feb 1 12:43 /var/run/docker.sock
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>nova-compute&lt;/code> service runs as the &lt;code>nova&lt;/code> user and will not have
+access to that socket. There are a few ways of resolving this; an
+expedient method is simply to make this socket owned by the &lt;code>nova&lt;/code>
+group, which we can do with &lt;code>docker&lt;/code>&amp;rsquo;s &lt;code>-G&lt;/code> option.&lt;/p>
+&lt;p>Edit &lt;code>/etc/sysconfig/docker&lt;/code>, and modify the &lt;code>OPTIONS=&lt;/code> line to look
+like:&lt;/p>
+&lt;pre>&lt;code>OPTIONS='--selinux-enabled -G nova'
+&lt;/code>&lt;/pre>
+&lt;p>Then enable and start the &lt;code>docker&lt;/code> service:&lt;/p>
+&lt;pre>&lt;code># systemctl enable docker
+# systemctl start docker
+&lt;/code>&lt;/pre>
+&lt;h2 id="install-nova-docker">Install nova-docker&lt;/h2>
+&lt;p>Clone the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> repository:&lt;/p>
+&lt;pre>&lt;code># git clone http://github.com/stackforge/nova-docker.git
+# cd nova-docker
+&lt;/code>&lt;/pre>
+&lt;p>And check out the &lt;code>stable/juno&lt;/code> branch, since we&amp;rsquo;re operating with an
+OpenStack Juno environment:&lt;/p>
+&lt;pre>&lt;code># git checkout stable/juno
+&lt;/code>&lt;/pre>
+&lt;p>Now install the driver:&lt;/p>
+&lt;pre>&lt;code># python setup.py install
+&lt;/code>&lt;/pre>
+&lt;h2 id="configure-nova">Configure Nova&lt;/h2>
+&lt;p>Following the &lt;a href="https://github.com/stackforge/nova-docker/blob/master/README.rst">README&lt;/a> from &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a>, we need to modify
+the Nova configuration to use the &lt;code>nova-docker&lt;/code> driver. Edit
+&lt;code>/etc/nova/nova.conf&lt;/code> and add the following line to the &lt;code>DEFAULT&lt;/code>
+section:&lt;/p>
+&lt;pre>&lt;code>compute_driver=novadocker.virt.docker.DockerDriver
+&lt;/code>&lt;/pre>
+&lt;p>If there is already a line setting &lt;code>compute_driver&lt;/code>, then comment it
+out or delete before adding the new one.&lt;/p>
+&lt;p>Modify the Glance configuration to permit storage of Docker images.
+Edit &lt;code>/etc/glance/glance-api.conf&lt;/code>, and add the following line to the
+&lt;code>DEFAULT&lt;/code> section:&lt;/p>
+&lt;pre>&lt;code>container_formats=ami,ari,aki,bare,ovf,ova,docker
+&lt;/code>&lt;/pre>
+&lt;p>Next, we need to augment the &lt;code>rootwrap&lt;/code> configuration such that
+&lt;code>nova-docker&lt;/code> is able run the &lt;code>ln&lt;/code> command with &lt;code>root&lt;/code> privileges.
+We&amp;rsquo;ll install the &lt;a href="https://github.com/stackforge/nova-docker/blob/master/etc/nova/rootwrap.d/docker.filters">docker.filters&lt;/a> file from the &lt;code>nova-docker&lt;/code>
+source:&lt;/p>
+&lt;pre>&lt;code># mkdir -p /etc/nova/rootwrap.d
+# cp etc/nova/rootwrap.d/docker.filters \
+/etc/nova/rootwrap.d/docker.filters
+&lt;/code>&lt;/pre>
+&lt;p>We&amp;rsquo;ve changed a number of configuration files, so we should restart
+the affected services:&lt;/p>
+&lt;pre>&lt;code># openstack-service restart nova glance
+&lt;/code>&lt;/pre>
+&lt;h2 id="testing-things-out">Testing things out&lt;/h2>
+&lt;p>Let&amp;rsquo;s try starting a container! We need to select one that will run
+in the &lt;code>nova-docker&lt;/code> environment. Generally, that means one that does
+not expect to have an interactive terminal and that will automatically
+start some sort of web-accessible service. I have a &lt;a href="https://registry.hub.docker.com/u/larsks/thttpd/">minimal thttpd
+container&lt;/a> that fits the bill nicely:&lt;/p>
+&lt;pre>&lt;code># docker pull larsks/thttpd
+&lt;/code>&lt;/pre>
+&lt;p>We need to store this image into Glance using the same name:&lt;/p>
+&lt;pre>&lt;code># docker save larsks/thttpd |
+glance image-create --name larsks/thttpd \
+--container-format docker --disk-format raw --is-public true
+&lt;/code>&lt;/pre>
+&lt;p>And now we should be able to start a container:&lt;/p>
+&lt;pre>&lt;code># nova boot --image larsks/thttpd --flavor m1.tiny test0
+&lt;/code>&lt;/pre>
+&lt;p>After a bit, &lt;code>nova list&lt;/code> should show:&lt;/p>
+&lt;pre>&lt;code>+------...+-------+--------+...+------------------+
+| ID ...| Name | Status |...| Networks |
++------...+-------+--------+...+------------------+
+| 430a1...| test0 | ACTIVE |...| private=10.0.0.6 |
++------...+-------+--------+...+------------------+
+&lt;/code>&lt;/pre>
+&lt;p>And we should also see the container if we run &lt;code>docker ps&lt;/code>:&lt;/p>
+&lt;pre>&lt;code># docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+ee864da30cf1 larsks/thttpd:latest &amp;quot;/thttpd -D -l /dev/ 7 hours ago Up 7 hours nova-430a197e-a0ca-4e72-a7db-1969d0773cf7
+&lt;/code>&lt;/pre>
+&lt;h2 id="getting-connected">Getting connected&lt;/h2>
+&lt;p>At this point, the container will &lt;em>not&lt;/em> be network accessible; it&amp;rsquo;s
+attached to a private tenant network. Let&amp;rsquo;s assign it a floating ip
+address:&lt;/p>
+&lt;pre>&lt;code># nova floating-ip-create public
++--------------+-----------+----------+--------+
+| Ip | Server Id | Fixed Ip | Pool |
++--------------+-----------+----------+--------+
+| 172.24.4.229 | - | - | public |
++--------------+-----------+----------+--------+
+# nova floating-ip-associate test0 172.24.4.229
+&lt;/code>&lt;/pre>
+&lt;p>This isn&amp;rsquo;t going to be immediately accessible because Packstack left
+us without a route to the floating ip network. We can fix that
+temporarily like this:&lt;/p>
+&lt;pre>&lt;code># ip addr add 172.24.4.225/28 dev br-ex
+&lt;/code>&lt;/pre>
+&lt;p>And now we can ping our Docker container:&lt;/p>
+&lt;pre>&lt;code># ping -c2 172.24.4.229
+PING 172.24.4.229 (172.24.4.229) 56(84) bytes of data.
+64 bytes from 172.24.4.229: icmp_seq=1 ttl=63 time=0.291 ms
+64 bytes from 172.24.4.229: icmp_seq=2 ttl=63 time=0.074 ms
+--- 172.24.4.229 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
+&lt;/code>&lt;/pre>
+&lt;p>And access the webserver:&lt;/p>
+&lt;pre>&lt;code># curl http://172.24.4.229
+&amp;lt;!DOCTYPE html&amp;gt;
+&amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;
+&amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
+.
+.
+.&lt;/code>&lt;/pre></content></item><item><title>Filtering libvirt XML in Nova</title><link>https://blog.oddbit.com/posts/filtering-libvirt-xml-in-nova/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/filtering-libvirt-xml-in-nova/</guid><description>I saw a request from a customer float by the other day regarding the ability to filter the XML used to create Nova instances in libvirt. The customer effectively wanted to blacklist a variety of devices (and device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now and upstream is unlikely to accept patches that implement this behavior&amp;rdquo;, but it sounded like an interesting problem, so&amp;hellip;
+https://github.com/larsks/nova/tree/feature/xmlfilter This is a fork of Nova (Juno) that includes support for an extensible filtering mechanism that is applied to the generated XML before it gets passed to libvirt.</description><content>&lt;p>I saw a request from a customer float by the other day regarding the
+ability to filter the XML used to create Nova instances in libvirt.
+The customer effectively wanted to blacklist a variety of devices (and
+device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now
+and upstream is unlikely to accept patches that implement this
+behavior&amp;rdquo;, but it sounded like an interesting problem, so&amp;hellip;&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/nova/tree/feature/xmlfilter">https://github.com/larsks/nova/tree/feature/xmlfilter&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>This is a fork of Nova (Juno) that includes support for an extensible
+filtering mechanism that is applied to the generated XML before it
+gets passed to libvirt.&lt;/p>
+&lt;h2 id="how-it-works">How it works&lt;/h2>
+&lt;p>The code uses the &lt;a href="https://github.com/dreamhost/stevedore">stevedore&lt;/a> module to handle locating and loading
+filters. A filter is a Python class that implements a &lt;code>filter&lt;/code>
+method with the following signature:&lt;/p>
+&lt;pre>&lt;code>def filter(self, xml, instance=None, context=None)
+&lt;/code>&lt;/pre>
+&lt;p>The code in &lt;code>nova.virt.libvirt.domxmlfilters&lt;/code> collects all filters
+registered in the &lt;code>nova.filters.domxml&lt;/code> namespace, and then runs them
+in sequence, passing the output of one filter as the output to the
+next:&lt;/p>
+&lt;pre>&lt;code>filters = stevedore.extension.ExtensionManager(
+'nova.filters.domxml',
+invoke_on_load=True,
+)
+def filter_domain_xml(xml,
+instance=None,
+context=None):
+'''Filter the XML content in 'xml' through any filters registered in
+the nova.filters.domxml namespace.'''
+revised = xml
+for filter in filters:
+LOG.debug('filtering xml with filter %s',
+filter.name)
+revised = filter.obj.filter(revised,
+instance=instance,
+context=context
+)
+return revised
+&lt;/code>&lt;/pre>
+&lt;p>The filters are called from the &lt;code>_get_guest_xml&lt;/code> method in
+&lt;code>nova/virt/libvirt/driver.py&lt;/code>.&lt;/p>
+&lt;h2 id="an-example-filter">An example filter&lt;/h2>
+&lt;p>This filter will add an interface to the libvirt &lt;code>default&lt;/code> network to
+any instance created by Nova:&lt;/p>
+&lt;pre>&lt;code>from lxml import etree
+class AddNetworkFilter (object):
+def filter(self, xml,
+instance=None,
+context=None):
+doc = etree.fromstring(xml)
+network = etree.fromstring('''
+&amp;lt;interface type=&amp;quot;network&amp;quot;&amp;gt;
+&amp;lt;source network=&amp;quot;default&amp;quot;/&amp;gt;
+&amp;lt;model type=&amp;quot;virtio&amp;quot;/&amp;gt;
+&amp;lt;/interface&amp;gt;
+''')
+devices = doc.xpath('/domain/devices')[0]
+devices.append(network)
+return etree.tostring(doc, pretty_print=True)
+&lt;/code>&lt;/pre>
+&lt;p>You can find this in my &lt;a href="https://github.com/larsks/demo_nova_filters/">demo_nova_filters&lt;/a> repository, along with a
+few other trivial examples. The above filter is registered via the
+&lt;code>entry_points&lt;/code> section of the &lt;code>setup.py&lt;/code> file:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/env python
+import setuptools
+setuptools.setup(
+name=&amp;quot;demo_nova_filters&amp;quot;,
+version=1,
+packages=['demo_nova_filters'],
+entry_points={
+'nova.filters.domxml': [
+'prettyprint=demo_nova_filters.prettyprint:PrettyPrintFilter',
+'novideo=demo_nova_filters.novideo:NoVideoFilter',
+'addnetwork=demo_nova_filters.addnetwork:AddNetworkFilter',
+]
+},
+)
+&lt;/code>&lt;/pre>
+&lt;p>And that&amp;rsquo;s it. This is almost entirely untested. While it works in
+some cases it doesn&amp;rsquo;t work in all cases, and it&amp;rsquo;s unlikely that I&amp;rsquo;m
+going to update this to work with any future version of Nova. This
+was really just an exercise in curiosity. Enjoy!&lt;/p></content></item><item><title>Accessing the serial console of your Nova servers</title><link>https://blog.oddbit.com/posts/accessing-the-serial-console-o/</link><pubDate>Mon, 22 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/accessing-the-serial-console-o/</guid><description>One of the new features available in the Juno release of OpenStack is support for serial console access to your Nova servers. This post looks into how to configure the serial console feature and then how to access the serial consoles of your Nova servers.
+Configuring serial console support In previous release of OpenStack, read-only access to the serial console of your servers was available through the os-getConsoleOutput server action (exposed via nova console-log on the command line).</description><content>&lt;p>One of the new features available in the Juno release of OpenStack is
+support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
+servers&lt;/a>. This post looks into how to configure the
+serial console feature and then how to access the serial consoles of
+your Nova servers.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="configuring-serial-console-support">Configuring serial console support&lt;/h2>
+&lt;p>In previous release of OpenStack, read-only access to the serial
+console of your servers was available through the
+&lt;code>os-getConsoleOutput&lt;/code> server action (exposed via &lt;code>nova console-log&lt;/code> on
+the command line). Most cloud-specific Linux images are configured
+with a command line that includes something like &lt;code>console=tty0 console=ttyS0,115200n81&lt;/code>, which ensures that kernel output and other
+messages are available on the serial console. This is a useful
+mechanism for diagnosing problems in the event that you do not have
+network access to a server.&lt;/p>
+&lt;p>In Juno, you can exchange this read-only view of the console for
+read-write access by setting &lt;code>enabled=true&lt;/code> in the &lt;code>[serial_console]&lt;/code>
+section of your &lt;code>nova.conf&lt;/code> file:&lt;/p>
+&lt;pre>&lt;code>[serial_console]
+enabled=true
+&lt;/code>&lt;/pre>
+&lt;p>This enables the new &lt;code>os-getSerialConsole&lt;/code> server action.&lt;/p>
+&lt;p>Much like the configuration for graphical console access, you will also
+probably need to provide values for &lt;code>base_url&lt;/code>, &lt;code>listen&lt;/code>, and
+&lt;code>proxyclient_address&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>[serial_console]
+enabled=true
+# Location of serial console proxy. (string value)
+base_url=ws://127.0.0.1:6083/
+# IP address on which instance serial console should listen
+# (string value)
+listen=127.0.0.1
+# The address to which proxy clients (like nova-serialproxy)
+# should connect (string value)
+proxyclient_address=127.0.0.1
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>base_url&lt;/code> setting is what gets passed to clients, so this will
+probably be the address of one of your &amp;ldquo;front-end&amp;rdquo; controllers (e.g.,
+wherever you are running other public APIs or services like Horizon).&lt;/p>
+&lt;p>The &lt;code>listen&lt;/code> address is used by &lt;code>nova-compute&lt;/code> to control on which
+address the virtual console will listen (this can be set to &lt;code>0.0.0.0&lt;/code>
+to listen on all available addresses). The &lt;code>proxyclient_address&lt;/code>
+controls to which address the &lt;code>nova-serialproxy&lt;/code> service will connect.&lt;/p>
+&lt;p>In other words: a remote client request a serial console will receive
+a websocket URL prefixed by &lt;code>base_url&lt;/code>. This URL will connect the
+client to the &lt;code>nova-serialproxy&lt;/code> service. The &lt;code>nova-serialproxy&lt;/code>
+service will look up the &lt;code>proxyclient_address&lt;/code> associated with the
+requested server, and will connect to the appropriate port at that
+address.&lt;/p>
+&lt;p>Enabling serial console support will result in an entry similar to the
+following in the XML description of libvirt guests started by Nova:&lt;/p>
+&lt;pre>&lt;code>&amp;lt;console type='tcp'&amp;gt;
+&amp;lt;source mode='bind' host='127.0.0.1' service='10000'/&amp;gt;
+&amp;lt;protocol type='raw'/&amp;gt;
+&amp;lt;target type='serial' port='0'/&amp;gt;
+&amp;lt;alias name='serial0'/&amp;gt;
+&amp;lt;/console&amp;gt;
+&lt;/code>&lt;/pre>
+&lt;h2 id="accessing-the-serial-console">Accessing the serial console&lt;/h2>
+&lt;p>You can use the &lt;code>nova get-serial-proxy&lt;/code> command to retrieve the
+websocket URL for a server&amp;rsquo;s serial console, like this:&lt;/p>
+&lt;pre>&lt;code>$ nova get-serial-console my-server
++--------+-----------------------------------------------------------------+
+| Type | Url |
++--------+-----------------------------------------------------------------+
+| serial | ws://127.0.0.1:6083/?token=18510769-71ad-4e5a-8348-4218b5613b3d |
++--------+-----------------------------------------------------------------+
+&lt;/code>&lt;/pre>
+&lt;p>Or through the REST API like this:&lt;/p>
+&lt;pre>&lt;code>curl -i 'http://127.0.0.1:8774/v2/&amp;lt;tenant_uuid&amp;gt;/servers/&amp;lt;server_uuid&amp;gt;/action' \
+-X POST \
+-H &amp;quot;Accept: application/json&amp;quot; \
+-H &amp;quot;Content-Type: application/json&amp;quot; \
+-H &amp;quot;X-Auth-Project-Id: &amp;lt;project_id&amp;gt;&amp;quot; \
+-H &amp;quot;X-Auth-Token: &amp;lt;auth_token&amp;gt;&amp;quot; \
+-d '{&amp;quot;os-getSerialConsole&amp;quot;: {&amp;quot;type&amp;quot;: &amp;quot;serial&amp;quot;}}'
+&lt;/code>&lt;/pre>
+&lt;p>But now that you have a websocket URL, what do you do with it? It
+turns out that there aren&amp;rsquo;t all that many out-of-the-box tools that
+will let you connect interactively to this URL from the command line.
+While I&amp;rsquo;m sure that a future version of Horizon will provide a
+web-accessible console access mechanism, it is often convenient to
+have a command-line tool for this sort of thing because that permits
+you to log or otherwise process the output.&lt;/p>
+&lt;p>Fortunately, it&amp;rsquo;s not too difficult to write a simple client. The
+Python &lt;code>websocket-client&lt;/code> module has the necessary support; given the
+above URL, you can open a connection like this:&lt;/p>
+&lt;pre>&lt;code>import websocket
+ws = websocket.create_connection(
+'ws://127.0.0.1:6083/?token=18510769-71ad-4e5a-8348-4218b5613b3d',
+subprotocols=['binary', 'base64'])
+&lt;/code>&lt;/pre>
+&lt;p>This gets you a &lt;code>WebSocket&lt;/code> object with &lt;code>.send&lt;/code> and &lt;code>.recv&lt;/code> methods
+for sending and receiving data (and a &lt;code>.fileno&lt;/code> method for use in
+event loops).&lt;/p>
+&lt;h2 id="i-was-told-there-would-be-no-programming">I was told there would be no programming&lt;/h2>
+&lt;p>If you don&amp;rsquo;t feel like writing your own websocket client, have no
+fear! I have put together a simple client called &lt;a href="http://github.com/larsks/novaconsole/">novaconsole&lt;/a>.
+Assuming that you have valid credentials in your environment, you can
+provide it with a server name or UUID:&lt;/p>
+&lt;pre>&lt;code>$ novaconsole my-server
+&lt;/code>&lt;/pre>
+&lt;p>You can also provide a verbatim websocket URL (in which case you don&amp;rsquo;t
+need to bother with OpenStack authentication):&lt;/p>
+&lt;pre>&lt;code>$ novaconsole --url ws://127.0.0.1:6083/?token=18510769-71ad-4e5a-8348-4218b5613b3d
+&lt;/code>&lt;/pre>
+&lt;p>In either case, you will have an interactive session to the specified
+serial console. You can exit the session by typing &lt;code>~.&lt;/code> at the
+beginning of a line.&lt;/p>
+&lt;p>You can only have a single active console connection at a time. Other
+connections will block until you disconnect from the active session.&lt;/p>
+&lt;h2 id="but-everything-is-not-roses-and-sunshine">But everything is not roses and sunshine&lt;/h2>
+&lt;p>One disadvantage to the serial console support is that it &lt;em>replaces&lt;/em>
+the console log available via &lt;code>nova console-log&lt;/code>. This means that if,
+for example, a server were to encounter problems configuring
+networking and emit errors on the console, you would not be able to
+see this information unless you happened to be connected to the
+console at the time the errors were generated.&lt;/p>
+&lt;p>It would be nice to have both mechanisms available &amp;ndash; serial console
+support for interactive access, and console logs for retroactive
+debugging.&lt;/p></content></item><item><title>Integrating custom code with Nova using hooks</title><link>https://blog.oddbit.com/posts/integrating-custom-code-with-n/</link><pubDate>Sat, 27 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/posts/integrating-custom-code-with-n/</guid><description>Would you like to run some custom Python code when Nova creates and destroys virtual instances on your compute hosts? This is possible using Nova&amp;rsquo;s support for hooks, but the existing documentation is somewhat short on examples, so I&amp;rsquo;ve spent some time trying to get things working.
+The demo_nova_hooks repository contains a working example of the techniques discussed in this article.
+What&amp;rsquo;s a hook? A Nova &amp;ldquo;hook&amp;rdquo; is a mechanism that allows you to attach a class of your own design to a particular function or method call in Nova.</description><content>&lt;p>Would you like to run some custom Python code when Nova creates and
+destroys virtual instances on your compute hosts? This is possible
+using Nova&amp;rsquo;s support for &lt;a href="http://docs.openstack.org/developer/nova/devref/hooks.html">hooks&lt;/a>, but the existing documentation is
+somewhat short on examples, so I&amp;rsquo;ve spent some time trying to get
+things working.&lt;/p>
+&lt;p>The &lt;a href="https://github.com/larsks/demo_nova_hooks">demo_nova_hooks&lt;/a> repository contains a working example of the
+techniques discussed in this article.&lt;/p>
+&lt;h2 id="whats-a-hook">What&amp;rsquo;s a hook?&lt;/h2>
+&lt;p>A Nova &amp;ldquo;hook&amp;rdquo; is a mechanism that allows you to attach a class of your
+own design to a particular function or method call in Nova. Your
+class should define a &lt;code>pre&lt;/code> method (that will be called before the
+method is called) and &lt;code>post&lt;/code> function (that will be called after the
+method is called):&lt;/p>
+&lt;pre>&lt;code>class YourHookClass(object):
+def pre(self, *args, **kwargs):
+....
+def post(self, rv, *args, **kwargs):
+....
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>pre&lt;/code> method will be called with the positional and keyword
+arguments being passed to the hooked function. The &lt;code>post&lt;/code> method
+receives the return value of the called method in addition to the
+positional and keyword arguments.&lt;/p>
+&lt;p>You connect your code to available hooks using &lt;a href="https://pythonhosted.org/setuptools/setuptools.html">Setuptools entry
+points&lt;/a>. For example, assuming that the above code lived in
+module named &lt;code>your_package.hooks&lt;/code>, you might have the following in the
+corresponding &lt;code>setup.py&lt;/code> file:&lt;/p>
+&lt;pre>&lt;code>entry_points = {
+'nova.hooks': [
+'create_instance=your_package.hooks:YourHookClass',
+]
+},
+&lt;/code>&lt;/pre>
+&lt;h2 id="what-hooks-are-available">What hooks are available?&lt;/h2>
+&lt;p>The Nova code (as of &lt;a href="https://github.com/openstack/nova/commit/81b1babcd9699118f57d5055ff9045e275b536b5">81b1bab&lt;/a>) defines three hooks:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>create_instance&lt;/code>&lt;/li>
+&lt;li>&lt;code>delete_instances&lt;/code>&lt;/li>
+&lt;li>&lt;code>instance_network_info&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;h3 id="create_instance">create_instance&lt;/h3>
+&lt;p>The &lt;code>create_instance&lt;/code> hook is attached to the Nova API &lt;code>create&lt;/code>
+function, and will receive the following arguments:&lt;/p>
+&lt;pre>&lt;code>def create(self, context, instance_type,
+image_href, kernel_id=None, ramdisk_id=None,
+min_count=None, max_count=None,
+display_name=None, display_description=None,
+key_name=None, key_data=None, security_group=None,
+availability_zone=None, user_data=None, metadata=None,
+injected_files=None, admin_password=None,
+block_device_mapping=None, access_ip_v4=None,
+access_ip_v6=None, requested_networks=None, config_drive=None,
+auto_disk_config=None, scheduler_hints=None, legacy_bdm=True,
+shutdown_terminate=False, check_server_group_quota=False):
+&lt;/code>&lt;/pre>
+&lt;p>When called, &lt;code>self&lt;/code> is a &lt;code>nova.compute.api.API&lt;/code> object, &lt;code>context&lt;/code> is a
+&lt;code>nova.context.RequestContext&lt;/code> object, &lt;code>instance_type&lt;/code> is a dictionary
+containing information about the selected flavor, and &lt;code>image_href&lt;/code> is
+an image UUID.&lt;/p>
+&lt;p>During my testing, the &lt;code>instance_type&lt;/code> dictionary looked like this&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>{'created_at': None,
+'deleted': 0L,
+'deleted_at': None,
+'disabled': False,
+'ephemeral_gb': 0L,
+'extra_specs': {},
+'flavorid': u'2',
+'id': 5L,
+'is_public': True,
+'memory_mb': 2048L,
+'name': u'm1.small',
+'root_gb': 20L,
+'rxtx_factor': 1.0,
+'swap': 0L,
+'updated_at': None,
+'vcpu_weight': None,
+'vcpus': 1L}
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;corresponding to the &lt;code>m1.small&lt;/code> flavor on my system.&lt;/p>
+&lt;h3 id="delete_instance">delete_instance&lt;/h3>
+&lt;p>The &lt;code>delete_instance&lt;/code> hook is attached to the &lt;code>_delete_instance&lt;/code>
+method in the &lt;code>nova.compute.manager.ComputeManager&lt;/code> class, which is
+called whenever Nova needs to delete an instance. The hook will
+receive the following arguments:&lt;/p>
+&lt;pre>&lt;code>def _delete_instance(self, context, instance, bdms, quotas):
+&lt;/code>&lt;/pre>
+&lt;p>Where:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>self&lt;/code> is a &lt;code>nova.compute.manager.ComputeManager&lt;/code> object,&lt;/li>
+&lt;li>&lt;code>context&lt;/code> is a &lt;code>nova.context.RequestContext&lt;/code>,&lt;/li>
+&lt;li>&lt;code>instance&lt;/code> is a &lt;code>nova.objects.instance.Instance&lt;/code> object&lt;/li>
+&lt;li>&lt;code>bdms&lt;/code> is a &lt;code>nova.objects.block_device.BlockDeviceMappingList&lt;/code>
+object, and&lt;/li>
+&lt;li>&lt;code>quotas&lt;/code> is a &lt;code>nova.objects.quotas.Quotas&lt;/code> object&lt;/li>
+&lt;/ul>
+&lt;h3 id="instance_network_info">instance_network_info&lt;/h3>
+&lt;p>The &lt;code>instance_network_info&lt;/code> hook is attached to the
+&lt;code>update_instance_cache_with_nw_info&lt;/code> function in
+&lt;code>nova.network.base_api.py&lt;/code>. The hook will receive the following
+arguments:&lt;/p>
+&lt;pre>&lt;code>def update_instance_cache_with_nw_info(impl, context, instance,
+nw_info=None, update_cells=True):
+&lt;/code>&lt;/pre>
+&lt;p>I am not running Nova Network in my environment, so I have not
+examined this hook in any additional detail.&lt;/p>
+&lt;h2 id="a-working-example">A working example&lt;/h2>
+&lt;p>The &lt;a href="https://github.com/larsks/demo_nova_hooks">demo_nova_hooks&lt;/a> repository implements simple logging-only
+implementations of &lt;code>create_instance&lt;/code> and &lt;code>delete_instance&lt;/code> hooks. You
+can install this code, restart Nova services, boot an instances, and
+verify that the code has executed by looking at the logs generated in
+&lt;code>/var/log/nova&lt;/code>.&lt;/p></content></item></channel></rss>
