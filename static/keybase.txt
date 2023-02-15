@@ -1,0 +1,76 @@
+==================================================================
+https://keybase.io/larsks
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of http://blog.oddbit.com
+  * I am larsks (https://keybase.io/larsks) on keybase.
+  * I have a public key with fingerprint 3E70 A502 BB52 55B6 BB8E  86BE 362D 63A8 0853 D4CF
+
+To claim this, I am signing this object:
+
+{
+    "body": {
+        "client": {
+            "name": "keybase.io node.js client",
+            "version": "0.4.15"
+        },
+        "key": {
+            "fingerprint": "3e70a502bb5255b6bb8e86be362d63a80853d4cf",
+            "host": "keybase.io",
+            "key_id": "362D63A80853D4CF",
+            "uid": "ea8f8f85bc91d0a6d7194e283033b300",
+            "username": "larsks"
+        },
+        "merkle_root": {
+            "ctime": 1407978082,
+            "hash": "b9bfbfbc01213cd76a323481433bf8bda8c3ba8992e6027ccf90178a64e86e42d8c888d4e77db96a5daae191c6259ce5abf985a045b5a742c9a33b7e4d406a97",
+            "seqno": 36868
+        },
+        "service": {
+            "hostname": "blog.oddbit.com",
+            "protocol": "http:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1407978601,
+    "expire_in": 157680000,
+    "prev": "b512cfce4c5bb5702eed220ae0e208bb856b2bd3efb40f5650d717e725f31e2d",
+    "seqno": 7,
+    "tag": "signature"
+}
+
+with the aforementioned key, yielding the PGP signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1
+
+owFVUl1oXEUY3W3aTVuNxJ8KkqLxEizS7TJ37vzdrdAU06AgmBpEBWE7P99Nrtnd
+u733bpI1RJA+lAgS9ckXX7RgHyRtXkpDqdWEIqgYUYtUER+q0toE1NQmVUqdGyLa
+mZcZvvOd75w580ZHW25rfvOe64vpT6efyn92ReUGl+4MJxwVmZZTnnB0NYR6mp3q
+sgZO2RmBlpIJlMKoux4ZKL2UdG9gis4oxEkY1S0KlUjJpc5kMcNn3UFYH4K4EYcZ
+meMBR5IirBTFlCqmlADBFHgMG+ZJgQT1DNGB5RyOkvS2sc46ZyU0GQ/Dfczbv47v
+I4/321pzvQBSBHZTpX3XIMkMd30CWHjI85SHUAZMIN7wVJVxMpJkamsQj1ShEkfR
+umedhhnAJYj73E7BVo9Mhm2L8lVgt0Yudj1tOJMe9ohwieUPhDJSaE9J4fsYGMJc
+68BHLheSEWsUCDZCCyEMAc6N8pmkRkpwfVczTH0NVKrAF1QiQhWVnGDtS8vMgRiC
+mPS5NZDA4XrklD0mmJjMrvFoqCGTnb3ZhjVVjYZKkTEqTEs6qtm2RhylkY6qtjic
+po1yZjttNTLwGKiZygZPRYV1Y0P7f6yuhd7+JAy5RQfGG2EMlTBDUM4EsiubA6OZ
+AOpiHWggmtq0OcIABmMkAQFGwgZPmcLKeBAoggLKKLJZceCYBp4L2PxnlFudcshS
+JuFQXabNGJzJqfzOzbn81lxhy6bs3+a2b+v89zMf+KL91jNXGsMLZqCjZ+D1pbt/
+wCeu8fd74DKIcffhPy7W2m/0nrz/oRN7b73XOddR3fX9IvQ/P1adjTs2Db56kPdf
+v/d436PfXMwV3lr789rhq3OuWZmfWNmxthQutH/43NP3TffuWz6V1oojx87Hbw9M
+D6zebLb9vvvQz1df+Lt1Y8ePE83fut55JPr1jLO6Kp8o5P257sK3ZHL26+LNNjyz
+fLz117vdpVly9NCR3gPlsx/A3n09l6rFj8bv+O612oJ3z+lzD/gvv/jJfPPSkXNk
+2zRr9OHBk4Wd87C8th+NdV6IpsZP/cLverP4adexC5+nX618+djRjy/PbH/2yd0P
+bll85Qw9ONW15x8=
+=YYU7
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/larsks
+
+==================================================================
