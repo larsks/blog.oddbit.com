@@ -11,13 +11,13 @@ your Pacemaker resource constraints.&lt;/p>
 &lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
 output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
 constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p>
-&lt;p>Given a document like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.xml">this&lt;/a>, if you run:&lt;/p>
+&lt;p>Given a document like &lt;a href="cib.xml">this&lt;/a>, if you run:&lt;/p>
 &lt;pre>&lt;code>cibadmin -Q |
 python graph-constraints.py -o cib.svg
 &lt;/code>&lt;/pre>
-&lt;p>You get a graph like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.svg">this&lt;/a>:&lt;/p>
+&lt;p>You get a graph like &lt;a href="cib.svg">this&lt;/a>:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2015/02/24/cib.svg" />
+&lt;img src="cib.svg" />
 &lt;/figure>
 &lt;p>Nodes are colored by their tag (so, &lt;code>primitive&lt;/code>, &lt;code>clone&lt;/code>, etc).&lt;/p></content></item><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>I&amp;rsquo;ve recently spent some time working with Pacemaker, and ended up with an interesting collection of XPath snippets that I am publishing here for your use and/or amusement.
 Check if there are any inactive resources pcs status xml | xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp; echo &amp;quot;There are inactive resources&amp;quot; This selects any resource (//resource) in the output of pcs status xml that has the attribute active set to false. If there are no matches to this query, xmllint exits with an error code.</description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up

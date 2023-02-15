@@ -407,10 +407,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>&lt;img src="raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>&lt;img src="arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Controlling a servo with your Arduino</title><link>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</link><pubDate>Thu, 07 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</guid><description>I&amp;rsquo;ve recently started playing with an Arduino kit I purchased a year ago (and only just now got around to unboxing). I purchased the kit from SparkFun, and it includes a motley collection of resistors, LEDs, a motor, a servo, and more.
 I was fiddling around with this exercise, which uses the SoftwareServo library to control a servo. Using this library, you just pass it an angle and the library takes care of everything else, e.</description><content>&lt;p>I&amp;rsquo;ve recently started playing with an &lt;a href="http://arduino.cc/">Arduino&lt;/a> kit I purchased a year

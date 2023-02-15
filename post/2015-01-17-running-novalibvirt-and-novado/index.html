@@ -107,7 +107,7 @@ nova-docker
 that it is running on a host called &ldquo;nova-docker&rdquo;, and Neutron doesn&rsquo;t
 know anything about that host.</p><hr><p><strong>NB</strong></p><p>If you were to try to delete this failed instance, you would find that
 it is un-deletable. In the end, I was only able to delete it by
-directly editing the <code>nova</code> database using <a href=/assets/2015/01/17/delete-deleting-instances.sql>this sql script</a>.</p><hr><h2 id=adding-a-neutron-agent>Adding a Neutron agent<a href=#adding-a-neutron-agent class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;re going to need to set up an instance of
+directly editing the <code>nova</code> database using <a href=delete-deleting-instances.sql>this sql script</a>.</p><hr><h2 id=adding-a-neutron-agent>Adding a Neutron agent<a href=#adding-a-neutron-agent class=hanchor arialabel=Anchor>&#8983;</a></h2><p>We&rsquo;re going to need to set up an instance of
 <code>neutron-openvswitch-agent</code> to service network requests on our
 &ldquo;nova-docker&rdquo; host. Like Nova, Neutron also supports a <code>host</code>
 configuration key, so we&rsquo;re going to pursue a solution similar to what
@@ -196,5 +196,6 @@ container:</p><pre><code>$ nova boot --image cirros --flavor m1.small --key-name
 +--------------------------------------+-------+--------+...
 | 642b7d61-9189-40ea-86f5-2424c3c86028 | test1 | ACTIVE |...
 | 7fec33c9-d50f-477e-957c-a05ee9bd0b0b | test2 | ACTIVE |...
-+--------------------------------------+-------+--------+...</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
++--------------------------------------+-------+--------+...
+</code></pre></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
 <span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>

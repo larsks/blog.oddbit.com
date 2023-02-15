@@ -833,7 +833,7 @@ configuration that would permit me to boot and run docker without
 requiring any loadable modules. This would allow me to use the same
 image for each kernel without needing to re-populate it with modules
 each time I built a kernel.&lt;/p>
-&lt;p>The kernel configuration I ended up with is available &lt;a href="https://blog.oddbit.com/assets/2014/07/21/kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
 &lt;h3 id="testing-docker">Testing docker&lt;/h3>
 &lt;p>The last step in this process is putting together something that tests
 &lt;code>docker&lt;/code> and exposes the result of that test to the build environment.

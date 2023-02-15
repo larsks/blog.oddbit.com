@@ -200,12 +200,12 @@ Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Grap
 like this, in which graph nodes are automatically colorized by
 resource type:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2014/09/02/sample.svg" />
+&lt;img src="sample.svg" />
 &lt;/figure>
 &lt;p>Or like this, in which each node contains information about its
 resource type and physical resource id:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2014/09/02/sample-detailed.svg" />
+&lt;img src="sample-detailed.svg" />
 &lt;/figure>
 &lt;p>The source code is available on &lt;a href="http://github.com/larsks/dotstack">github&lt;/a>.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>This is a companion to my article on the Docker plugin for Heat.
 While writing that article, I encountered a number of bugs in the Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the issues I encountered:

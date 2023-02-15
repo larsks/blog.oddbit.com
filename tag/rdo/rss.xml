@@ -224,9 +224,9 @@ file, but you could also do this on the command line:&lt;/p>
 &lt;p>I&amp;rsquo;ve made the examples presented in this article available for
 download at the following URLs:&lt;/p>
 &lt;ul>
-&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/ha.yml">ha.yml&lt;/a> playbook&lt;/li>
-&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
-&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
+&lt;li>&lt;a href="ha.yml">ha.yml&lt;/a> playbook&lt;/li>
+&lt;li>&lt;a href="nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
+&lt;li>&lt;a href="nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
 &lt;/ul>
 &lt;h2 id="running-tripleo-quickstart">Running tripleo-quickstart&lt;/h2>
 &lt;p>With all of the above in place, we can run:&lt;/p>

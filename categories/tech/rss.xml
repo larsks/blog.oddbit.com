@@ -3,8 +3,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="251738496" type="checkbox" />
-&lt;label for="251738496">
+&lt;input id="758312469" type="checkbox" />
+&lt;label for="758312469">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -67,8 +67,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="816932457" type="checkbox" />
-&lt;label for="816932457">
+&lt;input id="175493268" type="checkbox" />
+&lt;label for="175493268">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -278,8 +278,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="825649317" type="checkbox" />
-&lt;label for="825649317">
+&lt;input id="348129756" type="checkbox" />
+&lt;label for="348129756">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -7844,7 +7844,7 @@ Administrator. It usually boils down to these three things:
 &lt;/code>&lt;/pre>&lt;p>In the above output, you&amp;rsquo;ll note that there are no actual errors, but unexpectedly we&amp;rsquo;re seeing the privilege escalation prompt show up in the &lt;code>stderr&lt;/code> of the command. A quick search revealed bugs &lt;a href="https://github.com/ansible/ansible/issues/31759">#31759&lt;/a> and &lt;a href="https://github.com/ansible/ansible/issues/53385">#53385&lt;/a>, both of which confirm that privilege escalation simply doesn&amp;rsquo;t work using the &lt;code>docker&lt;/code> connection plugin.&lt;/p>
 &lt;h2 id="use-the-source-luke">Use the source, Luke&lt;/h2>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2019/04/26/sausage.jpg" />
+&lt;img src="sausage.jpg" />
 &lt;figcaption class="center" >Discovering how the sausage is made...&lt;/figcaption>
 &lt;/figure>
 &lt;p>Looking at the source, I was surprised: while Ansible has individual plugins for different privilege escalation methods, it is entirely up to the individual connection plugin to implement the logic necessary to make use of these mechanisms. I had expected privilege escalation support to be implemented in the base connection plugin (&lt;code>ConnectionBase&lt;/code> in &lt;code>lib/ansible/plugins/connection/__init__.py&lt;/code>), but it&amp;rsquo;s not. So while the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/ssh.py">ssh plugin&lt;/a> has a fairly complex set of logic for handing the &lt;code>become&lt;/code> prompt, and the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/local.py">local plugin&lt;/a> had a relatively simple solution, the &lt;code>docker&lt;/code> connection had none.&lt;/p>
@@ -9512,11 +9512,7 @@ written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> utime &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
 are now able to drive our display:&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>
-&lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2018/03/27/onewire.jpg" />
-&lt;/figure>
-&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+&lt;!-- raw HTML omitted --></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
 protocol for communication. Recent versions of the Linux kernel
 include a kernel driver for this protocol, making it relatively
 convenient to connect one or more of these devices to a Raspberry Pi
@@ -11486,9 +11482,9 @@ file, but you could also do this on the command line:&lt;/p>
 &lt;p>I&amp;rsquo;ve made the examples presented in this article available for
 download at the following URLs:&lt;/p>
 &lt;ul>
-&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/ha.yml">ha.yml&lt;/a> playbook&lt;/li>
-&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
-&lt;li>&lt;a href="https://blog.oddbit.com/assets/2016/02/19/nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
+&lt;li>&lt;a href="ha.yml">ha.yml&lt;/a> playbook&lt;/li>
+&lt;li>&lt;a href="nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
+&lt;li>&lt;a href="nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
 &lt;/ul>
 &lt;h2 id="running-tripleo-quickstart">Running tripleo-quickstart&lt;/h2>
 &lt;p>With all of the above in place, we can run:&lt;/p>
@@ -12371,7 +12367,7 @@ demonstrates how you can use the &lt;a href="http://docs.ansible.com/ansible/add
 created server to your inventory, and then target that new server in
 your playbook. I&amp;rsquo;ve split up this playbook with commentary; in
 practice, the pre-formatted text in this section would all be in a
-single playbook (like &lt;a href="https://blog.oddbit.com/assets/2015/10/26/playbook.yml">this&lt;/a>).&lt;/p>
+single playbook (like &lt;a href="playbook.yml">this&lt;/a>).&lt;/p>
 &lt;pre>&lt;code>- hosts: localhost
 tasks:
 &lt;/code>&lt;/pre>
@@ -13755,11 +13751,7 @@ adding pubkey from /home/lars/.ssh/id_rsa.pub
 adding user data from userdata
 generating configuration image at config.iso
 &lt;/code>&lt;/pre></content></item><item><title>Diagnosing problems with an OpenStack deployment</title><link>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</link><pubDate>Mon, 09 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</guid><description>I recently had the chance to help a colleague debug some problems in his OpenStack installation. The environment was unique because it was booting virtualized aarch64 instances, which at the time did not have any PCI bus support&amp;hellip;which in turn precluded things like graphic consoles (i.e., VNC or SPICE consoles) for the Nova instances.
-This post began life as an email summarizing the various configuration changes we made on the systems to get things up and running.</description><content>
-&lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2015/03/09/lucy.jpg" />
-&lt;/figure>
-&lt;p>I recently had the chance to help a colleague debug some problems in
+This post began life as an email summarizing the various configuration changes we made on the systems to get things up and running.</description><content>&lt;p>I recently had the chance to help a colleague debug some problems in
 his OpenStack installation. The environment was unique because it was
 booting virtualized &lt;a href="https://fedoraproject.org/wiki/Architectures/AArch64">aarch64&lt;/a> instances, which at the time did not
 have any PCI bus support&amp;hellip;which in turn precluded things like graphic
@@ -14101,13 +14093,13 @@ your Pacemaker resource constraints.&lt;/p>
 &lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
 output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
 constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p>
-&lt;p>Given a document like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.xml">this&lt;/a>, if you run:&lt;/p>
+&lt;p>Given a document like &lt;a href="cib.xml">this&lt;/a>, if you run:&lt;/p>
 &lt;pre>&lt;code>cibadmin -Q |
 python graph-constraints.py -o cib.svg
 &lt;/code>&lt;/pre>
-&lt;p>You get a graph like &lt;a href="https://blog.oddbit.com/assets/2015/02/24/cib.svg">this&lt;/a>:&lt;/p>
+&lt;p>You get a graph like &lt;a href="cib.svg">this&lt;/a>:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2015/02/24/cib.svg" />
+&lt;img src="cib.svg" />
 &lt;/figure>
 &lt;p>Nodes are colored by their tag (so, &lt;code>primitive&lt;/code>, &lt;code>clone&lt;/code>, etc).&lt;/p></content></item><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>I&amp;rsquo;ve recently spent some time working with Pacemaker, and ended up with an interesting collection of XPath snippets that I am publishing here for your use and/or amusement.
 Check if there are any inactive resources pcs status xml | xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp; echo &amp;quot;There are inactive resources&amp;quot; This selects any resource (//resource) in the output of pcs status xml that has the attribute active set to false. If there are no matches to this query, xmllint exits with an error code.</description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
@@ -15376,7 +15368,7 @@ know anything about that host.&lt;/p>
 &lt;p>&lt;strong>NB&lt;/strong>&lt;/p>
 &lt;p>If you were to try to delete this failed instance, you would find that
 it is un-deletable. In the end, I was only able to delete it by
-directly editing the &lt;code>nova&lt;/code> database using &lt;a href="https://blog.oddbit.com/assets/2015/01/17/delete-deleting-instances.sql">this sql script&lt;/a>.&lt;/p>
+directly editing the &lt;code>nova&lt;/code> database using &lt;a href="delete-deleting-instances.sql">this sql script&lt;/a>.&lt;/p>
 &lt;hr>
 &lt;h2 id="adding-a-neutron-agent">Adding a Neutron agent&lt;/h2>
 &lt;p>We&amp;rsquo;re going to need to set up an instance of
@@ -15498,7 +15490,8 @@ container:&lt;/p>
 +--------------------------------------+-------+--------+...
 | 642b7d61-9189-40ea-86f5-2424c3c86028 | test1 | ACTIVE |...
 | 7fec33c9-d50f-477e-957c-a05ee9bd0b0b | test2 | ACTIVE |...
-+--------------------------------------+-------+--------+...&lt;/code>&lt;/pre></content></item><item><title>Building a minimal web server for testing Kubernetes</title><link>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</link><pubDate>Sun, 04 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</guid><description>I have recently been doing some work with Kubernetes, and wanted to put together a minimal image with which I could test service and pod deployment. Size in this case was critical: I wanted something that would download quickly when initially deployed, because I am often setting up and tearing down Kubernetes as part of my testing (and some of my test environments have poor external bandwidth).
++--------------------------------------+-------+--------+...
+&lt;/code>&lt;/pre></content></item><item><title>Building a minimal web server for testing Kubernetes</title><link>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</link><pubDate>Sun, 04 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</guid><description>I have recently been doing some work with Kubernetes, and wanted to put together a minimal image with which I could test service and pod deployment. Size in this case was critical: I wanted something that would download quickly when initially deployed, because I am often setting up and tearing down Kubernetes as part of my testing (and some of my test environments have poor external bandwidth).
 Building thttpd My go-to minimal webserver is thttpd.</description><content>&lt;p>I have recently been doing some work with &lt;a href="https://github.com/googlecloudplatform/kubernetes">Kubernetes&lt;/a>, and wanted
 to put together a minimal image with which I could test service and
 pod deployment. Size in this case was critical: I wanted something
@@ -16820,12 +16813,12 @@ Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Grap
 like this, in which graph nodes are automatically colorized by
 resource type:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2014/09/02/sample.svg" />
+&lt;img src="sample.svg" />
 &lt;/figure>
 &lt;p>Or like this, in which each node contains information about its
 resource type and physical resource id:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2014/09/02/sample-detailed.svg" />
+&lt;img src="sample-detailed.svg" />
 &lt;/figure>
 &lt;p>The source code is available on &lt;a href="http://github.com/larsks/dotstack">github&lt;/a>.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>This is a companion to my article on the Docker plugin for Heat.
 While writing that article, I encountered a number of bugs in the Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the issues I encountered:
@@ -18392,7 +18385,7 @@ configuration that would permit me to boot and run docker without
 requiring any loadable modules. This would allow me to use the same
 image for each kernel without needing to re-populate it with modules
 each time I built a kernel.&lt;/p>
-&lt;p>The kernel configuration I ended up with is available &lt;a href="https://blog.oddbit.com/assets/2014/07/21/kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
 &lt;h3 id="testing-docker">Testing docker&lt;/h3>
 &lt;p>The last step in this process is putting together something that tests
 &lt;code>docker&lt;/code> and exposes the result of that test to the build environment.
@@ -20718,7 +20711,7 @@ in another post.&lt;/p>
 &lt;p>This is a simplified architecture diagram of network connectivity in a
 quantum/neutron managed world:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2013/11/14/quantum-gre.svg" />
+&lt;img src="quantum-gre.svg" />
 &lt;/figure>
 &lt;p>Section names in this document include
 parenthetical references to the nodes on the map relevant to that
@@ -21689,10 +21682,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>&lt;img src="raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/assets/2013/03/12/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>&lt;img src="arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
 RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses.</description><content>&lt;p>There are several Python libraries out there for interacting with the

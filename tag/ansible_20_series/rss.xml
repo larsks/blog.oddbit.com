@@ -234,7 +234,7 @@ demonstrates how you can use the &lt;a href="http://docs.ansible.com/ansible/add
 created server to your inventory, and then target that new server in
 your playbook. I&amp;rsquo;ve split up this playbook with commentary; in
 practice, the pre-formatted text in this section would all be in a
-single playbook (like &lt;a href="https://blog.oddbit.com/assets/2015/10/26/playbook.yml">this&lt;/a>).&lt;/p>
+single playbook (like &lt;a href="playbook.yml">this&lt;/a>).&lt;/p>
 &lt;pre>&lt;code>- hosts: localhost
 tasks:
 &lt;/code>&lt;/pre>

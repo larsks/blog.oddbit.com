@@ -43,7 +43,7 @@ Administrator. It usually boils down to these three things:
 &lt;/code>&lt;/pre>&lt;p>In the above output, you&amp;rsquo;ll note that there are no actual errors, but unexpectedly we&amp;rsquo;re seeing the privilege escalation prompt show up in the &lt;code>stderr&lt;/code> of the command. A quick search revealed bugs &lt;a href="https://github.com/ansible/ansible/issues/31759">#31759&lt;/a> and &lt;a href="https://github.com/ansible/ansible/issues/53385">#53385&lt;/a>, both of which confirm that privilege escalation simply doesn&amp;rsquo;t work using the &lt;code>docker&lt;/code> connection plugin.&lt;/p>
 &lt;h2 id="use-the-source-luke">Use the source, Luke&lt;/h2>
 &lt;figure class="left" >
-&lt;img src="https://blog.oddbit.com/assets/2019/04/26/sausage.jpg" />
+&lt;img src="sausage.jpg" />
 &lt;figcaption class="center" >Discovering how the sausage is made...&lt;/figcaption>
 &lt;/figure>
 &lt;p>Looking at the source, I was surprised: while Ansible has individual plugins for different privilege escalation methods, it is entirely up to the individual connection plugin to implement the logic necessary to make use of these mechanisms. I had expected privilege escalation support to be implemented in the base connection plugin (&lt;code>ConnectionBase&lt;/code> in &lt;code>lib/ansible/plugins/connection/__init__.py&lt;/code>), but it&amp;rsquo;s not. So while the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/ssh.py">ssh plugin&lt;/a> has a fairly complex set of logic for handing the &lt;code>become&lt;/code> prompt, and the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/local.py">local plugin&lt;/a> had a relatively simple solution, the &lt;code>docker&lt;/code> connection had none.&lt;/p>
@@ -519,7 +519,7 @@ demonstrates how you can use the &lt;a href="http://docs.ansible.com/ansible/add
 created server to your inventory, and then target that new server in
 your playbook. I&amp;rsquo;ve split up this playbook with commentary; in
 practice, the pre-formatted text in this section would all be in a
-single playbook (like &lt;a href="https://blog.oddbit.com/assets/2015/10/26/playbook.yml">this&lt;/a>).&lt;/p>
+single playbook (like &lt;a href="playbook.yml">this&lt;/a>).&lt;/p>
 &lt;pre>&lt;code>- hosts: localhost
 tasks:
 &lt;/code>&lt;/pre>

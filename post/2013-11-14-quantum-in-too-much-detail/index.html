@@ -14,7 +14,7 @@ networking but will generally match what you see under Neutron as
 well, if you replace <code>quantum</code> by <code>neutron</code> in names. The OVS flow
 rules under Neutron are somewhat more complex and I will cover those
 in another post.</p><h1 id=the-lay-of-the-land>The lay of the land<a href=#the-lay-of-the-land class=hanchor arialabel=Anchor>&#8983;</a></h1><p>This is a simplified architecture diagram of network connectivity in a
-quantum/neutron managed world:</p><figure class=left><img src=/assets/2013/11/14/quantum-gre.svg></figure><p>Section names in this document include
+quantum/neutron managed world:</p><figure class=left><img src=quantum-gre.svg></figure><p>Section names in this document include
 parenthetical references to the nodes on the map relevant to that
 particular section.</p><h1 id=compute-host-instance-networking-abc>Compute host: instance networking (A,B,C)<a href=#compute-host-instance-networking-abc class=hanchor arialabel=Anchor>&#8983;</a></h1><p>An outbound packet starts on <code>eth0</code> of the virtual instance, which is
 connected to a <code>tap</code> device on the host, <code>tap7c7ae61e-05</code>. This <code>tap</code>
