@@ -1,4 +1,4 @@
-name: Publish to github pages
+name: Publish to GitHub Pages
 
 on:
   push:
@@ -6,8 +6,13 @@ on:
       - main
   pull_request:
 
+  # republish every morning at 10:00 UTC so that posts with future
+  # dates are handled automatically.
+  schedule:
+    - cron: 0 10 * * *
+
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
