@@ -190,6 +190,8 @@ default via fe80::7a8a:20ff:febb:5db dev vlan10 proto ra metric 404 pref medium
 &lt;pre tabindex="0">&lt;code>$ curl https://api64.ipify.org
 2001:470:1237:1212::2:c19a
 &lt;/code>&lt;/pre>&lt;p>Note that unlike access using IPv4, the address visible here is the address assigned to our local interface. There is no NAT happening at the router.&lt;/p>
+&lt;hr>
+&lt;p>Cover image by &lt;a href="https://www.explainthatstuff.com/chris-woodford.html">Chris Woodford/explainthatstuff.com&lt;/a>, licensed under &lt;a href="https://creativecommons.org/licenses/by-nc-sa/3.0/">CC BY-NC-SA 3.0&lt;/a>.&lt;/p>
 &lt;div class="footnotes" role="doc-endnotes">
 &lt;hr>
 &lt;ol>
