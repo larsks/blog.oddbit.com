@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>garmin on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/garmin/</link><description>Recent content in garmin on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 15 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/garmin/rss.xml" rel="self" type="application/rss+xml"/><item><title>A review of the Garmin Fenix 6(x)</title><link>https://blog.oddbit.com/post/2023-02-15-garmin-fenix-6/</link><pubDate>Wed, 15 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-15-garmin-fenix-6/</guid><description>I&amp;rsquo;ve been using a Garmin Fenix 6x for a couple of weeks and thought it might be interesting to put together a short review.
+Is it really a smartwatch? I think it&amp;rsquo;s a misnomer to call the Fenix a &amp;ldquo;smartwatch&amp;rdquo;. I would call it a highly capable fitness tracker. That&amp;rsquo;s not a knock on the product; I really like it so far, but pretty much everything it does is centered around either fitness tracking or navigation.</description><content>&lt;p>I&amp;rsquo;ve been using a &lt;a href="https://www.garmin.com/en-US/p/641435">Garmin Fenix 6x&lt;/a> for a couple of weeks and thought it might be interesting to put together a short review.&lt;/p>
+&lt;h2 id="is-it-really-a-smartwatch">Is it really a smartwatch?&lt;/h2>
+&lt;p>I think it&amp;rsquo;s a misnomer to call the Fenix a &amp;ldquo;smartwatch&amp;rdquo;. I would call it a highly capable fitness tracker. That&amp;rsquo;s not a knock on the product; I really like it so far, but pretty much everything it does is centered around either fitness tracking or navigation. If you browse around the &lt;a href="https://apps.garmin.com/en-US/">&amp;ldquo;Connect IQ&amp;rdquo; store&lt;/a>, mostly you&amp;rsquo;ll find (a) watch faces, (b) fitness apps, and (c) navigation apps. It&amp;rsquo;s not able to control your phone (for the most part; there are some apps available that offer remote camera control and some other limited features); you can&amp;rsquo;t check your email on it, or send text messages, and you&amp;rsquo;ll never find a watch version of any major smartphone app.&lt;/p>
+&lt;p>So if you&amp;rsquo;re looking for a smartwatch, maybe look elsewhere. But if you&amp;rsquo;re looking for a great fitness tracker, this just might be your device.&lt;/p>
+&lt;h2 id="things-i-will-not-talk-about">Things I will not talk about&lt;/h2>
+&lt;p>I don&amp;rsquo;t listen to music when I exercise. If I&amp;rsquo;m inside, I&amp;rsquo;m watching a video on a streaming service, and if I&amp;rsquo;m outside, I want to be able to hear my surroundings. So I won&amp;rsquo;t be looking at any aspects of music support on the Fenix.&lt;/p>
+&lt;h2 id="all-the-data-in-one-place">All the data in one place&lt;/h2>
+&lt;p>One of the things I really like about the Fenix is that I now have more of my activity and health data in one place.&lt;/p>
+&lt;p>As part of my exercise a use a &lt;a href="https://www.schwinnfitness.com/ic4/100873.html">Schwinn IC4&lt;/a> spin bike. Previously, I was using a &lt;a href="https://www.fitbit.com/global/us/products/trackers/charge5">Fitbit Charge 5&lt;/a>, which works fine but meant exercise metrics ended up in multiple places: while I could collect heart rate with the Fitbit, to collect cycling data like cadence, power, etc, I needed to use another app on my phone (I used &lt;a href="https://apps.apple.com/us/app/wahoo-fitness-phone-powered-fitness/id391599899?ign-mpt=uo%3D8%26amp%3Buo%3D8">Wahoo Fitness&lt;/a>). Additionally, Fitbit doesn&amp;rsquo;t support sharing data with Apple Health, so there wasn&amp;rsquo;t a great way to see a unified view of things.&lt;/p>
+&lt;p>This has all changed with the Fenix:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>First and probably most importantly, the Fenix is able to utilize the sensor on the IC4 directly, so cadence/speed/distance data is collected in the same place as heart rate data.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Through the magic of the &lt;a href="https://github.com/ptx2/gymnasticon">Gymnasticon&lt;/a> project, the Fenix is also able to collect power data from the bike.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The Fenix is also great at tracking my outside bike rides, and of course providing basic heart rate and time tracking of my strength and PT workouts.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>All of this means that Garmin&amp;rsquo;s tools (both their app and the &lt;a href="https://connect.garmin.com/">Garmin Connect&lt;/a> website) provide a great unified view of my fitness activities.&lt;/p>
+&lt;h2 id="notifications">Notifications&lt;/h2>
+&lt;p>This is an area in which I think there is a lot of room for improvement.&lt;/p>
+&lt;p>Like any good connected watch, you can configure your Fenix to receive notifications from your phone. Unfortunately, this is an all-or-nothing configuration; there&amp;rsquo;s no facility for blocking or selecting notifications from specific apps.&lt;/p>
+&lt;p>I usually have my phone in do-not-disturb mode, so notifications from Google or the New York Times app don&amp;rsquo;t interrupt me, but they show up in the notification center when I check for anything interesting. With my Fenix connected, I get interrupted every time something happens.&lt;/p>
+&lt;p>Having the ability to filter &lt;em>which&lt;/em> notifications get sent to the watch would be an incredibly helpful feature.&lt;/p>
+&lt;h2 id="battery-life">Battery life&lt;/h2>
+&lt;p>One of the reasons I have the 6x instead of the 6 is the increased battery size that comes along with the bigger watch. While the advertising touts a battery life of &amp;ldquo;up to 21 days with activity tracking and 24/7 wrist-based heart rate monitoring&amp;rdquo;, I&amp;rsquo;ve been seeing battery life closer to 1 week under normal use (which includes probably 10-20 miles of GPS-tracked bike rides a week).&lt;/p>
+&lt;p>I&amp;rsquo;ve been using the pulse oximeter at night, but I understand that can have a substantial contribution to battery drain; I&amp;rsquo;ve disabled it for now and I&amp;rsquo;ll update this post if it turns out that has a significant impact on battery life.&lt;/p>
+&lt;p>One of the reasons that the Fenix is able to get substantially better battery life than the Apple Watch is that the screen is far, far dimmer. By default, the screen brightness is set to 20%; you can increase that, but you&amp;rsquo;ll consume substantially more power by doing so. In well lit areas &amp;ndash; outdoors, or under office lighting &amp;ndash; the display is generally very easy to read even with the backlight low.&lt;/p>
+&lt;h2 id="ease-of-use">Ease of use&lt;/h2>
+&lt;p>It&amp;rsquo;s a mixed bag.&lt;/p>
+&lt;p>The basic watch and fitness tracking functionality is easy to use, and I like the fact that it uses physical buttons rather than a touch screen (I&amp;rsquo;ve spent too much time struggling with touch screens in winter). The phone app itself is relatively easy to use, although the &amp;ldquo;Activities &amp;amp; Apps&amp;rdquo; screen has the bad habit of refreshing while you&amp;rsquo;re trying to use it.&lt;/p>
+&lt;p>I have found Garmin&amp;rsquo;s documentation to be very good, and highly search optimized. In most cases, when I&amp;rsquo;ve wanted to know how to do something on my watch I&amp;rsquo;ve been able to search for it on Google, and:&lt;/p>
+&lt;ul>
+&lt;li>Garmin&amp;rsquo;s manual is usually the first result&lt;/li>
+&lt;li>The instructions are on point and clearly written&lt;/li>
+&lt;/ul>
+&lt;p>For example, I wanted to know how to remove an activity from the list of favorite activities, so I searched for &lt;code>garmin remove activity from favorites&lt;/code>, which led me directly to &lt;a href="https://www8.garmin.com/manuals/webhelp/fenix6-6ssport/EN-US/GUID-B1501DD1-3616-4171-8814-07340761F494.html">this documentation&lt;/a>.&lt;/p>
+&lt;p>This was exactly the information I needed. I&amp;rsquo;ve had similar success with just about everything I&amp;rsquo;ve searched for.&lt;/p>
+&lt;p>The Garmin Connect app and website are both generally easy to use and well organized. There is an emphasis on &amp;ldquo;social networking&amp;rdquo; aspects (share your activities! Join a group! Earn badges!) in which I have zero interest, and I wish there was a checkbox to simply disable those parts of the UI.&lt;/p>
+&lt;p>The place where things really fall over is the &amp;ldquo;&lt;a href="https://apps.garmin.com/en-US/">IQ Connect&lt;/a>&amp;rdquo; app store. There are many apps and watch faces there that require some sort of payment, but there&amp;rsquo;s no centralized payment processing facility so you end up getting sent to random payment processors all over the place depending on what the software author selected&amp;hellip;and price information simply isn&amp;rsquo;t displayed in the app store &lt;strong>at all&lt;/strong> unless an author happens to include it in the product description.&lt;/p>
+&lt;p>The UI for configuring custom watch faces is awful; it&amp;rsquo;s a small step up from someone just throwing a text editor at you and telling you to edit a file. For this reason I&amp;rsquo;ve mostly stuck with Garmin-produced watch faces (the built-in ones and a few from the app store), which tend to have high visual quality but aren&amp;rsquo;t very configurable.&lt;/p>
+&lt;h2 id="some-random-technical-details">Some random technical details&lt;/h2>
+&lt;p>While Garmin doesn&amp;rsquo;t provide any Linux support at all, you can plug the watch into your Linux system and access the watch filesystem using any MTP client, including Gnome&amp;rsquo;s &lt;a href="https://wiki.gnome.org/Projects/gvfs">GVFS&lt;/a>. While this isn&amp;rsquo;t going to replace your phone app, it does give you reasonably convenient access to activity tracking data (as &lt;code>.fit&lt;/code> files).&lt;/p>
+&lt;p>The Fenix ships with reasonably complete US maps. I haven&amp;rsquo;t had the chance to assess their coverage of local hiking trails. You can load maps from the &lt;a href="https://www.openstreetmap.org">OpenStreetMap&lt;/a> project, although the process for doing so is annoyingly baroque.&lt;/p>
+&lt;p>It is easy to load GPX tracks from your favorite hiking website onto the watch using the Garmin Connect website or phone app.&lt;/p>
+&lt;h2 id="wrapping-up">Wrapping up&lt;/h2>
+&lt;p>I&amp;rsquo;m happy with the watch. It is a substantial upgrade from my Charge 5 in terms of fitness tracking, and aesthetically I like it as much as the Seiko &lt;a href="https://seikousa.com/products/snj025">SNJ025&lt;/a> I was previously wearing. It&amp;rsquo;s not a great smartwatch, but that&amp;rsquo;s not what I was looking for, and the battery life is much better than actual smart watches from Apple and Samsung.&lt;/p>
+&lt;hr>
+&lt;h2 id="a-digression-in-which-i-yell-at-all-trails">A digression, in which I yell at All Trails&lt;/h2>
+&lt;p>This isn&amp;rsquo;t a Garmin or Fenix issue, but I&amp;rsquo;d like to specially recognize All Trails for making the process of exporting a GPX file to Garmin Connect as painful as possible. You can&amp;rsquo;t do it at all from the phone app, so the process is something like:&lt;/p>
+&lt;ol>
+&lt;li>Use the All Trails app to find a hike you like&lt;/li>
+&lt;li>Decide you want to send it to your watch&lt;/li>
+&lt;li>Open a browser on your phone, go to &lt;a href="https://alltrails.com">https://alltrails.com&lt;/a>, and log in (again, even though you were already logged in on the app)&lt;/li>
+&lt;li>Find the hike again&lt;/li>
+&lt;li>Download the GPX&lt;/li>
+&lt;li>Open the downloads folder&lt;/li>
+&lt;li>Open the GPX file&lt;/li>
+&lt;li>Click the &amp;ldquo;share&amp;rdquo; button&lt;/li>
+&lt;li>Find the Garmin Connect app&lt;/li>
+&lt;/ol>
+&lt;p>That is&amp;hellip;completely ridiculous. The &amp;ldquo;Share&amp;rdquo; button in the All Trails app should provide an option to share the GPX version of the route so the above process could be collapsed into a single step. All Trails, why do you hate your users so much?&lt;/p></content></item></channel></rss>
