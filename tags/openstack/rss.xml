@@ -2793,7 +2793,9 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 (well, two) options for deploying Atomic into an OpenStack
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
-&lt;!-- raw HTML omitted -->
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/tS5X0qi04ZU" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
 working with Kubernetes).&lt;/p></content></item><item><title>Diagnosing problems with an OpenStack deployment</title><link>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</link><pubDate>Mon, 09 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</guid><description>I recently had the chance to help a colleague debug some problems in his OpenStack installation. The environment was unique because it was booting virtualized aarch64 instances, which at the time did not have any PCI bus support&amp;hellip;which in turn precluded things like graphic consoles (i.e., VNC or SPICE consoles) for the Nova instances.
@@ -4661,7 +4663,9 @@ Heat templates (as well as slide sources) are available &lt;a href="https://gith
 github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/qH-qYE1Kmpg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
 &amp;hellip;but I really like visualizing things, so I wrote a quick hack called dotstack that will generate dot language output from a Heat stack.</description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
@@ -5894,7 +5898,9 @@ $ neutron subnet-create --disable-dhcp external2 10.2.0.0/24
 corresponding &lt;code>.1&lt;/code> address.&lt;/p>
 &lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to set up the external bridge (br-ex) on a single-interface system:</description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/8zFQG5mKwPk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
 This started as a simple attempt to set up external connectivity on an all-in-one Icehouse install deployed on an OpenStack instance. I wanted to add eth0 to br-ex in order to model a typical method for providing external connectivity, but I ran into a very odd problem: the system would boot and work fine for a few seconds, but would then promptly lose network connectivity.</description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
 vexing problem to which I have not been able to find a solution.&lt;/p>
 &lt;p>This started as a simple attempt to set up external connectivity on
@@ -6177,14 +6183,16 @@ is running:&lt;/p>
 &lt;code>neutron-openvswitch-agent&lt;/code> is looking explicitly at
 &lt;code>/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini&lt;/code>. The
 physical network configuration needs to go into the
-&lt;code>ovs_neutron_plugin.ini&lt;/code> configuration file.&lt;/p></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode/</guid><description>I was the presenter for this morning&amp;rsquo;s RDO hangout, where I ran through a simple demonstration of setting up a multinode OpenStack deployment using packstack.
+&lt;code>ovs_neutron_plugin.ini&lt;/code> configuration file.&lt;/p></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</guid><description>I was the presenter for this morning&amp;rsquo;s RDO hangout, where I ran through a simple demonstration of setting up a multinode OpenStack deployment using packstack.
 The slides are online here.
 Here&amp;rsquo;s the video (also available on the event page):</description><content>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
 through a simple demonstration of setting up a multinode OpenStack
 deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>This is just here as a reminder for me:
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/DGf-ny25OAw" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>This is just here as a reminder for me:
 An OVS interface has a variety of attributes associated with it, including an external-id field that can be used to associate resources outside of OpenVSwitch with the interface. You can view this field with the following command:
 $ ovs-vsctl --columns=name,external-ids list Interface Which on my system, with a single virtual instance, looks like this:
 # ovs-vsctl --columns=name,external-ids list Interface . . .</description><content>&lt;p>This is just here as a reminder for me:&lt;/p>

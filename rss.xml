@@ -68,8 +68,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="241658739" type="checkbox" />
-&lt;label for="241658739">
+&lt;input id="465921387" type="checkbox" />
+&lt;label for="465921387">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -132,8 +132,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="637128945" type="checkbox" />
-&lt;label for="637128945">
+&lt;input id="256974813" type="checkbox" />
+&lt;label for="256974813">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -343,8 +343,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="379461582" type="checkbox" />
-&lt;label for="379461582">
+&lt;input id="872354691" type="checkbox" />
+&lt;label for="872354691">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -9860,10 +9860,10 @@ build an image that included the &lt;code>tm1637&lt;/code> module I ran into:&lt
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;tm1637.py&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">6&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ImportError&lt;/span>: cannot &lt;span style="color:#f92672">import&lt;/span> name sleep_us
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>One of CircuitPython&amp;rsquo;s goals is to be as close to CPython as possible.
-This means that in many cases that the CircuitPython folks have
+This means that in many cases the CircuitPython folks have
 re-implemented MicroPython modules to have syntax that is more a
 strict subset of the CPython equivalent, and the MicroPython &lt;code>time&lt;/code>
-module as impacted by this change. With stock MicroPython, the &lt;code>time&lt;/code>
+module is impacted by this change. With stock MicroPython, the &lt;code>time&lt;/code>
 module has:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#ae81ff">\n&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(dir(time)))
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__class__
@@ -9957,7 +9957,9 @@ written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> utime &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
 are now able to drive our display:&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/laH7HY-wlCk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
 protocol for communication. Recent versions of the Linux kernel
 include a kernel driver for this protocol, making it relatively
 convenient to connect one or more of these devices to a Raspberry Pi
@@ -13993,7 +13995,9 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 (well, two) options for deploying Atomic into an OpenStack
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
-&lt;!-- raw HTML omitted -->
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/tS5X0qi04ZU" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
 working with Kubernetes).&lt;/p></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>Someone named hithard on StackOverflow was trying to clone a git repository via https, and was running into an odd error: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (openhatch.org) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either OpenSSL or NSS, depending on how git was built).</description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
@@ -17246,7 +17250,9 @@ Heat templates (as well as slide sources) are available &lt;a href="https://gith
 github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/qH-qYE1Kmpg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
 &amp;hellip;but I really like visualizing things, so I wrote a quick hack called dotstack that will generate dot language output from a Heat stack.</description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
@@ -19477,7 +19483,9 @@ $ neutron subnet-create --disable-dhcp external2 10.2.0.0/24
 corresponding &lt;code>.1&lt;/code> address.&lt;/p>
 &lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to set up the external bridge (br-ex) on a single-interface system:</description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/8zFQG5mKwPk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
 This started as a simple attempt to set up external connectivity on an all-in-one Icehouse install deployed on an OpenStack instance. I wanted to add eth0 to br-ex in order to model a typical method for providing external connectivity, but I ran into a very odd problem: the system would boot and work fine for a few seconds, but would then promptly lose network connectivity.</description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
 vexing problem to which I have not been able to find a solution.&lt;/p>
 &lt;p>This started as a simple attempt to set up external connectivity on
@@ -19813,14 +19821,16 @@ a great deal of insight into the process and a bunch of example code:&lt;/p>
 &lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/25/fun-with-providers/">Fun With Puppet Providers&lt;/a>&lt;/li>
 &lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/26/fun-with-providers-part-2/">Who Abstracted My Ruby?&lt;/a>&lt;/li>
 &lt;li>&lt;a href="http://garylarizza.com/blog/2013/12/15/seriously-what-is-this-provider-doing/">Seriously, What Is This Provider Doing?&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode/</guid><description>I was the presenter for this morning&amp;rsquo;s RDO hangout, where I ran through a simple demonstration of setting up a multinode OpenStack deployment using packstack.
+&lt;/ul></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</guid><description>I was the presenter for this morning&amp;rsquo;s RDO hangout, where I ran through a simple demonstration of setting up a multinode OpenStack deployment using packstack.
 The slides are online here.
 Here&amp;rsquo;s the video (also available on the event page):</description><content>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
 through a simple demonstration of setting up a multinode OpenStack
 deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
-&lt;!-- raw HTML omitted --></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>This is just here as a reminder for me:
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/DGf-ny25OAw" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>This is just here as a reminder for me:
 An OVS interface has a variety of attributes associated with it, including an external-id field that can be used to associate resources outside of OpenVSwitch with the interface. You can view this field with the following command:
 $ ovs-vsctl --columns=name,external-ids list Interface Which on my system, with a single virtual instance, looks like this:
 # ovs-vsctl --columns=name,external-ids list Interface . . .</description><content>&lt;p>This is just here as a reminder for me:&lt;/p>

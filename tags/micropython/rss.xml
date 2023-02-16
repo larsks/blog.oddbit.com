@@ -409,10 +409,10 @@ build an image that included the &lt;code>tm1637&lt;/code> module I ran into:&lt
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> File &lt;span style="color:#e6db74">&amp;#34;tm1637.py&amp;#34;&lt;/span>, line &lt;span style="color:#ae81ff">6&lt;/span>, &lt;span style="color:#f92672">in&lt;/span> &lt;span style="color:#f92672">&amp;lt;&lt;/span>module&lt;span style="color:#f92672">&amp;gt;&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ImportError&lt;/span>: cannot &lt;span style="color:#f92672">import&lt;/span> name sleep_us
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>One of CircuitPython&amp;rsquo;s goals is to be as close to CPython as possible.
-This means that in many cases that the CircuitPython folks have
+This means that in many cases the CircuitPython folks have
 re-implemented MicroPython modules to have syntax that is more a
 strict subset of the CPython equivalent, and the MicroPython &lt;code>time&lt;/code>
-module as impacted by this change. With stock MicroPython, the &lt;code>time&lt;/code>
+module is impacted by this change. With stock MicroPython, the &lt;code>time&lt;/code>
 module has:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#ae81ff">\n&lt;/span>&lt;span style="color:#e6db74">&amp;#39;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(dir(time)))
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>__class__
@@ -506,4 +506,6 @@ written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">from&lt;/span> utime &lt;span style="color:#f92672">import&lt;/span> sleep_us, sleep_ms
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
 are now able to drive our display:&lt;/p>
-&lt;!-- raw HTML omitted --></content></item></channel></rss>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/laH7HY-wlCk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item></channel></rss>
