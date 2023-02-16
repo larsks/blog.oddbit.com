@@ -7,7 +7,6 @@ tags:
 - keyboards
 - hardware
 title: Vortex Core Keyboard Review
-
 ---
 
 I've had my eye on the [Vortex Core][] keyboard for a few months now, and this
@@ -15,8 +14,6 @@ past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
 different layers on the keyboard.
-
-{{< figure src="vortex-core.jpg" >}}
 
 ## Physical impressions
 

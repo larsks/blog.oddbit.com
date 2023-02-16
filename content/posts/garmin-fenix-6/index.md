@@ -9,7 +9,6 @@ tags:
 - health
 - gps
 - smartwatch
-cover: fenix-6x.png
 ---
 
 I've been using a [Garmin Fenix 6x][] for a couple of weeks and thought it might be interesting to put together a short review.

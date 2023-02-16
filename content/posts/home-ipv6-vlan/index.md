@@ -292,3 +292,10 @@ $ curl https://api64.ipify.org
 ```
 
 Note that unlike access using IPv4, the address visible here is the address assigned to our local interface. There is no NAT happening at the router.
+
+---
+
+Cover image by [Chris Woodford/explainthatstuff.com][chris woodford], licensed  under [CC BY-NC-SA 3.0][].
+
+[chris woodford]: https://www.explainthatstuff.com/chris-woodford.html
+[CC BY-NC-SA 3.0]: https://creativecommons.org/licenses/by-nc-sa/3.0/
