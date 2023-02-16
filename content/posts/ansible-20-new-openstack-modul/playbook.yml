@@ -1,0 +1,43 @@
+# An example playbook to accompany
+# http://blog.oddbit.com/2015/10/26/ansible-20-new-openstack-modules/
+
+- hosts: localhost
+  tasks:                                                                    
+                                                                            
+    - os_server:
+        cloud: testing
+        name: myserver
+        image: centos-7-atomic
+        nics:
+          - net-name: private
+        flavor: m1.small
+        key_name: lars
+        auto_ip: true
+      register: myserver
+
+    - debug:
+        var: myserver
+
+    - add_host:
+        name: myserver
+        groups: openstack
+        ansible_host: "{{myserver.server.public_v4}}"
+        ansible_user: centos
+        ansible_become: true
+
+    - command: >
+        ssh -o BatchMode=yes
+        centos@{{myserver.server.public_v4}} true
+      register: result
+      until: result|success
+      retries: 300
+      delay: 5
+
+- hosts: myserver
+  tasks:
+
+    - service:
+        name: docker
+        state: running
+        enabled: true
+

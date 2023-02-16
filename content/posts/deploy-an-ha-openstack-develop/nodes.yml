@@ -1,0 +1,3 @@
+control_memory: 6000
+compute_memory: 2048
+undercloud_vcpu: 4

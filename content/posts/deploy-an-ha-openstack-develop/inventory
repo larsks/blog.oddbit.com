@@ -1,0 +1,2 @@
+[virthost]
+my.target.host ansible_user=targetuser

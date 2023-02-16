@@ -1,0 +1,6 @@
+bind refs       <Esc>m	?sh -c 'git checkout master && git merge %(branch) && git branch -D %(branch)'
+bind refs       <Esc>d	?git branch -D %(branch)
+bind refs	<Esc>D	!sh -c 'git push --delete origin %(branch) && git remote update --prune'
+bind refs	<Esc>r	!blogtool -v refresh %(branch)
+
+bind refs	C	!git checkout %(branch)
