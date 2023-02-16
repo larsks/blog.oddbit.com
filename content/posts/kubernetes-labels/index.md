@@ -1,6 +1,6 @@
 ---
 categories: [tech]
-title: "Investigating connection timeouts in a Kubernetes application"
+title: "Kubernetes, connection timeouts, and the importance of labels"
 date: "2022-09-10"
 tags:
   - kubernetes
