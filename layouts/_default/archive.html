@@ -1,4 +1,5 @@
 {{ define "main" }}
+
 <div id="post-index" class="container">
   <ul class="archive-nav">
     {{ range (where .Site.RegularPages "Type" "posts").GroupByDate "2006" -}}
