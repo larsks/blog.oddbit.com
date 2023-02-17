@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>c on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/c/</link><description>Recent content in c on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 17 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/c/rss.xml" rel="self" type="application/rss+xml"/><item><title>Simple error handling in C</title><link>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</link><pubDate>Fri, 17 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</guid><description>Overview I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of if statements and calls to perror. I ended up implementing a simple must function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:
+must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Overview&lt;/h2>
+&lt;p>I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of &lt;code>if&lt;/code> statements and calls to &lt;code>perror&lt;/code>. I ended up implementing a simple &lt;code>must&lt;/code> function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">must&lt;/span>(fd &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;textfile.txt&amp;#34;&lt;/span>, O_RDONLY));
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">close&lt;/span>(fd));
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>In the event that an expression returns an error, the code will exit with a message that shows the file, line, and function in which the error occurred, along with the actual text of the called function and the output of &lt;code>perror&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>example.c:24 in main: fd = open(&amp;#34;does-not-exist.xt&amp;#34;, O_RDONLY): [2]: No such file or directory
+&lt;/code>&lt;/pre>&lt;p>To be clear, this is only useful when you&amp;rsquo;re using functions that conform to standard Unix error reporting conventions, and if you&amp;rsquo;re happy with &amp;ldquo;exit with an error message&amp;rdquo; as the failure handling mechanism.&lt;/p>
+&lt;h2 id="implementation">Implementation&lt;/h2>
+&lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="362918457" type="checkbox" />
+&lt;label for="362918457">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#ifndef _MUST
+#define _MUST
+#define must(x) _must(__FILE__, __LINE__, __func__, #x, (x))
+void _must(const char *fileName, int lineNumber, const char *funcName,
+const char *calledFunction, int err);
+#endif
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
+&lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="892351746" type="checkbox" />
+&lt;label for="892351746">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#include &amp;#34;must.h&amp;#34;
+#include &amp;lt;errno.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;stdlib.h&amp;gt;
+void _must(const char *fileName, int lineNumber, const char *funcName,
+const char *calledFunction, int err) {
+if (err &amp;lt; 0) {
+char buf[256];
+snprintf(buf, 256, &amp;#34;%s:%d in %s: %s: [%d]&amp;#34;, fileName, lineNumber, funcName,
+calledFunction, errno);
+perror(buf);
+exit(1);
+}
+}
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>In this function we check the value of &lt;code>err&lt;/code> (which will be the return value of the expression passed as the argument to the &lt;code>must()&lt;/code> macro), and if it evaluates to a number less than 0, we use &lt;code>snprintf()&lt;/code> to generate a string that we can pass to &lt;code>perror()&lt;/code>, and finally call &lt;code>perror()&lt;/code> which will print our information string, a colon, and then the error message corresponding to the value of &lt;code>errno&lt;/code>.&lt;/p>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="832614597" type="checkbox" />
+&lt;label for="832614597">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#include &amp;#34;must.h&amp;#34;
+#include &amp;lt;fcntl.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+int main() {
+int fd;
+char buf[1024];
+printf(&amp;#34;opening a file that does exist\n&amp;#34;);
+must(fd = open(&amp;#34;file-that-exists.txt&amp;#34;, O_RDONLY));
+while (1) {
+int nb;
+must(nb = read(fd, buf, sizeof(buf)));
+if (!nb)
+break;
+must(write(STDOUT_FILENO, buf, nb));
+}
+must(close(fd));
+printf(&amp;#34;opening a file that doesn&amp;#39;t exist\n&amp;#34;);
+must(fd = open(&amp;#34;file-that-does-not-exist.xt&amp;#34;, O_RDONLY));
+return 0;
+}
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>Provided the &lt;code>file-that-exists.txt&lt;/code> (a) exists and (b) contains the text &lt;code>Hello, world.&lt;/code>, and that &lt;code>file-that-does-not-exist.txt&lt;/code> does not, in fact, exist, running the above code will produce the following output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>opening a file that does exist
+Hello, world.
+opening a file that doesn&amp;#39;t exist
+example.c:24 in main: fd = open(&amp;#34;file-that-does-not-exist.xt&amp;#34;, O_RDONLY): [2]: No such file or directory
+&lt;/code>&lt;/pre></content></item></channel></rss>
