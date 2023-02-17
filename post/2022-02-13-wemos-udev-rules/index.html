@@ -112,4 +112,6 @@ DEVLINKS=/dev/serial/by-path/pci-0000:03:00.0-usb-0:1.4.3:1.0-port0 /dev/usbseri
     ├── 1.1 -&gt; ../../ttyUSB1
     └── 1.4.3 -&gt; ../../ttyUSB0
 </code></pre><p>And there have it. Now as long as I attach a specific device to the same USB port on my system, it will have the same device node. I&rsquo;ve updated my tooling to use these paths (<code>/dev/usbserial/3/1.4.3</code>) instead of the kernel names (<code>/dev/ttyUSB0</code>), and it has greatly simplified things.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
-<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script>
+<script src=/js/mermaid.min.js></script>
+<script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>

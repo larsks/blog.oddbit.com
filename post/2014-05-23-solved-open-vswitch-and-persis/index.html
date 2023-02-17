@@ -19,4 +19,6 @@ MACADDR=fa:16:3e:ef:91:ec
 OVS_EXTRA=&quot;set bridge br-ex other-config:hwaddr=$MACADDR&quot;
 </code></pre><p>The <code>OVS_EXTRA</code> parameter gets passed to the <code>add-br</code> call like this:</p><pre><code>ovs-vsctl --may-exist add-br br-ex -- set bridge br-ex other-config:hwaddr=$MACADDR
 </code></pre><p>And unlike using <code>ip link set</code>, this seems to stick.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
-<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script></div></body></html>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script>
+<script src=/js/mermaid.min.js></script>
+<script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>

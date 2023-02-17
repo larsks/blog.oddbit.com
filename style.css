@@ -12,3 +12,7 @@
 .archive-nav li:first-child {
 	border-left: none;
 }
+
+pre.mermaid line.branch {
+	stroke: white !important;
+}
