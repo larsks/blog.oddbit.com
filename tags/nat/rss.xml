@@ -2,17 +2,21 @@
 &amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range 192.168.3.0/24, and similarly for communication in the other direction?</description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same CIDR range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
 &lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="the-problem.svg" alt="two networks with the same address range connected by a host named &amp;amp;ldquo;middleman&amp;amp;rdquo;">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
-&lt;p>In order to work out an answer, I started by setting up a virtual network topology using &lt;a href="https://mininet.org">Mininet&lt;/a>, which gave me the following network:&lt;/p>
+&lt;h2 id="setting-up-a-lab">Setting up a lab&lt;/h2>
+&lt;p>When investigating this sort of networking question, I find it easiest to reproduce the topology in a virtual environment so that it&amp;rsquo;s easy to test things out. I generally use &lt;a href="https://mininet.org">Mininet&lt;/a> for this, which provides a simple Python API for creating virtual nodes and switches and creating links between them.&lt;/p>
+&lt;p>I created the following network topology for this test:&lt;/p>
 &lt;figure class="center" >
 &lt;img src="topology-1.svg" alt="virtual network topology diagram" />
 &lt;/figure>
-&lt;p>If you&amp;rsquo;d like to try this at home, see the bottom of the post for links to a repository with the necessary files.&lt;/p>
+&lt;p>In the rest of this post, I&amp;rsquo;ll be referring to these hostnames.&lt;/p>
+&lt;p>See the bottom of this post for a link to the repository that contains the complete test environment.&lt;/p>
 &lt;h2 id="vrf-in-theory">VRF in Theory&lt;/h2>
 &lt;p>VRF stands for &amp;ldquo;Virtual Routing and Forwarding&amp;rdquo;. From the &lt;a href="https://en.wikipedia.org/wiki/Virtual_routing_and_forwarding">Wikipedia article on the topic&lt;/a>:&lt;/p>
 &lt;blockquote>
 &lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="the-problem.svg">1&lt;/a>&lt;/p>
 &lt;/blockquote>
-&lt;p>In Linux, VRF support is implemented as a &lt;a href="https://docs.kernel.org/networking/vrf.html">special type of network device&lt;/a>. We can create new VRF devices with the &lt;code>ip link add&lt;/code> command:&lt;/p>
+&lt;p>In Linux, VRF support is implemented as a &lt;a href="https://docs.kernel.org/networking/vrf.html">special type of network device&lt;/a>. A VRF device sets up an isolated routing domain; network traffic on devices associated with a VRF will use the routing table associated with that VRF, rather than the main routing table, which permits us to connect multiple networks with overlapping address ranges.&lt;/p>
+&lt;p>We can create new VRF devices with the &lt;code>ip link add&lt;/code> command:&lt;/p>
 &lt;pre tabindex="0">&lt;code>ip link add vrf-inner type vrf table 100
 &lt;/code>&lt;/pre>&lt;p>Running the above command results in the following changes:&lt;/p>
 &lt;ul>
@@ -119,7 +123,7 @@ innernode0# ip route
 192.168.2.0/24 dev innernode0-eth0 proto kernel scope link src 192.168.2.10
 192.168.3.0/24 via 192.168.2.1 dev innernode0-eth0
 &lt;/code>&lt;/pre>&lt;p>This same change needs to be made on all the &lt;code>innernode*&lt;/code> and &lt;code>outernode*&lt;/code> nodes.&lt;/p>
-&lt;p>With the route in place, attempts to reach &lt;code>192.168.3.10&lt;/code> from &lt;code>innernode0&lt;/code> will still fail, but not they&amp;rsquo;re getting rejected by &lt;code>middleman&lt;/code>:&lt;/p>
+&lt;p>With the route in place, attempts to reach &lt;code>192.168.3.10&lt;/code> from &lt;code>innernode0&lt;/code> will still fail, but now they&amp;rsquo;re getting rejected by &lt;code>middleman&lt;/code> because &lt;em>it&lt;/em> doesn&amp;rsquo;t have any appropriate routes:&lt;/p>
 &lt;pre tabindex="0">&lt;code>innernode0# ping -c1 192.168.3.10
 PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
 From 192.168.2.1 icmp_seq=1 Destination Net Unreachable
@@ -136,7 +140,8 @@ From 192.168.2.1 icmp_seq=1 Destination Net Unreachable
 &lt;p>We can achieve (1) and (2) using the netfilter &lt;a href="https://www.netfilter.org/documentation/HOWTO/netfilter-extensions-HOWTO-4.html#ss4.4">&lt;code>NETMAP&lt;/code>&lt;/a> extension by adding the following two rules:&lt;/p>
 &lt;pre tabindex="0">&lt;code>iptables -t nat -A PREROUTING -d 192.168.3.0/24 -j NETMAP --to 192.168.2.0/24
 iptables -t nat -A POSTROUTING -s 192.168.2.0/24 -j NETMAP --to 192.168.3.0/24
-&lt;/code>&lt;/pre>&lt;p>(For those of you wondering, &amp;ldquo;can we do this using &lt;code>nftables&lt;/code> instead?&amp;rdquo;, as of this writing &lt;a href="https://wiki.nftables.org/wiki-nftables/index.php/Supported_features_compared_to_xtables#NETMAP">&lt;code>nftables&lt;/code> does not appear to have &lt;code>NETMAP&lt;/code> support&lt;/a>, so we have to use &lt;code>iptables&lt;/code> for this step.)&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>For incoming traffic destined for the 192.168.3.0/24 network, this maps the destination address to the matching &lt;code>192.168.2.0/24&lt;/code> address. For outgoing traffic with a source address on the &lt;code>192.168.2.0/24&lt;/code> network, this maps the source to the equivalent &lt;code>192.168.3.0/24&lt;/code> network (so that the recipient see the traffic as coming from &amp;ldquo;the other side&amp;rdquo;).&lt;/p>
+&lt;p>(For those of you wondering, &amp;ldquo;can we do this using &lt;code>nftables&lt;/code> instead?&amp;rdquo;, as of this writing &lt;a href="https://wiki.nftables.org/wiki-nftables/index.php/Supported_features_compared_to_xtables#NETMAP">&lt;code>nftables&lt;/code> does not appear to have &lt;code>NETMAP&lt;/code> support&lt;/a>, so we have to use &lt;code>iptables&lt;/code> for this step.)&lt;/p>
 &lt;p>With this change in place, re-trying that &lt;code>ping&lt;/code> command on &lt;code>innernode0&lt;/code> will apparently succeed:&lt;/p>
 &lt;pre tabindex="0">&lt;code>innernode0 ping -c1 192.168.3.10
 PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
