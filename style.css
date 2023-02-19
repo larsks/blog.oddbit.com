@@ -16,3 +16,15 @@
 pre.mermaid line.branch {
 	stroke: white !important;
 }
+
+.tagcloud {
+	list-style: none;
+}
+
+.tagcloud li {
+	display: inline-block;
+}
+
+.tagcloud a {
+	text-decoration: none;
+}
