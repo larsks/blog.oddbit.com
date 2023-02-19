@@ -2,3 +2,4 @@ autoCover: true
 themeColor: orange
 centerTheme: true
 showMenuItems: 6
+showLastUpdated: true
