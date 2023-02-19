@@ -1,5 +1,0 @@
-repos:
-  - repo: https://github.com/larsks/remark-validate-markdown
-    rev: 0.0.1
-    hooks:
-      - id: remark-validate-markdown
