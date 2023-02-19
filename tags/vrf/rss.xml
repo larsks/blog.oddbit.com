@@ -174,7 +174,24 @@ ip rule add prio 200 fwmark 200 lookup 100
 13:05:27.667863 middleman-eth1 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo reply, id 16556, seq 1, length 64
 13:05:27.667868 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16556, seq 1, length 64
 &lt;/code>&lt;/pre>&lt;p>Now we finally see the desired behavior: the request from &lt;code>innernode0&lt;/code> comes in on &lt;code>eth0&lt;/code>, goes out on &lt;code>eth1&lt;/code> with the addresses appropriately mapped and gets delivered to &lt;code>outernode0&lt;/code>. The reply from &lt;code>outernode0&lt;/code> goes through the process in reverse, and arrives back at &lt;code>innernode0&lt;/code>.&lt;/p>
-&lt;h2 id="demo">Demo&lt;/h2>
+&lt;h2 id="connection-tracking">Connection tracking&lt;/h2>
+&lt;p>There is a subtle problem with the configuration we&amp;rsquo;ve implemented so far: the Linux connection tracking mechanism (&amp;quot;&lt;a href="https://arthurchiao.art/blog/conntrack-design-and-implementation/">conntrack&lt;/a>&amp;quot;) by default identifies a connection by the 4-tuple &lt;code>(source_address, source_port, destination_address, destination_port)&lt;/code>. To understand why this is a problem, assume that we&amp;rsquo;re running a web server on port 80 on all the &amp;ldquo;inner&amp;rdquo; and &amp;ldquo;outer&amp;rdquo; nodes.&lt;/p>
+&lt;p>To connect from &lt;code>innernode0&lt;/code> to &lt;code>outernode0&lt;/code>, we could use the following command. We&amp;rsquo;re using the &lt;code>--local-port&lt;/code> option here because we want to control the source port of our connections:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0# curl --local-port 4000 192.168.3.10
+&lt;/code>&lt;/pre>&lt;p>To connect from &lt;code>outernode0&lt;/code> to &lt;code>innernode0&lt;/code>, we would use the same command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>outernode0# curl --local-port 4000 192.168.3.10
+&lt;/code>&lt;/pre>&lt;p>If we look at the connection tracking table on &lt;code>middleman&lt;/code>, we will see a single connection:&lt;/p>
+&lt;pre tabindex="0">&lt;code>middleman# conntrack -L
+tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=4000 [ASSURED] mark=0 use=1
+&lt;/code>&lt;/pre>&lt;p>This happens because the 4-tuple for our two connections is identical. Conflating connections like this can cause traffic to stop flowing if both connections are active at the same time.&lt;/p>
+&lt;p>We need to provide the connection track subsystem with some additional information to uniquely identify this connections. We can do this by using the netfilter &lt;code>CT&lt;/code> module to assign each connection to a unique conntrack origination &amp;ldquo;zone&amp;rdquo;:&lt;/p>
+&lt;pre tabindex="0">&lt;code>iptables -t raw -A PREROUTING -s 192.168.2.0/24 -i middleman-eth0 -j CT --zone-orig 100
+iptables -t raw -A PREROUTING -s 192.168.2.0/24 -i middleman-eth1 -j CT --zone-orig 200
+&lt;/code>&lt;/pre>&lt;p>With these rules in place, if we repeat the test with &lt;code>curl&lt;/code> we will see two distinct connections:&lt;/p>
+&lt;pre tabindex="0">&lt;code>middleman# conntrack -L
+tcp 6 117 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-orig=100 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=26148 [ASSURED] mark=0 use=1
+tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-orig=200 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=4000 [ASSURED] mark=0 use=1
+&lt;/code>&lt;/pre>&lt;h2 id="demo">Demo&lt;/h2>
 &lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe src="https://www.youtube.com/embed/Kws98JNKcxE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
