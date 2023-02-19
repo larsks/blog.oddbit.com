@@ -10,7 +10,7 @@
 &lt;/figure>
 &lt;p>In the rest of this post, I&amp;rsquo;ll be referring to these hostnames.&lt;/p>
 &lt;p>See the bottom of this post for a link to the repository that contains the complete test environment.&lt;/p>
-&lt;h2 id="vrf-in-theory">VRF in Theory&lt;/h2>
+&lt;h2 id="vrf-in-theory">VRF in theory&lt;/h2>
 &lt;p>VRF stands for &amp;ldquo;Virtual Routing and Forwarding&amp;rdquo;. From the &lt;a href="https://en.wikipedia.org/wiki/Virtual_routing_and_forwarding">Wikipedia article on the topic&lt;/a>:&lt;/p>
 &lt;blockquote>
 &lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="the-problem.svg">1&lt;/a>&lt;/p>
@@ -40,7 +40,7 @@ vrf-inner 100
 &lt;/code>&lt;/pre>&lt;p>You can see a list of devices associated with a particular VRF with the &lt;code>ip link&lt;/code> command:&lt;/p>
 &lt;pre tabindex="0">&lt;code># ip -brief link show master vrf-inner
 eth0@if448 UP 72:87:af:d3:b5:f9 &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt;
-&lt;/code>&lt;/pre>&lt;h2 id="vrf-in-practice">VRF in Practice&lt;/h2>
+&lt;/code>&lt;/pre>&lt;h2 id="vrf-in-practice">VRF in practice&lt;/h2>
 &lt;p>We&amp;rsquo;re going to create two VRF devices on the &lt;code>middleman&lt;/code> host; one associated with the &amp;ldquo;inner&amp;rdquo; network and one associated with the &amp;ldquo;outer&amp;rdquo; network. In our virtual network topology, the &lt;code>middleman&lt;/code> host has two network interfaces:&lt;/p>
 &lt;ul>
 &lt;li>&lt;code>middleman-eth0&lt;/code> is connected to the &amp;ldquo;inner&amp;rdquo; network&lt;/li>
@@ -167,14 +167,14 @@ iptables -t mangle -A PREROUTING -i middleman-eth1 -d 192.168.3.0/24 -j MARK --s
 &lt;pre tabindex="0">&lt;code>ip rule add prio 100 fwmark 100 lookup 200
 ip rule add prio 200 fwmark 200 lookup 100
 &lt;/code>&lt;/pre>&lt;p>It is critical that these rules come before (aka &amp;ldquo;have a higher priority than&amp;rdquo;, aka &amp;ldquo;have a lower number than&amp;rdquo;) the &lt;code>l3mdev&lt;/code> rule added when we created the VRF devices.&lt;/p>
-&lt;h2 id="validation">Validation&lt;/h2>
+&lt;h2 id="validation-does-it-actually-work">Validation: Does it actually work?&lt;/h2>
 &lt;p>With that last set of changes in place, if we repeat the &lt;code>ping&lt;/code> test from &lt;code>innernode0&lt;/code> to &lt;code>outernode0&lt;/code> and run &lt;code>tcpdump&lt;/code> on &lt;code>middleman&lt;/code>, we see:&lt;/p>
 &lt;pre tabindex="0">&lt;code>13:05:27.667793 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo request, id 16556, seq 1, length 64
 13:05:27.667816 middleman-eth1 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo request, id 16556, seq 1, length 64
 13:05:27.667863 middleman-eth1 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo reply, id 16556, seq 1, length 64
 13:05:27.667868 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16556, seq 1, length 64
 &lt;/code>&lt;/pre>&lt;p>Now we finally see the desired behavior: the request from &lt;code>innernode0&lt;/code> comes in on &lt;code>eth0&lt;/code>, goes out on &lt;code>eth1&lt;/code> with the addresses appropriately mapped and gets delivered to &lt;code>outernode0&lt;/code>. The reply from &lt;code>outernode0&lt;/code> goes through the process in reverse, and arrives back at &lt;code>innernode0&lt;/code>.&lt;/p>
-&lt;h2 id="connection-tracking">Connection tracking&lt;/h2>
+&lt;h2 id="connection-tracking-or-one-more-thing">Connection tracking (or, &amp;ldquo;One more thing&amp;hellip;&amp;rdquo;)&lt;/h2>
 &lt;p>There is a subtle problem with the configuration we&amp;rsquo;ve implemented so far: the Linux connection tracking mechanism (&amp;quot;&lt;a href="https://arthurchiao.art/blog/conntrack-design-and-implementation/">conntrack&lt;/a>&amp;quot;) by default identifies a connection by the 4-tuple &lt;code>(source_address, source_port, destination_address, destination_port)&lt;/code>. To understand why this is a problem, assume that we&amp;rsquo;re running a web server on port 80 on all the &amp;ldquo;inner&amp;rdquo; and &amp;ldquo;outer&amp;rdquo; nodes.&lt;/p>
 &lt;p>To connect from &lt;code>innernode0&lt;/code> to &lt;code>outernode0&lt;/code>, we could use the following command. We&amp;rsquo;re using the &lt;code>--local-port&lt;/code> option here because we want to control the source port of our connections:&lt;/p>
 &lt;pre tabindex="0">&lt;code>innernode0# curl --local-port 4000 192.168.3.10
@@ -184,18 +184,25 @@ ip rule add prio 200 fwmark 200 lookup 100
 &lt;pre tabindex="0">&lt;code>middleman# conntrack -L
 tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=4000 [ASSURED] mark=0 use=1
 &lt;/code>&lt;/pre>&lt;p>This happens because the 4-tuple for our two connections is identical. Conflating connections like this can cause traffic to stop flowing if both connections are active at the same time.&lt;/p>
-&lt;p>We need to provide the connection track subsystem with some additional information to uniquely identify this connections. We can do this by using the netfilter &lt;code>CT&lt;/code> module to assign each connection to a unique conntrack origination &amp;ldquo;zone&amp;rdquo;:&lt;/p>
+&lt;p>We need to provide the connection track subsystem with some additional information to uniquely identify these connections. We can do this by using the netfilter &lt;code>CT&lt;/code> module to assign each connection to a unique conntrack origination &amp;ldquo;zone&amp;rdquo;:&lt;/p>
 &lt;pre tabindex="0">&lt;code>iptables -t raw -A PREROUTING -s 192.168.2.0/24 -i middleman-eth0 -j CT --zone-orig 100
 iptables -t raw -A PREROUTING -s 192.168.2.0/24 -i middleman-eth1 -j CT --zone-orig 200
-&lt;/code>&lt;/pre>&lt;p>With these rules in place, if we repeat the test with &lt;code>curl&lt;/code> we will see two distinct connections:&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>What is a &amp;ldquo;zone&amp;rdquo;? From &lt;a href="https://lore.kernel.org/all/4B9158F5.5040205@parallels.com/T/">the patch adding this feature&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>A zone is simply a numerical identifier associated with a network
+device that is incorporated into the various hashes and used to
+distinguish entries in addition to the connection tuples.&lt;/p>
+&lt;/blockquote>
+&lt;p>With these rules in place, if we repeat the test with &lt;code>curl&lt;/code> we will see two distinct connections:&lt;/p>
 &lt;pre tabindex="0">&lt;code>middleman# conntrack -L
 tcp 6 117 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-orig=100 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=26148 [ASSURED] mark=0 use=1
 tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-orig=200 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=4000 [ASSURED] mark=0 use=1
-&lt;/code>&lt;/pre>&lt;h2 id="demo">Demo&lt;/h2>
+&lt;/code>&lt;/pre>&lt;h2 id="repository-and-demo">Repository and demo&lt;/h2>
 &lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe src="https://www.youtube.com/embed/Kws98JNKcxE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
-&lt;/div></content></item><item><title>Simple error handling in C</title><link>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</link><pubDate>Fri, 17 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</guid><description>Overview I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of if statements and calls to perror. I ended up implementing a simple must function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:
+&lt;/div>
+&lt;p>And here&amp;rsquo;s a video that runs through the steps described in this post:&lt;/p></content></item><item><title>Simple error handling in C</title><link>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</link><pubDate>Fri, 17 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</guid><description>Overview I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of if statements and calls to perror. I ended up implementing a simple must function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:
 must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Overview&lt;/h2>
 &lt;p>I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of &lt;code>if&lt;/code> statements and calls to &lt;code>perror&lt;/code>. I ended up implementing a simple &lt;code>must&lt;/code> function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">must&lt;/span>(fd &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;textfile.txt&amp;#34;&lt;/span>, O_RDONLY));
@@ -207,8 +214,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="541986372" type="checkbox" />
-&lt;label for="541986372">
+&lt;input id="834219576" type="checkbox" />
+&lt;label for="834219576">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -224,8 +231,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="845293761" type="checkbox" />
-&lt;label for="845293761">
+&lt;input id="169875432" type="checkbox" />
+&lt;label for="169875432">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -250,8 +257,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="453827961" type="checkbox" />
-&lt;label for="453827961">
+&lt;input id="391475862" type="checkbox" />
+&lt;label for="391475862">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -354,8 +361,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="495732186" type="checkbox" />
-&lt;label for="495732186">
+&lt;input id="734652198" type="checkbox" />
+&lt;label for="734652198">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -418,8 +425,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="918254367" type="checkbox" />
-&lt;label for="918254367">
+&lt;input id="957326184" type="checkbox" />
+&lt;label for="957326184">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -629,8 +636,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="479513826" type="checkbox" />
-&lt;label for="479513826">
+&lt;input id="476825391" type="checkbox" />
+&lt;label for="476825391">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
