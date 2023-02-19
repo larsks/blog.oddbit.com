@@ -1,2 +1,3 @@
-{{ $file := path.Join "content" (path.Dir .Page.File.Path) (.Get "file") | readFile }}
-{{ print $file | htmlUnescape | safeHTML }}
+{{ with .Page.Resources.GetMatch (.Get "file") }}
+{{ .Content | safeHTML }}
+{{ end }}
