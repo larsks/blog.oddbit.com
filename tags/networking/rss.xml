@@ -170,13 +170,16 @@ ip rule add prio 200 fwmark 200 lookup 100
 13:05:27.667868 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16556, seq 1, length 64
 &lt;/code>&lt;/pre>&lt;p>Now we finally see the desired behavior: the request from &lt;code>innernode0&lt;/code> comes in on &lt;code>eth0&lt;/code>, goes out on &lt;code>eth1&lt;/code> with the addresses appropriately mapped and gets delivered to &lt;code>outernode0&lt;/code>. The reply from &lt;code>outernode0&lt;/code> goes through the process in reverse, and arrives back at &lt;code>innernode0&lt;/code>.&lt;/p>
 &lt;h2 id="demo">Demo&lt;/h2>
-&lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
+&lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe src="https://www.youtube.com/embed/Kws98JNKcxE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;/div></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
 The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="613874259" type="checkbox" />
-&lt;label for="613874259">
+&lt;input id="749163528" type="checkbox" />
+&lt;label for="749163528">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -239,8 +242,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="128463759" type="checkbox" />
-&lt;label for="128463759">
+&lt;input id="597412836" type="checkbox" />
+&lt;label for="597412836">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -450,8 +453,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="238451967" type="checkbox" />
-&lt;label for="238451967">
+&lt;input id="345896217" type="checkbox" />
+&lt;label for="345896217">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
