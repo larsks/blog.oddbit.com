@@ -1,10 +1,182 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>networking on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networking/</link><description>Recent content in networking on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 14 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networking/rss.xml" rel="self" type="application/rss+xml"/><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>networking on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networking/</link><description>Recent content in networking on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networking/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same CIDR range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
+&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range 192.168.3.0/24, and similarly for communication in the other direction?</description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same CIDR range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
+&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="the-problem.svg" alt="two networks with the same address range connected by a host named &amp;amp;ldquo;middleman&amp;amp;rdquo;">&lt;/a>&lt;/p>
+&lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
+&lt;p>In order to work out an answer, I started by setting up a virtual network topology using &lt;a href="https://mininet.org">Mininet&lt;/a>, which gave me the following network:&lt;/p>
+&lt;figure class="center" >
+&lt;img src="topology-1.svg" alt="virtual network topology diagram" />
+&lt;/figure>
+&lt;p>If you&amp;rsquo;d like to try this at home, see the bottom of the post for links to a repository with the necessary files.&lt;/p>
+&lt;h2 id="vrf-in-theory">VRF in Theory&lt;/h2>
+&lt;p>VRF stands for &amp;ldquo;Virtual Routing and Forwarding&amp;rdquo;. From the &lt;a href="https://en.wikipedia.org/wiki/Virtual_routing_and_forwarding">Wikipedia article on the topic&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="the-problem.svg">1&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>In Linux, VRF support is implemented as a &lt;a href="https://docs.kernel.org/networking/vrf.html">special type of network device&lt;/a>. We can create new VRF devices with the &lt;code>ip link add&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip link add vrf-inner type vrf table 100
+&lt;/code>&lt;/pre>&lt;p>Running the above command results in the following changes:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>It creates a new network device named &lt;code>vrf-inner&lt;/code>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>It adds a new route policy rule (if it doesn&amp;rsquo;t already exist) that looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>1000: from all lookup [l3mdev-table]
+&lt;/code>&lt;/pre>&lt;p>This causes route lookups to use the appropriate route table for interfaces associated with a VRF.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>After creating a VRF device, we can add interfaces to it like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip link set eth0 master vrf-inner
+&lt;/code>&lt;/pre>&lt;p>This associates the given interface with the VRF device, and it moves all routes associated with the interface out of the &lt;code>local&lt;/code> and &lt;code>main&lt;/code> routing tables and into the VRF-specific routing table.&lt;/p>
+&lt;p>You can see a list of vrf devices by running &lt;code>ip vrf show&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code># ip vrf show
+Name Table
+-----------------------
+vrf-inner 100
+&lt;/code>&lt;/pre>&lt;p>You can see a list of devices associated with a particular VRF with the &lt;code>ip link&lt;/code> command:&lt;/p>
+&lt;pre tabindex="0">&lt;code># ip -brief link show master vrf-inner
+eth0@if448 UP 72:87:af:d3:b5:f9 &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt;
+&lt;/code>&lt;/pre>&lt;h2 id="vrf-in-practice">VRF in Practice&lt;/h2>
+&lt;p>We&amp;rsquo;re going to create two VRF devices on the &lt;code>middleman&lt;/code> host; one associated with the &amp;ldquo;inner&amp;rdquo; network and one associated with the &amp;ldquo;outer&amp;rdquo; network. In our virtual network topology, the &lt;code>middleman&lt;/code> host has two network interfaces:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>middleman-eth0&lt;/code> is connected to the &amp;ldquo;inner&amp;rdquo; network&lt;/li>
+&lt;li>&lt;code>middleman-eth1&lt;/code> is connected to the &amp;ldquo;outer&amp;rdquo; network&lt;/li>
+&lt;/ul>
+&lt;p>Both devices have the same address (&lt;code>192.168.2.1&lt;/code>):&lt;/p>
+&lt;pre tabindex="0">&lt;code># ip addr show
+2: middleman-eth0@if426: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue master vrf-inner state UP group default qlen 1000
+link/ether 32:9e:01:2e:78:2f brd ff:ff:ff:ff:ff:ff link-netnsid 0
+inet 192.168.2.1/24 brd 192.168.2.255 scope global middleman-eth0
+valid_lft forever preferred_lft forever
+root@mininet-vm:~/unix-735931# ip addr show middleman-eth1
+3: middleman-eth1@if427: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue master vrf-outer state UP group default qlen 1000
+link/ether 12:be:9a:09:33:93 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+inet 192.168.2.1/24 brd 192.168.2.255 scope global middleman-eth1
+valid_lft forever preferred_lft forever
+&lt;/code>&lt;/pre>&lt;p>And the main routing table looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code># ip route show
+192.168.2.0/24 dev middleman-eth1 proto kernel scope link src 192.168.2.1
+192.168.2.0/24 dev middleman-eth0 proto kernel scope link src 192.168.2.1
+&lt;/code>&lt;/pre>&lt;p>If you&amp;rsquo;re at all familiar with Linux network configuration, that probably looks weird. Right now this isn&amp;rsquo;t a particularly functional network configuration, but we can fix that!&lt;/p>
+&lt;p>To create our two VRF devices, we run the following commands:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip link add vrf-inner type vrf table 100
+ip link add vrf-outer type vrf table 200
+ip link set vrf-inner up
+ip link set vrf-outer up
+&lt;/code>&lt;/pre>&lt;p>This associates &lt;code>vrf-inner&lt;/code> with route table 100, and &lt;code>vrf-outer&lt;/code> with route table 200. At this point, tables 100 and 200 are empty:&lt;/p>
+&lt;pre tabindex="0">&lt;code># ip route show table 100
+Error: ipv4: FIB table does not exist.
+Dump terminated
+# ip route show table 200
+Error: ipv4: FIB table does not exist.
+Dump terminated
+&lt;/code>&lt;/pre>&lt;p>Next, we add our interfaces to the appropriate VRF devices:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip link set middleman-eth0 master vrf-inner
+ip link set middleman-eth1 master vrf-outer
+&lt;/code>&lt;/pre>&lt;p>After running these commands, there are no routes left in the main routing table:&lt;/p>
+&lt;pre tabindex="0">&lt;code># ip route show
+&amp;lt;no output&amp;gt;
+&lt;/code>&lt;/pre>&lt;p>And the routes associated with our two physical interfaces are now contained by the appropriate VRF routing tables. Here&amp;rsquo;s table 100:&lt;/p>
+&lt;pre tabindex="0">&lt;code>root@mininet-vm:~/unix-735931# ip route show table 100
+broadcast 192.168.2.0 dev middleman-eth0 proto kernel scope link src 192.168.2.1
+192.168.2.0/24 dev middleman-eth0 proto kernel scope link src 192.168.2.1
+local 192.168.2.1 dev middleman-eth0 proto kernel scope host src 192.168.2.1
+broadcast 192.168.2.255 dev middleman-eth0 proto kernel scope link src 192.168.2.1
+&lt;/code>&lt;/pre>&lt;p>And table 200:&lt;/p>
+&lt;pre tabindex="0">&lt;code>root@mininet-vm:~/unix-735931# ip route show table 200
+broadcast 192.168.2.0 dev middleman-eth1 proto kernel scope link src 192.168.2.1
+192.168.2.0/24 dev middleman-eth1 proto kernel scope link src 192.168.2.1
+local 192.168.2.1 dev middleman-eth1 proto kernel scope host src 192.168.2.1
+broadcast 192.168.2.255 dev middleman-eth1 proto kernel scope link src 192.168.2.1
+&lt;/code>&lt;/pre>&lt;p>This configuration effectively gives us two isolated networks:&lt;/p>
+&lt;figure class="center" >
+&lt;img src="topology-2.svg" alt="virtual network topology diagram" />
+&lt;/figure>
+&lt;p>We can verify that nodes in the &amp;ldquo;inner&amp;rdquo; and &amp;ldquo;outer&amp;rdquo; networks are now able to communicate with &lt;code>middleman&lt;/code>. We can reach &lt;code>middleman&lt;/code> from &lt;code>innernode0&lt;/code>; in this case, we&amp;rsquo;re communicating with interface &lt;code>middleman-eth0&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0# ping -c1 192.168.2.1
+PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
+64 bytes from 192.168.2.1: icmp_seq=1 ttl=64 time=0.126 ms
+--- 192.168.2.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.126/0.126/0.126/0.000 ms
+&lt;/code>&lt;/pre>&lt;p>Similarly, we can reach &lt;code>middleman&lt;/code> from &lt;code>outernode&lt;/code>, but in this case we&amp;rsquo;re communicating with interface &lt;code>middleman-eth0&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>outernode0# ping -c1 192.168.2.1
+PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
+64 bytes from 192.168.2.1: icmp_seq=1 ttl=64 time=1.02 ms
+--- 192.168.2.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.020/1.020/1.020/0.000 ms
+&lt;/code>&lt;/pre>&lt;h2 id="configure-routing-on-the-nodes">Configure routing on the nodes&lt;/h2>
+&lt;p>Our goal is to let nodes on one side of the network to use the address range &lt;code>192.168.3.0/24&lt;/code> to refer to nodes on the other side of the network. Right now, if we were to try to access &lt;code>192.168.3.10&lt;/code> from &lt;code>innernode0&lt;/code>, the attempt would fail with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0# ping 192.168.3.10
+ping: connect: Network is unreachable
+&lt;/code>&lt;/pre>&lt;p>The &amp;ldquo;network is unreachable&amp;rdquo; message means that &lt;code>innernode0&lt;/code> has no idea where to send that request. That&amp;rsquo;s because at the moment, the routing table on all the nodes look like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0# ip route
+192.168.2.0/24 dev outernode0-eth0 proto kernel scope link src 192.168.2.10
+&lt;/code>&lt;/pre>&lt;p>There is neither a default gateway nor a network-specific route appropriate for &lt;code>192.168.3.0/24&lt;/code> addresses. Let&amp;rsquo;s add a network route that will route that address range through &lt;code>middleman&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0# ip route add 192.168.3.0/24 via 192.168.2.1
+innernode0# ip route
+192.168.2.0/24 dev innernode0-eth0 proto kernel scope link src 192.168.2.10
+192.168.3.0/24 via 192.168.2.1 dev innernode0-eth0
+&lt;/code>&lt;/pre>&lt;p>This same change needs to be made on all the &lt;code>innernode*&lt;/code> and &lt;code>outernode*&lt;/code> nodes.&lt;/p>
+&lt;p>With the route in place, attempts to reach &lt;code>192.168.3.10&lt;/code> from &lt;code>innernode0&lt;/code> will still fail, but not they&amp;rsquo;re getting rejected by &lt;code>middleman&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0# ping -c1 192.168.3.10
+PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
+From 192.168.2.1 icmp_seq=1 Destination Net Unreachable
+--- 192.168.3.10 ping statistics ---
+1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
+&lt;/code>&lt;/pre>&lt;p>We need to tell &lt;code>middleman&lt;/code> what to do with these packets.&lt;/p>
+&lt;h2 id="configure-routing-and-nat-on-middleman">Configure routing and NAT on middleman&lt;/h2>
+&lt;p>In order to achieve our desired connectivity, we need to:&lt;/p>
+&lt;ol>
+&lt;li>Map the &lt;code>192.168.3.0/24&lt;/code> destination address to the equivalent &lt;code>192.168.2.0/24&lt;/code> address &lt;em>before&lt;/em> the kernel makes a routing decision.&lt;/li>
+&lt;li>Map the &lt;code>192.168.2.0/24&lt;/code> source address to the equivalent &lt;code>192.168.3.0/24&lt;/code> address &lt;em>after&lt;/em> the kernel makes a routing decision (so that replies will go back to &amp;ldquo;other&amp;rdquo; side).&lt;/li>
+&lt;li>Ensure that the kernel uses the routing table for the &lt;em>target&lt;/em> network when making routing decisions for these connections.&lt;/li>
+&lt;/ol>
+&lt;p>We can achieve (1) and (2) using the netfilter &lt;a href="https://www.netfilter.org/documentation/HOWTO/netfilter-extensions-HOWTO-4.html#ss4.4">&lt;code>NETMAP&lt;/code>&lt;/a> extension by adding the following two rules:&lt;/p>
+&lt;pre tabindex="0">&lt;code>iptables -t nat -A PREROUTING -d 192.168.3.0/24 -j NETMAP --to 192.168.2.0/24
+iptables -t nat -A POSTROUTING -s 192.168.2.0/24 -j NETMAP --to 192.168.3.0/24
+&lt;/code>&lt;/pre>&lt;p>(For those of you wondering, &amp;ldquo;can we do this using &lt;code>nftables&lt;/code> instead?&amp;rdquo;, as of this writing &lt;a href="https://wiki.nftables.org/wiki-nftables/index.php/Supported_features_compared_to_xtables#NETMAP">&lt;code>nftables&lt;/code> does not appear to have &lt;code>NETMAP&lt;/code> support&lt;/a>, so we have to use &lt;code>iptables&lt;/code> for this step.)&lt;/p>
+&lt;p>With this change in place, re-trying that &lt;code>ping&lt;/code> command on &lt;code>innernode0&lt;/code> will apparently succeed:&lt;/p>
+&lt;pre tabindex="0">&lt;code>innernode0 ping -c1 192.168.3.10
+PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
+64 bytes from 192.168.3.10: icmp_seq=1 ttl=63 time=0.063 ms
+--- 192.168.3.10 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.063/0.063/0.063/0.000 ms
+&lt;/code>&lt;/pre>&lt;p>However, running &lt;code>tcpdump&lt;/code> on &lt;code>middleman&lt;/code> will show us that we haven&amp;rsquo;t yet achieved our goal:&lt;/p>
+&lt;pre tabindex="0">&lt;code>12:59:52.899054 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo request, id 16520, seq 1, length 64
+12:59:52.899077 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo request, id 16520, seq 1, length 64
+12:59:52.899127 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo reply, id 16520, seq 1, length 64
+12:59:52.899130 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16520, seq 1, length 64
+&lt;/code>&lt;/pre>&lt;p>You can see that our packet is coming on on &lt;code>middleman-eth0&lt;/code>&amp;hellip;and going right back out the same interface. We have thus far achieved a very complicated loopback interface.&lt;/p>
+&lt;p>The missing piece is some logic to have the kernel use the routing table for the &amp;ldquo;other side&amp;rdquo; when making routing decisions for these packets. We&amp;rsquo;re going to do that by:&lt;/p>
+&lt;ol>
+&lt;li>Tagging packets with a mark that indicates the interface on which they were recieved&lt;/li>
+&lt;li>Using this mark to select an appropriate routing table&lt;/li>
+&lt;/ol>
+&lt;p>We add the packet mark by adding these rules to the &lt;code>MANGLE&lt;/code> table &lt;code>PREROUTING&lt;/code> chain:&lt;/p>
+&lt;pre tabindex="0">&lt;code>iptables -t mangle -A PREROUTING -i middleman-eth0 -d 192.168.3.0/24 -j MARK --set-mark 100
+iptables -t mangle -A PREROUTING -i middleman-eth1 -d 192.168.3.0/24 -j MARK --set-mark 200
+&lt;/code>&lt;/pre>&lt;p>And we utilize that mark in route lookups by adding the following two route policy rules:&lt;/p>
+&lt;pre tabindex="0">&lt;code>ip rule add prio 100 fwmark 100 lookup 200
+ip rule add prio 200 fwmark 200 lookup 100
+&lt;/code>&lt;/pre>&lt;p>It is critical that these rules come before (aka &amp;ldquo;have a higher priority than&amp;rdquo;, aka &amp;ldquo;have a lower number than&amp;rdquo;) the &lt;code>l3mdev&lt;/code> rule added when we created the VRF devices.&lt;/p>
+&lt;h2 id="validation">Validation&lt;/h2>
+&lt;p>With that last set of changes in place, if we repeat the &lt;code>ping&lt;/code> test from &lt;code>innernode0&lt;/code> to &lt;code>outernode0&lt;/code> and run &lt;code>tcpdump&lt;/code> on &lt;code>middleman&lt;/code>, we see:&lt;/p>
+&lt;pre tabindex="0">&lt;code>13:05:27.667793 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo request, id 16556, seq 1, length 64
+13:05:27.667816 middleman-eth1 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo request, id 16556, seq 1, length 64
+13:05:27.667863 middleman-eth1 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo reply, id 16556, seq 1, length 64
+13:05:27.667868 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16556, seq 1, length 64
+&lt;/code>&lt;/pre>&lt;p>Now we finally see the desired behavior: the request from &lt;code>innernode0&lt;/code> comes in on &lt;code>eth0&lt;/code>, goes out on &lt;code>eth1&lt;/code> with the addresses appropriately mapped and gets delivered to &lt;code>outernode0&lt;/code>. The reply from &lt;code>outernode0&lt;/code> goes through the process in reverse, and arrives back at &lt;code>innernode0&lt;/code>.&lt;/p>
+&lt;h2 id="demo">Demo&lt;/h2>
+&lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
 The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="764815923" type="checkbox" />
-&lt;label for="764815923">
+&lt;input id="613874259" type="checkbox" />
+&lt;label for="613874259">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -67,8 +239,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="439275186" type="checkbox" />
-&lt;label for="439275186">
+&lt;input id="128463759" type="checkbox" />
+&lt;label for="128463759">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -278,8 +450,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="615984237" type="checkbox" />
-&lt;label for="615984237">
+&lt;input id="238451967" type="checkbox" />
+&lt;label for="238451967">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
