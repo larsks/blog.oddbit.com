@@ -1,3 +1,9 @@
 <pre class="mermaid">
+{{ if (.Get "src") }}
+{{ with .Page.Resources.GetMatch (.Get "src") }}
+{{ .Content | safeHTML }}
+{{ end }}
+{{ else }}
 {{.Inner}}
+{{ end }}
 </pre>
