@@ -103,7 +103,7 @@ PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
 --- 192.168.2.1 ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
 rtt min/avg/max/mdev = 0.126/0.126/0.126/0.000 ms
-&lt;/code>&lt;/pre>&lt;p>Similarly, we can reach &lt;code>middleman&lt;/code> from &lt;code>outernode&lt;/code>, but in this case we&amp;rsquo;re communicating with interface &lt;code>middleman-eth0&lt;/code>:&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>Similarly, we can reach &lt;code>middleman&lt;/code> from &lt;code>outernode&lt;/code>, but in this case we&amp;rsquo;re communicating with interface &lt;code>middleman-eth1&lt;/code>:&lt;/p>
 &lt;pre tabindex="0">&lt;code>outernode0# ping -c1 192.168.2.1
 PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
 64 bytes from 192.168.2.1: icmp_seq=1 ttl=64 time=1.02 ms
