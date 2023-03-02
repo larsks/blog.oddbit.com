@@ -65,7 +65,7 @@ able to work around that issue once I realized what was going on.</p><p>On the E
 coordinate address ownership among Kiwi instances. It listens to
 events from Etcd regarding key create/delete/set/etc operations in
 this prefix by calling
-<code>/v2/keys/kiwi/publicips?watch=true&recursive=true</code>. This is a
+<code>/v2/keys/kiwi/publicips?watch=true&amp;recursive=true</code>. This is a
 long-poll request, rather than a streaming request: that means that a
 request will only ever receive a single event, but it may need to wait
 for a while before it receives that response. This model worked well
