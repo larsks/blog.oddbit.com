@@ -147,7 +147,7 @@ homeDirectory: /home/user1
 labeledURI: ldap:///ou=groups,dc=oddbit,dc=com??sub?(&amp;amp;(objectclass=posixgroup)
 (memberuid=user1))
 objectClass: inetOrgPerson
-objectClass: oddPerson
+objectClass: obPerson
 objectClass: posixAccount
 obmemberof: cn=user1,ou=groups,dc=oddbit,dc=com
 obmemberof: cn=staff,ou=groups,dc=oddbit,dc=com
