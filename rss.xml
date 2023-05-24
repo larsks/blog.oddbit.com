@@ -214,8 +214,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="758963142" type="checkbox" />
-&lt;label for="758963142">
+&lt;input id="167423589" type="checkbox" />
+&lt;label for="167423589">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -231,8 +231,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="658137429" type="checkbox" />
-&lt;label for="658137429">
+&lt;input id="823471659" type="checkbox" />
+&lt;label for="823471659">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -257,8 +257,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="287649513" type="checkbox" />
-&lt;label for="287649513">
+&lt;input id="841293675" type="checkbox" />
+&lt;label for="841293675">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -361,8 +361,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="528436197" type="checkbox" />
-&lt;label for="528436197">
+&lt;input id="259381467" type="checkbox" />
+&lt;label for="259381467">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -425,8 +425,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="641973582" type="checkbox" />
-&lt;label for="641973582">
+&lt;input id="157389642" type="checkbox" />
+&lt;label for="157389642">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -636,8 +636,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="781235694" type="checkbox" />
-&lt;label for="781235694">
+&lt;input id="284179536" type="checkbox" />
+&lt;label for="284179536">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -8437,13 +8437,13 @@ order 0
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h1 id="verbose-mode">VERBOSE mode&lt;/h1>
 &lt;p>The first thing to note is that I&amp;rsquo;m using &lt;code>VERBOSE&lt;/code> syntax for both of these expressions. That means that whitespace must be included explicitly in the expression. That&amp;rsquo;s what all of those &lt;code>\s+&lt;/code> markers are &amp;ndash; that means &amp;ldquo;any white space character, one or more times&amp;rdquo;. For example, consider the following simple expression:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The pattern matches the string just fine. But if we were to enable the &lt;code>VERBOSE&lt;/code> flag, the pattern would no longer match:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We would instead need to write it like this:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this \s is \s a \s test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;this \s is \s a \s test&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The advantage to &lt;code>VERBOSE&lt;/code> mode is that you can split your regular expression across multiple lines for legibility:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... this \s
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... is \s
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">... a \s
@@ -8451,24 +8451,24 @@ order 0
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="capture-groups">Capture groups&lt;/h2>
 &lt;p>In order to make it easier to extract information from the results of a match, I&amp;rsquo;m using named capture groups. A &amp;ldquo;capture group&amp;rdquo; is a part of the expression inside parentheses that can be extracted from the resulting match object. Unnamed groups can be extracted using their index. If we wanted to match the phrase &lt;code>this is a &amp;lt;noun&amp;gt;&lt;/code>, rather than &lt;code>this is a test&lt;/code>, and we wanted to extract the noun, we might write something like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_example &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;this is a (\S+)&amp;#39;&lt;/span>)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a frog&amp;#39;&lt;/span>)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>groups()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span> &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;this is a frog&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>groups()
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>(&lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>,)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#ae81ff">1&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#ae81ff">1&lt;/span>)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The expression &lt;code>(\S+)&lt;/code> is a capture group that will match any string of non-whitespace characters. This works fine for a simple expression, but keeping the index straight in a complex expression can be difficult. This is where named capture groups become useful. We could rewrite the above like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_example &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;this is a (?P&amp;lt;noun&amp;gt;\S+)&amp;#39;&lt;/span>)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a frog&amp;#39;&lt;/span>)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>groupdict()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span> &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;this is a frog&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>groupdict()
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>{&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>}
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;frog&amp;#39;&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="non-capture-groups">Non-capture groups&lt;/h2>
 &lt;p>Sometimes, you want to group part of a regular expression in a way that does not result in another capture group. This is what the &lt;code>(?: ...)&lt;/code> expression is for. For example, we we were to write:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_example &lt;span style="color:#f92672">=&lt;/span> re&lt;span style="color:#f92672">.&lt;/span>compile(&lt;span style="color:#e6db74">&amp;#39;this (?:is|was) a (?P&amp;lt;noun&amp;gt;\S+)&amp;#39;&lt;/span>)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then we could match the phrase &lt;code>this is a test&lt;/code> or &lt;code>this was a test&lt;/code>, but we would still only have a single capture group:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>match(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> match&lt;span style="color:#f92672">.&lt;/span>groupdict()
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span> &lt;span style="color:#f92672">=&lt;/span> re_example&lt;span style="color:#f92672">.&lt;/span>&lt;span style="color:#66d9ef">match&lt;/span>(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>groupdict()
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>{&lt;span style="color:#e6db74">&amp;#39;noun&amp;#39;&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;test&amp;#39;&lt;/span>}
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="putting-it-all-together">Putting it all together&lt;/h2>
 &lt;p>With all that in mind, let&amp;rsquo;s take a look at the regular expression in my answer:&lt;/p>
@@ -8514,7 +8514,7 @@ pool-lb-mode topology
 &lt;pre>&lt;code>}
 &lt;/code>&lt;/pre>
 &lt;p>When that expression matches, we end up with a match object that has a &lt;code>pools&lt;/code> match group that will look like this:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;pools&amp;#39;&lt;/span>))
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> print(&lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;pools&amp;#39;&lt;/span>))
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>test1&lt;span style="color:#f92672">-&lt;/span>pool {
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> order &lt;span style="color:#ae81ff">1&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
@@ -8526,7 +8526,7 @@ pool-lb-mode topology
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">(\S+) \s+ { \s+ [^}]* \s+ } \s+
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">&amp;#39;&amp;#39;&amp;#39;&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>re&lt;span style="color:#f92672">.&lt;/span>VERBOSE)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>That has a single capture group (&lt;code>(\S+)&lt;/code>) that will match the pool name; the remainder of the expression takes care of matching the &lt;code>{ &amp;lt;anythingthing not '}'&amp;gt; }&lt;/code> part. We use &lt;code>re.findall&lt;/code> to get &lt;em>all&lt;/em> of the matches in one go:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_pool&lt;span style="color:#f92672">.&lt;/span>findall(match&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;pools&amp;#39;&lt;/span>))
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">&amp;gt;&amp;gt;&amp;gt;&lt;/span> re_pool&lt;span style="color:#f92672">.&lt;/span>findall(&lt;span style="color:#66d9ef">match&lt;/span>&lt;span style="color:#f92672">.&lt;/span>group(&lt;span style="color:#e6db74">&amp;#39;pools&amp;#39;&lt;/span>))
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>[&lt;span style="color:#e6db74">&amp;#39;test1-pool&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;test2-pool&amp;#39;&lt;/span>]
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And that&amp;rsquo;s it!&lt;/p>
 &lt;h2 id="for-more-information">For more information&lt;/h2>
