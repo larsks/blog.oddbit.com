@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>routing on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/routing/</link><description>Recent content in routing on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/routing/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>routing on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/routing/</link><description>Recent content in routing on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/routing/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
 &amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range 192.168.3.0/24, and similarly for communication in the other direction?</description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
 &lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="the-problem.svg" alt="two networks with the same address range connected by a host named &amp;amp;ldquo;middleman&amp;amp;rdquo;">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
@@ -207,8 +207,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="581674932" type="checkbox" />
-&lt;label for="581674932">
+&lt;input id="481592367" type="checkbox" />
+&lt;label for="481592367">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -271,8 +271,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="984273651" type="checkbox" />
-&lt;label for="984273651">
+&lt;input id="859376241" type="checkbox" />
+&lt;label for="859376241">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -482,8 +482,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="578123694" type="checkbox" />
-&lt;label for="578123694">
+&lt;input id="759816342" type="checkbox" />
+&lt;label for="759816342">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
