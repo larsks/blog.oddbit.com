@@ -9,8 +9,8 @@ c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fc
 #<a href=https://blog.oddbit.com/tags/routing/>routing</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/ebpf/>ebpf</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/pwru/>pwru</a>&nbsp;</span>
-<img src=/post/2023-02-14-whos-got-the-packet/cover.jpg class=post-cover alt="Packet, packet, who's got the packet?" title="Cover Image"><div class=post-content><div><p>In <a href=https://unix.stackexchange.com/q/735522/4989>this question</a>, August Vrubel has some C code that sets up a <a href=https://docs.kernel.org/networking/tuntap.html>tun</a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&rsquo;d like to take a slightly extended look at <a href=https://unix.stackexchange.com/a/735534/4989>my answer</a> because I think it&rsquo;s a great opportunity for learning a bit more about performing network diagnostics.</p><p>The original code looked like this:</p><div class=collapsable-code><input id=671523849 type=checkbox>
-<label for=671523849><span class=collapsable-code__language>c</span>
+<img src=/post/2023-02-14-whos-got-the-packet/cover.jpg class=post-cover alt="Packet, packet, who's got the packet?" title="Cover Image"><div class=post-content><div><p>In <a href=https://unix.stackexchange.com/q/735522/4989>this question</a>, August Vrubel has some C code that sets up a <a href=https://docs.kernel.org/networking/tuntap.html>tun</a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&rsquo;d like to take a slightly extended look at <a href=https://unix.stackexchange.com/a/735534/4989>my answer</a> because I think it&rsquo;s a great opportunity for learning a bit more about performing network diagnostics.</p><p>The original code looked like this:</p><div class=collapsable-code><input id=467215839 type=checkbox>
+<label for=467215839><span class=collapsable-code__language>c</span>
 <span class=collapsable-code__title>original sendpacket.c</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
 
@@ -79,8 +79,8 @@ int main() {
 
 
 
-</code></pre></div><p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&rsquo;s going on.</p><p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the <code>tun</code> interface (and also some minimal error checking), giving us:</p><div class=collapsable-code><input id=537862941 type=checkbox>
-<label for=537862941><span class=collapsable-code__language>c</span>
+</code></pre></div><p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&rsquo;s going on.</p><p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the <code>tun</code> interface (and also some minimal error checking), giving us:</p><div class=collapsable-code><input id=478961235 type=checkbox>
+<label for=478961235><span class=collapsable-code__language>c</span>
 <span class=collapsable-code__title>sendpacket.c with prompts and error checking</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
 
@@ -277,8 +277,8 @@ interface is up
 </code></pre><p>And if we repeat our earlier test in which we use <code>tcpdump</code> to watch for our synthesized packet on any interface, we now see the desired behavior:</p><pre tabindex=0><code># tcpdump -nn -i any port 10001
 23:37:55.897786 tun0  In  IP 172.30.0.1.41626 &gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
 23:37:55.897816 eth0  Out IP 172.30.0.1.41626 &gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
-</code></pre><p>The packet is correctly handled by the kernel and sent out to our default gateway.</p><h2 id=finishing-up>Finishing up<a href=#finishing-up class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The final version of the code looks like this:</p><div class=collapsable-code><input id=329647158 type=checkbox>
-<label for=329647158><span class=collapsable-code__language>c</span>
+</code></pre><p>The packet is correctly handled by the kernel and sent out to our default gateway.</p><h2 id=finishing-up>Finishing up<a href=#finishing-up class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The final version of the code looks like this:</p><div class=collapsable-code><input id=842761953 type=checkbox>
+<label for=842761953><span class=collapsable-code__language>c</span>
 <span class=collapsable-code__title>working sendpacket.c</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
 
