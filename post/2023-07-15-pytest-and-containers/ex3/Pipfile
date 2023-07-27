@@ -1,0 +1,14 @@
+[[source]]
+url = "http://devpi.internal/root/pypi/+simple/"
+verify_ssl = false
+name = "pip_conf_index_install"
+
+[packages]
+docker = "*"
+"mysql.connector" = "*"
+pytest = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

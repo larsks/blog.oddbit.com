@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>fixtures on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/fixtures/</link><description>Recent content in fixtures on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 15 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/fixtures/rss.xml" rel="self" type="application/rss+xml"/><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>A software fixture &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in Pytest to create and tear down containers as part of a test run.</description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
+&lt;h2 id="pytest-fixtures">Pytest Fixtures&lt;/h2>
+&lt;p>Pytest &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html">fixtures&lt;/a> are created through the use of the &lt;code>fixture&lt;/code> decorator. A fixture is accessed by including a function parameter with the fixture name in our test functions. For example, if we define an &lt;code>example&lt;/code> fixture:&lt;/p>
+&lt;pre tabindex="0">&lt;code>@pytest.fixture
+def example():
+return &amp;#34;hello world&amp;#34;
+&lt;/code>&lt;/pre>&lt;p>Then we can write a test function like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>def test_something(example):
+...
+&lt;/code>&lt;/pre>&lt;p>And it will receive the string &amp;ldquo;hello world&amp;rdquo; as the value of the &lt;code>example&lt;/code> parameter.&lt;/p>
+&lt;p>There are a number of built-in fixtures available; for example, the &lt;code>tmp_path&lt;/code> fixture provides access to a temporary directory that is unique to each test function. The following function would create a file named &lt;code>myfile&lt;/code> in the temporary directory; the file (in fact, the entire directory) will be removed automatically when the function completes:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">test_something&lt;/span>(tmp_path):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">with&lt;/span> (tmp_path &lt;span style="color:#f92672">/&lt;/span> &lt;span style="color:#e6db74">&amp;#34;myfile&amp;#34;&lt;/span>)&lt;span style="color:#f92672">.&lt;/span>open() &lt;span style="color:#66d9ef">as&lt;/span> fd:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> fd&lt;span style="color:#f92672">.&lt;/span>write(&lt;span style="color:#e6db74">&amp;#39;this is a test&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>A fixture can declare a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#scope-sharing-fixtures-across-classes-modules-packages-or-session">scope&lt;/a>; the default is the &lt;code>function&lt;/code> scope &amp;ndash; a new value will be generated for each function. A fixture can also be declared with a scope of &lt;code>class&lt;/code>, &lt;code>module&lt;/code>, &lt;code>package&lt;/code>, or &lt;code>session&lt;/code> (where &amp;ldquo;session&amp;rdquo; means, effectively, a distinct run of &lt;code>pytest&lt;/code>).&lt;/p>
+&lt;p>Fixtures can be located in the same files as your tests, or they can be placed in a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#scope-sharing-fixtures-across-classes-modules-packages-or-session">&lt;code>conftest.py&lt;/code>&lt;/a> file where they can be shared between multiple sets of tests.&lt;/p>
+&lt;h2 id="communicating-with-docker">Communicating with Docker&lt;/h2>
+&lt;p>In order to manage containers as part of the test process we&amp;rsquo;re going to need to interact with Docker. While we could call out to the &lt;code>docker&lt;/code> CLI from our tests, a more graceful solution is to use the &lt;a href="https://docker-py.readthedocs.io/en/stable/">Docker client for Python&lt;/a>. That means we&amp;rsquo;ll need a Docker client instance, so we start with a very simple fixture:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>(scope&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;session&amp;#34;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">docker_client&lt;/span>():
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&amp;#34;Return a Docker client&amp;#34;&amp;#34;&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> docker&lt;span style="color:#f92672">.&lt;/span>from_env()
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This returns a Docker client initialized using values from the environment (in other words, it behaves very much like the &lt;code>docker&lt;/code> cli).&lt;/p>
+&lt;p>I&amp;rsquo;ve made this a &lt;code>session&lt;/code> scoped fixture (which means we create one Docker client object at per pytest run, and every test using this fixture will receive the same object). This makes sense in general because a Docker client is stateless; there isn&amp;rsquo;t any data we need to reset between tests.&lt;/p>
+&lt;h2 id="starting-a-container-version-1">Starting a container, version 1&lt;/h2>
+&lt;p>For the purposes of this article, let&amp;rsquo;s assume we want to spin up a MariaDB server in a container. From the command line we might run something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>docker run -d \
+-e MARIADB_ROOT_PASSWORD=secret \
+-e MARIADB_USER=testuser \
+-e MARIADB_DATABASE=testdb \
+mariadb:10
+&lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="618427395" type="checkbox" />
+&lt;label for="618427395">
+&lt;span class="collapsable-code__language">python&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-python" >&lt;code>
+import docker
+import pytest
+@pytest.fixture
+def mariadb_container(
+docker_client,
+):
+&amp;#34;&amp;#34;&amp;#34;Create a MariaDB container&amp;#34;&amp;#34;&amp;#34;
+container = docker_client.containers.run(
+&amp;#34;docker.io/mariadb:11&amp;#34;,
+detach=True,
+environment={
+&amp;#34;MARIADB_ROOT_PASSWORD&amp;#34;: &amp;#34;secret&amp;#34;,
+&amp;#34;MYSQL_PWD&amp;#34;: &amp;#34;secret&amp;#34;,
+&amp;#34;MARIADB_DATABASE&amp;#34;: &amp;#34;testdb&amp;#34;,
+},
+)
+return container
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>This works, but it&amp;rsquo;s not great. In particular, the container we create will hang around until we remove it manually, since we didn&amp;rsquo;t arrange to remove the container on completion. Since this is a &lt;code>function&lt;/code> scoped fixture, we would end up with one container per test (potentially leading to hundreds of containers running for a large test suite).&lt;/p>
+&lt;h2 id="starting-a-container-version-2">Starting a container, version 2&lt;/h2>
+&lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
+&lt;p>That might look like:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="432876951" type="checkbox" />
+&lt;label for="432876951">
+&lt;span class="collapsable-code__language">python&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-python" >&lt;code>
+import docker
+import pytest
+@pytest.fixture
+def mariadb_container(
+docker_client,
+):
+&amp;#34;&amp;#34;&amp;#34;Create a MariaDB container&amp;#34;&amp;#34;&amp;#34;
+container = docker_client.containers.run(
+&amp;#34;docker.io/mariadb:11&amp;#34;,
+detach=True,
+environment={
+&amp;#34;MARIADB_ROOT_PASSWORD&amp;#34;: &amp;#34;secret&amp;#34;,
+&amp;#34;MYSQL_PWD&amp;#34;: &amp;#34;secret&amp;#34;,
+&amp;#34;MARIADB_DATABASE&amp;#34;: &amp;#34;testdb&amp;#34;,
+},
+)
+yield container
+container.remove(force=True)
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="768352194" type="checkbox" />
+&lt;label for="768352194">
+&lt;span class="collapsable-code__language">python&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-python" >&lt;code>
+import mysql.connector
+def test_simple_select(mariadb_container):
+# get the address of the mariadb container
+mariadb_container.reload()
+addr = mariadb_container.attrs[&amp;#34;NetworkSettings&amp;#34;][&amp;#34;Networks&amp;#34;][&amp;#34;bridge&amp;#34;][&amp;#34;IPAddress&amp;#34;]
+# create a connection objects
+conn = mysql.connector.connect(
+host=addr, user=&amp;#34;root&amp;#34;, password=&amp;#34;secret&amp;#34;, database=&amp;#34;testdb&amp;#34;
+)
+# try a simple select statement
+curs = conn.cursor()
+curs.execute(&amp;#34;select 1&amp;#34;)
+res = curs.fetchone()
+assert res[0] == 1
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>First of all, that&amp;rsquo;s not a great test; there&amp;rsquo;s too much setup happening in the test that we would have to repeat before every additional test. And more importantly, if you were to try to run that test it would probably fail with:&lt;/p>
+&lt;pre tabindex="0">&lt;code>E mysql.connector.errors.InterfaceError: 2003: Can&amp;#39;t connect to MySQL
+server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
+&lt;/code>&lt;/pre>&lt;p>The problem is that when we start the MariaDB container, MariaDB isn&amp;rsquo;t ready to handle connections immediately. It takes a couple of seconds after starting the container before the server is ready. Because we haven&amp;rsquo;t accounted for that in our test, there&amp;rsquo;s nothing listening when we try to connect.&lt;/p>
+&lt;h2 id="a-step-back-and-a-moving-forward">A step back and a moving forward&lt;/h2>
+&lt;p>To resolve the issues in the previous example, let&amp;rsquo;s first take a step back. For our test, we don&amp;rsquo;t actually &lt;em>want&lt;/em> a container; what we want is the ability to perform SQL queries in our test with a minimal amount of boilerplate. Ideally, our test would look more like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">test_simple_select&lt;/span>(mariadb_cursor):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> curs&lt;span style="color:#f92672">.&lt;/span>execute(&lt;span style="color:#e6db74">&amp;#39;select 1&amp;#39;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> res &lt;span style="color:#f92672">=&lt;/span> curs&lt;span style="color:#f92672">.&lt;/span>fetchone()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">assert&lt;/span> res[&lt;span style="color:#ae81ff">0&lt;/span>] &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>How do we get there?&lt;/p>
+&lt;p>Working backwards, we would need a &lt;code>mariadb_cursor&lt;/code> fixture:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_cursor&lt;/span>(&lt;span style="color:#f92672">...&lt;/span>):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">...&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>But to get a database cursor, we need a database connection:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_connection&lt;/span>(&lt;span style="color:#f92672">...&lt;/span>):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">...&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And to create a database connection, we need to know the address of the database server:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_host&lt;/span>(&lt;span style="color:#f92672">...&lt;/span>):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">...&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Let&amp;rsquo;s start filling in all those ellipses.&lt;/p>
+&lt;p>What would the &lt;code>mariadb_host&lt;/code> fixture look like? We saw in our earlier test code how to get the address of a Docker container. Much like the situation with the database server, we want to account for the fact that it might take a nonzero amount of time for the container network setup to complete, so we can use a simple loop in which we check for the address and return it if it&amp;rsquo;s available, otherwise sleep a bit and try again:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_host&lt;/span>(mariadb_container):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">while&lt;/span> &lt;span style="color:#66d9ef">True&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> mariadb_container&lt;span style="color:#f92672">.&lt;/span>reload()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">try&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> networks &lt;span style="color:#f92672">=&lt;/span> list(
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> mariadb_container&lt;span style="color:#f92672">.&lt;/span>attrs[&lt;span style="color:#e6db74">&amp;#34;NetworkSettings&amp;#34;&lt;/span>][&lt;span style="color:#e6db74">&amp;#34;Networks&amp;#34;&lt;/span>]&lt;span style="color:#f92672">.&lt;/span>values()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> )
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> addr &lt;span style="color:#f92672">=&lt;/span> networks[&lt;span style="color:#ae81ff">0&lt;/span>][&lt;span style="color:#e6db74">&amp;#34;IPAddress&amp;#34;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> addr
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">except&lt;/span> &lt;span style="color:#a6e22e">KeyError&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> time&lt;span style="color:#f92672">.&lt;/span>sleep(&lt;span style="color:#ae81ff">0.5&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This works by repeatedly refreshing information about the container until we can find an ip address.&lt;/p>
+&lt;p>Now that we have the address of the database server, we can create a connection:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_connection&lt;/span>(mariadb_host):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">while&lt;/span> &lt;span style="color:#66d9ef">True&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">try&lt;/span>:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> conn &lt;span style="color:#f92672">=&lt;/span> mysql&lt;span style="color:#f92672">.&lt;/span>connector&lt;span style="color:#f92672">.&lt;/span>connect(
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> host&lt;span style="color:#f92672">=&lt;/span>mariadb_host, user&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;root&amp;#34;&lt;/span>, password&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;secret&amp;#34;&lt;/span>, database&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;testdb&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> )
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> conn
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">except&lt;/span> mysql&lt;span style="color:#f92672">.&lt;/span>connector&lt;span style="color:#f92672">.&lt;/span>errors&lt;span style="color:#f92672">.&lt;/span>InterfaceError:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> time&lt;span style="color:#f92672">.&lt;/span>sleep(&lt;span style="color:#ae81ff">1&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The logic here is very similar; we keep attempting to establish a connection until we&amp;rsquo;re successful, at which point we return the connection object.&lt;/p>
+&lt;p>Now that we have a fixture that gives us a functioning database connection, we can use that to acquire a cursor:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">from&lt;/span> contextlib &lt;span style="color:#f92672">import&lt;/span> closing
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_cursor&lt;/span>(mariadb_connection):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">with&lt;/span> closing(mariadb_connection&lt;span style="color:#f92672">.&lt;/span>cursor()) &lt;span style="color:#66d9ef">as&lt;/span> cursor:
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">yield&lt;/span> cursor
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;a href="https://docs.python.org/3/library/contextlib.html#contextlib.closing">&lt;code>closing&lt;/code>&lt;/a> method from the &lt;code>contextlib&lt;/code> module returns a &lt;a href="https://docs.python.org/3/library/stdtypes.html#context-manager-types">context manager&lt;/a> that calls the &lt;code>close&lt;/code> method on the given object when leaving the &lt;code>with&lt;/code> context; this ensures that the cursor is closed when we&amp;rsquo;re done with it. We could have accomplished the same thing by writing this instead:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_cursor&lt;/span>(mariadb_connection):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor &lt;span style="color:#f92672">=&lt;/span> mariadb_connection&lt;span style="color:#f92672">.&lt;/span>cursor()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">yield&lt;/span> cursor
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="432675981" type="checkbox" />
+&lt;label for="432675981">
+&lt;span class="collapsable-code__language">python&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-python" >&lt;code>
+import pytest
+import docker
+import time
+import mysql.connector
+from contextlib import closing
+@pytest.fixture(scope=&amp;#34;session&amp;#34;)
+def docker_client():
+&amp;#34;&amp;#34;&amp;#34;Return a Docker client&amp;#34;&amp;#34;&amp;#34;
+return docker.from_env()
+@pytest.fixture
+def mariadb_container(
+docker_client,
+):
+&amp;#34;&amp;#34;&amp;#34;Create a MariaDB container&amp;#34;&amp;#34;&amp;#34;
+container = docker_client.containers.run(
+&amp;#34;docker.io/mariadb:11&amp;#34;,
+detach=True,
+environment={
+&amp;#34;MARIADB_ROOT_PASSWORD&amp;#34;: &amp;#34;secret&amp;#34;,
+&amp;#34;MYSQL_PWD&amp;#34;: &amp;#34;secret&amp;#34;,
+&amp;#34;MARIADB_DATABASE&amp;#34;: &amp;#34;testdb&amp;#34;,
+},
+)
+yield container
+container.remove(force=True)
+@pytest.fixture
+def mariadb_host(mariadb_container):
+while True:
+mariadb_container.reload()
+try:
+networks = list(
+mariadb_container.attrs[&amp;#34;NetworkSettings&amp;#34;][&amp;#34;Networks&amp;#34;].values()
+)
+addr = networks[0][&amp;#34;IPAddress&amp;#34;]
+return addr
+except KeyError:
+time.sleep(0.5)
+@pytest.fixture
+def mariadb_connection(mariadb_host):
+while True:
+try:
+conn = mysql.connector.connect(
+host=mariadb_host, user=&amp;#34;root&amp;#34;, password=&amp;#34;secret&amp;#34;, database=&amp;#34;testdb&amp;#34;
+)
+return conn
+except mysql.connector.errors.InterfaceError:
+time.sleep(1)
+@pytest.fixture
+def mariadb_cursor(mariadb_connection):
+with closing(mariadb_connection.cursor()) as cursor:
+yield cursor
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="495713286" type="checkbox" />
+&lt;label for="495713286">
+&lt;span class="collapsable-code__language">python&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-python" >&lt;code>
+def test_simple_select(mariadb_cursor):
+mariadb_cursor.execute(&amp;#34;select 1&amp;#34;)
+res = mariadb_cursor.fetchone()
+assert res[0] == 1
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>So we&amp;rsquo;ve accomplished our goal.&lt;/p>
+&lt;h2 id="additional-improvements">Additional improvements&lt;/h2>
+&lt;h3 id="things-were-ignoring">Things we&amp;rsquo;re ignoring&lt;/h3>
+&lt;p>In order to keep this post to a reasonable size, we haven&amp;rsquo;t bothered to create an actual application, which means we haven&amp;rsquo;t had to worry about things like initializing the database schema. In reality, we would probably handle that in a new or existing fixture.&lt;/p>
+&lt;h3 id="replaced-hardcoded-values">Replaced hardcoded values&lt;/h3>
+&lt;p>While our fixture does the job, we&amp;rsquo;re using a number of hardcoded values (for the username, the database name, the password, etc). This isn&amp;rsquo;t inherently bad for a test environment, but it can sometimes mask errors in our code (for example, if we pick values that match default values in our code, we might miss errors that crop up when using non-default values).&lt;/p>
+&lt;p>We can replace fixed strings with fixtures that produce random values (or values with a random component, if we want something a little more human readable). In the following example, we have a &lt;code>random_string&lt;/code> fixture that produces an 8 character random string, and then we use that to produce a password and a database name:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> string
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> random
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">random_string&lt;/span>():
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>&lt;span style="color:#f92672">.&lt;/span>join(random&lt;span style="color:#f92672">.&lt;/span>choices(string&lt;span style="color:#f92672">.&lt;/span>ascii_letters &lt;span style="color:#f92672">+&lt;/span> string&lt;span style="color:#f92672">.&lt;/span>digits, k&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">8&lt;/span>))
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_dbpass&lt;/span>(random_string):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#34;secret-&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>random_string&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_dbname&lt;/span>(random_string):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#34;testdb-&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>random_string&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We would incorporate these into our existing fixtures wherever we need the database password or name:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">@pytest.fixture&lt;/span>(scope&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;session&amp;#34;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">mariadb_container&lt;/span>(
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> docker_client,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> random_string,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> mariadb_dbpass,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> mariadb_dbname,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>):
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&amp;#34;Create a MariaDB container&amp;#34;&amp;#34;&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> container &lt;span style="color:#f92672">=&lt;/span> docker_client&lt;span style="color:#f92672">.&lt;/span>containers&lt;span style="color:#f92672">.&lt;/span>run(
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;docker.io/mariadb:11&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> name&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#34;mariadb-test-&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>random_string&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> detach&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> environment&lt;span style="color:#f92672">=&lt;/span>{
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;MARIADB_ROOT_PASSWORD&amp;#34;&lt;/span>: mariadb_dbpass,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;MYSQL_PWD&amp;#34;&lt;/span>: mariadb_dbpass,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;MARIADB_DATABASE&amp;#34;&lt;/span>: mariadb_dbname,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> )
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">yield&lt;/span> container
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> container&lt;span style="color:#f92672">.&lt;/span>remove(force&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>(and so forth)&lt;/p>
+&lt;h3 id="consider-a-session-scoped-container">Consider a session scoped container&lt;/h3>
+&lt;p>The fixtures we&amp;rsquo;ve developed in this post have all been &lt;code>function&lt;/code> scoped, which means that we&amp;rsquo;re creating and tearing down a container for every single function. This will substantially increase the runtime of our tests. We may want to consider using &lt;code>session&lt;/code> scoped fixtures instead; this would bring up a container and it use it for all our tests, only cleaning it up at the end of the test run.&lt;/p>
+&lt;p>The advantage here is that the impact on the test run time is minimal. The disadvantage is that we have to be very careful about the interaction between tests, since we would no longer be starting each test with a clean version of the database.&lt;/p>
+&lt;p>Keep in mind that in Pytest, a fixture can only reference other fixtures that come from the same or &amp;ldquo;broader&amp;rdquo; scope (so, a &lt;code>function&lt;/code> scoped fixture can use a &lt;code>session&lt;/code> scoped fixture, but the opposite is not true). In particular, that means if we were to make our &lt;code>mariadb_container&lt;/code> fixture &lt;code>session&lt;/code>-scoped, we would need to make the same change to its dependencies (&lt;code>mariadb_dbname&lt;/code>, &lt;code>mariadb_dbpass&lt;/code>, etc).&lt;/p>
+&lt;hr>
+&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="ex3/conftest.py">here&lt;/a>.&lt;/p></content></item></channel></rss>
