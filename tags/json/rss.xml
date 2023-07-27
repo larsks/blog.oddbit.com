@@ -1,4 +1,70 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>json on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/json/</link><description>Recent content in json on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 17 Nov 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/json/rss.xml" rel="self" type="application/rss+xml"/><item><title>json-tools: cli for generating and filtering json</title><link>https://blog.oddbit.com/post/2013-11-17-json-tools/</link><pubDate>Sun, 17 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-17-json-tools/</guid><description>Interacting with JSON-based APIs from the command line can be difficult, and OpenStack is filled with REST APIs that consume or produce JSON. I&amp;rsquo;ve just put pair of tools for generating and filtering JSON on the command line, called collectively json-tools.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>json on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/json/</link><description>Recent content in json on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 27 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/json/rss.xml" rel="self" type="application/rss+xml"/><item><title>Processing deeply nested JSON with jq streams</title><link>https://blog.oddbit.com/post/2023-07-27-jq-streams/</link><pubDate>Thu, 27 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-27-jq-streams/</guid><description>I recently found myself wanting to perform a few transformations on a large OpenAPI schema. In particular, I wanted to take the schema available from the /openapi/v2 endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the description attributes.
+The first task is relatively easy, since everything of interest exists at the same level in the schema. If I want one or more specific definitions, I can simply ask for those by key.</description><content>&lt;p>I &lt;a href="https://stackoverflow.com/a/76762619/147356">recently&lt;/a> found myself wanting to perform a few transformations on a large &lt;a href="https://www.openapis.org/">OpenAPI&lt;/a> schema. In particular, I wanted to take the schema available from the &lt;code>/openapi/v2&lt;/code> endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the &lt;code>description&lt;/code> attributes.&lt;/p>
+&lt;p>The first task is relatively easy, since everything of interest exists at the same level in the schema. If I want one or more specific definitions, I can simply ask for those by key. For example, if I want the definition of a &lt;a href="https://docs.openshift.com/container-platform/4.13/rest_api/workloads_apis/deploymentconfig-apps-openshift-io-v1.html">&lt;code>DeploymentConfig&lt;/code>&lt;/a> object, I can run:&lt;/p>
+&lt;pre tabindex="0">&lt;code>jq &amp;#39;.definitions.&amp;#34;com.github.openshift.api.apps.v1.DeploymentConfig&amp;#34;&amp;#39; &amp;lt; openapi.json
+&lt;/code>&lt;/pre>&lt;p>So simple! And so wrong! Because while that does extract the required definition, that definition is not self-contained: it refers to &lt;em>other&lt;/em> definitions via &lt;a href="https://json-schema.org/understanding-json-schema/structuring.html#ref">&lt;code>$ref&lt;/code>&lt;/a> pointers. The &lt;em>real&lt;/em> solution would require code that parses the schema, resolves all the &lt;code>$ref&lt;/code> pointers, and spits out a fully resolved schema. Fortunately, in this case we can get what we need by asking for schemas matching a few specific prefixes. Using &lt;code>jq&lt;/code>, we can match keys against a prefix by:&lt;/p>
+&lt;ul>
+&lt;li>Using the &lt;code>to_entries&lt;/code> filter to transform a dictionary into a list of &lt;code>{&amp;quot;key&amp;quot;: ..., &amp;quot;value&amp;quot;: ...}&lt;/code> dictionaries, and then&lt;/li>
+&lt;li>Using &lt;code>select&lt;/code> with the &lt;code>startswith&lt;/code> function to match specific keys, and finally&lt;/li>
+&lt;li>Reconstructing the data with &lt;code>from_entries&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>Which looks like:&lt;/p>
+&lt;pre tabindex="0">&lt;code>jq &amp;#39;[.definitions|to_entries[]|select(
+(.key|startswith(&amp;#34;com.github.openshift.api.apps.v1.Deployment&amp;#34;)) or
+(.key|startswith(&amp;#34;io.k8s.apimachinery&amp;#34;)) or
+(.key|startswith(&amp;#34;io.k8s.api.core&amp;#34;))
+)]|from_entries&amp;#39; &amp;lt; openapi.json
+&lt;/code>&lt;/pre>&lt;p>That works, but results in almost 500KB of output, which seems excessive. We could further reduce the size of the document by removing all the &lt;code>description&lt;/code> elements, but here is where things get tricky: &lt;code>description&lt;/code> attributes can occur throughout the schema hierarchy, so we can&amp;rsquo;t use a simple path (&lt;code>...|del(.value.description)&lt;/code> to remove them.&lt;/p>
+&lt;p>A simple solution is to use sed:&lt;/p>
+&lt;pre tabindex="0">&lt;code>jq ... | sed &amp;#39;/&amp;#34;description&amp;#34;/d&amp;#39;
+&lt;/code>&lt;/pre>&lt;p>While normally I would never use &lt;code>sed&lt;/code> for processing JSON, that actually works in this case: because we&amp;rsquo;re first running the JSON document through &lt;code>jq&lt;/code>, we can be confident about the formatting of the document being passed through &lt;code>sed&lt;/code>, and anywhere the string &lt;code>&amp;quot;description&amp;quot;&lt;/code> is contained in the value of an attribute the quotes will be escaped so we would see &lt;code>\&amp;quot;description\&amp;quot;&lt;/code>.&lt;/p>
+&lt;p>We could stop here and things would be just fine&amp;hellip;but I was looking for a way to perform the same operation in a structured fashion. What I really wanted was an equivalent to xpath&amp;rsquo;s &lt;code>//&lt;/code> operator (e.g., the path &lt;code>//description&lt;/code> would find all &lt;code>&amp;lt;description&amp;gt;&lt;/code> elements in a document, regardless of how deeply they were nested), but no such equivalent exists in &lt;code>jq&lt;/code>. Then I came across the &lt;code>tostream&lt;/code> filter, which is really neat: it transforms a JSON document into a sequence of &lt;code>[path, leaf-value]&lt;/code> nodes (or &lt;code>[path]&lt;/code> to indicate the end of an array or object).&lt;/p>
+&lt;p>That probably requires an example. The document:&lt;/p>
+&lt;pre tabindex="0">&lt;code>{
+&amp;#34;name&amp;#34;: &amp;#34;gizmo&amp;#34;,
+&amp;#34;color&amp;#34;: &amp;#34;red&amp;#34;,
+&amp;#34;count&amp;#34;: {
+&amp;#34;local&amp;#34;: 1,
+&amp;#34;warehouse&amp;#34;: 3
+}
+}
+&lt;/code>&lt;/pre>&lt;p>When converted into a stream becomes:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[[&amp;#34;name&amp;#34;],&amp;#34;gizmo&amp;#34;]
+[[&amp;#34;color&amp;#34;],&amp;#34;red&amp;#34;]
+[[&amp;#34;count&amp;#34;,&amp;#34;local&amp;#34;],1]
+[[&amp;#34;count&amp;#34;,&amp;#34;warehouse&amp;#34;],3]
+[[&amp;#34;count&amp;#34;,&amp;#34;warehouse&amp;#34;]]
+[[&amp;#34;count&amp;#34;]]
+&lt;/code>&lt;/pre>&lt;p>You can see how each attribute is represented by a tuple. For example, for &lt;code>.count.local&lt;/code>, the first element of the tuple is &lt;code>[&amp;quot;count&amp;quot;, &amp;quot;local&amp;quot;]&lt;/code>, representing that path to the value in the document, and the second element is the value itself (&lt;code>1&lt;/code>). The &amp;ldquo;end&amp;rdquo; of an object is indicated by a 1-tuple (&lt;code>[path]&lt;/code>), such as &lt;code>[[&amp;quot;count&amp;quot;]]&lt;/code> at the end of this example.&lt;/p>
+&lt;p>If we convert the OpenAPI schema to a stream, we&amp;rsquo;ll end up with nodes for the &lt;code>description&lt;/code> attributes that look like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>[
+[
+&amp;#34;com.github.openshift.api.apps.v1.DeploymentCause&amp;#34;,
+&amp;#34;properties&amp;#34;,
+&amp;#34;imageTrigger&amp;#34;,
+&amp;#34;description&amp;#34;
+],
+&amp;#34;ImageTrigger contains the image trigger details, if this trigger was fired based on an image change&amp;#34;
+]
+&lt;/code>&lt;/pre>&lt;p>To match those, we need to look for nodes for which the last element of the first item is &lt;code>description&lt;/code>. That is:&lt;/p>
+&lt;pre tabindex="0">&lt;code>...|tostream|select(.[0][-1]==&amp;#34;description&amp;#34;))
+&lt;/code>&lt;/pre>&lt;p>Of course, we don&amp;rsquo;t want to &lt;em>select&lt;/em> those nodes; we want to delete them:&lt;/p>
+&lt;pre tabindex="0">&lt;code>...|tostream|del(select(.[0][-1]==&amp;#34;description&amp;#34;)))
+&lt;/code>&lt;/pre>&lt;p>And lastly, we need to feed the result back to the &lt;code>fromstream&lt;/code> function to reconstruct the document. Putting all of that together &amp;ndash; and populating some required top-level keys so that we end up with a valid OpenAPI schema &amp;ndash; looks like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>jq &amp;#39;
+fromstream(
+{
+&amp;#34;swagger&amp;#34;: .swagger,
+&amp;#34;definitions&amp;#34;: [
+.definitions|to_entries[]|select(
+(.key|startswith(&amp;#34;com.github.openshift.api.apps.v1.Deployment&amp;#34;)) or
+(.key|startswith(&amp;#34;io.k8s.apimachinery&amp;#34;)) or
+(.key|startswith(&amp;#34;io.k8s.api.core&amp;#34;))
+)]|from_entries
+}|tostream|del(select(.[0][-1]==&amp;#34;description&amp;#34;))|select(. != null)
+)
+&amp;#39;
+&lt;/code>&lt;/pre>&lt;p>In my environment, this reduces the size of the resulting file from about 500KB to around 175KB.&lt;/p></content></item><item><title>json-tools: cli for generating and filtering json</title><link>https://blog.oddbit.com/post/2013-11-17-json-tools/</link><pubDate>Sun, 17 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-17-json-tools/</guid><description>Interacting with JSON-based APIs from the command line can be difficult, and OpenStack is filled with REST APIs that consume or produce JSON. I&amp;rsquo;ve just put pair of tools for generating and filtering JSON on the command line, called collectively json-tools.
 Both make use of the Python dpath module to populate or filter JSON objects.
 The jsong command generates JSON on stdout. You provide /-delimited paths on the command line to represent the JSON structure.</description><content>&lt;p>Interacting with JSON-based APIs from the command line can be
 difficult, and OpenStack is filled with REST APIs that consume or
