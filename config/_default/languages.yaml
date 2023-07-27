@@ -1,8 +1,8 @@
 en:
   title: "blog.oddbit.com"
   copyright: "Lars Kellogg-Stedman"
-  readMore: "read more"
   params:
+    readMore: "read more"
     logo:
       logoText: "the odd bit blog"
       logoHomeLink: "/"
