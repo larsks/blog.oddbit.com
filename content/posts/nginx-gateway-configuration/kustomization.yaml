@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonLabels:
+  nginxGatewayVersion: v1.0.0
+
+resources:
+- https://github.com/nginxinc/nginx-gateway-fabric/releases/download/v1.0.0/crds.yaml
+- https://github.com/nginxinc/nginx-gateway-fabric/releases/download/v1.0.0/nginx-gateway.yaml
+- https://raw.githubusercontent.com/nginxinc/nginx-gateway-fabric/v1.0.0/deploy/manifests/service/nodeport.yaml
+
+patches:
+- patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: nginx-gateway
+      namespace: nginx-gateway
+    spec:
+      template:
+        spec:
+          containers:
+            - name: nginx
+              volumeMounts:
+                - mountPath: /etc/nginx/nginx.conf
+                  name: nginx-conf-override
+                  subPath: nginx.conf
+          volumes:
+            - name: nginx-conf-override
+              configMap:
+                name: nginx-conf-override
+
+configMapGenerator:
+  - name: nginx-conf-override
+    namespace: nginx-gateway
+    options:
+      disableNameSuffixHash: true
+    files:
+      - configs/nginx.conf
+
+
