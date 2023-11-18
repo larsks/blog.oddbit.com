@@ -1,4 +1,96 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>tech on blog.oddbit.com</title><link>https://blog.oddbit.com/categories/tech/</link><description>Recent content in tech on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 27 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/categories/tech/rss.xml" rel="self" type="application/rss+xml"/><item><title>Processing deeply nested JSON with jq streams</title><link>https://blog.oddbit.com/post/2023-07-27-jq-streams/</link><pubDate>Thu, 27 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-27-jq-streams/</guid><description>I recently found myself wanting to perform a few transformations on a large OpenAPI schema. In particular, I wanted to take the schema available from the /openapi/v2 endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the description attributes.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>tech on blog.oddbit.com</title><link>https://blog.oddbit.com/categories/tech/</link><description>Recent content in tech on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 17 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/categories/tech/rss.xml" rel="self" type="application/rss+xml"/><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the NGINX Gateway Fabric.
+What&amp;rsquo;s the NGINX Gateway Fabric? The NGINX Gateway Fabric is an implementation of the Kubernetes Gateway API.
+What&amp;rsquo;s the Gateway API? The Gateway API is an evolution of the Ingress API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster).</description><content>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
+&lt;h2 id="whats-the-nginx-gateway-fabric">What&amp;rsquo;s the NGINX Gateway Fabric?&lt;/h2>
+&lt;p>The NGINX Gateway Fabric is an implementation of the Kubernetes &lt;a href="https://gateway-api.sigs.k8s.io/">Gateway API&lt;/a>.&lt;/p>
+&lt;h2 id="whats-the-gateway-api">What&amp;rsquo;s the Gateway API?&lt;/h2>
+&lt;p>The Gateway API is an evolution of the &lt;a href="https://kubernetes.io/docs/concepts/services-networking/ingress/">Ingress&lt;/a> API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster).&lt;/p>
+&lt;h2 id="whats-this-about-custom-configuration">What&amp;rsquo;s this about custom configuration?&lt;/h2>
+&lt;p>I&amp;rsquo;ve deployed a local development cluster, and I wanted to be able to push images into an image registry hosted on the cluster. This requires (a) running a registry, which is easy, and (b) somehow exposing that registry outside the cluster, which is also easy unless you decide to make it more complex.&lt;/p>
+&lt;p>In this case, I decided that rather than running an Ingress provider I was going to start familiarizing myself with the Gateway API, so I deployed NGINX Gateway Fabric. My first attempt at pushing an image into the registry looked like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>$ podman push --tls-verify=false example registry.apps.cluster1.house/example:latest
+Getting image source signatures
+Copying blob b9fe5313d237 done |
+Copying blob cc2447e1835a done |
+Copying blob cb8b0886acfb done |
+Copying blob c4219a5645ea [===&amp;gt;----------------------------------] 9.3MiB / 80.2MiB | 372.7 MiB/s
+Copying blob c6e5c62d1726 done |
+Copying blob 9ee7eb11f876 done |
+Copying blob f064c46326cb done |
+Copying blob 9c45ffa2a02a done |
+Copying blob 9a6c9897f309 done |
+Copying blob 27a0dbb2828e done |
+Error: writing blob: uploading layer chunked: StatusCode: 413, &amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;&amp;lt;title&amp;gt;413 Request Entity Too Large&amp;lt;...
+&lt;/code>&lt;/pre>&lt;p>Nginx, by default, restricts the maximum size of a request body to &lt;code>1m&lt;/code>, which is to say, 1 megabyte. You can increase (or remove) this limit by setting the &lt;a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size">&lt;code>client_max_body_size&lt;/code>&lt;/a> parameter&amp;hellip;but how do you do this in the context of a managed deployment like the NGINX Gateway Fabric?&lt;/p>
+&lt;h2 id="via-the-api">Via the API?&lt;/h2>
+&lt;p>As of this writing, there is no mechanism to apply custom configuration options via the API (although there is ongoing work to provide this, see issue &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric/issues/1258">#1258&lt;/a>).&lt;/p>
+&lt;h2 id="what-about-dropping-a-config-file-into-confd">What about dropping a config file into conf.d?&lt;/h2>
+&lt;p>My first thought was that I could mount a custom configuration file into &lt;code>/etc/nginx/conf.d&lt;/code>, along the lines of:&lt;/p>
+&lt;pre tabindex="0">&lt;code>...
+containers:
+- name: nginx
+volumeMounts:
+- name: nginx-extra-conf
+mountPath: /etc/nginx/conf.d/client_max_body_size.conf
+subPath: client_max_body_size
+...
+volumes:
+- name: nginx-extra-conf
+configMap:
+name: nginx-extra-conf
+&lt;/code>&lt;/pre>&lt;p>&amp;hellip;but this fails because the Nginx controller &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric/blob/7de105c7dd09ccfca5823d6941ac12c520257221/internal/mode/static/manager.go#L123-L129">explicitly cleans out that directory on startup&lt;/a> and is unhappy if it is unable to delete a file.&lt;/p>
+&lt;h2 id="replacing-nginxconf">Replacing nginx.conf&lt;/h2>
+&lt;p>Right now, the solution is to replace &lt;code>/etc/nginx/nginx.conf&lt;/code>. This is a relatively simple operation using &lt;a href="https://kustomize.io">kustomize&lt;/a> to apply a patch to the deployment manifests.&lt;/p>
+&lt;h3 id="grab-the-original-configuration">Grab the original configuration&lt;/h3>
+&lt;p>First, we need to retrieve the &lt;em>original&lt;/em> &lt;code>nginx.conf&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>mkdir configs
+podman run --rm --entrypoint cat \
+ghcr.io/nginxinc/nginx-gateway-fabric/nginx:1.0.0 /etc/nginx/nginx.conf &amp;gt; configs/nginx.conf
+&lt;/code>&lt;/pre>&lt;p>Modify &lt;code>configs/nginx.conf&lt;/code> as necessary; in my case, I added the following line to the &lt;code>http&lt;/code> section:&lt;/p>
+&lt;pre tabindex="0">&lt;code>client_max_body_size 0;
+&lt;/code>&lt;/pre>&lt;h3 id="patch-the-deployment">Patch the deployment&lt;/h3>
+&lt;p>We can deploy the stock NGINX Gateway Fabric with a &lt;code>kustomization.yaml&lt;/code> file like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonLabels:
+nginxGatewayVersion: v1.0.0
+resources:
+- https://github.com/nginxinc/nginx-gateway-fabric/releases/download/v1.0.0/crds.yaml
+- https://github.com/nginxinc/nginx-gateway-fabric/releases/download/v1.0.0/nginx-gateway.yaml
+- https://raw.githubusercontent.com/nginxinc/nginx-gateway-fabric/v1.0.0/deploy/manifests/service/nodeport.yaml
+&lt;/code>&lt;/pre>&lt;p>To patch the Deployment resource, we extend the &lt;code>kustomization.yaml&lt;/code> with the following patch:&lt;/p>
+&lt;pre tabindex="0">&lt;code>patches:
+- patch: |
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: nginx-gateway
+namespace: nginx-gateway
+spec:
+template:
+spec:
+containers:
+- name: nginx
+volumeMounts:
+- mountPath: /etc/nginx/nginx.conf
+name: nginx-conf-override
+subPath: nginx.conf
+volumes:
+- name: nginx-conf-override
+configMap:
+name: nginx-conf-override
+&lt;/code>&lt;/pre>&lt;p>And then we add a &lt;code>confdigMapGenerator&lt;/code> to generate the &lt;code>nginx-conf-override&lt;/code> ConfigMap:&lt;/p>
+&lt;pre tabindex="0">&lt;code>configMapGenerator:
+- name: nginx-conf-override
+namespace: nginx-gateway
+options:
+disableNameSuffixHash: true
+files:
+- configs/nginx.conf
+&lt;/code>&lt;/pre>&lt;p>Now when we deploy from this directory&amp;hellip;&lt;/p>
+&lt;pre tabindex="0">&lt;code>kubectl apply -k . --server-side
+&lt;/code>&lt;/pre>&lt;p>&amp;hellip;the deployment includes our patched &lt;code>nginx.conf&lt;/code> and we are able to successfully push images into the cluster registry.&lt;/p></content></item><item><title>Processing deeply nested JSON with jq streams</title><link>https://blog.oddbit.com/post/2023-07-27-jq-streams/</link><pubDate>Thu, 27 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-27-jq-streams/</guid><description>I recently found myself wanting to perform a few transformations on a large OpenAPI schema. In particular, I wanted to take the schema available from the /openapi/v2 endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the description attributes.
 The first task is relatively easy, since everything of interest exists at the same level in the schema. If I want one or more specific definitions, I can simply ask for those by key.</description><content>&lt;p>I &lt;a href="https://stackoverflow.com/a/76762619/147356">recently&lt;/a> found myself wanting to perform a few transformations on a large &lt;a href="https://www.openapis.org/">OpenAPI&lt;/a> schema. In particular, I wanted to take the schema available from the &lt;code>/openapi/v2&lt;/code> endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the &lt;code>description&lt;/code> attributes.&lt;/p>
 &lt;p>The first task is relatively easy, since everything of interest exists at the same level in the schema. If I want one or more specific definitions, I can simply ask for those by key. For example, if I want the definition of a &lt;a href="https://docs.openshift.com/container-platform/4.13/rest_api/workloads_apis/deploymentconfig-apps-openshift-io-v1.html">&lt;code>DeploymentConfig&lt;/code>&lt;/a> object, I can run:&lt;/p>
 &lt;pre tabindex="0">&lt;code>jq &amp;#39;.definitions.&amp;#34;com.github.openshift.api.apps.v1.DeploymentConfig&amp;#34;&amp;#39; &amp;lt; openapi.json
@@ -99,8 +191,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="421736598" type="checkbox" />
-&lt;label for="421736598">
+&lt;input id="394172568" type="checkbox" />
+&lt;label for="394172568">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -129,8 +221,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="429867153" type="checkbox" />
-&lt;label for="429867153">
+&lt;input id="594816327" type="checkbox" />
+&lt;label for="594816327">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -157,8 +249,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="473596812" type="checkbox" />
-&lt;label for="473596812">
+&lt;input id="147683592" type="checkbox" />
+&lt;label for="147683592">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -243,8 +335,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="871493562" type="checkbox" />
-&lt;label for="871493562">
+&lt;input id="758239641" type="checkbox" />
+&lt;label for="758239641">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -304,8 +396,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="543219768" type="checkbox" />
-&lt;label for="543219768">
+&lt;input id="329165478" type="checkbox" />
+&lt;label for="329165478">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -585,8 +677,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="498315762" type="checkbox" />
-&lt;label for="498315762">
+&lt;input id="618327549" type="checkbox" />
+&lt;label for="618327549">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -602,8 +694,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="138675492" type="checkbox" />
-&lt;label for="138675492">
+&lt;input id="684517329" type="checkbox" />
+&lt;label for="684517329">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -628,8 +720,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="861245937" type="checkbox" />
-&lt;label for="861245937">
+&lt;input id="265748139" type="checkbox" />
+&lt;label for="265748139">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -667,8 +759,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="918736524" type="checkbox" />
-&lt;label for="918736524">
+&lt;input id="952143768" type="checkbox" />
+&lt;label for="952143768">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -731,8 +823,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="386154972" type="checkbox" />
-&lt;label for="386154972">
+&lt;input id="431765829" type="checkbox" />
+&lt;label for="431765829">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -942,8 +1034,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="869273514" type="checkbox" />
-&lt;label for="869273514">
+&lt;input id="841329657" type="checkbox" />
+&lt;label for="841329657">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>

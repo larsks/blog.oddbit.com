@@ -1,0 +1,78 @@
+<!doctype html><html lang=en><head><title>Applying custom configuration to Nginx Gateway Fabric :: blog.oddbit.com</title>
+<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the NGINX Gateway Fabric.
+What&amp;rsquo;s the NGINX Gateway Fabric? The NGINX Gateway Fabric is an implementation of the Kubernetes Gateway API.
+What&amp;rsquo;s the Gateway API? The Gateway API is an evolution of the Ingress API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster)."><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/><script async src="https://www.googletagmanager.com/gtag/js?id=G-G1FYT93ENG"></script><script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G1FYT93ENG",{anonymize_ip:!1})}</script><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="og:title" content="Applying custom configuration to Nginx Gateway Fabric"><meta property="og:description" content="In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the NGINX Gateway Fabric.
+What&amp;rsquo;s the NGINX Gateway Fabric? The NGINX Gateway Fabric is an implementation of the Kubernetes Gateway API.
+What&amp;rsquo;s the Gateway API? The Gateway API is an evolution of the Ingress API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster)."><meta property="og:url" content="https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><meta property="article:section" content="tech"><meta property="article:published_time" content="2023-11-17 00:00:00 +0000 UTC"></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><article class=post><h1 class=post-title><a href=https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/>Applying custom configuration to Nginx Gateway Fabric</a></h1><div class=post-meta><time class=post-date>2023-11-17 ::
+[Updated :: 2023-11-17]</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/kubernetes/>kubernetes</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/nginx/>nginx</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/gateway-api/>gateway-api</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/containers/>containers</a>&nbsp;</span><div class=post-content><div><p>In this post, we take a look at how to apply custom Nginx configuration directives when you&rsquo;re using the <a href=https://github.com/nginxinc/nginx-gateway-fabric>NGINX Gateway Fabric</a>.</p><h2 id=whats-the-nginx-gateway-fabric>What&rsquo;s the NGINX Gateway Fabric?<a href=#whats-the-nginx-gateway-fabric class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The NGINX Gateway Fabric is an implementation of the Kubernetes <a href=https://gateway-api.sigs.k8s.io/>Gateway API</a>.</p><h2 id=whats-the-gateway-api>What&rsquo;s the Gateway API?<a href=#whats-the-gateway-api class=hanchor arialabel=Anchor>&#8983;</a></h2><p>The Gateway API is an evolution of the <a href=https://kubernetes.io/docs/concepts/services-networking/ingress/>Ingress</a> API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster).</p><h2 id=whats-this-about-custom-configuration>What&rsquo;s this about custom configuration?<a href=#whats-this-about-custom-configuration class=hanchor arialabel=Anchor>&#8983;</a></h2><p>I&rsquo;ve deployed a local development cluster, and I wanted to be able to push images into an image registry hosted on the cluster. This requires (a) running a registry, which is easy, and (b) somehow exposing that registry outside the cluster, which is also easy unless you decide to make it more complex.</p><p>In this case, I decided that rather than running an Ingress provider I was going to start familiarizing myself with the Gateway API, so I deployed NGINX Gateway Fabric. My first attempt at pushing an image into the registry looked like this:</p><pre tabindex=0><code>$ podman push --tls-verify=false example registry.apps.cluster1.house/example:latest
+Getting image source signatures
+Copying blob b9fe5313d237 done   |
+Copying blob cc2447e1835a done   |
+Copying blob cb8b0886acfb done   |
+Copying blob c4219a5645ea [===&gt;----------------------------------] 9.3MiB / 80.2MiB | 372.7 MiB/s
+Copying blob c6e5c62d1726 done   |
+Copying blob 9ee7eb11f876 done   |
+Copying blob f064c46326cb done   |
+Copying blob 9c45ffa2a02a done   |
+Copying blob 9a6c9897f309 done   |
+Copying blob 27a0dbb2828e done   |
+Error: writing blob: uploading layer chunked: StatusCode: 413, &lt;html&gt;
+&lt;head&gt;&lt;title&gt;413 Request Entity Too Large&lt;...
+</code></pre><p>Nginx, by default, restricts the maximum size of a request body to <code>1m</code>, which is to say, 1 megabyte. You can increase (or remove) this limit by setting the <a href=https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size><code>client_max_body_size</code></a> parameter&mldr;but how do you do this in the context of a managed deployment like the NGINX Gateway Fabric?</p><h2 id=via-the-api>Via the API?<a href=#via-the-api class=hanchor arialabel=Anchor>&#8983;</a></h2><p>As of this writing, there is no mechanism to apply custom configuration options via the API (although there is ongoing work to provide this, see issue <a href=https://github.com/nginxinc/nginx-gateway-fabric/issues/1258>#1258</a>).</p><h2 id=what-about-dropping-a-config-file-into-confd>What about dropping a config file into conf.d?<a href=#what-about-dropping-a-config-file-into-confd class=hanchor arialabel=Anchor>&#8983;</a></h2><p>My first thought was that I could mount a custom configuration file into <code>/etc/nginx/conf.d</code>, along the lines of:</p><pre tabindex=0><code>...
+containers:
+  - name: nginx
+    volumeMounts:
+      - name: nginx-extra-conf
+        mountPath: /etc/nginx/conf.d/client_max_body_size.conf
+        subPath: client_max_body_size
+...
+volumes:
+  - name: nginx-extra-conf
+    configMap:
+      name: nginx-extra-conf
+</code></pre><p>&mldr;but this fails because the Nginx controller <a href=https://github.com/nginxinc/nginx-gateway-fabric/blob/7de105c7dd09ccfca5823d6941ac12c520257221/internal/mode/static/manager.go#L123-L129>explicitly cleans out that directory on startup</a> and is unhappy if it is unable to delete a file.</p><h2 id=replacing-nginxconf>Replacing nginx.conf<a href=#replacing-nginxconf class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Right now, the solution is to replace <code>/etc/nginx/nginx.conf</code>. This is a relatively simple operation using <a href=https://kustomize.io>kustomize</a> to apply a patch to the deployment manifests.</p><h3 id=grab-the-original-configuration>Grab the original configuration<a href=#grab-the-original-configuration class=hanchor arialabel=Anchor>&#8983;</a></h3><p>First, we need to retrieve the <em>original</em> <code>nginx.conf</code>:</p><pre tabindex=0><code>mkdir configs
+podman run --rm --entrypoint cat \
+  ghcr.io/nginxinc/nginx-gateway-fabric/nginx:1.0.0 /etc/nginx/nginx.conf &gt; configs/nginx.conf
+</code></pre><p>Modify <code>configs/nginx.conf</code> as necessary; in my case, I added the following line to the <code>http</code> section:</p><pre tabindex=0><code>client_max_body_size 0;
+</code></pre><h3 id=patch-the-deployment>Patch the deployment<a href=#patch-the-deployment class=hanchor arialabel=Anchor>&#8983;</a></h3><p>We can deploy the stock NGINX Gateway Fabric with a <code>kustomization.yaml</code> file like this:</p><pre tabindex=0><code>apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonLabels:
+  nginxGatewayVersion: v1.0.0
+
+resources:
+- https://github.com/nginxinc/nginx-gateway-fabric/releases/download/v1.0.0/crds.yaml
+- https://github.com/nginxinc/nginx-gateway-fabric/releases/download/v1.0.0/nginx-gateway.yaml
+- https://raw.githubusercontent.com/nginxinc/nginx-gateway-fabric/v1.0.0/deploy/manifests/service/nodeport.yaml
+</code></pre><p>To patch the Deployment resource, we extend the <code>kustomization.yaml</code> with the following patch:</p><pre tabindex=0><code>patches:
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: nginx-gateway
+        namespace: nginx-gateway
+      spec:
+        template:
+          spec:
+            containers:
+              - name: nginx
+                volumeMounts:
+                  - mountPath: /etc/nginx/nginx.conf
+                    name: nginx-conf-override
+                    subPath: nginx.conf
+            volumes:
+              - name: nginx-conf-override
+                configMap:
+                  name: nginx-conf-override
+</code></pre><p>And then we add a <code>confdigMapGenerator</code> to generate the <code>nginx-conf-override</code> ConfigMap:</p><pre tabindex=0><code>configMapGenerator:
+  - name: nginx-conf-override
+    namespace: nginx-gateway
+    options:
+      disableNameSuffixHash: true
+    files:
+      - configs/nginx.conf
+</code></pre><p>Now when we deploy from this directory&mldr;</p><pre tabindex=0><code>kubectl apply -k . --server-side
+</code></pre><p>&mldr;the deployment includes our patched <code>nginx.conf</code> and we are able to successfully push images into the cluster registry.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+<span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script><script src=/js/mermaid.min.js></script><script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>
