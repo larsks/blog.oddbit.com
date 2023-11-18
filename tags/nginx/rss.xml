@@ -90,4 +90,5 @@ files:
 - configs/nginx.conf
 &lt;/code>&lt;/pre>&lt;p>Now when we deploy from this directory&amp;hellip;&lt;/p>
 &lt;pre tabindex="0">&lt;code>kubectl apply -k . --server-side
-&lt;/code>&lt;/pre>&lt;p>&amp;hellip;the deployment includes our patched &lt;code>nginx.conf&lt;/code> and we are able to successfully push images into the cluster registry.&lt;/p></content></item></channel></rss>
+&lt;/code>&lt;/pre>&lt;p>&amp;hellip;the deployment includes our patched &lt;code>nginx.conf&lt;/code> and we are able to successfully push images into the cluster registry.&lt;/p>
+&lt;p>I&amp;rsquo;ve included the complete &lt;a href="kustomization.yaml">&lt;code>kustomization.yaml&lt;/code>&lt;/a> alongside this post.&lt;/p></content></item></channel></rss>
