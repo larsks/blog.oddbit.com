@@ -23,8 +23,8 @@ def example():
   -e MARIADB_USER=testuser \
   -e MARIADB_DATABASE=testdb \
   mariadb:10
-</code></pre><p>Looking through the Docker <a href=https://docker-py.readthedocs.io/en/stable/>python API documentation</a>, a naïve Python equivalent might look like this:</p><div class=collapsable-code><input id=165387429 type=checkbox>
-<label for=165387429><span class=collapsable-code__language>python</span>
+</code></pre><p>Looking through the Docker <a href=https://docker-py.readthedocs.io/en/stable/>python API documentation</a>, a naïve Python equivalent might look like this:</p><div class=collapsable-code><input id=378951264 type=checkbox>
+<label for=378951264><span class=collapsable-code__language>python</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-python><code>
 
 import docker
@@ -50,8 +50,8 @@ def mariadb_container(
 
 
 
-</code></pre></div><p>This works, but it&rsquo;s not great. In particular, the container we create will hang around until we remove it manually, since we didn&rsquo;t arrange to remove the container on completion. Since this is a <code>function</code> scoped fixture, we would end up with one container per test (potentially leading to hundreds of containers running for a large test suite).</p><h2 id=starting-a-container-version-2>Starting a container, version 2<a href=#starting-a-container-version-2 class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Let&rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a <a href=https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended>yield fixture</a>; instead of <code>return</code>-ing a value, we <a href=https://docs.python.org/3/reference/expressions.html#yield-expressions><code>yield</code></a> a value, and any cleanup code after the <code>yield</code> statement runs when the fixture is no longer in scope.</p><p>That might look like:</p><div class=collapsable-code><input id=435698271 type=checkbox>
-<label for=435698271><span class=collapsable-code__language>python</span>
+</code></pre></div><p>This works, but it&rsquo;s not great. In particular, the container we create will hang around until we remove it manually, since we didn&rsquo;t arrange to remove the container on completion. Since this is a <code>function</code> scoped fixture, we would end up with one container per test (potentially leading to hundreds of containers running for a large test suite).</p><h2 id=starting-a-container-version-2>Starting a container, version 2<a href=#starting-a-container-version-2 class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Let&rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a <a href=https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended>yield fixture</a>; instead of <code>return</code>-ing a value, we <a href=https://docs.python.org/3/reference/expressions.html#yield-expressions><code>yield</code></a> a value, and any cleanup code after the <code>yield</code> statement runs when the fixture is no longer in scope.</p><p>That might look like:</p><div class=collapsable-code><input id=741923856 type=checkbox>
+<label for=741923856><span class=collapsable-code__language>python</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-python><code>
 
 import docker
@@ -79,8 +79,8 @@ def mariadb_container(
 
 
 
-</code></pre></div><p>That&rsquo;s better, but we&rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:</p><div class=collapsable-code><input id=765148932 type=checkbox>
-<label for=765148932><span class=collapsable-code__language>python</span>
+</code></pre></div><p>That&rsquo;s better, but we&rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:</p><div class=collapsable-code><input id=651438729 type=checkbox>
+<label for=651438729><span class=collapsable-code__language>python</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-python><code>
 
 import mysql.connector
@@ -151,8 +151,8 @@ server on &#39;172.17.0.2:3306&#39; (111 Connection refused)
 </span></span><span style=display:flex><span>    cursor <span style=color:#f92672>=</span> mariadb_connection<span style=color:#f92672>.</span>cursor()
 </span></span><span style=display:flex><span>    <span style=color:#66d9ef>yield</span> cursor
 </span></span><span style=display:flex><span>    cursor<span style=color:#f92672>.</span>close()
-</span></span></code></pre></div><p>Putting all of this together gets us a <code>conftest.py</code> that looks something like:</p><div class=collapsable-code><input id=963247815 type=checkbox>
-<label for=963247815><span class=collapsable-code__language>python</span>
+</span></span></code></pre></div><p>Putting all of this together gets us a <code>conftest.py</code> that looks something like:</p><div class=collapsable-code><input id=138654792 type=checkbox>
+<label for=138654792><span class=collapsable-code__language>python</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-python><code>
 
 import pytest
@@ -222,8 +222,8 @@ def mariadb_cursor(mariadb_connection):
 
 
 
-</code></pre></div><p>And <em>that</em> allows us to dramatically simplify our test:</p><div class=collapsable-code><input id=178943265 type=checkbox>
-<label for=178943265><span class=collapsable-code__language>python</span>
+</code></pre></div><p>And <em>that</em> allows us to dramatically simplify our test:</p><div class=collapsable-code><input id=241795863 type=checkbox>
+<label for=241795863><span class=collapsable-code__language>python</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-python><code>
 
 def test_simple_select(mariadb_cursor):
