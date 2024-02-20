@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>tech on blog.oddbit.com</title><link>https://blog.oddbit.com/categories/tech/</link><description>Recent content in tech on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 17 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/categories/tech/rss.xml" rel="self" type="application/rss+xml"/><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the NGINX Gateway Fabric.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Tech on blog.oddbit.com</title><link>https://blog.oddbit.com/categories/tech/</link><description>Recent content in Tech on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 17 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/categories/tech/rss.xml" rel="self" type="application/rss+xml"/><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the NGINX Gateway Fabric.
 What&amp;rsquo;s the NGINX Gateway Fabric? The NGINX Gateway Fabric is an implementation of the Kubernetes Gateway API.
 What&amp;rsquo;s the Gateway API? The Gateway API is an evolution of the Ingress API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster).</description><content>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
 &lt;h2 id="whats-the-nginx-gateway-fabric">What&amp;rsquo;s the NGINX Gateway Fabric?&lt;/h2>
@@ -92,7 +92,7 @@ files:
 &lt;pre tabindex="0">&lt;code>kubectl apply -k . --server-side
 &lt;/code>&lt;/pre>&lt;p>&amp;hellip;the deployment includes our patched &lt;code>nginx.conf&lt;/code> and we are able to successfully push images into the cluster registry.&lt;/p>
 &lt;hr>
-&lt;p>I&amp;rsquo;ve included the complete &lt;a href="kustomization.yaml">&lt;code>kustomization.yaml&lt;/code>&lt;/a> alongside this post.&lt;/p></content></item><item><title>Processing deeply nested JSON with jq streams</title><link>https://blog.oddbit.com/post/2023-07-27-jq-streams/</link><pubDate>Thu, 27 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-27-jq-streams/</guid><description>I recently found myself wanting to perform a few transformations on a large OpenAPI schema. In particular, I wanted to take the schema available from the /openapi/v2 endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the description attributes.
+&lt;p>I&amp;rsquo;ve included the complete &lt;a href="https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/kustomization.yaml">&lt;code>kustomization.yaml&lt;/code>&lt;/a> alongside this post.&lt;/p></content></item><item><title>Processing deeply nested JSON with jq streams</title><link>https://blog.oddbit.com/post/2023-07-27-jq-streams/</link><pubDate>Thu, 27 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-27-jq-streams/</guid><description>I recently found myself wanting to perform a few transformations on a large OpenAPI schema. In particular, I wanted to take the schema available from the /openapi/v2 endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the description attributes.
 The first task is relatively easy, since everything of interest exists at the same level in the schema. If I want one or more specific definitions, I can simply ask for those by key.</description><content>&lt;p>I &lt;a href="https://stackoverflow.com/a/76762619/147356">recently&lt;/a> found myself wanting to perform a few transformations on a large &lt;a href="https://www.openapis.org/">OpenAPI&lt;/a> schema. In particular, I wanted to take the schema available from the &lt;code>/openapi/v2&lt;/code> endpoint of a Kubernetes server and minimize it by (a) extracting a subset of the definitions and (b) removing all the &lt;code>description&lt;/code> attributes.&lt;/p>
 &lt;p>The first task is relatively easy, since everything of interest exists at the same level in the schema. If I want one or more specific definitions, I can simply ask for those by key. For example, if I want the definition of a &lt;a href="https://docs.openshift.com/container-platform/4.13/rest_api/workloads_apis/deploymentconfig-apps-openshift-io-v1.html">&lt;code>DeploymentConfig&lt;/code>&lt;/a> object, I can run:&lt;/p>
 &lt;pre tabindex="0">&lt;code>jq &amp;#39;.definitions.&amp;#34;com.github.openshift.api.apps.v1.DeploymentConfig&amp;#34;&amp;#39; &amp;lt; openapi.json
@@ -193,8 +193,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="796518243" type="checkbox" />
-&lt;label for="796518243">
+&lt;input id="187956432" type="checkbox" />
+&lt;label for="187956432">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -223,8 +223,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="315768492" type="checkbox" />
-&lt;label for="315768492">
+&lt;input id="623854719" type="checkbox" />
+&lt;label for="623854719">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -251,8 +251,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="926713458" type="checkbox" />
-&lt;label for="926713458">
+&lt;input id="742516839" type="checkbox" />
+&lt;label for="742516839">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -337,8 +337,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="364195827" type="checkbox" />
-&lt;label for="364195827">
+&lt;input id="185296347" type="checkbox" />
+&lt;label for="185296347">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -398,8 +398,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="693728415" type="checkbox" />
-&lt;label for="693728415">
+&lt;input id="617598234" type="checkbox" />
+&lt;label for="617598234">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -463,9 +463,9 @@ assert res[0] == 1
 &lt;p>The advantage here is that the impact on the test run time is minimal. The disadvantage is that we have to be very careful about the interaction between tests, since we would no longer be starting each test with a clean version of the database.&lt;/p>
 &lt;p>Keep in mind that in Pytest, a fixture can only reference other fixtures that come from the same or &amp;ldquo;broader&amp;rdquo; scope (so, a &lt;code>function&lt;/code> scoped fixture can use a &lt;code>session&lt;/code> scoped fixture, but the opposite is not true). In particular, that means if we were to make our &lt;code>mariadb_container&lt;/code> fixture &lt;code>session&lt;/code>-scoped, we would need to make the same change to its dependencies (&lt;code>mariadb_dbname&lt;/code>, &lt;code>mariadb_dbpass&lt;/code>, etc).&lt;/p>
 &lt;hr>
-&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
+&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
 &amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range 192.168.3.0/24, and similarly for communication in the other direction?</description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
-&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="the-problem.svg" alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
 &lt;h2 id="setting-up-a-lab">Setting up a lab&lt;/h2>
 &lt;p>When investigating this sort of networking question, I find it easiest to reproduce the topology in a virtual environment so that it&amp;rsquo;s easy to test things out. I generally use &lt;a href="https://mininet.org">Mininet&lt;/a> for this, which provides a simple Python API for creating virtual nodes and switches and creating links between them.&lt;/p>
@@ -478,7 +478,7 @@ assert res[0] == 1
 &lt;h2 id="vrf-in-theory">VRF in theory&lt;/h2>
 &lt;p>VRF stands for &amp;ldquo;Virtual Routing and Forwarding&amp;rdquo;. From the &lt;a href="https://en.wikipedia.org/wiki/Virtual_routing_and_forwarding">Wikipedia article on the topic&lt;/a>:&lt;/p>
 &lt;blockquote>
-&lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="the-problem.svg">1&lt;/a>&lt;/p>
+&lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">1&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;p>In Linux, VRF support is implemented as a &lt;a href="https://docs.kernel.org/networking/vrf.html">special type of network device&lt;/a>. A VRF device sets up an isolated routing domain; network traffic on devices associated with a VRF will use the routing table associated with that VRF, rather than the main routing table, which permits us to connect multiple networks with overlapping address ranges.&lt;/p>
 &lt;p>We can create new VRF devices with the &lt;code>ip link add&lt;/code> command:&lt;/p>
@@ -679,8 +679,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="375698241" type="checkbox" />
-&lt;label for="375698241">
+&lt;input id="683715294" type="checkbox" />
+&lt;label for="683715294">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -696,8 +696,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="518794326" type="checkbox" />
-&lt;label for="518794326">
+&lt;input id="861257493" type="checkbox" />
+&lt;label for="861257493">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -722,8 +722,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="196523478" type="checkbox" />
-&lt;label for="196523478">
+&lt;input id="824139657" type="checkbox" />
+&lt;label for="824139657">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -761,8 +761,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="328751469" type="checkbox" />
-&lt;label for="328751469">
+&lt;input id="573124869" type="checkbox" />
+&lt;label for="573124869">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -825,8 +825,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="938154726" type="checkbox" />
-&lt;label for="938154726">
+&lt;input id="918672453" type="checkbox" />
+&lt;label for="918672453">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1036,8 +1036,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="361748295" type="checkbox" />
-&lt;label for="361748295">
+&lt;input id="562137894" type="checkbox" />
+&lt;label for="562137894">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1120,17 +1120,17 @@ return 0;
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
 &lt;p>This shows how to set up an IPv6 tunnel and configure an IPv6-only
 VLAN on the EdgeRouter.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
 &lt;p>This is only necessary due to the specifics of the connection between
 my desktop and the router; you can probably skip this.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
 &lt;p>This shows how to set up the IPv6 VLAN interface under Linux using &lt;code>nmcli&lt;/code>.&lt;/p>
 &lt;/li>
 &lt;/ul>
@@ -1323,17 +1323,17 @@ Publish the GPG key</description><content>&lt;p>In today&amp;rsquo;s post, we lo
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>&lt;a href="#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#step-3-add-a-claim">Use the GPG key to assert claims on online resources&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#step-3-add-a-claim">Use the GPG key to assert claims on online resources&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
 &lt;h2 id="step-1-create-a-gpg-keypair">Step 1: Create a GPG keypair&lt;/h2>
-&lt;p>If you already have a keypair, skip on to &amp;ldquo;&lt;a href="#step-2-publish-your-key">Step 2: Publish your key&lt;/a>&amp;rdquo;.&lt;/p>
+&lt;p>If you already have a keypair, skip on to &amp;ldquo;&lt;a href="https://blog.oddbit.com/#step-2-publish-your-key">Step 2: Publish your key&lt;/a>&amp;rdquo;.&lt;/p>
 &lt;p>The first thing you need to do is set up a GPG&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> keypair and publish it to a keyserver (or a &lt;a href="https://wiki.gnupg.org/WKD">WKD endpoint&lt;/a>). There are many guides out there that step you through the process (for example, GitHub&amp;rsquo;s guide on &lt;a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key">Generating a new GPG key&lt;/a>), but if you&amp;rsquo;re in a hurry and not particularly picky, read on.&lt;/p>
 &lt;p>This assumes that you&amp;rsquo;re using a recent version of GPG; at the time of this writing, the current GPG release is 2.3.8, but these instructions seem to work at least with version 2.2.27.&lt;/p>
 &lt;ol>
@@ -1358,7 +1358,7 @@ sub cv25519 2022-11-13 [E]
 &lt;/ol>
 &lt;p>Now you have created a GPG keypair!&lt;/p>
 &lt;h2 id="step-2-publish-your-key">Step 2: Publish your key&lt;/h2>
-&lt;p>If you&amp;rsquo;ve already published your key at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a> or at a &lt;a href="https://wiki.gnupg.org/WKD">WKD&lt;/a> endpoint, skip on to &amp;ldquo;&lt;a href="#step-3-add-a-claim">Step 3: Add a claim&lt;/a>&amp;rdquo;.&lt;/p>
+&lt;p>If you&amp;rsquo;ve already published your key at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a> or at a &lt;a href="https://wiki.gnupg.org/WKD">WKD&lt;/a> endpoint, skip on to &amp;ldquo;&lt;a href="https://blog.oddbit.com/#step-3-add-a-claim">Step 3: Add a claim&lt;/a>&amp;rdquo;.&lt;/p>
 &lt;p>In order for KeyOxide to find your GPG key, it needs to be published at a known location. There are two choices:&lt;/p>
 &lt;ul>
 &lt;li>Publishing your key at the public keyserver at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a>.&lt;/li>
@@ -1434,7 +1434,7 @@ sub cv25519 2022-11-13 [E]
 &lt;/code>&lt;/pre>&lt;/li>
 &lt;/ol>
 &lt;h3 id="update-your-published-key">Update your published key&lt;/h3>
-&lt;p>After adding an annotation to your key locally, you need to publish those changes. One way of doing this is simply following the &lt;a href="#step-2-publish-your-key">instructions for initially uploading your public key&lt;/a>:&lt;/p>
+&lt;p>After adding an annotation to your key locally, you need to publish those changes. One way of doing this is simply following the &lt;a href="https://blog.oddbit.com/#step-2-publish-your-key">instructions for initially uploading your public key&lt;/a>:&lt;/p>
 &lt;ol>
 &lt;li>
 &lt;p>Export the key to a file:&lt;/p>
@@ -1469,9 +1469,9 @@ sub cv25519 2022-11-13 [E]
 &lt;p>Click &amp;ldquo;Save Changes&amp;rdquo;&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;p>Now, &lt;a href="#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://&amp;lt;your mastodon server&amp;gt;/@&amp;lt;your mastodon username&lt;/code>. I am @larsks@hachyderm.io, so I would enter:&lt;/p>
+&lt;p>Now, &lt;a href="https://blog.oddbit.com/#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://&amp;lt;your mastodon server&amp;gt;/@&amp;lt;your mastodon username&lt;/code>. I am @larsks@hachyderm.io, so I would enter:&lt;/p>
 &lt;pre tabindex="0">&lt;code>proof@ariadne.id=https://hachyderm.io/@larsks
-&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="#update-your-published-key">update your published key&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="https://blog.oddbit.com/#update-your-published-key">update your published key&lt;/a>.&lt;/p>
 &lt;h3 id="claiming-a-github-identity">Claiming a Github identity&lt;/h3>
 &lt;ol>
 &lt;li>
@@ -1485,9 +1485,9 @@ sub cv25519 2022-11-13 [E]
 &lt;pre tabindex="0">&lt;code>openpgp4fpr:&amp;lt;your key fingerprint&amp;gt;
 &lt;/code>&lt;/pre>&lt;/li>
 &lt;/ol>
-&lt;p>Now, &lt;a href="#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://gist.github.com/larsks/&amp;lt;gist id&amp;gt;&lt;/code>. You can see my claim at &lt;a href="https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7">https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7&lt;/a>; the notation I added to my key is:&lt;/p>
+&lt;p>Now, &lt;a href="https://blog.oddbit.com/#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://gist.github.com/larsks/&amp;lt;gist id&amp;gt;&lt;/code>. You can see my claim at &lt;a href="https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7">https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7&lt;/a>; the notation I added to my key is:&lt;/p>
 &lt;pre tabindex="0">&lt;code>proof@ariadne.id=https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7
-&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="#update-your-published-key">update your published key&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="https://blog.oddbit.com/#update-your-published-key">update your published key&lt;/a>.&lt;/p>
 &lt;h2 id="step-4-view-your-claims">Step 4: View your claims&lt;/h2>
 &lt;p>You&amp;rsquo;ll note that none of the previous steps required interacting with &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>. That&amp;rsquo;s because KeyOxide doesn&amp;rsquo;t actually store any of your data: it just provides a mechanism for visualizing and verifying claims.&lt;/p>
 &lt;p>You can look up an identity by email address or by GPG key fingerprint.&lt;/p>
@@ -3011,7 +3011,7 @@ name: example-secret
 type: Opaque
 stringData:
 message: this is a test
-&lt;/code>&lt;/pre></content></item><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-index.in/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-index.in/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
+&lt;/code>&lt;/pre></content></item><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-git-doc-tools/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-git-doc-tools/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
 git synth The git synth command reads a YAML description of a repository and executes the necessary commands to reproduce that history. It allows you set the name and email address of the author and committer as well as static date, so you every time you generate the repository you can identical commit ids.</description><content>&lt;p>I sometimes find myself writing articles or documentation about
 &lt;a href="https://git-scm.org">git&lt;/a>, so I put together a couple of terrible hacks for generating
 reproducible histories and pretty graphs of those histories.&lt;/p>
@@ -3027,7 +3027,35 @@ history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_
 into diagrams.&lt;/p>
 &lt;h2 id="putting-it-together">Putting it together&lt;/h2>
 &lt;p>For example, the following history specification:&lt;/p>
-&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.yml --&amp;gt;
+&lt;pre tabindex="0">&lt;code>- set:
+date: &amp;#34;2021-01-01&amp;#34;
+name: Fake Person
+email: fake@example.com
+- branch:
+name: master
+actions:
+- commit:
+message: A
+- commit:
+message: B
+- commit:
+message: C
+- branch:
+name: topic1
+actions:
+- commit:
+message: D
+- commit:
+message: E
+- branch:
+name: topic2
+actions:
+- commit:
+message: F
+- commit:
+message: G
+- commit:
+message: H
 &lt;/code>&lt;/pre>&lt;p>When applied with &lt;code>git synth&lt;/code>:&lt;/p>
 &lt;pre tabindex="0">&lt;code>$ git synth -r examplerepo examplerepo.yml
 &lt;/code>&lt;/pre>&lt;p>Will generate the following repository:&lt;/p>
@@ -3044,10 +3072,51 @@ into diagrams.&lt;/p>
 &lt;/code>&lt;/pre>&lt;p>We can run this &lt;code>git dot&lt;/code> command line:&lt;/p>
 &lt;pre tabindex="0">&lt;code>$ git -C examplerepo dot -m -g branch --rankdir=RL
 &lt;/code>&lt;/pre>&lt;p>To produce the following &lt;code>dot&lt;/code> description of the history:&lt;/p>
-&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.dot --&amp;gt;
+&lt;pre tabindex="0">&lt;code>digraph git {
+graph [rankdir=RL]
+node [shape=circle]
+{
+node [group=master_commits]
+&amp;#34;28f7b382a5&amp;#34; [label=H tooltip=&amp;#34;28f7b382a52ac53f86314e5d608ebafd66de6c44&amp;#34;]
+cabdedff95 [label=C tooltip=cabdedff957f7dec15f365e7c29eaead9930d618]
+a5cbd99954 [label=B tooltip=a5cbd999545aeabc2e102a845aeb0466f01454a2]
+d98f949840 [label=A tooltip=d98f94984057d760066ba0b300ab4930497bcba6]
+}
+{
+node [group=topic1_commits]
+&amp;#34;973437cb00&amp;#34; [label=E tooltip=&amp;#34;973437cb007d2a69d6564fd7b30f3e8c347073c2&amp;#34;]
+&amp;#34;2c0bd1c1df&amp;#34; [label=D tooltip=&amp;#34;2c0bd1c1dfe9f76cd18b37bb0bc995e449e0094b&amp;#34;]
+}
+{
+node [group=topic2_commits]
+&amp;#34;93e1d18862&amp;#34; [label=G tooltip=&amp;#34;93e1d18862102e044a4ec46bb189f5bca9ba0e05&amp;#34;]
+&amp;#34;3ef811d426&amp;#34; [label=F tooltip=&amp;#34;3ef811d426c09be792a0ff6564eca82a7bd105a9&amp;#34;]
+}
+{
+node [color=black fontcolor=white group=heads shape=box style=filled]
+master
+topic1
+topic2
+}
+{
+edge [style=dashed]
+topic2 -&amp;gt; &amp;#34;93e1d18862&amp;#34;
+topic1 -&amp;gt; &amp;#34;973437cb00&amp;#34;
+master -&amp;gt; &amp;#34;28f7b382a5&amp;#34;
+}
+a5cbd99954 -&amp;gt; d98f949840
+&amp;#34;3ef811d426&amp;#34; -&amp;gt; &amp;#34;973437cb00&amp;#34;
+&amp;#34;973437cb00&amp;#34; -&amp;gt; &amp;#34;2c0bd1c1df&amp;#34;
+cabdedff95 -&amp;gt; a5cbd99954
+&amp;#34;28f7b382a5&amp;#34; -&amp;gt; cabdedff95
+&amp;#34;2c0bd1c1df&amp;#34; -&amp;gt; cabdedff95
+&amp;#34;93e1d18862&amp;#34; -&amp;gt; &amp;#34;3ef811d426&amp;#34;
+}
 &lt;/code>&lt;/pre>&lt;p>Running that through the &lt;code>dot&lt;/code> utility (&lt;code>dot -Tsvg -o repo.svg repo.dot&lt;/code>) results in the following diagram:&lt;/p>
-&lt;pre tabindex="0">&lt;code class="language-graphviz" data-lang="graphviz">&amp;lt;!-- include examplerepo.dot --&amp;gt;
-&lt;/code>&lt;/pre>&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
+&lt;figure class="left" >
+&lt;img src="gen-094ef3d69a7692db2cdee8e04869e8f98bdd237b.svg" />
+&lt;/figure>
+&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
 &lt;p>Both tools live in my &lt;a href="https://github.com/larsks/git-snippets">git-snippets&lt;/a> repository, which is a motley
 collection of shells scripts, python programs, and other utilities for
 interacting with &lt;code>git&lt;/code>.&lt;/p>
@@ -4484,7 +4553,7 @@ path: /spec/template/spec/securityContext/runAsUser
 &lt;/code>&lt;/pre>&lt;h2 id="conclusion">Conclusion&lt;/h2>
 &lt;p>The changes described here will result in a successful MetalLB deployment
 into your OpenShift environment.&lt;/p></content></item><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>I&amp;rsquo;ve had my eye on the Vortex Core keyboard for a few months now, and this past week I finally broke down and bought one (with Cherry MX Brown switches). The Vortex Core is a 40% keyboard, which means it consists primarily of letter keys, a few lonely bits of punctuation, and several modifier keys to activate different layers on the keyboard.
-Physical impressions It&amp;rsquo;s a really cute keyboard. I&amp;rsquo;m a big fan of MX brown switches, and this keyboard is really a joy to type on, at least when you&amp;rsquo;re working primarily with the alpha keys.</description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;amp;kind2=224&amp;amp;kind3=&amp;amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+Physical impressions It&amp;rsquo;s a really cute keyboard. I&amp;rsquo;m a big fan of MX brown switches, and this keyboard is really a joy to type on, at least when you&amp;rsquo;re working primarily with the alpha keys.</description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
 past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
@@ -4886,10 +4955,10 @@ administrative assistance).&lt;/p>
 managed virtual machines:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ul>
 &lt;p>We&amp;rsquo;re going to start with the direct attachment model, since this may
@@ -5265,7 +5334,7 @@ a number of features that make it particularly appropriate for this niche.&lt;/p
 &lt;img src="grove-open.jpg" />
 &lt;/figure>
 &lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
-the &lt;a href="#sensors">Sensors&lt;/a> and &lt;a href="#inputoutput">Input/Output&lt;/a> sections,
+the &lt;a href="https://blog.oddbit.com/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/#inputoutput">Input/Output&lt;/a> sections,
 below, for an overview). To make it easy to get started, everything
 you see is pre-wired (via traces on the PCB) to the microcontroller.
 That means you don&amp;rsquo;t need soldering or connection cables to use
@@ -5296,7 +5365,7 @@ and sound sensors, the kit also has:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>DHT11 Temperature and Humidity Sensor&lt;/p>
-&lt;p>The &lt;a href="DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
 DHT11 can measure temperature from 0-50 °C with an accuracy of ±2 °C,
 and humidity from 20-80% with an accuracy of ±5% (the DHT22, in
 comparison, has a slightly wider ranger for both temperature and
@@ -5304,7 +5373,7 @@ humidity, and substantially better accuracy).&lt;/p>
 &lt;/li>
 &lt;li>
 &lt;p>BMP280 Air Pressure Sensor&lt;/p>
-&lt;p>The &lt;a href="Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
 above sea level, with a relative accuracy of ±1 m (that&amp;rsquo;s 300-1100 hPa
 with a relative accuracy of ±0.12 hPa). &amp;ldquo;Relative
 accuracy&amp;rdquo; means that it&amp;rsquo;s good at detecting pressure &lt;em>changes&lt;/em>, but
@@ -5313,7 +5382,7 @@ it&amp;rsquo;s less accurate if your goal is to read the absolute air pressure
 &lt;/li>
 &lt;li>
 &lt;p>LIS3DHTR 3-Axis Accelerometer&lt;/p>
-&lt;p>The &lt;a href="LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
 is capable of measuring accelerations with output data rates from 1
 Hz to 5.3 kHz.&lt;/p>
 &lt;/li>
@@ -5322,8 +5391,8 @@ Hz to 5.3 kHz.&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>OLED Display&lt;/p>
-&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
-the SSD1315 chip. You can see this display in action &lt;a href="#video">at the bottom
+&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
+the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/#video">at the bottom
 of this post&lt;/a>.&lt;/p>
 &lt;/li>
 &lt;li>
@@ -5571,7 +5640,7 @@ are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p>
 &lt;p>Raspbian automatically starts a getty on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p>
 &lt;pre tabindex="0">&lt;code>root@raspberrypi:/etc/systemd/system# ps -fe | grep agetty | grep ttyS0
 root 1138 1 0 00:24 ttyS0 00:00:00 /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220
-&lt;/code>&lt;/pre>&lt;p>If you don&amp;rsquo;t see this process and you&amp;rsquo;re on a Raspberry Pi 3 (or later), you may need to &lt;a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&amp;amp;t=141195">explicitly enable the serial port&lt;/a> by adding &lt;code>enable_uart=1&lt;/code> to &lt;code>/boot/config.txt&lt;/code>. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>If you don&amp;rsquo;t see this process and you&amp;rsquo;re on a Raspberry Pi 3 (or later), you may need to &lt;a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&amp;t=141195">explicitly enable the serial port&lt;/a> by adding &lt;code>enable_uart=1&lt;/code> to &lt;code>/boot/config.txt&lt;/code>. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.&lt;/p>
 &lt;p>Note that your serial port may not always be named &lt;code>ttyS0&lt;/code>. I&amp;rsquo;m going to use the value &lt;code>ttyS0&lt;/code> throughout this article to represent the appropriate device name. The correct device name is the penultimate argument in the above &lt;code>agetty&lt;/code> command.&lt;/p>
 &lt;h2 id="modify-the-serial-gettyttys0-unit">Modify the serial-getty@ttyS0 unit&lt;/h2>
 &lt;p>The &lt;code>agetty&lt;/code> process we saw in the previous section is started by the &lt;code>serial-getty@ttyS0.service&lt;/code> service unit (which is an instance of the &lt;code>serial-getty@.service&lt;/code> &lt;a href="https://fedoramagazine.org/systemd-template-unit-files/">template unit&lt;/a>). We need to modify that service so that it will call &lt;code>agetty&lt;/code> with the &lt;code>--autologin root&lt;/code> option.&lt;/p>
@@ -5691,7 +5760,7 @@ df[&amp;#39;winter_start&amp;#39;] = df[&amp;#39;DATE&amp;#39;].apply(get_winter
 &lt;pre tabindex="0">&lt;code>winter = df[df[&amp;#39;winter&amp;#39;]].copy()
 winter[&amp;#39;winter_start&amp;#39;] = (
 winter[&amp;#39;DATE&amp;#39;].dt.year - (winter[&amp;#39;DATE&amp;#39;].dt.month &amp;lt;= 3))
-&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="#bool">later on&lt;/a> in this article.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="https://blog.oddbit.com/#bool">later on&lt;/a> in this article.&lt;/p>
 &lt;h2 id="finding-a-sequence-of-consecutive-days-an-iterative-solution">Finding a sequence of consecutive days: an iterative solution&lt;/h2>
 &lt;p>To find the longest sequence of days below freezing, I again started with an iterative solution:&lt;/p>
 &lt;pre tabindex="0">&lt;code>def max_dbf(val):
@@ -12241,9 +12310,9 @@ file, but you could also do this on the command line:&lt;/p>
 &lt;p>I&amp;rsquo;ve made the examples presented in this article available for
 download at the following URLs:&lt;/p>
 &lt;ul>
-&lt;li>&lt;a href="ha.yml">ha.yml&lt;/a> playbook&lt;/li>
-&lt;li>&lt;a href="nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
-&lt;li>&lt;a href="nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
+&lt;li>&lt;a href="https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/ha.yml">ha.yml&lt;/a> playbook&lt;/li>
+&lt;li>&lt;a href="https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/nodes.yml">nodes.yml&lt;/a> example configuration file&lt;/li>
+&lt;li>&lt;a href="https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/nodes-minimal.yml">nodes-minimal.yml&lt;/a> example configuration file for a minimal environment&lt;/li>
 &lt;/ul>
 &lt;h2 id="running-tripleo-quickstart">Running tripleo-quickstart&lt;/h2>
 &lt;p>With all of the above in place, we can run:&lt;/p>
@@ -13126,7 +13195,7 @@ demonstrates how you can use the &lt;a href="http://docs.ansible.com/ansible/add
 created server to your inventory, and then target that new server in
 your playbook. I&amp;rsquo;ve split up this playbook with commentary; in
 practice, the pre-formatted text in this section would all be in a
-single playbook (like &lt;a href="playbook.yml">this&lt;/a>).&lt;/p>
+single playbook (like &lt;a href="https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/playbook.yml">this&lt;/a>).&lt;/p>
 &lt;pre>&lt;code>- hosts: localhost
 tasks:
 &lt;/code>&lt;/pre>
@@ -14349,7 +14418,7 @@ init_curl_http_auth(result);
 if (ssl_cert != NULL)
 curl_easy_setopt(result, CURLOPT_SSLCERT, ssl_cert);
 if (has_cert_password())
-&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;amp;m=143100824118409&amp;amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Suggestions for the Docker MAINTAINER directive</title><link>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</link><pubDate>Mon, 27 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</guid><description>Because nobody asked for it, this is my opinion on the use of the MAINTAINER directive in your Dockerfiles.
+&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;m=143100824118409&amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Suggestions for the Docker MAINTAINER directive</title><link>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</link><pubDate>Mon, 27 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</guid><description>Because nobody asked for it, this is my opinion on the use of the MAINTAINER directive in your Dockerfiles.
 The documentation says simply:
 The MAINTAINER instruction allows you to set the Author field of the generated images. Many people end up putting the name and email address of an actual person here. I think this is ultimately a bad idea, and does a disservice both to members of a project that produce Docker images and to people consuming those images.</description><content>&lt;p>Because nobody asked for it, this is my opinion on the use of the
 &lt;code>MAINTAINER&lt;/code> directive in your Dockerfiles.&lt;/p>
@@ -14409,7 +14478,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -14419,7 +14488,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img src="repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -14431,7 +14500,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img src="repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</guid><description>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed for use in cloud environments like OpenStack and AWS. These images are usually differentiated by (a) being relatively small, and (b) running cloud-init at boot to perform initial system configuration tasks using metadata provided by the cloud environment.
 Because of their small size and support for automatic configuration (including such useful tasks as provisioning ssh keys), these images are attractive for use outside of a cloud environment.</description><content>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
 for use in cloud environments like OpenStack and AWS. These images
@@ -14854,11 +14923,11 @@ your Pacemaker resource constraints.&lt;/p>
 &lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
 output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
 constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p>
-&lt;p>Given a document like &lt;a href="cib.xml">this&lt;/a>, if you run:&lt;/p>
+&lt;p>Given a document like &lt;a href="https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/cib.xml">this&lt;/a>, if you run:&lt;/p>
 &lt;pre>&lt;code>cibadmin -Q |
 python graph-constraints.py -o cib.svg
 &lt;/code>&lt;/pre>
-&lt;p>You get a graph like &lt;a href="cib.svg">this&lt;/a>:&lt;/p>
+&lt;p>You get a graph like &lt;a href="https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/cib.svg">this&lt;/a>:&lt;/p>
 &lt;figure class="left" >
 &lt;img src="cib.svg" />
 &lt;/figure>
@@ -16129,7 +16198,7 @@ know anything about that host.&lt;/p>
 &lt;p>&lt;strong>NB&lt;/strong>&lt;/p>
 &lt;p>If you were to try to delete this failed instance, you would find that
 it is un-deletable. In the end, I was only able to delete it by
-directly editing the &lt;code>nova&lt;/code> database using &lt;a href="delete-deleting-instances.sql">this sql script&lt;/a>.&lt;/p>
+directly editing the &lt;code>nova&lt;/code> database using &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/delete-deleting-instances.sql">this sql script&lt;/a>.&lt;/p>
 &lt;hr>
 &lt;h2 id="adding-a-neutron-agent">Adding a Neutron agent&lt;/h2>
 &lt;p>We&amp;rsquo;re going to need to set up an instance of
@@ -18436,7 +18505,7 @@ givin you better support for multi-tenancy and flexible networking
 than you get with Docker by itself.&lt;/p>
 &lt;p>The &lt;a href="https://wiki.openstack.org/wiki/Docker">Docker driver wiki&lt;/a> was mostly sufficient for getting the
 &lt;code>nova-docker&lt;/code> driver installed in my existing OpenStack deployment,
-although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;amp;diff=61664&amp;amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
+although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;diff=61664&amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
 some missing steps. Other than that, the installation was relatively
 simple and I was soon able to spin up Docker containers using &lt;code>nova boot ...&lt;/code>&lt;/p>
 &lt;p>The one problem I encountered is that it is not possible to pass
@@ -19148,7 +19217,7 @@ configuration that would permit me to boot and run docker without
 requiring any loadable modules. This would allow me to use the same
 image for each kernel without needing to re-populate it with modules
 each time I built a kernel.&lt;/p>
-&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/kernel-config.txt">here&lt;/a>.&lt;/p>
 &lt;h3 id="testing-docker">Testing docker&lt;/h3>
 &lt;p>The last step in this process is putting together something that tests
 &lt;code>docker&lt;/code> and exposes the result of that test to the build environment.
@@ -20332,7 +20401,7 @@ B -&amp;gt; D
 }
 &lt;/code>&lt;/pre>
 &lt;p>Which would produce output like this:&lt;/p>
-&lt;p>&lt;img src="dot-example.svg" alt="Dot output example">&lt;/p>
+&lt;p>&lt;img alt="Dot output example" src="https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/dot-example.svg">&lt;/p>
 &lt;p>When run on my laptop, with a simple all-in-one configuration and five
 instances across two networks, the result of running &lt;code>mk-network-dot&lt;/code>
 looks like this:&lt;/p>
@@ -22114,7 +22183,7 @@ interfaces on the same network would look like this:&lt;/p>
 &lt;p>Of course, this is only half the solution: having generated a hosts
 file we need to put it somewhere where your system can find it.&lt;/p>
 &lt;h2 id="an-aside-incron">An aside: incron&lt;/h2>
-&lt;p>Both of the following solutions rely on &lt;a href="http://inotify.aiken.cz/?section=incron&amp;amp;page=about&amp;amp;lang=en">incron&lt;/a>, a tool that uses
+&lt;p>Both of the following solutions rely on &lt;a href="http://inotify.aiken.cz/?section=incron&amp;page=about&amp;lang=en">incron&lt;/a>, a tool that uses
 the Linux &lt;a href="http://en.wikipedia.org/wiki/Inotify">inotify&lt;/a> subsystem to trigger scripts in reaction to
 events on file and directories. In this case, we&amp;rsquo;ll be using &lt;code>incron&lt;/code>
 to monitor the dnsmasq &lt;code>default.leases&lt;/code> file and firing off a script
@@ -22125,7 +22194,7 @@ could hook up something to the libvirt events framework.&lt;/p>
 &lt;h2 id="using-etchosts">Using /etc/hosts&lt;/h2>
 &lt;p>If you want to update your &lt;code>/etc/hosts&lt;/code> file, you can place the
 following into a script called &lt;code>update-virt-hosts&lt;/code> (somewhere in
-root&amp;rsquo;s &lt;code>PATH&lt;/code>) and run that via &lt;a href="http://inotify.aiken.cz/?section=incron&amp;amp;page=about&amp;amp;lang=en">incron&lt;/a>:&lt;/p>
+root&amp;rsquo;s &lt;code>PATH&lt;/code>) and run that via &lt;a href="http://inotify.aiken.cz/?section=incron&amp;page=about&amp;lang=en">incron&lt;/a>:&lt;/p>
 &lt;pre>&lt;code>#!/bin/sh
 sed -i '/^# BEGIN VIRT HOSTS/,/^# END VIRT HOSTS/ d' /etc/hosts
 cat &amp;lt;&amp;lt;EOF &amp;gt;&amp;gt;/etc/hosts
@@ -22449,10 +22518,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img src="raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>&lt;img alt="Raspberry Pi Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img src="arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
 RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses.</description><content>&lt;p>There are several Python libraries out there for interacting with the
@@ -23789,7 +23858,7 @@ the firewall the connection was never successfully established&amp;hellip;and af
 seconds (the default &amp;ldquo;embryonic connection timeout&amp;rdquo;) the connection gets
 dropped by the firewall. The diagram below illustrates exactly what was
 happening:&lt;/p>
-&lt;p>&lt;img src="asymmetric-routing.png" alt="assymetric routing">&lt;/p>
+&lt;p>&lt;img alt="assymetric routing" src="https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/asymmetric-routing.png">&lt;/p>
 &lt;p>There are various ways of correcting this situation:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -23934,7 +24003,7 @@ What it does As I detailed in my previous post, the Envoy sends data to Enphase 
 &lt;p>In addition to extracting the XML data, the proxy also logs the complete contents (headers and message content) of the request and the reply to files.&lt;/p>
 &lt;h2 id="how-it-works">How it works&lt;/h2>
 &lt;p>Out of the box, your Envoy configures itself automatically using DHCP. Possibly, you&amp;rsquo;ve configured it statically. In either case, it will typically be configured to connect via your default gateway &amp;ndash; generally, your home router, cable modem, etc. In order to intercept the communication between the Envoy and Enphase, we insert another server between the Envoy and your network gateway. In the foollowing diagram, the dotted line represents the original communication path, while the solid lines represent the new communication path:&lt;/p>
-&lt;p>&lt;img src="envoy-capture.png" alt="envoy communication">&lt;/p>
+&lt;p>&lt;img alt="envoy communication" src="https://blog.oddbit.com/post/2012-02-22-capturing-envoy-data/envoy-capture.png">&lt;/p>
 &lt;p>The intermediate system &amp;ndash; which we&amp;rsquo;ll call the interceptor &amp;ndash; will use a few tricks to redirect traffic destined for Enphase to the local proxy (which will log the data locally and then forward it on to Enphase).&lt;/p>
 &lt;h2 id="assumptions">Assumptions&lt;/h2>
 &lt;p>For the purposes of this article, we&amp;rsquo;ll assume that your Envoy is at address 192.168.1.100, and the address of the interceptor is 192.168.1.200.&lt;/p>
@@ -25140,7 +25209,7 @@ mail: user2@example.com
 &lt;/code>&lt;/pre>
 &lt;p>This should give you something that looks very much like the contents of backend1.ldif. You can do the same thing for backend2.&lt;/p>
 &lt;h1 id="set-up-meta-database">Set up meta database&lt;/h1>
-&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP+2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
+&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;apropos=0&amp;sektion=0&amp;manpath=OpenLDAP+2.4-Release&amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
 &lt;p>Put the following into a file called slapd-frontend.conf (we&amp;rsquo;ll discuss the details in moment):&lt;/p>
 &lt;pre>&lt;code>database meta
 suffix &amp;quot;dc=example,dc=com&amp;quot;
@@ -25179,7 +25248,7 @@ suffix &amp;quot;dc=example,dc=com&amp;quot;
 &lt;pre>&lt;code>uri &amp;quot;ldap://localhost/ou=backend1,dc=example,dc=com&amp;quot;
 suffixmassage &amp;quot;ou=backend1,dc=example,dc=com&amp;quot; &amp;quot;ou=backend1&amp;quot;
 &lt;/code>&lt;/pre>
-&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP+2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
+&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;apropos=0&amp;sektion=0&amp;manpath=OpenLDAP+2.4-Release&amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
 &lt;p>The suffixmassage statement performs simple rewriting on distinguished names. It directs &lt;em>slapd&lt;/em> to replace ou=backend1,dc=example,dc=com with ou=backend1 when communicating with the backend directory (and vice-versa).&lt;/p>
 &lt;p>You can perform simple rewriting of attribute and object classes with the map statement. For example, if backend1 used a sAMAccountName attribute and our application was expecting a uid attribute, we could add this after the suffixmassage statement:&lt;/p>
 &lt;pre>&lt;code>map attribute uid sAMAccountName

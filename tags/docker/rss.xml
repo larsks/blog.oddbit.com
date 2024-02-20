@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>docker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/docker/</link><description>Recent content in docker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 20 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/docker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>This post is mostly for myself: I find the Traefik documentation hard to navigate, so having figured this out in response to a question on Stack Overflow, I&amp;rsquo;m putting it here to help it stick in my head.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/docker/</link><description>Recent content in Docker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 20 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/docker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>This post is mostly for myself: I find the Traefik documentation hard to navigate, so having figured this out in response to a question on Stack Overflow, I&amp;rsquo;m putting it here to help it stick in my head.
 The question asks essentially how to perform port-based routing of requests to containers, so that a request for http://example.com goes to one container while a request for http://example.com:9090 goes to a different container.</description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
 &lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
 &lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
@@ -2087,7 +2087,7 @@ know anything about that host.&lt;/p>
 &lt;p>&lt;strong>NB&lt;/strong>&lt;/p>
 &lt;p>If you were to try to delete this failed instance, you would find that
 it is un-deletable. In the end, I was only able to delete it by
-directly editing the &lt;code>nova&lt;/code> database using &lt;a href="delete-deleting-instances.sql">this sql script&lt;/a>.&lt;/p>
+directly editing the &lt;code>nova&lt;/code> database using &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/delete-deleting-instances.sql">this sql script&lt;/a>.&lt;/p>
 &lt;hr>
 &lt;h2 id="adding-a-neutron-agent">Adding a Neutron agent&lt;/h2>
 &lt;p>We&amp;rsquo;re going to need to set up an instance of
@@ -3438,7 +3438,7 @@ givin you better support for multi-tenancy and flexible networking
 than you get with Docker by itself.&lt;/p>
 &lt;p>The &lt;a href="https://wiki.openstack.org/wiki/Docker">Docker driver wiki&lt;/a> was mostly sufficient for getting the
 &lt;code>nova-docker&lt;/code> driver installed in my existing OpenStack deployment,
-although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;amp;diff=61664&amp;amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
+although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;diff=61664&amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
 some missing steps. Other than that, the installation was relatively
 simple and I was soon able to spin up Docker containers using &lt;code>nova boot ...&lt;/code>&lt;/p>
 &lt;p>The one problem I encountered is that it is not possible to pass
@@ -3924,7 +3924,7 @@ configuration that would permit me to boot and run docker without
 requiring any loadable modules. This would allow me to use the same
 image for each kernel without needing to re-populate it with modules
 each time I built a kernel.&lt;/p>
-&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/kernel-config.txt">here&lt;/a>.&lt;/p>
 &lt;h3 id="testing-docker">Testing docker&lt;/h3>
 &lt;p>The last step in this process is putting together something that tests
 &lt;code>docker&lt;/code> and exposes the result of that test to the build environment.

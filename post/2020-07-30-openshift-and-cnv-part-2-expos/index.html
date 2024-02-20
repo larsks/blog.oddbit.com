@@ -19,7 +19,7 @@ platforms, consumers of this service need to be able to:</p><ul><li>Start a virt
 on a routeable ip address</li></ul><p>All of the above should be self service (that is, none of those steps
 should requiring opening a support ticket or otherwise require
 administrative assistance).</p><h2 id=connectivity-options>Connectivity options<a href=#connectivity-options class=hanchor arialabel=Anchor>&#8983;</a></h2><p>There are broadly two major connectivity models available to CNV
-managed virtual machines:</p><ul><li><p><a href=#direct-attachment>Direct attachment to a host network</a></p></li><li><p><a href=#using-an-openshift-service>Using an OpenShift Service</a></p></li></ul><p>We&rsquo;re going to start with the direct attachment model, since this may
+managed virtual machines:</p><ul><li><p><a href=/#direct-attachment>Direct attachment to a host network</a></p></li><li><p><a href=/#using-an-openshift-service>Using an OpenShift Service</a></p></li></ul><p>We&rsquo;re going to start with the direct attachment model, since this may
 be familiar to people coming to CNV from other hypervisor platforms.</p><h2 id=direct-attachment>Direct attachment<a href=#direct-attachment class=hanchor arialabel=Anchor>&#8983;</a></h2><p>With a little configuration, it is possible to attach virtual machines
 directly to an existing layer two network.</p><p>When running CNV, you can affect the network configuration of your
 OpenShift hosts by creating <code>NodeNetworkConfigurationPolicy</code>

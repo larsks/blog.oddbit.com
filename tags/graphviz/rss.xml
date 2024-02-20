@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>graphviz on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/graphviz/</link><description>Recent content in graphviz on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 27 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/graphviz/rss.xml" rel="self" type="application/rss+xml"/><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-index.in/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-index.in/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Graphviz on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/graphviz/</link><description>Recent content in Graphviz on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 27 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/graphviz/rss.xml" rel="self" type="application/rss+xml"/><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-git-doc-tools/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-git-doc-tools/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
 git synth The git synth command reads a YAML description of a repository and executes the necessary commands to reproduce that history. It allows you set the name and email address of the author and committer as well as static date, so you every time you generate the repository you can identical commit ids.</description><content>&lt;p>I sometimes find myself writing articles or documentation about
 &lt;a href="https://git-scm.org">git&lt;/a>, so I put together a couple of terrible hacks for generating
 reproducible histories and pretty graphs of those histories.&lt;/p>
@@ -14,7 +14,35 @@ history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_
 into diagrams.&lt;/p>
 &lt;h2 id="putting-it-together">Putting it together&lt;/h2>
 &lt;p>For example, the following history specification:&lt;/p>
-&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.yml --&amp;gt;
+&lt;pre tabindex="0">&lt;code>- set:
+date: &amp;#34;2021-01-01&amp;#34;
+name: Fake Person
+email: fake@example.com
+- branch:
+name: master
+actions:
+- commit:
+message: A
+- commit:
+message: B
+- commit:
+message: C
+- branch:
+name: topic1
+actions:
+- commit:
+message: D
+- commit:
+message: E
+- branch:
+name: topic2
+actions:
+- commit:
+message: F
+- commit:
+message: G
+- commit:
+message: H
 &lt;/code>&lt;/pre>&lt;p>When applied with &lt;code>git synth&lt;/code>:&lt;/p>
 &lt;pre tabindex="0">&lt;code>$ git synth -r examplerepo examplerepo.yml
 &lt;/code>&lt;/pre>&lt;p>Will generate the following repository:&lt;/p>
@@ -31,10 +59,51 @@ into diagrams.&lt;/p>
 &lt;/code>&lt;/pre>&lt;p>We can run this &lt;code>git dot&lt;/code> command line:&lt;/p>
 &lt;pre tabindex="0">&lt;code>$ git -C examplerepo dot -m -g branch --rankdir=RL
 &lt;/code>&lt;/pre>&lt;p>To produce the following &lt;code>dot&lt;/code> description of the history:&lt;/p>
-&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.dot --&amp;gt;
+&lt;pre tabindex="0">&lt;code>digraph git {
+graph [rankdir=RL]
+node [shape=circle]
+{
+node [group=master_commits]
+&amp;#34;28f7b382a5&amp;#34; [label=H tooltip=&amp;#34;28f7b382a52ac53f86314e5d608ebafd66de6c44&amp;#34;]
+cabdedff95 [label=C tooltip=cabdedff957f7dec15f365e7c29eaead9930d618]
+a5cbd99954 [label=B tooltip=a5cbd999545aeabc2e102a845aeb0466f01454a2]
+d98f949840 [label=A tooltip=d98f94984057d760066ba0b300ab4930497bcba6]
+}
+{
+node [group=topic1_commits]
+&amp;#34;973437cb00&amp;#34; [label=E tooltip=&amp;#34;973437cb007d2a69d6564fd7b30f3e8c347073c2&amp;#34;]
+&amp;#34;2c0bd1c1df&amp;#34; [label=D tooltip=&amp;#34;2c0bd1c1dfe9f76cd18b37bb0bc995e449e0094b&amp;#34;]
+}
+{
+node [group=topic2_commits]
+&amp;#34;93e1d18862&amp;#34; [label=G tooltip=&amp;#34;93e1d18862102e044a4ec46bb189f5bca9ba0e05&amp;#34;]
+&amp;#34;3ef811d426&amp;#34; [label=F tooltip=&amp;#34;3ef811d426c09be792a0ff6564eca82a7bd105a9&amp;#34;]
+}
+{
+node [color=black fontcolor=white group=heads shape=box style=filled]
+master
+topic1
+topic2
+}
+{
+edge [style=dashed]
+topic2 -&amp;gt; &amp;#34;93e1d18862&amp;#34;
+topic1 -&amp;gt; &amp;#34;973437cb00&amp;#34;
+master -&amp;gt; &amp;#34;28f7b382a5&amp;#34;
+}
+a5cbd99954 -&amp;gt; d98f949840
+&amp;#34;3ef811d426&amp;#34; -&amp;gt; &amp;#34;973437cb00&amp;#34;
+&amp;#34;973437cb00&amp;#34; -&amp;gt; &amp;#34;2c0bd1c1df&amp;#34;
+cabdedff95 -&amp;gt; a5cbd99954
+&amp;#34;28f7b382a5&amp;#34; -&amp;gt; cabdedff95
+&amp;#34;2c0bd1c1df&amp;#34; -&amp;gt; cabdedff95
+&amp;#34;93e1d18862&amp;#34; -&amp;gt; &amp;#34;3ef811d426&amp;#34;
+}
 &lt;/code>&lt;/pre>&lt;p>Running that through the &lt;code>dot&lt;/code> utility (&lt;code>dot -Tsvg -o repo.svg repo.dot&lt;/code>) results in the following diagram:&lt;/p>
-&lt;pre tabindex="0">&lt;code class="language-graphviz" data-lang="graphviz">&amp;lt;!-- include examplerepo.dot --&amp;gt;
-&lt;/code>&lt;/pre>&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
+&lt;figure class="left" >
+&lt;img src="gen-094ef3d69a7692db2cdee8e04869e8f98bdd237b.svg" />
+&lt;/figure>
+&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
 &lt;p>Both tools live in my &lt;a href="https://github.com/larsks/git-snippets">git-snippets&lt;/a> repository, which is a motley
 collection of shells scripts, python programs, and other utilities for
 interacting with &lt;code>git&lt;/code>.&lt;/p>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>arduino on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/arduino/</link><description>Recent content in arduino on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 07 Jun 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/arduino/rss.xml" rel="self" type="application/rss+xml"/><item><title>Grove Beginner Kit for Arduino (part 2): First look</title><link>https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/</link><pubDate>Sun, 07 Jun 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/</guid><description>The folks at Seeed Studio were kind enough to send me a Grove Beginner Kit for Arduino for review. That&amp;rsquo;s a mouthful of a name for a compact little kit!
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Arduino on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/arduino/</link><description>Recent content in Arduino on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 07 Jun 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/arduino/rss.xml" rel="self" type="application/rss+xml"/><item><title>Grove Beginner Kit for Arduino (part 2): First look</title><link>https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/</link><pubDate>Sun, 07 Jun 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/</guid><description>The folks at Seeed Studio were kind enough to send me a Grove Beginner Kit for Arduino for review. That&amp;rsquo;s a mouthful of a name for a compact little kit!
 The Grove Beginner Kit for Arduino (henceforth &amp;ldquo;the Kit&amp;rdquo;, because ain&amp;rsquo;t nobody got time to type that out more than a few times in a single article) is about 8.5 x 5 x 1 inches. Closed, you could fit two of them on a piece of 8.</description><content>&lt;p>The folks at &lt;a href="https://seeedstudio.com">Seeed Studio&lt;/a> were kind enough to send me a &lt;a href="https://www.seeedstudio.com/Grove-Beginner-Kit-for-Arduino-p-4549.html">Grove
 Beginner Kit for Arduino&lt;/a> for review. That&amp;rsquo;s a mouthful of a name
 for a compact little kit!&lt;/p>
@@ -16,7 +16,7 @@ a number of features that make it particularly appropriate for this niche.&lt;/p
 &lt;img src="grove-open.jpg" />
 &lt;/figure>
 &lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
-the &lt;a href="#sensors">Sensors&lt;/a> and &lt;a href="#inputoutput">Input/Output&lt;/a> sections,
+the &lt;a href="https://blog.oddbit.com/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/#inputoutput">Input/Output&lt;/a> sections,
 below, for an overview). To make it easy to get started, everything
 you see is pre-wired (via traces on the PCB) to the microcontroller.
 That means you don&amp;rsquo;t need soldering or connection cables to use
@@ -47,7 +47,7 @@ and sound sensors, the kit also has:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>DHT11 Temperature and Humidity Sensor&lt;/p>
-&lt;p>The &lt;a href="DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
 DHT11 can measure temperature from 0-50 °C with an accuracy of ±2 °C,
 and humidity from 20-80% with an accuracy of ±5% (the DHT22, in
 comparison, has a slightly wider ranger for both temperature and
@@ -55,7 +55,7 @@ humidity, and substantially better accuracy).&lt;/p>
 &lt;/li>
 &lt;li>
 &lt;p>BMP280 Air Pressure Sensor&lt;/p>
-&lt;p>The &lt;a href="Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
 above sea level, with a relative accuracy of ±1 m (that&amp;rsquo;s 300-1100 hPa
 with a relative accuracy of ±0.12 hPa). &amp;ldquo;Relative
 accuracy&amp;rdquo; means that it&amp;rsquo;s good at detecting pressure &lt;em>changes&lt;/em>, but
@@ -64,7 +64,7 @@ it&amp;rsquo;s less accurate if your goal is to read the absolute air pressure
 &lt;/li>
 &lt;li>
 &lt;p>LIS3DHTR 3-Axis Accelerometer&lt;/p>
-&lt;p>The &lt;a href="LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
 is capable of measuring accelerations with output data rates from 1
 Hz to 5.3 kHz.&lt;/p>
 &lt;/li>
@@ -73,8 +73,8 @@ Hz to 5.3 kHz.&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>OLED Display&lt;/p>
-&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
-the SSD1315 chip. You can see this display in action &lt;a href="#video">at the bottom
+&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
+the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/#video">at the bottom
 of this post&lt;/a>.&lt;/p>
 &lt;/li>
 &lt;li>
@@ -407,10 +407,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img src="raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>&lt;img alt="Raspberry Pi Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img src="arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Controlling a servo with your Arduino</title><link>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</link><pubDate>Thu, 07 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</guid><description>I&amp;rsquo;ve recently started playing with an Arduino kit I purchased a year ago (and only just now got around to unboxing). I purchased the kit from SparkFun, and it includes a motley collection of resistors, LEDs, a motor, a servo, and more.
 I was fiddling around with this exercise, which uses the SoftwareServo library to control a servo. Using this library, you just pass it an angle and the library takes care of everything else, e.</description><content>&lt;p>I&amp;rsquo;ve recently started playing with an &lt;a href="http://arduino.cc/">Arduino&lt;/a> kit I purchased a year

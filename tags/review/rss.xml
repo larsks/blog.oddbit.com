@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>review on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/review/</link><description>Recent content in review on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 15 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/review/rss.xml" rel="self" type="application/rss+xml"/><item><title>A review of the Garmin Fenix 6(x)</title><link>https://blog.oddbit.com/post/2023-02-15-garmin-fenix-6/</link><pubDate>Wed, 15 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-15-garmin-fenix-6/</guid><description>I&amp;rsquo;ve been using a Garmin Fenix 6x for a couple of weeks and thought it might be interesting to put together a short review.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Review on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/review/</link><description>Recent content in Review on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 15 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/review/rss.xml" rel="self" type="application/rss+xml"/><item><title>A review of the Garmin Fenix 6(x)</title><link>https://blog.oddbit.com/post/2023-02-15-garmin-fenix-6/</link><pubDate>Wed, 15 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-15-garmin-fenix-6/</guid><description>I&amp;rsquo;ve been using a Garmin Fenix 6x for a couple of weeks and thought it might be interesting to put together a short review.
 Is it really a smartwatch? I think it&amp;rsquo;s a misnomer to call the Fenix a &amp;ldquo;smartwatch&amp;rdquo;. I would call it a highly capable fitness tracker. That&amp;rsquo;s not a knock on the product; I really like it so far, but pretty much everything it does is centered around either fitness tracking or navigation.</description><content>&lt;p>I&amp;rsquo;ve been using a &lt;a href="https://www.garmin.com/en-US/p/641435">Garmin Fenix 6x&lt;/a> for a couple of weeks and thought it might be interesting to put together a short review.&lt;/p>
 &lt;h2 id="is-it-really-a-smartwatch">Is it really a smartwatch?&lt;/h2>
 &lt;p>I think it&amp;rsquo;s a misnomer to call the Fenix a &amp;ldquo;smartwatch&amp;rdquo;. I would call it a highly capable fitness tracker. That&amp;rsquo;s not a knock on the product; I really like it so far, but pretty much everything it does is centered around either fitness tracking or navigation. If you browse around the &lt;a href="https://apps.garmin.com/en-US/">&amp;ldquo;Connect IQ&amp;rdquo; store&lt;/a>, mostly you&amp;rsquo;ll find (a) watch faces, (b) fitness apps, and (c) navigation apps. It&amp;rsquo;s not able to control your phone (for the most part; there are some apps available that offer remote camera control and some other limited features); you can&amp;rsquo;t check your email on it, or send text messages, and you&amp;rsquo;ll never find a watch version of any major smartphone app.&lt;/p>
@@ -81,7 +81,7 @@ a number of features that make it particularly appropriate for this niche.&lt;/p
 &lt;img src="grove-open.jpg" />
 &lt;/figure>
 &lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
-the &lt;a href="#sensors">Sensors&lt;/a> and &lt;a href="#inputoutput">Input/Output&lt;/a> sections,
+the &lt;a href="https://blog.oddbit.com/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/#inputoutput">Input/Output&lt;/a> sections,
 below, for an overview). To make it easy to get started, everything
 you see is pre-wired (via traces on the PCB) to the microcontroller.
 That means you don&amp;rsquo;t need soldering or connection cables to use
@@ -112,7 +112,7 @@ and sound sensors, the kit also has:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>DHT11 Temperature and Humidity Sensor&lt;/p>
-&lt;p>The &lt;a href="DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/DHT11-Technical-Data-Sheet.pdf">DHT11&lt;/a> is the less expensive cousin of the DHT22. The
 DHT11 can measure temperature from 0-50 °C with an accuracy of ±2 °C,
 and humidity from 20-80% with an accuracy of ±5% (the DHT22, in
 comparison, has a slightly wider ranger for both temperature and
@@ -120,7 +120,7 @@ humidity, and substantially better accuracy).&lt;/p>
 &lt;/li>
 &lt;li>
 &lt;p>BMP280 Air Pressure Sensor&lt;/p>
-&lt;p>The &lt;a href="Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/Grove-Barometer_Sensor-BMP280-BMP280-DS001-12_Datasheet.pdf">BMP280&lt;/a> can measure pressure from -500 m below sea level to 9000 m
 above sea level, with a relative accuracy of ±1 m (that&amp;rsquo;s 300-1100 hPa
 with a relative accuracy of ±0.12 hPa). &amp;ldquo;Relative
 accuracy&amp;rdquo; means that it&amp;rsquo;s good at detecting pressure &lt;em>changes&lt;/em>, but
@@ -129,7 +129,7 @@ it&amp;rsquo;s less accurate if your goal is to read the absolute air pressure
 &lt;/li>
 &lt;li>
 &lt;p>LIS3DHTR 3-Axis Accelerometer&lt;/p>
-&lt;p>The &lt;a href="LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
+&lt;p>The &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/LIS3DHTR_datasheet.pdf">LIS3DHTR&lt;/a> has user-selectable scales of ±2 g/±4 g/±8 g/±16 g and
 is capable of measuring accelerations with output data rates from 1
 Hz to 5.3 kHz.&lt;/p>
 &lt;/li>
@@ -138,8 +138,8 @@ Hz to 5.3 kHz.&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>OLED Display&lt;/p>
-&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
-the SSD1315 chip. You can see this display in action &lt;a href="#video">at the bottom
+&lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
+the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/#video">at the bottom
 of this post&lt;/a>.&lt;/p>
 &lt;/li>
 &lt;li>

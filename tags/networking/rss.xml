@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>networking on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networking/</link><description>Recent content in networking on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networking/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networking on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networking/</link><description>Recent content in Networking on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networking/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
 &amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range 192.168.3.0/24, and similarly for communication in the other direction?</description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
-&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="the-problem.svg" alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
 &lt;h2 id="setting-up-a-lab">Setting up a lab&lt;/h2>
 &lt;p>When investigating this sort of networking question, I find it easiest to reproduce the topology in a virtual environment so that it&amp;rsquo;s easy to test things out. I generally use &lt;a href="https://mininet.org">Mininet&lt;/a> for this, which provides a simple Python API for creating virtual nodes and switches and creating links between them.&lt;/p>
@@ -13,7 +13,7 @@
 &lt;h2 id="vrf-in-theory">VRF in theory&lt;/h2>
 &lt;p>VRF stands for &amp;ldquo;Virtual Routing and Forwarding&amp;rdquo;. From the &lt;a href="https://en.wikipedia.org/wiki/Virtual_routing_and_forwarding">Wikipedia article on the topic&lt;/a>:&lt;/p>
 &lt;blockquote>
-&lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="the-problem.svg">1&lt;/a>&lt;/p>
+&lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">1&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;p>In Linux, VRF support is implemented as a &lt;a href="https://docs.kernel.org/networking/vrf.html">special type of network device&lt;/a>. A VRF device sets up an isolated routing domain; network traffic on devices associated with a VRF will use the routing table associated with that VRF, rather than the main routing table, which permits us to connect multiple networks with overlapping address ranges.&lt;/p>
 &lt;p>We can create new VRF devices with the &lt;code>ip link add&lt;/code> command:&lt;/p>
@@ -207,8 +207,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="328751469" type="checkbox" />
-&lt;label for="328751469">
+&lt;input id="573124869" type="checkbox" />
+&lt;label for="573124869">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -271,8 +271,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="938154726" type="checkbox" />
-&lt;label for="938154726">
+&lt;input id="918672453" type="checkbox" />
+&lt;label for="918672453">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -482,8 +482,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="361748295" type="checkbox" />
-&lt;label for="361748295">
+&lt;input id="562137894" type="checkbox" />
+&lt;label for="562137894">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -566,17 +566,17 @@ return 0;
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
 &lt;p>This shows how to set up an IPv6 tunnel and configure an IPv6-only
 VLAN on the EdgeRouter.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
 &lt;p>This is only necessary due to the specifics of the connection between
 my desktop and the router; you can probably skip this.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
 &lt;p>This shows how to set up the IPv6 VLAN interface under Linux using &lt;code>nmcli&lt;/code>.&lt;/p>
 &lt;/li>
 &lt;/ul>
@@ -1036,10 +1036,10 @@ administrative assistance).&lt;/p>
 managed virtual machines:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ul>
 &lt;p>We&amp;rsquo;re going to start with the direct attachment model, since this may
@@ -3068,7 +3068,7 @@ B -&amp;gt; D
 }
 &lt;/code>&lt;/pre>
 &lt;p>Which would produce output like this:&lt;/p>
-&lt;p>&lt;img src="dot-example.svg" alt="Dot output example">&lt;/p>
+&lt;p>&lt;img alt="Dot output example" src="https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/dot-example.svg">&lt;/p>
 &lt;p>When run on my laptop, with a simple all-in-one configuration and five
 instances across two networks, the result of running &lt;code>mk-network-dot&lt;/code>
 looks like this:&lt;/p>
@@ -3647,7 +3647,7 @@ the firewall the connection was never successfully established&amp;hellip;and af
 seconds (the default &amp;ldquo;embryonic connection timeout&amp;rdquo;) the connection gets
 dropped by the firewall. The diagram below illustrates exactly what was
 happening:&lt;/p>
-&lt;p>&lt;img src="asymmetric-routing.png" alt="assymetric routing">&lt;/p>
+&lt;p>&lt;img alt="assymetric routing" src="https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/asymmetric-routing.png">&lt;/p>
 &lt;p>There are various ways of correcting this situation:&lt;/p>
 &lt;ul>
 &lt;li>

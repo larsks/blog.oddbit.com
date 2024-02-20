@@ -121,7 +121,7 @@ when I ran <code>docker</code> with the above image, I set up a custom kernel
 configuration that would permit me to boot and run docker without
 requiring any loadable modules. This would allow me to use the same
 image for each kernel without needing to re-populate it with modules
-each time I built a kernel.</p><p>The kernel configuration I ended up with is available <a href=kernel-config.txt>here</a>.</p><h3 id=testing-docker>Testing docker<a href=#testing-docker class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The last step in this process is putting together something that tests
+each time I built a kernel.</p><p>The kernel configuration I ended up with is available <a href=/post/2014-07-21-tracking-down-a-kernel-bug-wit/kernel-config.txt>here</a>.</p><h3 id=testing-docker>Testing docker<a href=#testing-docker class=hanchor arialabel=Anchor>&#8983;</a></h3><p>The last step in this process is putting together something that tests
 <code>docker</code> and exposes the result of that test to the build environment.
 I added the following script to the image as <code>/root/docker-test</code>:</p><pre><code>#!/bin/sh
 

@@ -3,7 +3,7 @@
 	"file": "styles.css",
 	"sourceRoot": "/home/runner/work/blog.oddbit.com/blog.oddbit.com",
 	"sources": [
-		"css/base.scss",
+		"/css/base.scss",
 		"../../../../../tmp/hugo_cache_runner/modules/filecache/modules/pkg/mod/github.com/panr/hugo-theme-terminal/v3@v3.1.2/assets/css/variables.scss",
 		"../../../../../tmp/hugo_cache_runner/modules/filecache/modules/pkg/mod/github.com/panr/hugo-theme-terminal/v3@v3.1.2/assets/css/font.scss",
 		"../../../../../tmp/hugo_cache_runner/modules/filecache/modules/pkg/mod/github.com/panr/hugo-theme-terminal/v3@v3.1.2/assets/css/buttons.scss",

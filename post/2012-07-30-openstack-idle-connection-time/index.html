@@ -47,7 +47,7 @@ packet was being routed directly, which means that from the point of view of
 the firewall the connection was never successfully established&mldr;and after 20
 seconds (the default &ldquo;embryonic connection timeout&rdquo;) the connection gets
 dropped by the firewall. The diagram below illustrates exactly what was
-happening:</p><p><img src=asymmetric-routing.png alt="assymetric routing"></p><p>There are various ways of correcting this situation:</p><ul><li><p>You could use the advanced <a href=http://www.policyrouting.org/PolicyRoutingBook/ONLINE/TOC.html>policy routing</a> features available in Linux
+happening:</p><p><img alt="assymetric routing" src=/post/2012-07-30-openstack-idle-connection-time/asymmetric-routing.png></p><p>There are various ways of correcting this situation:</p><ul><li><p>You could use the advanced <a href=http://www.policyrouting.org/PolicyRoutingBook/ONLINE/TOC.html>policy routing</a> features available in Linux
 to set up a routing policy that would route replies out the same interface
 on which a packet was received, thus returning to a more typical symmetric
 routing model.</p></li><li><p>You could use the <a href=http://www.cisco.com/en/US/docs/security/asdm/6_2/user/guide/protect.html#wp1291963>tcp state bypass</a> feature available in the Cisco

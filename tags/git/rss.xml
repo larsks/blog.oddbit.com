@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>git on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/git/</link><description>Recent content in git on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 22 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/git/rss.xml" rel="self" type="application/rss+xml"/><item><title>Delete GitHub workflow runs using the gh cli</title><link>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</link><pubDate>Thu, 22 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</guid><description>Hello, future me. This is for you next time you want to do this.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Git on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/git/</link><description>Recent content in Git on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 22 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/git/rss.xml" rel="self" type="application/rss+xml"/><item><title>Delete GitHub workflow runs using the gh cli</title><link>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</link><pubDate>Thu, 22 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</guid><description>Hello, future me. This is for you next time you want to do this.
 When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:
 gh run list --json databaseId -q &amp;#39;.</description><content>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
 &lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p>
@@ -6,7 +6,7 @@ gh run list --json databaseId -q &amp;#39;.</description><content>&lt;p>Hello, f
 xargs -IID gh api \
 &amp;#34;repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID&amp;#34; \
 -X DELETE
-&lt;/code>&lt;/pre>&lt;p>This will delete &lt;em>all&lt;/em> (well, up to 20, or whatever you set in &lt;code>--limit&lt;/code>) your workflow runs. You can add flags to &lt;code>gh run list&lt;/code> to filter runs by workflow or by triggering user.&lt;/p></content></item><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-index.in/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-index.in/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
+&lt;/code>&lt;/pre>&lt;p>This will delete &lt;em>all&lt;/em> (well, up to 20, or whatever you set in &lt;code>--limit&lt;/code>) your workflow runs. You can add flags to &lt;code>gh run list&lt;/code> to filter runs by workflow or by triggering user.&lt;/p></content></item><item><title>Tools for writing about Git</title><link>https://blog.oddbit.com/post/2021-02-27-git-doc-tools/</link><pubDate>Sat, 27 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-27-git-doc-tools/</guid><description>I sometimes find myself writing articles or documentation about git, so I put together a couple of terrible hacks for generating reproducible histories and pretty graphs of those histories.
 git synth The git synth command reads a YAML description of a repository and executes the necessary commands to reproduce that history. It allows you set the name and email address of the author and committer as well as static date, so you every time you generate the repository you can identical commit ids.</description><content>&lt;p>I sometimes find myself writing articles or documentation about
 &lt;a href="https://git-scm.org">git&lt;/a>, so I put together a couple of terrible hacks for generating
 reproducible histories and pretty graphs of those histories.&lt;/p>
@@ -22,7 +22,35 @@ history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_
 into diagrams.&lt;/p>
 &lt;h2 id="putting-it-together">Putting it together&lt;/h2>
 &lt;p>For example, the following history specification:&lt;/p>
-&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.yml --&amp;gt;
+&lt;pre tabindex="0">&lt;code>- set:
+date: &amp;#34;2021-01-01&amp;#34;
+name: Fake Person
+email: fake@example.com
+- branch:
+name: master
+actions:
+- commit:
+message: A
+- commit:
+message: B
+- commit:
+message: C
+- branch:
+name: topic1
+actions:
+- commit:
+message: D
+- commit:
+message: E
+- branch:
+name: topic2
+actions:
+- commit:
+message: F
+- commit:
+message: G
+- commit:
+message: H
 &lt;/code>&lt;/pre>&lt;p>When applied with &lt;code>git synth&lt;/code>:&lt;/p>
 &lt;pre tabindex="0">&lt;code>$ git synth -r examplerepo examplerepo.yml
 &lt;/code>&lt;/pre>&lt;p>Will generate the following repository:&lt;/p>
@@ -39,10 +67,51 @@ into diagrams.&lt;/p>
 &lt;/code>&lt;/pre>&lt;p>We can run this &lt;code>git dot&lt;/code> command line:&lt;/p>
 &lt;pre tabindex="0">&lt;code>$ git -C examplerepo dot -m -g branch --rankdir=RL
 &lt;/code>&lt;/pre>&lt;p>To produce the following &lt;code>dot&lt;/code> description of the history:&lt;/p>
-&lt;pre tabindex="0">&lt;code>&amp;lt;!-- include examplerepo.dot --&amp;gt;
+&lt;pre tabindex="0">&lt;code>digraph git {
+graph [rankdir=RL]
+node [shape=circle]
+{
+node [group=master_commits]
+&amp;#34;28f7b382a5&amp;#34; [label=H tooltip=&amp;#34;28f7b382a52ac53f86314e5d608ebafd66de6c44&amp;#34;]
+cabdedff95 [label=C tooltip=cabdedff957f7dec15f365e7c29eaead9930d618]
+a5cbd99954 [label=B tooltip=a5cbd999545aeabc2e102a845aeb0466f01454a2]
+d98f949840 [label=A tooltip=d98f94984057d760066ba0b300ab4930497bcba6]
+}
+{
+node [group=topic1_commits]
+&amp;#34;973437cb00&amp;#34; [label=E tooltip=&amp;#34;973437cb007d2a69d6564fd7b30f3e8c347073c2&amp;#34;]
+&amp;#34;2c0bd1c1df&amp;#34; [label=D tooltip=&amp;#34;2c0bd1c1dfe9f76cd18b37bb0bc995e449e0094b&amp;#34;]
+}
+{
+node [group=topic2_commits]
+&amp;#34;93e1d18862&amp;#34; [label=G tooltip=&amp;#34;93e1d18862102e044a4ec46bb189f5bca9ba0e05&amp;#34;]
+&amp;#34;3ef811d426&amp;#34; [label=F tooltip=&amp;#34;3ef811d426c09be792a0ff6564eca82a7bd105a9&amp;#34;]
+}
+{
+node [color=black fontcolor=white group=heads shape=box style=filled]
+master
+topic1
+topic2
+}
+{
+edge [style=dashed]
+topic2 -&amp;gt; &amp;#34;93e1d18862&amp;#34;
+topic1 -&amp;gt; &amp;#34;973437cb00&amp;#34;
+master -&amp;gt; &amp;#34;28f7b382a5&amp;#34;
+}
+a5cbd99954 -&amp;gt; d98f949840
+&amp;#34;3ef811d426&amp;#34; -&amp;gt; &amp;#34;973437cb00&amp;#34;
+&amp;#34;973437cb00&amp;#34; -&amp;gt; &amp;#34;2c0bd1c1df&amp;#34;
+cabdedff95 -&amp;gt; a5cbd99954
+&amp;#34;28f7b382a5&amp;#34; -&amp;gt; cabdedff95
+&amp;#34;2c0bd1c1df&amp;#34; -&amp;gt; cabdedff95
+&amp;#34;93e1d18862&amp;#34; -&amp;gt; &amp;#34;3ef811d426&amp;#34;
+}
 &lt;/code>&lt;/pre>&lt;p>Running that through the &lt;code>dot&lt;/code> utility (&lt;code>dot -Tsvg -o repo.svg repo.dot&lt;/code>) results in the following diagram:&lt;/p>
-&lt;pre tabindex="0">&lt;code class="language-graphviz" data-lang="graphviz">&amp;lt;!-- include examplerepo.dot --&amp;gt;
-&lt;/code>&lt;/pre>&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
+&lt;figure class="left" >
+&lt;img src="gen-094ef3d69a7692db2cdee8e04869e8f98bdd237b.svg" />
+&lt;/figure>
+&lt;h2 id="where-are-these-wonders">Where are these wonders?&lt;/h2>
 &lt;p>Both tools live in my &lt;a href="https://github.com/larsks/git-snippets">git-snippets&lt;/a> repository, which is a motley
 collection of shells scripts, python programs, and other utilities for
 interacting with &lt;code>git&lt;/code>.&lt;/p>
@@ -633,7 +702,7 @@ init_curl_http_auth(result);
 if (ssl_cert != NULL)
 curl_easy_setopt(result, CURLOPT_SSLCERT, ssl_cert);
 if (has_cert_password())
-&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;amp;m=143100824118409&amp;amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>This is a terrible hack. If you are easily offended by bad ideas implemented poorly, move along!
+&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;m=143100824118409&amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>This is a terrible hack. If you are easily offended by bad ideas implemented poorly, move along!
 You are working on a wonderful open source project&amp;hellip;but you are not supposed to be working on that project! You&amp;rsquo;re supposed to be doing your real work! Unfortunately, your extra-curricular activity is well documented in the git history of your project for all to see:
 And now your boss knows why the TPS reports are late.</description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
 implemented poorly, move along!&lt;/p>
@@ -641,7 +710,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -651,7 +720,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img src="repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -663,7 +732,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img src="repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</guid><description>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
 $ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
 Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3.</description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
@@ -833,7 +902,7 @@ configuration that would permit me to boot and run docker without
 requiring any loadable modules. This would allow me to use the same
 image for each kernel without needing to re-populate it with modules
 each time I built a kernel.&lt;/p>
-&lt;p>The kernel configuration I ended up with is available &lt;a href="kernel-config.txt">here&lt;/a>.&lt;/p>
+&lt;p>The kernel configuration I ended up with is available &lt;a href="https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/kernel-config.txt">here&lt;/a>.&lt;/p>
 &lt;h3 id="testing-docker">Testing docker&lt;/h3>
 &lt;p>The last step in this process is putting together something that tests
 &lt;code>docker&lt;/code> and exposes the result of that test to the build environment.

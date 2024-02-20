@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>pacemaker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pacemaker/</link><description>Recent content in pacemaker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 24 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pacemaker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>If a picture is worth a thousand words, then code that generates pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that produces dot output from Pacemaker start and colocation constraints:
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pacemaker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pacemaker/</link><description>Recent content in Pacemaker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 24 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pacemaker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>If a picture is worth a thousand words, then code that generates pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that produces dot output from Pacemaker start and colocation constraints:
 https://github.com/larsks/pacemaker-tools/
 You can pass this output to graphviz to create visualizations of your Pacemaker resource constraints.
 The graph-constraints.py script in that repository consumes the output of cibadmin -Q and can produce output for either start constraints (-S, the default) or colocation constraints (-C).</description><content>&lt;p>If a picture is worth a thousand words, then code that generates
@@ -11,11 +11,11 @@ your Pacemaker resource constraints.&lt;/p>
 &lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
 output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
 constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p>
-&lt;p>Given a document like &lt;a href="cib.xml">this&lt;/a>, if you run:&lt;/p>
+&lt;p>Given a document like &lt;a href="https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/cib.xml">this&lt;/a>, if you run:&lt;/p>
 &lt;pre>&lt;code>cibadmin -Q |
 python graph-constraints.py -o cib.svg
 &lt;/code>&lt;/pre>
-&lt;p>You get a graph like &lt;a href="cib.svg">this&lt;/a>:&lt;/p>
+&lt;p>You get a graph like &lt;a href="https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/cib.svg">this&lt;/a>:&lt;/p>
 &lt;figure class="left" >
 &lt;img src="cib.svg" />
 &lt;/figure>
