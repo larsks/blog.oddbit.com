@@ -193,8 +193,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="187956432" type="checkbox" />
-&lt;label for="187956432">
+&lt;input id="489531627" type="checkbox" />
+&lt;label for="489531627">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -223,8 +223,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="623854719" type="checkbox" />
-&lt;label for="623854719">
+&lt;input id="472835916" type="checkbox" />
+&lt;label for="472835916">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -251,8 +251,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="742516839" type="checkbox" />
-&lt;label for="742516839">
+&lt;input id="749612853" type="checkbox" />
+&lt;label for="749612853">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -337,8 +337,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="185296347" type="checkbox" />
-&lt;label for="185296347">
+&lt;input id="475163298" type="checkbox" />
+&lt;label for="475163298">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -398,8 +398,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="617598234" type="checkbox" />
-&lt;label for="617598234">
+&lt;input id="152479368" type="checkbox" />
+&lt;label for="152479368">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -679,8 +679,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="683715294" type="checkbox" />
-&lt;label for="683715294">
+&lt;input id="513869742" type="checkbox" />
+&lt;label for="513869742">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -696,8 +696,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="861257493" type="checkbox" />
-&lt;label for="861257493">
+&lt;input id="253871649" type="checkbox" />
+&lt;label for="253871649">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -722,8 +722,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="824139657" type="checkbox" />
-&lt;label for="824139657">
+&lt;input id="754982361" type="checkbox" />
+&lt;label for="754982361">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -761,8 +761,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="573124869" type="checkbox" />
-&lt;label for="573124869">
+&lt;input id="785132649" type="checkbox" />
+&lt;label for="785132649">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -825,8 +825,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="918672453" type="checkbox" />
-&lt;label for="918672453">
+&lt;input id="316985247" type="checkbox" />
+&lt;label for="316985247">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1036,8 +1036,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="562137894" type="checkbox" />
-&lt;label for="562137894">
+&lt;input id="872493165" type="checkbox" />
+&lt;label for="872493165">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1120,17 +1120,17 @@ return 0;
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
 &lt;p>This shows how to set up an IPv6 tunnel and configure an IPv6-only
 VLAN on the EdgeRouter.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
 &lt;p>This is only necessary due to the specifics of the connection between
 my desktop and the router; you can probably skip this.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
 &lt;p>This shows how to set up the IPv6 VLAN interface under Linux using &lt;code>nmcli&lt;/code>.&lt;/p>
 &lt;/li>
 &lt;/ul>
@@ -1323,17 +1323,17 @@ Publish the GPG key</description><content>&lt;p>In today&amp;rsquo;s post, we lo
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#step-3-add-a-claim">Use the GPG key to assert claims on online resources&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-3-add-a-claim">Use the GPG key to assert claims on online resources&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
 &lt;h2 id="step-1-create-a-gpg-keypair">Step 1: Create a GPG keypair&lt;/h2>
-&lt;p>If you already have a keypair, skip on to &amp;ldquo;&lt;a href="https://blog.oddbit.com/#step-2-publish-your-key">Step 2: Publish your key&lt;/a>&amp;rdquo;.&lt;/p>
+&lt;p>If you already have a keypair, skip on to &amp;ldquo;&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-2-publish-your-key">Step 2: Publish your key&lt;/a>&amp;rdquo;.&lt;/p>
 &lt;p>The first thing you need to do is set up a GPG&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> keypair and publish it to a keyserver (or a &lt;a href="https://wiki.gnupg.org/WKD">WKD endpoint&lt;/a>). There are many guides out there that step you through the process (for example, GitHub&amp;rsquo;s guide on &lt;a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key">Generating a new GPG key&lt;/a>), but if you&amp;rsquo;re in a hurry and not particularly picky, read on.&lt;/p>
 &lt;p>This assumes that you&amp;rsquo;re using a recent version of GPG; at the time of this writing, the current GPG release is 2.3.8, but these instructions seem to work at least with version 2.2.27.&lt;/p>
 &lt;ol>
@@ -1358,7 +1358,7 @@ sub cv25519 2022-11-13 [E]
 &lt;/ol>
 &lt;p>Now you have created a GPG keypair!&lt;/p>
 &lt;h2 id="step-2-publish-your-key">Step 2: Publish your key&lt;/h2>
-&lt;p>If you&amp;rsquo;ve already published your key at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a> or at a &lt;a href="https://wiki.gnupg.org/WKD">WKD&lt;/a> endpoint, skip on to &amp;ldquo;&lt;a href="https://blog.oddbit.com/#step-3-add-a-claim">Step 3: Add a claim&lt;/a>&amp;rdquo;.&lt;/p>
+&lt;p>If you&amp;rsquo;ve already published your key at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a> or at a &lt;a href="https://wiki.gnupg.org/WKD">WKD&lt;/a> endpoint, skip on to &amp;ldquo;&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-3-add-a-claim">Step 3: Add a claim&lt;/a>&amp;rdquo;.&lt;/p>
 &lt;p>In order for KeyOxide to find your GPG key, it needs to be published at a known location. There are two choices:&lt;/p>
 &lt;ul>
 &lt;li>Publishing your key at the public keyserver at &lt;a href="https://keys.openpgp.org/">https://keys.openpgp.org/&lt;/a>.&lt;/li>
@@ -1434,7 +1434,7 @@ sub cv25519 2022-11-13 [E]
 &lt;/code>&lt;/pre>&lt;/li>
 &lt;/ol>
 &lt;h3 id="update-your-published-key">Update your published key&lt;/h3>
-&lt;p>After adding an annotation to your key locally, you need to publish those changes. One way of doing this is simply following the &lt;a href="https://blog.oddbit.com/#step-2-publish-your-key">instructions for initially uploading your public key&lt;/a>:&lt;/p>
+&lt;p>After adding an annotation to your key locally, you need to publish those changes. One way of doing this is simply following the &lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-2-publish-your-key">instructions for initially uploading your public key&lt;/a>:&lt;/p>
 &lt;ol>
 &lt;li>
 &lt;p>Export the key to a file:&lt;/p>
@@ -1469,9 +1469,9 @@ sub cv25519 2022-11-13 [E]
 &lt;p>Click &amp;ldquo;Save Changes&amp;rdquo;&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;p>Now, &lt;a href="https://blog.oddbit.com/#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://&amp;lt;your mastodon server&amp;gt;/@&amp;lt;your mastodon username&lt;/code>. I am @larsks@hachyderm.io, so I would enter:&lt;/p>
+&lt;p>Now, &lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://&amp;lt;your mastodon server&amp;gt;/@&amp;lt;your mastodon username&lt;/code>. I am @larsks@hachyderm.io, so I would enter:&lt;/p>
 &lt;pre tabindex="0">&lt;code>proof@ariadne.id=https://hachyderm.io/@larsks
-&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="https://blog.oddbit.com/#update-your-published-key">update your published key&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#update-your-published-key">update your published key&lt;/a>.&lt;/p>
 &lt;h3 id="claiming-a-github-identity">Claiming a Github identity&lt;/h3>
 &lt;ol>
 &lt;li>
@@ -1485,9 +1485,9 @@ sub cv25519 2022-11-13 [E]
 &lt;pre tabindex="0">&lt;code>openpgp4fpr:&amp;lt;your key fingerprint&amp;gt;
 &lt;/code>&lt;/pre>&lt;/li>
 &lt;/ol>
-&lt;p>Now, &lt;a href="https://blog.oddbit.com/#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://gist.github.com/larsks/&amp;lt;gist id&amp;gt;&lt;/code>. You can see my claim at &lt;a href="https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7">https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7&lt;/a>; the notation I added to my key is:&lt;/p>
+&lt;p>Now, &lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#add-a-claim-to-your-gpg-key">add the claim to your GPG key&lt;/a> by adding the notation &lt;code>proof@ariadne.id=https://gist.github.com/larsks/&amp;lt;gist id&amp;gt;&lt;/code>. You can see my claim at &lt;a href="https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7">https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7&lt;/a>; the notation I added to my key is:&lt;/p>
 &lt;pre tabindex="0">&lt;code>proof@ariadne.id=https://gist.github.com/larsks/9224f58cf82bdf95ef591a6703eb91c7
-&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="https://blog.oddbit.com/#update-your-published-key">update your published key&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>After adding the claim, &lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#update-your-published-key">update your published key&lt;/a>.&lt;/p>
 &lt;h2 id="step-4-view-your-claims">Step 4: View your claims&lt;/h2>
 &lt;p>You&amp;rsquo;ll note that none of the previous steps required interacting with &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>. That&amp;rsquo;s because KeyOxide doesn&amp;rsquo;t actually store any of your data: it just provides a mechanism for visualizing and verifying claims.&lt;/p>
 &lt;p>You can look up an identity by email address or by GPG key fingerprint.&lt;/p>
@@ -4955,10 +4955,10 @@ administrative assistance).&lt;/p>
 managed virtual machines:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ul>
 &lt;p>We&amp;rsquo;re going to start with the direct attachment model, since this may
@@ -5334,7 +5334,7 @@ a number of features that make it particularly appropriate for this niche.&lt;/p
 &lt;img src="grove-open.jpg" />
 &lt;/figure>
 &lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
-the &lt;a href="https://blog.oddbit.com/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/#inputoutput">Input/Output&lt;/a> sections,
+the &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/#inputoutput">Input/Output&lt;/a> sections,
 below, for an overview). To make it easy to get started, everything
 you see is pre-wired (via traces on the PCB) to the microcontroller.
 That means you don&amp;rsquo;t need soldering or connection cables to use
@@ -5392,7 +5392,7 @@ Hz to 5.3 kHz.&lt;/p>
 &lt;li>
 &lt;p>OLED Display&lt;/p>
 &lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
-the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/#video">at the bottom
+the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/#video">at the bottom
 of this post&lt;/a>.&lt;/p>
 &lt;/li>
 &lt;li>
@@ -5760,7 +5760,7 @@ df[&amp;#39;winter_start&amp;#39;] = df[&amp;#39;DATE&amp;#39;].apply(get_winter
 &lt;pre tabindex="0">&lt;code>winter = df[df[&amp;#39;winter&amp;#39;]].copy()
 winter[&amp;#39;winter_start&amp;#39;] = (
 winter[&amp;#39;DATE&amp;#39;].dt.year - (winter[&amp;#39;DATE&amp;#39;].dt.month &amp;lt;= 3))
-&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="https://blog.oddbit.com/#bool">later on&lt;/a> in this article.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/#bool">later on&lt;/a> in this article.&lt;/p>
 &lt;h2 id="finding-a-sequence-of-consecutive-days-an-iterative-solution">Finding a sequence of consecutive days: an iterative solution&lt;/h2>
 &lt;p>To find the longest sequence of days below freezing, I again started with an iterative solution:&lt;/p>
 &lt;pre tabindex="0">&lt;code>def max_dbf(val):

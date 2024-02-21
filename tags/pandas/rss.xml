@@ -36,7 +36,7 @@ df[&amp;#39;winter_start&amp;#39;] = df[&amp;#39;DATE&amp;#39;].apply(get_winter
 &lt;pre tabindex="0">&lt;code>winter = df[df[&amp;#39;winter&amp;#39;]].copy()
 winter[&amp;#39;winter_start&amp;#39;] = (
 winter[&amp;#39;DATE&amp;#39;].dt.year - (winter[&amp;#39;DATE&amp;#39;].dt.month &amp;lt;= 3))
-&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="https://blog.oddbit.com/#bool">later on&lt;/a> in this article.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>This seems to do the job. You&amp;rsquo;ll note that in the above expression I&amp;rsquo;m subtracting a boolean from an integer, which is in fact totally legal and I talk about that in more detail &lt;a href="https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/#bool">later on&lt;/a> in this article.&lt;/p>
 &lt;h2 id="finding-a-sequence-of-consecutive-days-an-iterative-solution">Finding a sequence of consecutive days: an iterative solution&lt;/h2>
 &lt;p>To find the longest sequence of days below freezing, I again started with an iterative solution:&lt;/p>
 &lt;pre tabindex="0">&lt;code>def max_dbf(val):

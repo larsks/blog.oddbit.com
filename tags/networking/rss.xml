@@ -207,8 +207,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="573124869" type="checkbox" />
-&lt;label for="573124869">
+&lt;input id="785132649" type="checkbox" />
+&lt;label for="785132649">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -271,8 +271,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="918672453" type="checkbox" />
-&lt;label for="918672453">
+&lt;input id="316985247" type="checkbox" />
+&lt;label for="316985247">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -482,8 +482,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="562137894" type="checkbox" />
-&lt;label for="562137894">
+&lt;input id="872493165" type="checkbox" />
+&lt;label for="872493165">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -566,17 +566,17 @@ return 0;
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
 &lt;p>This shows how to set up an IPv6 tunnel and configure an IPv6-only
 VLAN on the EdgeRouter.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
 &lt;p>This is only necessary due to the specifics of the connection between
 my desktop and the router; you can probably skip this.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
 &lt;p>This shows how to set up the IPv6 VLAN interface under Linux using &lt;code>nmcli&lt;/code>.&lt;/p>
 &lt;/li>
 &lt;/ul>
@@ -1036,10 +1036,10 @@ administrative assistance).&lt;/p>
 managed virtual machines:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ul>
 &lt;p>We&amp;rsquo;re going to start with the direct attachment model, since this may

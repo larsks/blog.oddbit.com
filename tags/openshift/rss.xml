@@ -1529,10 +1529,10 @@ administrative assistance).&lt;/p>
 managed virtual machines:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/#direct-attachment">Direct attachment to a host network&lt;/a>&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/#using-an-openshift-service">Using an OpenShift Service&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ul>
 &lt;p>We&amp;rsquo;re going to start with the direct attachment model, since this may

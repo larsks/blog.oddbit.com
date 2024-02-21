@@ -16,7 +16,7 @@ a number of features that make it particularly appropriate for this niche.&lt;/p
 &lt;img src="grove-open.jpg" />
 &lt;/figure>
 &lt;p>The kit comes with a wide variety of sensors, inputs, and outputs (see
-the &lt;a href="https://blog.oddbit.com/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/#inputoutput">Input/Output&lt;/a> sections,
+the &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/#sensors">Sensors&lt;/a> and &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/#inputoutput">Input/Output&lt;/a> sections,
 below, for an overview). To make it easy to get started, everything
 you see is pre-wired (via traces on the PCB) to the microcontroller.
 That means you don&amp;rsquo;t need soldering or connection cables to use
@@ -74,7 +74,7 @@ Hz to 5.3 kHz.&lt;/p>
 &lt;li>
 &lt;p>OLED Display&lt;/p>
 &lt;p>There&amp;rsquo;s a 0.96&amp;quot; I2C addressable &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/OLED_Display_Module.pdf">OLED Display Module&lt;/a> built around
-the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/#video">at the bottom
+the SSD1315 chip. You can see this display in action &lt;a href="https://blog.oddbit.com/post/2020-06-07-first-look-seed-grove-beginner/#video">at the bottom
 of this post&lt;/a>.&lt;/p>
 &lt;/li>
 &lt;li>

@@ -3,17 +3,17 @@
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-edgerouter">Configure the EdgeRouter&lt;/a>&lt;/p>
 &lt;p>This shows how to set up an IPv6 tunnel and configure an IPv6-only
 VLAN on the EdgeRouter.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-switch">Configure the switch&lt;/a>&lt;/p>
 &lt;p>This is only necessary due to the specifics of the connection between
 my desktop and the router; you can probably skip this.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/#configure-the-desktop">Configure the desktop&lt;/a>&lt;/p>
 &lt;p>This shows how to set up the IPv6 VLAN interface under Linux using &lt;code>nmcli&lt;/code>.&lt;/p>
 &lt;/li>
 &lt;/ul>
