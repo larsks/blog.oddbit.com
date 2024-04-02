@@ -18,14 +18,16 @@ In this article, we'll walk through one way of implementing this configuration.
 
 ## Activate the serial port
 
-Raspbian automatically starts a getty on the serial port if one is available. You should see an `agetty` process associated with your serial port when you run `ps -ef`. For example:
+Raspberry Pi OS automatically starts a [`getty`][getty] on the serial port if one is available. You should see an `agetty` process associated with your serial port when you run `ps -ef`. For example:
+
+[getty]: https://en.wikipedia.org/wiki/Getty_(Unix)
 
 ```
 root@raspberrypi:/etc/systemd/system# ps -fe | grep agetty | grep ttyS0
 root      1138     1  0 00:24 ttyS0    00:00:00 /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220
 ```
 
-If you don't see this process and you're on a Raspberry Pi 3 (or later), you may need to [explicitly enable the serial port][1] by adding `enable_uart=1` to `/boot/config.txt`. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.
+If you don't see this process and you're on a Raspberry Pi 3 (or later), you may need to [explicitly enable the serial port][1] by adding `enable_uart=1` to `/boot/firmware/config.txt`. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.
 
 Note that your serial port may not always be named `ttyS0`. I'm going to use the value `ttyS0` throughout this article to represent the appropriate device name. The correct device name is the penultimate argument in the above `agetty` command.
 
@@ -35,7 +37,7 @@ The `agetty` process we saw in the previous section is started by the `serial-ge
 
 [template unit]: https://fedoramagazine.org/systemd-template-unit-files/
 
-Rather than editing the unit file included in Raspbian, we're going to make the changes by creating a systemd "drop-in" configuration to override the stock service unit.  From the [systemd.unit man page][]:
+Rather than directly editing the unit file `/lib/systemd/system/serial-getty@.service`, we're going to make the changes by creating a systemd "drop-in" configuration to override the stock service unit.  From the [systemd.unit man page][]:
 
 [systemd.unit man page]: https://www.freedesktop.org/software/systemd/man/systemd.unit.html
 
@@ -47,7 +49,7 @@ The easiest way to creating a drop-in unit is with the `systemctl edit` command:
 systemctl edit serial-getty@ttyS0
 ```
 
-This will bring up an editor (`nano` by default, unless you have set `VISUAL` in your environment to point at a different editor) in which you will create `/etc/systemd/system/serial-getty@ttyS0.d/override.conf`.
+This will bring up an editor (`nano` by default, unless you have set `VISUAL` in your environment to point at a different editor) for `/etc/systemd/system/serial-getty@ttyS0.d/override.conf` in which you will place your override configuration.
 
 Enter the following content:
 
@@ -57,7 +59,7 @@ ExecStart=
 ExecStart=/sbin/agetty -o '-p -- \u' --keep-baud 115200,38400,9600 --noclear --autologin root ttyS0 vt220
 ```
 
-(That while the original request was for a getty running as 1200 bos, the above configuration is more generally useful. To allow connectoins at 1200 bps, modify the list of rates above to looking something like `115200,38400,9600,1200` (if you want to permit connections at higher speeds) or just `1200` (if you really want to permit only 1200 bps connections).
+(While the original request referenced at the beginning of this post was for a getty running at 1200 bps, the above configuration is more generally useful. To allow connections at 1200 bps, modify the list of rates above to looking something like `115200,38400,9600,1200` (if you want to permit connections at higher speeds) or just `1200` (if you really want to permit only 1200 bps connections).
 
 Save the file, then reload `systemd` by running `systemctl daemon-reload`. This tells `systemd` to re-read its unit files.
 
@@ -86,15 +88,15 @@ We need to configure things such that the `root` user does not require a passwor
 Add the following to the top of `/etc/pam.d/login`:
 
 ```
-auth sufficient pam_listfile.so item=tty sense=allow file=/etc/rootshelltty onerr=fail apply=root
+auth sufficient pam_listfile.so item=tty sense=allow file=/etc/securetty onerr=fail apply=root
 ```
 
-This configures `login` to permit a login for the `root` user if it finds the login tty in the file `/etc/rootshelltty`.
+This configures `login` to permit a login for the `root` user if it finds the login tty in the file `/etc/securetty`.
 
-Now, add the serial port device to `/etc/rootshelltty`:
+Now, add the serial port device to `/etc/securetty`:
 
 ```
-root@raspberrypi:/etc# echo /dev/ttyS0 > /etc/rootshelltty
+root@raspberrypi:/etc# echo /dev/ttyS0 > /etc/securetty
 ```
 
 These changes will take affect as soon as `agetty` restarts. You can wait for the `Password:` prompt to timeout, or just restart the service by running `systemctl restart serial-getty@ttyS0`.
