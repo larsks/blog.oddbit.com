@@ -193,8 +193,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="426135987" type="checkbox" />
-&lt;label for="426135987">
+&lt;input id="819356427" type="checkbox" />
+&lt;label for="819356427">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -223,8 +223,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="971526348" type="checkbox" />
-&lt;label for="971526348">
+&lt;input id="168932754" type="checkbox" />
+&lt;label for="168932754">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -251,8 +251,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="754129368" type="checkbox" />
-&lt;label for="754129368">
+&lt;input id="351297684" type="checkbox" />
+&lt;label for="351297684">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -337,8 +337,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="573892164" type="checkbox" />
-&lt;label for="573892164">
+&lt;input id="865392174" type="checkbox" />
+&lt;label for="865392174">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -398,8 +398,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="692573814" type="checkbox" />
-&lt;label for="692573814">
+&lt;input id="537681942" type="checkbox" />
+&lt;label for="537681942">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -679,8 +679,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="431752968" type="checkbox" />
-&lt;label for="431752968">
+&lt;input id="198324756" type="checkbox" />
+&lt;label for="198324756">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -696,8 +696,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="237481659" type="checkbox" />
-&lt;label for="237481659">
+&lt;input id="219783564" type="checkbox" />
+&lt;label for="219783564">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -722,8 +722,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="283169574" type="checkbox" />
-&lt;label for="283169574">
+&lt;input id="821369754" type="checkbox" />
+&lt;label for="821369754">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -826,8 +826,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="429683517" type="checkbox" />
-&lt;label for="429683517">
+&lt;input id="419658273" type="checkbox" />
+&lt;label for="419658273">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -890,8 +890,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="412796835" type="checkbox" />
-&lt;label for="412796835">
+&lt;input id="139586472" type="checkbox" />
+&lt;label for="139586472">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1101,8 +1101,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="953126784" type="checkbox" />
-&lt;label for="953126784">
+&lt;input id="762953148" type="checkbox" />
+&lt;label for="762953148">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -6075,32 +6075,32 @@ happens to have some lying around. With a diode in place, everything
 worked swimmingly.&lt;/p></content></item><item><title>A passwordless serial console for your Raspberry Pi</title><link>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</link><pubDate>Mon, 24 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</guid><description>legendre on #raspbian asked:
 How can i config rasp lite to open a shell on the serial uart on boot? Params are 1200-8-N-1 Dont want login running, just straight to sh
 In this article, we&amp;rsquo;ll walk through one way of implementing this configuration.
-Activate the serial port Raspbian automatically starts a getty on the serial port if one is available. You should see an agetty process associated with your serial port when you run ps -ef.</description><content>&lt;p>&lt;code>legendre&lt;/code> on &lt;code>#raspbian&lt;/code> asked:&lt;/p>
+Activate the serial port Raspberry Pi OS automatically starts a getty on the serial port if one is available. You should see an agetty process associated with your serial port when you run ps -ef.</description><content>&lt;p>&lt;code>legendre&lt;/code> on &lt;code>#raspbian&lt;/code> asked:&lt;/p>
 &lt;blockquote>
 &lt;p>How can i config rasp lite to open a shell on the serial uart on boot? Params
 are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p>
 &lt;/blockquote>
 &lt;p>In this article, we&amp;rsquo;ll walk through one way of implementing this configuration.&lt;/p>
 &lt;h2 id="activate-the-serial-port">Activate the serial port&lt;/h2>
-&lt;p>Raspbian automatically starts a getty on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p>
+&lt;p>Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_(Unix)">&lt;code>getty&lt;/code>&lt;/a> on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p>
 &lt;pre tabindex="0">&lt;code>root@raspberrypi:/etc/systemd/system# ps -fe | grep agetty | grep ttyS0
 root 1138 1 0 00:24 ttyS0 00:00:00 /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220
-&lt;/code>&lt;/pre>&lt;p>If you don&amp;rsquo;t see this process and you&amp;rsquo;re on a Raspberry Pi 3 (or later), you may need to &lt;a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&amp;t=141195">explicitly enable the serial port&lt;/a> by adding &lt;code>enable_uart=1&lt;/code> to &lt;code>/boot/config.txt&lt;/code>. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>If you don&amp;rsquo;t see this process and you&amp;rsquo;re on a Raspberry Pi 3 (or later), you may need to &lt;a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&amp;t=141195">explicitly enable the serial port&lt;/a> by adding &lt;code>enable_uart=1&lt;/code> to &lt;code>/boot/firmware/config.txt&lt;/code>. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.&lt;/p>
 &lt;p>Note that your serial port may not always be named &lt;code>ttyS0&lt;/code>. I&amp;rsquo;m going to use the value &lt;code>ttyS0&lt;/code> throughout this article to represent the appropriate device name. The correct device name is the penultimate argument in the above &lt;code>agetty&lt;/code> command.&lt;/p>
 &lt;h2 id="modify-the-serial-gettyttys0-unit">Modify the serial-getty@ttyS0 unit&lt;/h2>
 &lt;p>The &lt;code>agetty&lt;/code> process we saw in the previous section is started by the &lt;code>serial-getty@ttyS0.service&lt;/code> service unit (which is an instance of the &lt;code>serial-getty@.service&lt;/code> &lt;a href="https://fedoramagazine.org/systemd-template-unit-files/">template unit&lt;/a>). We need to modify that service so that it will call &lt;code>agetty&lt;/code> with the &lt;code>--autologin root&lt;/code> option.&lt;/p>
-&lt;p>Rather than editing the unit file included in Raspbian, we&amp;rsquo;re going to make the changes by creating a systemd &amp;ldquo;drop-in&amp;rdquo; configuration to override the stock service unit. From the &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd.unit.html">systemd.unit man page&lt;/a>:&lt;/p>
+&lt;p>Rather than directly editing the unit file &lt;code>/lib/systemd/system/serial-getty@.service&lt;/code>, we&amp;rsquo;re going to make the changes by creating a systemd &amp;ldquo;drop-in&amp;rdquo; configuration to override the stock service unit. From the &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd.unit.html">systemd.unit man page&lt;/a>:&lt;/p>
 &lt;blockquote>
 &lt;p>Along with a unit file foo.service, a &amp;ldquo;drop-in&amp;rdquo; directory foo.service.d/ may exist. All files with the suffix &amp;ldquo;.conf&amp;rdquo; from this directory will be parsed after the unit file itself is parsed. This is useful to alter or add configuration settings for a unit, without having to modify unit files.&lt;/p>
 &lt;/blockquote>
 &lt;p>The easiest way to creating a drop-in unit is with the &lt;code>systemctl edit&lt;/code> command:&lt;/p>
 &lt;pre tabindex="0">&lt;code>systemctl edit serial-getty@ttyS0
-&lt;/code>&lt;/pre>&lt;p>This will bring up an editor (&lt;code>nano&lt;/code> by default, unless you have set &lt;code>VISUAL&lt;/code> in your environment to point at a different editor) in which you will create &lt;code>/etc/systemd/system/serial-getty@ttyS0.d/override.conf&lt;/code>.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>This will bring up an editor (&lt;code>nano&lt;/code> by default, unless you have set &lt;code>VISUAL&lt;/code> in your environment to point at a different editor) for &lt;code>/etc/systemd/system/serial-getty@ttyS0.d/override.conf&lt;/code> in which you will place your override configuration.&lt;/p>
 &lt;p>Enter the following content:&lt;/p>
 &lt;pre tabindex="0">&lt;code>[Service]
 ExecStart=
 ExecStart=/sbin/agetty -o &amp;#39;-p -- \u&amp;#39; --keep-baud 115200,38400,9600 --noclear --autologin root ttyS0 vt220
-&lt;/code>&lt;/pre>&lt;p>(That while the original request was for a getty running as 1200 bos, the above configuration is more generally useful. To allow connectoins at 1200 bps, modify the list of rates above to looking something like &lt;code>115200,38400,9600,1200&lt;/code> (if you want to permit connections at higher speeds) or just &lt;code>1200&lt;/code> (if you really want to permit only 1200 bps connections).&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>(While the original request referenced at the beginning of this post was for a getty running at 1200 bps, the above configuration is more generally useful. To allow connections at 1200 bps, modify the list of rates above to looking something like &lt;code>115200,38400,9600,1200&lt;/code> (if you want to permit connections at higher speeds) or just &lt;code>1200&lt;/code> (if you really want to permit only 1200 bps connections).&lt;/p>
 &lt;p>Save the file, then reload &lt;code>systemd&lt;/code> by running &lt;code>systemctl daemon-reload&lt;/code>. This tells &lt;code>systemd&lt;/code> to re-read its unit files.&lt;/p>
 &lt;p>Finally, restart the &lt;code>serial-getty@ttys0&lt;/code> service:&lt;/p>
 &lt;pre tabindex="0">&lt;code>systemctl restart serial-getty@ttyS0
@@ -6111,10 +6111,10 @@ raspberrypi login: root (automatic login)
 Password:
 &lt;/code>&lt;/pre>&lt;p>We need to configure things such that the &lt;code>root&lt;/code> user does not require a password when logging on the serial console. We&amp;rsquo;ll do this by modifying the &lt;a href="http://www.linux-pam.org/">PAM&lt;/a> configuration for the &lt;code>login&lt;/code> program.&lt;/p>
 &lt;p>Add the following to the top of &lt;code>/etc/pam.d/login&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code>auth sufficient pam_listfile.so item=tty sense=allow file=/etc/rootshelltty onerr=fail apply=root
-&lt;/code>&lt;/pre>&lt;p>This configures &lt;code>login&lt;/code> to permit a login for the &lt;code>root&lt;/code> user if it finds the login tty in the file &lt;code>/etc/rootshelltty&lt;/code>.&lt;/p>
-&lt;p>Now, add the serial port device to &lt;code>/etc/rootshelltty&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code>root@raspberrypi:/etc# echo /dev/ttyS0 &amp;gt; /etc/rootshelltty
+&lt;pre tabindex="0">&lt;code>auth sufficient pam_listfile.so item=tty sense=allow file=/etc/securetty onerr=fail apply=root
+&lt;/code>&lt;/pre>&lt;p>This configures &lt;code>login&lt;/code> to permit a login for the &lt;code>root&lt;/code> user if it finds the login tty in the file &lt;code>/etc/securetty&lt;/code>.&lt;/p>
+&lt;p>Now, add the serial port device to &lt;code>/etc/securetty&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code>root@raspberrypi:/etc# echo /dev/ttyS0 &amp;gt; /etc/securetty
 &lt;/code>&lt;/pre>&lt;p>These changes will take affect as soon as &lt;code>agetty&lt;/code> restarts. You can wait for the &lt;code>Password:&lt;/code> prompt to timeout, or just restart the service by running &lt;code>systemctl restart serial-getty@ttyS0&lt;/code>.&lt;/p>
 &lt;hr>
 &lt;p>With these changes, the Pi will now automatically start a &lt;code>root&lt;/code> shell on the serial port without prompting for a password:&lt;/p>
