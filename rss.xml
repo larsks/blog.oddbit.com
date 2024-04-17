@@ -193,8 +193,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="612748593" type="checkbox" />
-&lt;label for="612748593">
+&lt;input id="648352179" type="checkbox" />
+&lt;label for="648352179">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -223,8 +223,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="546382719" type="checkbox" />
-&lt;label for="546382719">
+&lt;input id="761359842" type="checkbox" />
+&lt;label for="761359842">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -251,8 +251,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="928347651" type="checkbox" />
-&lt;label for="928347651">
+&lt;input id="719836245" type="checkbox" />
+&lt;label for="719836245">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -337,8 +337,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="562798143" type="checkbox" />
-&lt;label for="562798143">
+&lt;input id="791435682" type="checkbox" />
+&lt;label for="791435682">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -398,8 +398,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="931482567" type="checkbox" />
-&lt;label for="931482567">
+&lt;input id="762319548" type="checkbox" />
+&lt;label for="762319548">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -666,7 +666,8 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p>
 &lt;p>And here&amp;rsquo;s a video that runs through the steps described in this post:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/Kws98JNKcxE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/Kws98JNKcxE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="VRF and Nat Demo"
+>&lt;/iframe>
 &lt;/div></content></item><item><title>Simple error handling in C</title><link>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</link><pubDate>Fri, 17 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</guid><description>Overview I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of if statements and calls to perror. I ended up implementing a simple must function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:
 must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Overview&lt;/h2>
 &lt;p>I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of &lt;code>if&lt;/code> statements and calls to &lt;code>perror&lt;/code>. I ended up implementing a simple &lt;code>must&lt;/code> function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:&lt;/p>
@@ -679,8 +680,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="792841563" type="checkbox" />
-&lt;label for="792841563">
+&lt;input id="315429867" type="checkbox" />
+&lt;label for="315429867">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -696,8 +697,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="275648319" type="checkbox" />
-&lt;label for="275648319">
+&lt;input id="286759134" type="checkbox" />
+&lt;label for="286759134">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -722,8 +723,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="458916723" type="checkbox" />
-&lt;label for="458916723">
+&lt;input id="496257318" type="checkbox" />
+&lt;label for="496257318">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -826,8 +827,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="862179543" type="checkbox" />
-&lt;label for="862179543">
+&lt;input id="425186379" type="checkbox" />
+&lt;label for="425186379">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -890,8 +891,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="246931857" type="checkbox" />
-&lt;label for="246931857">
+&lt;input id="314658729" type="checkbox" />
+&lt;label for="314658729">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1101,8 +1102,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="769582413" type="checkbox" />
-&lt;label for="769582413">
+&lt;input id="382594671" type="checkbox" />
+&lt;label for="382594671">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -4158,7 +4159,8 @@ described in the previous section, waking once every 60 seconds. If
 I thought it might be interesting to walk through the process I used to create the video. The steps described in this article aren&amp;rsquo;t exactly what I used (I was dealing with data in a PostGIS database, and in the interests of simplicity I wanted instructions that can be accomplished with just QGIS), but they end up in the same place.</description><content>&lt;p>I recently put together a short animation showing the spread of Covid
 throughout the Northeast United States:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/zGN_zEzd_TE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="Covid spread in the Northeast United States"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>I thought it might be interesting to walk through the process I used to
 create the video. The steps described in this article aren&amp;rsquo;t exactly
@@ -5953,23 +5955,27 @@ SSID &amp;ndash; but somewhat more difficult to change the BSSID.)&lt;/p>
 at the finished project. When the device detects a target BSSID, it
 rings the bell twice and lights the &lt;code>ALARM&lt;/code> LED:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/cT2JB-aDhTQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/cT2JB-aDhTQ?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="maxdetector alarm on"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>After the initial alarm, the bell will ring once every five minutes
 while the alarm persists. Once the BSSID goes offline, the device
 cancels the alarm and extinguishes the &lt;code>ALARM&lt;/code> LED:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/XY6YKFK2qv4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/XY6YKFK2qv4?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="maxdetector alarm off"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>If the doorbell proves annoying, there&amp;rsquo;s a switch that activates
 silent mode:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/bgM7Asc4FD4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/bgM7Asc4FD4?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="maxdetector silent mode on"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>When silent mode is active, the device will illuminate the &lt;code>ALARM&lt;/code> LED
 without sounding the bell:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/xRxxqKiiYVc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/xRxxqKiiYVc?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="maxdetector silent alarm"
+>&lt;/iframe>
 &lt;/div>
 &lt;h2 id="but-wait-theres-more">But wait, there&amp;rsquo;s more!&lt;/h2>
 &lt;p>There&amp;rsquo;s also a web interface that allows one to monitor and configure
@@ -5983,7 +5989,8 @@ the device. The web interface allows one to:&lt;/p>
 &lt;/ul>
 &lt;p>Here&amp;rsquo;s a video of it in action:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/TtDwYMXy-b8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/TtDwYMXy-b8?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="maxdetector webu ui"
+>&lt;/iframe>
 &lt;/div>
 &lt;h2 id="and-thats-not-all">And that&amp;rsquo;s not all!&lt;/h2>
 &lt;p>In order to support the UI, there&amp;rsquo;s a simple HTTP API that permits
@@ -10784,7 +10791,8 @@ written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
 are now able to drive our display:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/laH7HY-wlCk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/laH7HY-wlCk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="fancier hello adafruit"
+>&lt;/iframe>
 &lt;/div></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
 protocol for communication. Recent versions of the Linux kernel
 include a kernel driver for this protocol, making it relatively
@@ -14822,7 +14830,8 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/tS5X0qi04ZU" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="Heat-kubernetes Demonstration"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -18077,7 +18086,8 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/qH-qYE1Kmpg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="Deploying things with Heat - An #OpenStack Hangout"
+>&lt;/iframe>
 &lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
 &amp;hellip;but I really like visualizing things, so I wrote a quick hack called dotstack that will generate dot language output from a Heat stack.</description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
@@ -20310,7 +20320,8 @@ corresponding &lt;code>.1&lt;/code> address.&lt;/p>
 &lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to set up the external bridge (br-ex) on a single-interface system:</description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/8zFQG5mKwPk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="RDO Icehouse: Configuring the external bridge"
+>&lt;/iframe>
 &lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
 This started as a simple attempt to set up external connectivity on an all-in-one Icehouse install deployed on an OpenStack instance. I wanted to add eth0 to br-ex in order to model a typical method for providing external connectivity, but I ran into a very odd problem: the system would boot and work fine for a few seconds, but would then promptly lose network connectivity.</description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
 vexing problem to which I have not been able to find a solution.&lt;/p>
@@ -20655,7 +20666,8 @@ deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstac
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe src="https://www.youtube.com/embed/DGf-ny25OAw" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="RDO: Multinode OpenStack using Packstack"
+>&lt;/iframe>
 &lt;/div></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>This is just here as a reminder for me:
 An OVS interface has a variety of attributes associated with it, including an external-id field that can be used to associate resources outside of OpenVSwitch with the interface. You can view this field with the following command:
 $ ovs-vsctl --columns=name,external-ids list Interface Which on my system, with a single virtual instance, looks like this:
