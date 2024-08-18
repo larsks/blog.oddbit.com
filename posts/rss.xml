@@ -193,8 +193,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="136247859" type="checkbox" />
-&lt;label for="136247859">
+&lt;input id="147386952" type="checkbox" />
+&lt;label for="147386952">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -223,8 +223,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="976158342" type="checkbox" />
-&lt;label for="976158342">
+&lt;input id="721486593" type="checkbox" />
+&lt;label for="721486593">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -251,8 +251,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="127583496" type="checkbox" />
-&lt;label for="127583496">
+&lt;input id="839165472" type="checkbox" />
+&lt;label for="839165472">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -337,8 +337,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="738961524" type="checkbox" />
-&lt;label for="738961524">
+&lt;input id="293746518" type="checkbox" />
+&lt;label for="293746518">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -398,8 +398,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="916283745" type="checkbox" />
-&lt;label for="916283745">
+&lt;input id="528713946" type="checkbox" />
+&lt;label for="528713946">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -680,8 +680,8 @@ must(fd = open(&amp;#34;textfile.</description><content>&lt;h2 id="overview">Ove
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="975142638" type="checkbox" />
-&lt;label for="975142638">
+&lt;input id="685971432" type="checkbox" />
+&lt;label for="685971432">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -697,8 +697,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="624158793" type="checkbox" />
-&lt;label for="624158793">
+&lt;input id="153476829" type="checkbox" />
+&lt;label for="153476829">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -723,8 +723,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="254736189" type="checkbox" />
-&lt;label for="254736189">
+&lt;input id="143769582" type="checkbox" />
+&lt;label for="143769582">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -827,8 +827,8 @@ The original code looked like this:
 c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="796153248" type="checkbox" />
-&lt;label for="796153248">
+&lt;input id="314968725" type="checkbox" />
+&lt;label for="314968725">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -891,8 +891,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="697831254" type="checkbox" />
-&lt;label for="697831254">
+&lt;input id="782549316" type="checkbox" />
+&lt;label for="782549316">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1102,8 +1102,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="874291365" type="checkbox" />
-&lt;label for="874291365">
+&lt;input id="891356742" type="checkbox" />
+&lt;label for="891356742">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
