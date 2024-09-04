@@ -1,15 +1,23 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Orchestration on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/orchestration/</link><description>Recent content in Orchestration on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 30 Aug 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/orchestration/rss.xml" rel="self" type="application/rss+xml"/><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-DockerInc::Docker::Container Properties cmd : List
-Command to run after spawning the container.
-Optional property.
-Example:
-cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi'] dns : List
-Set custom DNS servers.
-Example:
-dns: - 8.8.8.8 - 8.8.4.4 docker_endopint : String
-Docker daemon endpoint. By default the local Docker daemon will be used.
-Example:
-docker_endpoint: tcp://192.168.1.100:2375 env : String</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Orchestration on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/orchestration/</link><description>Recent content in Orchestration on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 30 Aug 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/orchestration/rss.xml" rel="self" type="application/rss+xml"/><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
+&lt;h3 id="properties">Properties&lt;/h3>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>cmd&lt;/code> : List&lt;/p>
+&lt;p>Command to run after spawning the container.&lt;/p>
+&lt;p>Optional property.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi']
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>dns&lt;/code> : List&lt;/p>
+&lt;p>Set custom DNS servers.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> dns:
+- 8.8.8.8
+- 8.8.4.4
+&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>
@@ -279,8 +287,14 @@ value: {get_attr: [&amp;quot;docker_dbserver&amp;quot;, &amp;quot;network_udp_po
 &lt;pre>&lt;code> &amp;quot;8443,8080&amp;quot;
 &lt;/code>&lt;/pre>
 &lt;/li>
-&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>I have been looking at both Docker and OpenStack recently. In my last post I talked a little about the Docker driver for Nova; in this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for Heat, which has been available since the Icehouse release but is surprisingly under-documented.
-The release announcement on the Docker blog includes an example Heat template, but it is unfortunately grossly inaccurate and has led many people astray.</description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
+this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
+Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
+surprisingly under-documented.&lt;/p>
+&lt;p>The &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">release announcement&lt;/a> on the Docker blog includes an
+example Heat template, but it is unfortunately grossly inaccurate and
+has led many people astray. In particular:&lt;/p></description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
 post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
 this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
 Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is

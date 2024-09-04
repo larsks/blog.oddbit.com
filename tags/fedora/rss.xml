@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Fedora on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/fedora/</link><description>Recent content in Fedora on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 17 Nov 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/fedora/rss.xml" rel="self" type="application/rss+xml"/><item><title>Installing pyspatialite on Fedora</title><link>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</link><pubDate>Tue, 17 Nov 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</guid><description>If you should find yourself wanting to install pyspatialite on Fedora &amp;ndash; perhaps because you want to use the Processing plugin for QGIS &amp;ndash; you will first need to install the following dependencies:
-gcc python-devel sqlite-devel geos-devel proj-devel python-pip redhat-rpm-config After which you can install pyspatialite using pip by running:
-CFLAGS=-I/usr/include pip install pyspatialite At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.</description><content>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Fedora on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/fedora/</link><description>Recent content in Fedora on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 17 Nov 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/fedora/rss.xml" rel="self" type="application/rss+xml"/><item><title>Installing pyspatialite on Fedora</title><link>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</link><pubDate>Tue, 17 Nov 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</guid><description>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
 Fedora &amp;ndash; perhaps because you want to use the &lt;a href="https://plugins.qgis.org/plugins/processing/">Processing plugin&lt;/a>
 for &lt;a href="http://www.qgis.org/">QGIS&lt;/a> &amp;ndash; you will first need to install the following
 dependencies:&lt;/p>
@@ -16,8 +14,33 @@ dependencies:&lt;/p>
 &lt;p>After which you can install &lt;code>pyspatialite&lt;/code> using &lt;code>pip&lt;/code> by running:&lt;/p>
 &lt;pre>&lt;code>CFLAGS=-I/usr/include pip install pyspatialite
 &lt;/code>&lt;/pre>
-&lt;p>At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.&lt;/p></content></item><item><title>Bootstrapping Ansible on Fedora 23</title><link>https://blog.oddbit.com/post/2015-10-15-bootstrapping-ansible-on-fedor/</link><pubDate>Thu, 15 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-15-bootstrapping-ansible-on-fedor/</guid><description>If you&amp;rsquo;ve tried running Ansible against a Fedora 23 system, you may have run into the following problem:
-fatal: [myserver]: FAILED! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;failed&amp;quot;: true, &amp;quot;msg&amp;quot;: &amp;quot;/bin/sh: /usr/bin/python: No such file or directory\r\n&amp;quot;, &amp;quot;parsed&amp;quot;: false} Fedora has recently made the switch to only including Python 3 on the base system (at least for the cloud variant), while Ansible still requires Python 2. With Fedora 23, Python 3 is available as /usr/bin/python3, and /usr/bin/python is only available if you have installed the Python 2 interpreter.</description><content>&lt;p>If you&amp;rsquo;ve tried running &lt;a href="http://ansible.com/">Ansible&lt;/a> against a &lt;a href="http://fedoraproject.org/">Fedora&lt;/a> 23 system,
+&lt;p>At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.&lt;/p></description><content>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
+Fedora &amp;ndash; perhaps because you want to use the &lt;a href="https://plugins.qgis.org/plugins/processing/">Processing plugin&lt;/a>
+for &lt;a href="http://www.qgis.org/">QGIS&lt;/a> &amp;ndash; you will first need to install the following
+dependencies:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>gcc&lt;/code>&lt;/li>
+&lt;li>&lt;code>python-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>sqlite-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>geos-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>proj-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>python-pip&lt;/code>&lt;/li>
+&lt;li>&lt;code>redhat-rpm-config&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>After which you can install &lt;code>pyspatialite&lt;/code> using &lt;code>pip&lt;/code> by running:&lt;/p>
+&lt;pre>&lt;code>CFLAGS=-I/usr/include pip install pyspatialite
+&lt;/code>&lt;/pre>
+&lt;p>At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.&lt;/p></content></item><item><title>Bootstrapping Ansible on Fedora 23</title><link>https://blog.oddbit.com/post/2015-10-15-bootstrapping-ansible-on-fedor/</link><pubDate>Thu, 15 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-15-bootstrapping-ansible-on-fedor/</guid><description>&lt;p>If you&amp;rsquo;ve tried running &lt;a href="http://ansible.com/">Ansible&lt;/a> against a &lt;a href="http://fedoraproject.org/">Fedora&lt;/a> 23 system,
+you may have run into the following problem:&lt;/p>
+&lt;pre>&lt;code>fatal: [myserver]: FAILED! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;failed&amp;quot;: true,
+&amp;quot;msg&amp;quot;: &amp;quot;/bin/sh: /usr/bin/python: No such file or directory\r\n&amp;quot;,
+&amp;quot;parsed&amp;quot;: false}
+&lt;/code>&lt;/pre>
+&lt;p>Fedora has recently made the switch to only including Python 3 on the
+base system (at least for the &lt;a href="https://getfedora.org/en/cloud/prerelease/">cloud&lt;/a> variant), while Ansible still
+requires Python 2. With Fedora 23, Python 3 is available as
+&lt;code>/usr/bin/python3&lt;/code>, and &lt;code>/usr/bin/python&lt;/code> is only available if you
+have installed the Python 2 interpreter.&lt;/p></description><content>&lt;p>If you&amp;rsquo;ve tried running &lt;a href="http://ansible.com/">Ansible&lt;/a> against a &lt;a href="http://fedoraproject.org/">Fedora&lt;/a> 23 system,
 you may have run into the following problem:&lt;/p>
 &lt;pre>&lt;code>fatal: [myserver]: FAILED! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;failed&amp;quot;: true,
 &amp;quot;msg&amp;quot;: &amp;quot;/bin/sh: /usr/bin/python: No such file or directory\r\n&amp;quot;,
@@ -79,8 +102,19 @@ etc.&lt;/p>
 &lt;p>Note that with the &lt;code>raw&lt;/code> module I had to use the &lt;code>dnf&lt;/code> command
 explicitly, while in the above playbook I can use the &lt;code>package&lt;/code> module
 for package installation, which relies on available facts to determine
-the correct package module.&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</guid><description>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed for use in cloud environments like OpenStack and AWS. These images are usually differentiated by (a) being relatively small, and (b) running cloud-init at boot to perform initial system configuration tasks using metadata provided by the cloud environment.
-Because of their small size and support for automatic configuration (including such useful tasks as provisioning ssh keys), these images are attractive for use outside of a cloud environment.</description><content>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
+the correct package module.&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</guid><description>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
+for use in cloud environments like OpenStack and AWS. These images
+are usually differentiated by (a) being relatively small, and (b) running
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> at boot to perform initial system configuration tasks
+using metadata provided by the cloud environment.&lt;/p>
+&lt;p>Because of their small size and support for automatic configuration
+(including such useful tasks as provisioning ssh keys), these images
+are attractive for use &lt;em>outside&lt;/em> of a cloud environment.
+Unfortunately, when people first try to boot them they are met with
+frustration as first the image takes forever to boot as it tries to
+contact a non-existent metadata service, and then when it finally does
+boot they are unable to log in because the images typically only
+support key-based login.&lt;/p></description><content>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
 for use in cloud environments like OpenStack and AWS. These images
 are usually differentiated by (a) being relatively small, and (b) running
 &lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> at boot to perform initial system configuration tasks
@@ -158,8 +192,18 @@ simply:&lt;/p>
 adding pubkey from /home/lars/.ssh/id_rsa.pub
 adding user data from userdata
 generating configuration image at config.iso
-&lt;/code>&lt;/pre></content></item><item><title>Fedora Atomic, OpenStack, and Kubernetes (oh my)</title><link>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</link><pubDate>Mon, 24 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</guid><description>While experimenting with Fedora Atomic, I was looking for an elegant way to automatically deploy Atomic into an OpenStack environment and then automatically schedule some Docker containers on the Atomic host. This post describes my solution.
-Like many other cloud-targeted distributions, Fedora Atomic runs cloud-init when the system boots. We can take advantage of this to configure the system at first boot by providing a user-data blob to Nova when we boot the instance.</description><content>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
+&lt;/code>&lt;/pre></content></item><item><title>Fedora Atomic, OpenStack, and Kubernetes (oh my)</title><link>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</link><pubDate>Mon, 24 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</guid><description>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
+elegant way to automatically deploy Atomic into an &lt;a href="http://openstack.org/">OpenStack&lt;/a>
+environment and then automatically schedule some &lt;a href="http://docker.com/">Docker&lt;/a> containers
+on the Atomic host. This post describes my solution.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>Like many other cloud-targeted distributions, Fedora Atomic runs
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> when the system boots. We can take advantage of this
+to configure the system at first boot by providing a &lt;code>user-data&lt;/code> blob
+to Nova when we boot the instance. A &lt;code>user-data&lt;/code> blob can be as
+simple as a shell script, and while we could arguably mash everything
+into a single script it wouldn&amp;rsquo;t be particularly maintainable or
+flexible in the face of different pod/service/etc descriptions.&lt;/p></description><content>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
 elegant way to automatically deploy Atomic into an &lt;a href="http://openstack.org/">OpenStack&lt;/a>
 environment and then automatically schedule some &lt;a href="http://docker.com/">Docker&lt;/a> containers
 on the Atomic host. This post describes my solution.&lt;/p>
@@ -293,9 +337,13 @@ these run much later).&lt;/p>
 write the Kubernetes configs into a directory somewhere, and then
 install a service that launches after Kubernetes and (a) watches that
 directory for files, then (b) passes the configuration to Kubernetes
-and deletes (or relocates) the file.&lt;/p></content></item><item><title>Fedora and OVS Bridge Interfaces</title><link>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</guid><description>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious problem with OVS bridge interfaces under both F19 and F20. My OpenStack environment relies on an OVS bridge device named br-ex for external connectivity and for making services available to OpenStack instances, but after rebooting, br-ex was consistently unconfigured, which caused a variety of problems.
-This is the network configuration file for br-ex on my system:
-DEVICE=br-ex DEVICETYPE=ovs TYPE=OVSBridge BOOTPROT=static IPADDR=192.</description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+and deletes (or relocates) the file.&lt;/p></content></item><item><title>Fedora and OVS Bridge Interfaces</title><link>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</guid><description>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+problem with OVS bridge interfaces under both F19 and F20. My
+OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
+external connectivity and for making services available to OpenStack
+instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
+which caused a variety of problems.&lt;/p>
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack
@@ -371,8 +419,16 @@ fi
 fi
 &lt;/code>&lt;/pre>
 &lt;p>With this change in place, &lt;code>br-ex&lt;/code> is correctly configured after a
-reboot.&lt;/p></content></item><item><title>Private /tmp directories in Fedora</title><link>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</link><pubDate>Mon, 05 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</guid><description>I ran into an odd problem the other day: I was testing out some configuration changes for a web application by dropping files into /tmp and pointing the application configuration at the appropriate directory. Everything worked out great when testing it by hand&amp;hellip;but when starting up the httpd service, the application behaved as if it was unable to find any of the files in /tmp.
-My first assumption was that had simply missed something obvious like file permissions or that I had a typo in my configuration, but after repeated checks and lots of testing it was obvious that something else was going on.</description><content>&lt;p>I ran into an odd problem the other day: I was testing out some
+reboot.&lt;/p></content></item><item><title>Private /tmp directories in Fedora</title><link>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</link><pubDate>Mon, 05 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</guid><description>&lt;p>I ran into an odd problem the other day: I was testing out some
+configuration changes for a web application by dropping files into
+&lt;code>/tmp&lt;/code> and pointing the application configuration at the appropriate
+directory. Everything worked out great when testing it by hand&amp;hellip;but
+when starting up the &lt;code>httpd&lt;/code> service, the application behaved as if it
+was unable to find any of the files in &lt;code>/tmp&lt;/code>.&lt;/p>
+&lt;p>My first assumption was that had simply missed something obvious like
+file permissions or that I had a typo in my configuration, but after
+repeated checks and lots of testing it was obvious that something else
+was going on.&lt;/p></description><content>&lt;p>I ran into an odd problem the other day: I was testing out some
 configuration changes for a web application by dropping files into
 &lt;code>/tmp&lt;/code> and pointing the application configuration at the appropriate
 directory. Everything worked out great when testing it by hand&amp;hellip;but

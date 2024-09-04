@@ -1,12 +1,23 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Rant on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/rant/</link><description>Recent content in Rant on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 26 Jul 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/rant/rss.xml" rel="self" type="application/rss+xml"/><item><title>In which we are amazed it doesn't all fall apart</title><link>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</link><pubDate>Sun, 26 Jul 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</guid><description>So, the Kilo release notes say:
-nova-manage migrate-flavor-data But nova-manage says:
-nova-manage db migrate_flavor_data But that says:
-Missing arguments: max_number And the help says:
-usage: nova-manage db migrate_flavor_data [-h] [--max-number &amp;lt;number&amp;gt;] Which indicates that &amp;ndash;max-number is optional, but whatever, so you try:
-nova-manage db migrate_flavor_data --max-number 100 And that says:
-Missing arguments: max_number So just for kicks you try:
-nova-manage db migrate_flavor_data --max_number 100 And that says:
-nova-manage: error: unrecognized arguments: --max_number So finally you try:</description><content>&lt;p>So, the Kilo release notes say:&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Rant on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/rant/</link><description>Recent content in Rant on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 26 Jul 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/rant/rss.xml" rel="self" type="application/rss+xml"/><item><title>In which we are amazed it doesn't all fall apart</title><link>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</link><pubDate>Sun, 26 Jul 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</guid><description>&lt;p>So, the Kilo release notes say:&lt;/p>
+&lt;pre>&lt;code>nova-manage migrate-flavor-data
+&lt;/code>&lt;/pre>
+&lt;p>But nova-manage says:&lt;/p>
+&lt;pre>&lt;code>nova-manage db migrate_flavor_data
+&lt;/code>&lt;/pre>
+&lt;p>But that says:&lt;/p>
+&lt;pre>&lt;code>Missing arguments: max_number
+&lt;/code>&lt;/pre>
+&lt;p>And the help says:&lt;/p>
+&lt;pre>&lt;code>usage: nova-manage db migrate_flavor_data [-h]
+[--max-number &amp;lt;number&amp;gt;]
+&lt;/code>&lt;/pre>
+&lt;p>Which indicates that &amp;ndash;max-number is optional, but whatever, so you
+try:&lt;/p>
+&lt;pre>&lt;code>nova-manage db migrate_flavor_data --max-number 100
+&lt;/code>&lt;/pre>
+&lt;p>And that says:&lt;/p>
+&lt;pre>&lt;code>Missing arguments: max_number
+&lt;/code>&lt;/pr</description><content>&lt;p>So, the Kilo release notes say:&lt;/p>
 &lt;pre>&lt;code>nova-manage migrate-flavor-data
 &lt;/code>&lt;/pre>
 &lt;p>But nova-manage says:&lt;/p>

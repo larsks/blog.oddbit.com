@@ -1,5 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ansible_20_series on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/ansible_20_series/</link><description>Recent content in Ansible_20_series on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 26 Oct 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/ansible_20_series/rss.xml" rel="self" type="application/rss+xml"/><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</guid><description>This is the second in a loose sequence of articles looking at new features in Ansible 2.0. In the previous article I looked at the Docker connection driver. In this article, I would like to provide an overview of the new-and-much-improved suite of modules for interacting with an OpenStack environment, and provide a few examples of their use.
-In versions of Ansible prior to 2.0, there was a small collection of OpenStack modules.</description><content>&lt;p>This is the second in a loose sequence of articles looking at new
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ansible_20_series on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/ansible_20_series/</link><description>Recent content in Ansible_20_series on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 26 Oct 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/ansible_20_series/rss.xml" rel="self" type="application/rss+xml"/><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</guid><description>&lt;p>This is the second in a loose sequence of articles looking at new
+features in Ansible 2.0. In the previous article I looked at the
+&lt;a href="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
+provide an overview of the new-and-much-improved suite of modules for
+interacting with an &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> environment, and provide a few
+examples of their use.&lt;/p>
+&lt;p>In versions of Ansible prior to 2.0, there was a small collection of
+OpenStack modules. There was the minimum necessary to boot a Nova
+instance:&lt;/p></description><content>&lt;p>This is the second in a loose sequence of articles looking at new
 features in Ansible 2.0. In the previous article I looked at the
 &lt;a href="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
 provide an overview of the new-and-much-improved suite of modules for
@@ -297,8 +304,18 @@ tasks:
 name: docker
 state: running
 enabled: true
-&lt;/code>&lt;/pre></content></item><item><title>Ansible 2.0: The Docker connection driver</title><link>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</link><pubDate>Tue, 13 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</guid><description>As the release of Ansible 2.0 draws closer, I&amp;rsquo;d like to take a look at some of the new features that are coming down the pipe. In this post, we&amp;rsquo;ll look at the docker connection driver.
-A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to your target hosts. These days it uses ssh by default (which relies on the OpenSSH command line client for connectivity), and it also offers the Paramiko library as an alternative ssh implementation (this was in fact the default driver in earlier versions of Ansible).</description><content>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
+&lt;/code>&lt;/pre></content></item><item><title>Ansible 2.0: The Docker connection driver</title><link>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</link><pubDate>Tue, 13 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</guid><description>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
+look at some of the new features that are coming down the pipe. In
+this post, we&amp;rsquo;ll look at the &lt;code>docker&lt;/code> connection driver.&lt;/p>
+&lt;p>A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to
+your target hosts. These days it uses &lt;code>ssh&lt;/code> by default (which relies
+on the OpenSSH command line client for connectivity), and it also
+offers the &lt;a href="http://www.paramiko.org/">Paramiko&lt;/a> library as an alternative ssh implementation
+(this was in fact the default driver in earlier versions of Ansible).
+Alternative drivers offered by recent versions of ansible included the
+&lt;code>winrm&lt;/code> driver, for accessing Windows hosts, the &lt;code>fireball&lt;/code> driver, a
+(deprecated) driver that used &lt;a href="http://zeromq.org/">0mq&lt;/a> for communication, and &lt;code>jail&lt;/code>, a
+driver for connecting to FreeBSD jails.&lt;/p></description><content>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
 look at some of the new features that are coming down the pipe. In
 this post, we&amp;rsquo;ll look at the &lt;code>docker&lt;/code> connection driver.&lt;/p>
 &lt;p>A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to

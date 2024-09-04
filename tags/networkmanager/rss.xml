@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networkmanager on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networkmanager/</link><description>Recent content in Networkmanager on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 16 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networkmanager/rss.xml" rel="self" type="application/rss+xml"/><item><title>Setting up an IPv6 VLAN</title><link>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</link><pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</guid><description>My internet service provider (FIOS) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the Hurricane Electric tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to all systems in my house 1. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN.</description><content>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networkmanager on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networkmanager/</link><description>Recent content in Networkmanager on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 16 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networkmanager/rss.xml" rel="self" type="application/rss+xml"/><item><title>Setting up an IPv6 VLAN</title><link>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</link><pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</guid><description>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p></description><content>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p>
 &lt;p>Parts of this post are going to be device specific: for example, I&amp;rsquo;m using a Ubiquiti &lt;a href="https://store.ui.com/collections/operator-edgemax-routers/products/edgerouter-x">EdgeRouter X&lt;/a> as my Internet router, so the tunnel setup is going to be specific to that device. The section about setting things up on my Linux desktop will be more generally applicable.&lt;/p>
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
@@ -23,26 +23,26 @@ my desktop and the router; you can probably skip this.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>Server IPv4 Address&lt;/td>
-&lt;td>209.51.161.14&lt;/td>
+&lt;td style="text-align: left">Server IPv4 Address&lt;/td>
+&lt;td style="text-align: left">209.51.161.14&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>Server IPv6 Address&lt;/td>
-&lt;td>2001:470:1236:1212::1/64&lt;/td>
+&lt;td style="text-align: left">Server IPv6 Address&lt;/td>
+&lt;td style="text-align: left">2001:470:1236:1212::1/64&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>Client IPv4 Address&lt;/td>
-&lt;td>1.2.3.4&lt;/td>
+&lt;td style="text-align: left">Client IPv4 Address&lt;/td>
+&lt;td style="text-align: left">1.2.3.4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>Client IPv6 Address&lt;/td>
-&lt;td>2001:470:1236:1212::2/64&lt;/td>
+&lt;td style="text-align: left">Client IPv6 Address&lt;/td>
+&lt;td style="text-align: left">2001:470:1236:1212::2/64&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -50,14 +50,14 @@ my desktop and the router; you can probably skip this.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>Routed /64&lt;/td>
-&lt;td>2001:470:1237:1212::/64&lt;/td>
+&lt;td style="text-align: left">Routed /64&lt;/td>
+&lt;td style="text-align: left">2001:470:1237:1212::/64&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -199,7 +199,7 @@ default via fe80::7a8a:20ff:febb:5db dev vlan10 proto ra metric 404 pref medium
 &lt;p>Some services (Netflix is a notable example) block access over the IPv6 tunnels because it breaks their geolocation process and prevents them from determining your country of origin. I don&amp;rsquo;t want to break things for other folks in my house just because I want to play with IPv6.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/div></content></item><item><title>Configuring Open vSwitch with nmcli</title><link>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</link><pubDate>Sat, 15 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</guid><description>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy /etc/sysconfig/network-scripts scripts or rolling my own set of services. These are my notes in case I ever have to do this again.</description><content>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p>
+&lt;/div></content></item><item><title>Configuring Open vSwitch with nmcli</title><link>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</link><pubDate>Sat, 15 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</guid><description>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p></description><content>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p>
 &lt;p>First, we need the openvswitch plugin for NetworkManager:&lt;/p>
 &lt;pre tabindex="0">&lt;code>yum install NetworkManager-ovs
 &lt;/code>&lt;/pre>&lt;p>Without the plugin, &lt;code>nmcli&lt;/code> will happily accept all your configuration commands, but you&amp;rsquo;ll get an error when you try to bring an interface up.&lt;/p>
@@ -242,9 +242,16 @@ nmcli c add type ovs-port conn.interface vlan101 master br-house ovs-port.tag 10
 nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan101 master ovs-port-vlan101 con-name ovs-if-vlan101 ipv4.method static ipv4.address 192.168.11.1/24
 nmcli c add type ovs-port conn.interface vlan102 master br-house ovs-port.tag 102 con-name ovs-port-vlan102
 nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan102 master ovs-port-vlan102 con-name ovs-if-vlan102 ipv4.method static ipv4.address 192.168.13.1/24
-&lt;/code>&lt;/pre></content></item><item><title>Firewalld, NetworkManager, and OpenStack</title><link>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</guid><description>These are my notes on making OpenStack play well with firewalld and NetworkManager.
-NetworkManager By default, NetworkManager attempts to start a DHCP client on every new available interface. Since booting a single instance in OpenStack can result in the creation of several virtual interfaces, this results in a lot of:
-May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt; Activation (qvb512640bd-ee) starting connection 'Wired connection 2' You can disable this behavior by adding the following to /etc/NetworkManager/NetworkManager.</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+&lt;/code>&lt;/pre></content></item><item><title>Firewalld, NetworkManager, and OpenStack</title><link>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</guid><description>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
+&lt;h2 id="networkmanager">NetworkManager&lt;/h2>
+&lt;p>By default, NetworkManager attempts to start a DHCP client on every
+new available interface. Since booting a single instance in OpenStack
+can result in the creation of several virtual interfaces, this results
+in a lot of:&lt;/p>
+&lt;pre>&lt;code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt;
+Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
+&lt;/code>&lt;/pr</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
 and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
 &lt;h2 id="networkmanager">NetworkManager&lt;/h2>
 &lt;p>By default, NetworkManager attempts to start a DHCP client on every

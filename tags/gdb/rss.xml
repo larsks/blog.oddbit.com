@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gdb on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gdb/</link><description>Recent content in Gdb on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 22 Jan 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gdb/rss.xml" rel="self" type="application/rss+xml"/><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>In a case of awful timing, after my recent project involving some attiny85 programming I finally got around to learning how to use simavr and gdb to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!
-I&amp;rsquo;ve split this into three posts:</description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gdb on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gdb/</link><description>Recent content in Gdb on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 22 Jan 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gdb/rss.xml" rel="self" type="application/rss+xml"/><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
 &lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -101,42 +101,42 @@ Continuing.
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>Pin&lt;/th>
-&lt;th>Name&lt;/th>
-&lt;th>I/O&lt;/th>
-&lt;th>Description&lt;/th>
+&lt;th style="text-align: left">Pin&lt;/th>
+&lt;th style="text-align: left">Name&lt;/th>
+&lt;th style="text-align: left">I/O&lt;/th>
+&lt;th style="text-align: left">Description&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>&lt;code>POWER&lt;/code>&lt;/td>
-&lt;td>I&lt;/td>
-&lt;td>Connected to active-low power button&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">&lt;code>POWER&lt;/code>&lt;/td>
+&lt;td style="text-align: left">I&lt;/td>
+&lt;td style="text-align: left">Connected to active-low power button&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>&lt;code>USB&lt;/code>&lt;/td>
-&lt;td>I&lt;/td>
-&lt;td>USB signal from powerboost&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">&lt;code>USB&lt;/code>&lt;/td>
+&lt;td style="text-align: left">I&lt;/td>
+&lt;td style="text-align: left">USB signal from powerboost&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>&lt;code>EN&lt;/code>&lt;/td>
-&lt;td>O&lt;/td>
-&lt;td>EN signal to powerboost (turns on power)&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">&lt;code>EN&lt;/code>&lt;/td>
+&lt;td style="text-align: left">O&lt;/td>
+&lt;td style="text-align: left">EN signal to powerboost (turns on power)&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>&lt;code>SHUTDOWN&lt;/code>&lt;/td>
-&lt;td>O&lt;/td>
-&lt;td>Signal to Pi requesting shutdown&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">&lt;code>SHUTDOWN&lt;/code>&lt;/td>
+&lt;td style="text-align: left">O&lt;/td>
+&lt;td style="text-align: left">Signal to Pi requesting shutdown&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>&lt;code>BOOT&lt;/code>&lt;/td>
-&lt;td>I&lt;/td>
-&lt;td>Signal from Pi that it has booted&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">&lt;code>BOOT&lt;/code>&lt;/td>
+&lt;td style="text-align: left">I&lt;/td>
+&lt;td style="text-align: left">Signal from Pi that it has booted&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -219,13 +219,18 @@ Temporary breakpoint 2, loop () at ../pipower.c:98
 &lt;p>This works by disabling the unqualified breakpoint at the top of &lt;code>loop()&lt;/code> and creating a new temporary breakpoint (meaning it will be removed once it triggers) that will only trigger when the global &lt;code>state&lt;/code> value has changed.&lt;/p>
 &lt;p>From &lt;a href="https://github.com/larsks/pipower/blob/b822b91af88d8baeb4e0e69fa5e69c074b96c32f/pipower.c#L213">STATE_POWEROFF2&lt;/a>, Pipower will enter the various &lt;code>IDLE*&lt;/code> stages, during which it enters a very low power sleep mode.&lt;/p>
 &lt;hr>
-&lt;p>That&amp;rsquo;s it for the walk-through! Hopefully that has given you some idea of how you can use &lt;code>simavr&lt;/code> and a debugger to test your AVR code without having to flash it to a device first.&lt;/p></content></item><item><title>Debugging attiny85 code, part 2: Automating GDB with scripts</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</guid><description>This is the second of three posts about using gdb and simavr to debug AVR code. The complete series is:
-Part 1: Using GDB
-A walkthrough of using GDB to manually inspect the behavior of our code.
-Part 2: Automating GDB with scripts
-Creating GDB scripts to automatically test the behavior of our code.
-Part 3: Tracing with simavr
-Using simavr to collect information about the state of microcontroller pins while our code is running.</description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;p>That&amp;rsquo;s it for the walk-through! Hopefully that has given you some idea of how you can use &lt;code>simavr&lt;/code> and a debugger to test your AVR code without having to flash it to a device first.&lt;/p></content></item><item><title>Debugging attiny85 code, part 2: Automating GDB with scripts</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</guid><description>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
+&lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p>
+&lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
@@ -556,13 +561,17 @@ main () at ../pipower.c:280
 1: state = STATE_QUIT
 2: /t PORTB = 10001
 3: /t PINB = 10011
-&lt;/code>&lt;/pre></content></item><item><title>Debugging attiny85 code, part 3: Tracing with simavr</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</guid><description>This is the third of three posts about using gdb and simavr to debug AVR code. The complete series is:
-Part 1: Using GDB
-A walkthrough of using GDB to manually inspect the behavior of our code.
-Part 2: Automating GDB with scripts
-Creating GDB scripts to automatically test the behavior of our code.
-Part 3: Tracing with simavr
-Using simavr to collect information about the state of microcontroller pins while our code is running.</description><content>
+&lt;/code>&lt;/pre></content></item><item><title>Debugging attiny85 code, part 3: Tracing with simavr</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</guid><description>&lt;figure class="left" >
+&lt;img src="pipower_trace.png" />
+&lt;/figure>
+&lt;p>This is the third of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
+&lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p></description><content>
 &lt;figure class="left" >
 &lt;img src="pipower_trace.png" />
 &lt;/figure>

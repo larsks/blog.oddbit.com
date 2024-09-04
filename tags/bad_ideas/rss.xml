@@ -1,6 +1,10 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Bad_ideas on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/bad_ideas/</link><description>Recent content in Bad_ideas on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 10 Apr 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/bad_ideas/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>This is a terrible hack. If you are easily offended by bad ideas implemented poorly, move along!
-You are working on a wonderful open source project&amp;hellip;but you are not supposed to be working on that project! You&amp;rsquo;re supposed to be doing your real work! Unfortunately, your extra-curricular activity is well documented in the git history of your project for all to see:
-And now your boss knows why the TPS reports are late.</description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Bad_ideas on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/bad_ideas/</link><description>Recent content in Bad_ideas on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 10 Apr 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/bad_ideas/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+implemented poorly, move along!&lt;/p>
+&lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
+&lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
+your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
+well documented in the git history of your project for all to see:&lt;/p>
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
 implemented poorly, move along!&lt;/p>
 &lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
@@ -29,8 +33,20 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
 &lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
-&lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Fixing RPM with evil magic</title><link>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</link><pubDate>Tue, 26 Jul 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</guid><description>Fixing rpmsign with evil magic At my office we are developing a deployment mechanism for RPM packages. The general workflow looks like this:
-You build a source rpm on your own machine. You sign the rpm with your GPG key. You submit the source RPM to our buildserver. The buildserver validates your signature and then builds the package. The buildserver signs the package using a master signing key. The last step in that sequence represents a problem, because the rpmsign command will always, always prompt for a password and read the response from /dev/tty.</description><content>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
+&lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Fixing RPM with evil magic</title><link>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</link><pubDate>Tue, 26 Jul 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</guid><description>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
+&lt;p>At my office we are developing a deployment mechanism for RPM packages. The
+general workflow looks like this:&lt;/p>
+&lt;ul>
+&lt;li>You build a source rpm on your own machine.&lt;/li>
+&lt;li>You sign the rpm with your GPG key.&lt;/li>
+&lt;li>You submit the source RPM to our buildserver.&lt;/li>
+&lt;li>The buildserver validates your signature and then builds the package.&lt;/li>
+&lt;li>The buildserver signs the package using a master signing key.&lt;/li>
+&lt;/ul>
+&lt;p>The last step in that sequence represents a problem, because the &lt;code>rpmsign&lt;/code>
+command will always, always prompt for a password and read the response from
+&lt;code>/dev/tty&lt;/code>. This means that (a) you can&amp;rsquo;t easily provide the password on stdin,
+and (b) you can&amp;rsquo;t fix the problem using a passwordless key.&lt;/p></description><content>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
 &lt;p>At my office we are developing a deployment mechanism for RPM packages. The
 general workflow looks like this:&lt;/p>
 &lt;ul>

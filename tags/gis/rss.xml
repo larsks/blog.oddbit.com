@@ -1,5 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gis on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gis/</link><description>Recent content in Gis on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gis/rss.xml" rel="self" type="application/rss+xml"/><item><title>Animating a map of Covid in the Northeast US</title><link>https://blog.oddbit.com/post/2020-12-13-animating-a-map-of-covid-in-th/</link><pubDate>Sun, 13 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-13-animating-a-map-of-covid-in-th/</guid><description>I recently put together a short animation showing the spread of Covid throughout the Northeast United States:
-I thought it might be interesting to walk through the process I used to create the video. The steps described in this article aren&amp;rsquo;t exactly what I used (I was dealing with data in a PostGIS database, and in the interests of simplicity I wanted instructions that can be accomplished with just QGIS), but they end up in the same place.</description><content>&lt;p>I recently put together a short animation showing the spread of Covid
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gis on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gis/</link><description>Recent content in Gis on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gis/rss.xml" rel="self" type="application/rss+xml"/><item><title>Animating a map of Covid in the Northeast US</title><link>https://blog.oddbit.com/post/2020-12-13-animating-a-map-of-covid-in-th/</link><pubDate>Sun, 13 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-13-animating-a-map-of-covid-in-th/</guid><description>&lt;p>I recently put together a short animation showing the spread of Covid
+throughout the Northeast United States:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div>
+&lt;p>I thought it might be interesting to walk through the process I used to
+create the video. The steps described in this article aren&amp;rsquo;t exactly
+what I used (I was dealing with data in a &lt;a href="https://postgis.net/">PostGIS&lt;/a> database, and in
+the interests of simplicity I wanted instructions that can be
+accomplished with just QGIS), but they end up in the same place.&lt;/p></description><content>&lt;p>I recently put together a short animation showing the spread of Covid
 throughout the Northeast United States:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
@@ -316,9 +325,23 @@ each frame and (b) a file named &lt;code>out.mp4&lt;/code> containing the export
 video.&lt;/p>
 &lt;h2 id="datasets">Datasets&lt;/h2>
 &lt;p>I have made all the data referenced in this post available at
-&lt;a href="https://github.com/larsks/ne-covid-map">https://github.com/larsks/ne-covid-map&lt;/a>.&lt;/p></content></item><item><title>Installing pyspatialite on Fedora</title><link>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</link><pubDate>Tue, 17 Nov 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</guid><description>If you should find yourself wanting to install pyspatialite on Fedora &amp;ndash; perhaps because you want to use the Processing plugin for QGIS &amp;ndash; you will first need to install the following dependencies:
-gcc python-devel sqlite-devel geos-devel proj-devel python-pip redhat-rpm-config After which you can install pyspatialite using pip by running:
-CFLAGS=-I/usr/include pip install pyspatialite At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.</description><content>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
+&lt;a href="https://github.com/larsks/ne-covid-map">https://github.com/larsks/ne-covid-map&lt;/a>.&lt;/p></content></item><item><title>Installing pyspatialite on Fedora</title><link>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</link><pubDate>Tue, 17 Nov 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-11-17-installing-pyspatialite-on-fed/</guid><description>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
+Fedora &amp;ndash; perhaps because you want to use the &lt;a href="https://plugins.qgis.org/plugins/processing/">Processing plugin&lt;/a>
+for &lt;a href="http://www.qgis.org/">QGIS&lt;/a> &amp;ndash; you will first need to install the following
+dependencies:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>gcc&lt;/code>&lt;/li>
+&lt;li>&lt;code>python-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>sqlite-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>geos-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>proj-devel&lt;/code>&lt;/li>
+&lt;li>&lt;code>python-pip&lt;/code>&lt;/li>
+&lt;li>&lt;code>redhat-rpm-config&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>After which you can install &lt;code>pyspatialite&lt;/code> using &lt;code>pip&lt;/code> by running:&lt;/p>
+&lt;pre>&lt;code>CFLAGS=-I/usr/include pip install pyspatialite
+&lt;/code>&lt;/pre>
+&lt;p>At this point, you should be able to use the &amp;ldquo;Processing&amp;rdquo; plugin.&lt;/p></description><content>&lt;p>If you should find yourself wanting to install &lt;a href="https://github.com/lokkju/pyspatialite">pyspatialite&lt;/a> on
 Fedora &amp;ndash; perhaps because you want to use the &lt;a href="https://plugins.qgis.org/plugins/processing/">Processing plugin&lt;/a>
 for &lt;a href="http://www.qgis.org/">QGIS&lt;/a> &amp;ndash; you will first need to install the following
 dependencies:&lt;/p>

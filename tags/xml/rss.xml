@@ -1,5 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Xml on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/xml/</link><description>Recent content in Xml on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 19 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/xml/rss.xml" rel="self" type="application/rss+xml"/><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>I&amp;rsquo;ve recently spent some time working with Pacemaker, and ended up with an interesting collection of XPath snippets that I am publishing here for your use and/or amusement.
-Check if there are any inactive resources pcs status xml | xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp; echo &amp;quot;There are inactive resources&amp;quot; This selects any resource (//resource) in the output of pcs status xml that has the attribute active set to false. If there are no matches to this query, xmllint exits with an error code.</description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Xml on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/xml/</link><description>Recent content in Xml on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 19 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/xml/rss.xml" rel="self" type="application/rss+xml"/><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
+with an interesting collection of &lt;a href="http://www.w3.org/TR/xpath/">XPath&lt;/a> snippets that I am publishing
+here for your use and/or amusement.&lt;/p>
+&lt;h2 id="check-if-there-are-any-inactive-resources">Check if there are any inactive resources&lt;/h2>
+&lt;pre>&lt;code>pcs status xml |
+xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp;
+echo &amp;quot;There are inactive resources&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>This selects &lt;em>any&lt;/em> resource (&lt;code>//resource&lt;/code>) in the output of &lt;code>pcs status xml&lt;/code> that has the attribute &lt;code>active&lt;/code> set to &lt;code>false&lt;/code>. If there
+are no matches to this query, &lt;code>xmllint&lt;/code> exits with an error code.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
 with an interesting collection of &lt;a href="http://www.w3.org/TR/xpath/">XPath&lt;/a> snippets that I am publishing
 here for your use and/or amusement.&lt;/p>
 &lt;h2 id="check-if-there-are-any-inactive-resources">Check if there are any inactive resources&lt;/h2>
@@ -81,8 +89,12 @@ sleep 1
 done
 &lt;/code>&lt;/pre>
 &lt;p>This waits until all children of the specified resource id become
-active.&lt;/p></content></item><item><title>Parsing XML with Awk</title><link>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</link><pubDate>Mon, 10 Sep 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</guid><description>Recently, changes from the xmlgawk project have been integrated into GNU awk, and xmlgawk has been renamed to gawkextlib. With both a recent (post-4.0.70) gawk and gawkextlib built and installed correctly, you can write simple XML parsing scripts using gawk.
-For example, let&amp;rsquo;s say you would like to generate a list of disk image files associated with a KVM virtual instance. You can use the virsh dumpxml command to get output like the following:</description><content>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
+active.&lt;/p></content></item><item><title>Parsing XML with Awk</title><link>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</link><pubDate>Mon, 10 Sep 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</guid><description>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
+&lt;a href="https://www.gnu.org/software/gawk/">GNU awk&lt;/a>, and xmlgawk has been renamed to &lt;a href="http://gawkextlib.sourceforge.net/">gawkextlib&lt;/a>. With both a
+recent (post-4.0.70) gawk and gawkextlib built and installed
+correctly, you can write simple XML parsing scripts using gawk.&lt;/p>
+&lt;p>For example, let&amp;rsquo;s say you would like to generate a list of disk image
+files associated with a KVM virtual instance. You can use the &lt;code>virsh dumpxml&lt;/code> command to get output like the following:&lt;/p></description><content>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
 &lt;a href="https://www.gnu.org/software/gawk/">GNU awk&lt;/a>, and xmlgawk has been renamed to &lt;a href="http://gawkextlib.sourceforge.net/">gawkextlib&lt;/a>. With both a
 recent (post-4.0.70) gawk and gawkextlib built and installed
 correctly, you can write simple XML parsing scripts using gawk.&lt;/p>
@@ -135,9 +147,11 @@ element attributes.&lt;/li>
 the element).&lt;/li>
 &lt;/ul>
 &lt;p>There are other variables available, but with this basic set is
-becomes easy to extract information from XML documents.&lt;/p></content></item><item><title>MBTA realtime XML feed</title><link>https://blog.oddbit.com/post/2010-02-07-mbta-realtime-xml-feed/</link><pubDate>Sun, 07 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-07-mbta-realtime-xml-feed/</guid><description>The MBTA has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:
-http://www.eot.state.ma.us/developers/realtime/
-The service is provided by NextBus, which specializes in real-time location information for public transit organizations. The API (sorry, PDF) is very simple and does not require any sort of advance registration.</description><content>&lt;p>The &lt;a href="http://mbta.com/">MBTA&lt;/a> has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:&lt;/p>
+becomes easy to extract information from XML documents.&lt;/p></content></item><item><title>MBTA realtime XML feed</title><link>https://blog.oddbit.com/post/2010-02-07-mbta-realtime-xml-feed/</link><pubDate>Sun, 07 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-07-mbta-realtime-xml-feed/</guid><description>&lt;p>The &lt;a href="http://mbta.com/">MBTA&lt;/a> has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;a href="http://www.eot.state.ma.us/developers/realtime/">http://www.eot.state.ma.us/developers/realtime/&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>The service is provided by &lt;a href="http://www.nextbus.com/">NextBus&lt;/a>, which specializes in real-time location information for public transit organizations. The &lt;a href="http://www.eot.state.ma.us/developers/downloads/MBTA_XML_Feed_Trial_Docs_13Nov09.pdf">API&lt;/a> (sorry, PDF) is very simple and does not require any sort of advance registration.&lt;/p></description><content>&lt;p>The &lt;a href="http://mbta.com/">MBTA&lt;/a> has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:&lt;/p>
 &lt;blockquote>
 &lt;p>&lt;a href="http://www.eot.state.ma.us/developers/realtime/">http://www.eot.state.ma.us/developers/realtime/&lt;/a>&lt;/p>
 &lt;/blockquote>

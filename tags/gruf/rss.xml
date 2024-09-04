@@ -1,5 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gruf on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gruf/</link><description>Recent content in Gruf on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 19 Feb 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gruf/rss.xml" rel="self" type="application/rss+xml"/><item><title>Gruf gets superpowers</title><link>https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/</guid><description>In my last article article I introduced Gruf, a command line tool for interacting with Gerrit. Since then, Gruf has gained a few important new features.
-Caching Gruf will now by default cache results for five minutes. This avoids repeatedly querying the server for the same information when you&amp;rsquo;re just displaying it with different templates (for example, if you run a gruf query open here followed by a gruf -t patches query open here).</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/">last article&lt;/a> article I introduced &lt;a href="http://github.com/larsks/gruf">Gruf&lt;/a>, a command line
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gruf on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gruf/</link><description>Recent content in Gruf on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 19 Feb 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gruf/rss.xml" rel="self" type="application/rss+xml"/><item><title>Gruf gets superpowers</title><link>https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/</guid><description>&lt;p>In my &lt;a href="https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/">last article&lt;/a> article I introduced &lt;a href="http://github.com/larsks/gruf">Gruf&lt;/a>, a command line
+tool for interacting with &lt;a href="https://www.gerritcodereview.com/">Gerrit&lt;/a>. Since then, Gruf has gained a
+few important new features.&lt;/p>
+&lt;h2 id="caching">Caching&lt;/h2>
+&lt;p>Gruf will now by default cache results for five minutes. This avoids
+repeatedly querying the server for the same information when you&amp;rsquo;re
+just displaying it with different templates (for example, if you run a
+&lt;code>gruf query open here&lt;/code> followed by a &lt;code>gruf -t patches query open here&lt;/code>).&lt;/p></description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/">last article&lt;/a> article I introduced &lt;a href="http://github.com/larsks/gruf">Gruf&lt;/a>, a command line
 tool for interacting with &lt;a href="https://www.gerritcodereview.com/">Gerrit&lt;/a>. Since then, Gruf has gained a
 few important new features.&lt;/p>
 &lt;h2 id="caching">Caching&lt;/h2>
@@ -27,8 +33,17 @@ what&amp;rsquo;s going on.&lt;/p>
 &lt;!-- raw HTML omitted -->
 &lt;p>The short output looks something like this:&lt;/p>
 &lt;!-- raw HTML omitted -->
-&lt;!-- raw HTML omitted --></content></item><item><title>Gruf, a Gerrit command line utility</title><link>https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/</link><pubDate>Tue, 16 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/</guid><description>(See also the followup to this article.)
-I&amp;rsquo;ve recently started spending more time interacting with Gerrit, the code review tool used both by OpenStack, at review.openstack.org, and by a variety of other open source projects at GerritForge&amp;rsquo;s GitHub-linked review.gerrithub.io. I went looking for command line tools and was largely disappointed with what I found. Many of the solutions out there assume that you&amp;rsquo;re regularly interacting with a single Gerrit instance, and that&amp;rsquo;s seldom the case: more often, the Gerrit server in use varies from project to project.</description><content>&lt;p>(See also &lt;a href="https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/">the followup&lt;/a> to this article.)&lt;/p>
+&lt;!-- raw HTML omitted --></content></item><item><title>Gruf, a Gerrit command line utility</title><link>https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/</link><pubDate>Tue, 16 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-16-gruf-a-gerrit-command-line-uti/</guid><description>&lt;p>(See also &lt;a href="https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/">the followup&lt;/a> to this article.)&lt;/p>
+&lt;p>I&amp;rsquo;ve recently started spending more time interacting with &lt;a href="https://www.gerritcodereview.com/">Gerrit&lt;/a>,
+the code review tool used both by &lt;a href="http://openstack.org/">OpenStack&lt;/a>, at
+&lt;a href="http://review.openstack.org/">review.openstack.org&lt;/a>, and by a variety of other open source projects
+at GerritForge&amp;rsquo;s GitHub-linked &lt;a href="http://review.gerrithub.io/">review.gerrithub.io&lt;/a>. I went
+looking for command line tools and was largely disappointed with what
+I found. Many of the solutions out there assume that you&amp;rsquo;re regularly
+interacting with a single Gerrit instance, and that&amp;rsquo;s seldom the case:
+more often, the Gerrit server in use varies from project to project.&lt;br>
+I also found that many of the tools were opinionated in what sort of
+output they would produce.&lt;/p></description><content>&lt;p>(See also &lt;a href="https://blog.oddbit.com/post/2016-02-19-gruf-gets-superpowers/">the followup&lt;/a> to this article.)&lt;/p>
 &lt;p>I&amp;rsquo;ve recently started spending more time interacting with &lt;a href="https://www.gerritcodereview.com/">Gerrit&lt;/a>,
 the code review tool used both by &lt;a href="http://openstack.org/">OpenStack&lt;/a>, at
 &lt;a href="http://review.openstack.org/">review.openstack.org&lt;/a>, and by a variety of other open source projects

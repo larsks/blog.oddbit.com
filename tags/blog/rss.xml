@@ -1,4 +1,9 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blog on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/blog/</link><description>Recent content in Blog on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 22 Nov 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/blog/rss.xml" rel="self" type="application/rss+xml"/><item><title>Automatic maintenance of tag feeds</title><link>https://blog.oddbit.com/post/2013-11-22-automatic-maintenanc/</link><pubDate>Fri, 22 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-22-automatic-maintenanc/</guid><description>I recently added some scripts to automatically generate tag feeds for my blog when pushing new content. I&amp;rsquo;m using GitHub Pages to publish everything, so it seemed easiest to make tag generation part of a pre-push hook (new in Git 1.8.2). This hook is run automatically as part of the git push operation, so it&amp;rsquo;s the perfect place to insert generated content that must be kept in sync with posts on the blog.</description><content>&lt;p>I recently added some scripts to automatically generate tag feeds for
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blog on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/blog/</link><description>Recent content in Blog on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 22 Nov 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/blog/rss.xml" rel="self" type="application/rss+xml"/><item><title>Automatic maintenance of tag feeds</title><link>https://blog.oddbit.com/post/2013-11-22-automatic-maintenanc/</link><pubDate>Fri, 22 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-22-automatic-maintenanc/</guid><description>&lt;p>I recently added some scripts to automatically generate tag feeds for
+my blog when pushing new content. I&amp;rsquo;m using GitHub Pages to publish
+everything, so it seemed easiest to make tag generation part of a
+&lt;code>pre-push&lt;/code> hook (new in Git 1.8.2). This hook is run automatically as
+part of the &lt;code>git push&lt;/code> operation, so it&amp;rsquo;s the perfect place to insert
+generated content that must be kept in sync with posts on the blog.&lt;/p></description><content>&lt;p>I recently added some scripts to automatically generate tag feeds for
 my blog when pushing new content. I&amp;rsquo;m using GitHub Pages to publish
 everything, so it seemed easiest to make tag generation part of a
 &lt;code>pre-push&lt;/code> hook (new in Git 1.8.2). This hook is run automatically as
@@ -114,11 +119,26 @@ between the tags in the post and the tags selected in the tag feed.
 While the automatic feeds use only a single tag, this also makes it
 possible to create feeds that follow multiple tags.&lt;/p>
 &lt;p>All of the code used to implement this is available in the &lt;a href="http://github.com/larsks/blog.oddbit.com/">GitHub
-repository for this blog&lt;/a>.&lt;/p></content></item><item><title>Enabled blog comments</title><link>https://blog.oddbit.com/post/2013-11-18-enabled-comments/</link><pubDate>Mon, 18 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-18-enabled-comments/</guid><description>I&amp;rsquo;ve enabled blog comments using Disqus. This is something of an experiment, since (a) I&amp;rsquo;m not really happy with how Disqus is handling user registration these days and (b) I don&amp;rsquo;t know that I have the time to moderate anything. But we&amp;rsquo;ll see.</description><content>&lt;p>I&amp;rsquo;ve enabled blog comments using &lt;a href="http://disqus.com/">Disqus&lt;/a>. This is something of an
+repository for this blog&lt;/a>.&lt;/p></content></item><item><title>Enabled blog comments</title><link>https://blog.oddbit.com/post/2013-11-18-enabled-comments/</link><pubDate>Mon, 18 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-18-enabled-comments/</guid><description>&lt;p>I&amp;rsquo;ve enabled blog comments using &lt;a href="http://disqus.com/">Disqus&lt;/a>. This is something of an
 experiment, since (a) I&amp;rsquo;m not really happy with how Disqus is handling
 user registration these days and (b) I don&amp;rsquo;t know that I have the time
-to moderate anything. But we&amp;rsquo;ll see.&lt;/p></content></item><item><title>Moving to GitHub</title><link>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</link><pubDate>Wed, 13 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</guid><description>This blog has been hosted on scriptogram for the past year or so. Unfortunately, while I like the publish-via-Dropbox mechanism, there have been enough problems recently that I&amp;rsquo;ve finally switched over to using GitHub Pages for hosting. I&amp;rsquo;ve been thinking about doing this for a while, but the things that finally pushed me to make the change were:
-Sync problems that would prevent new posts from appearing (and that at least once caused posts to disappear).</description><content>&lt;p>This blog has been hosted on &lt;a href="http://scriptogr.am/">scriptogram&lt;/a> for the past year or so.
+to moderate anything. But we&amp;rsquo;ll see.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve enabled blog comments using &lt;a href="http://disqus.com/">Disqus&lt;/a>. This is something of an
+experiment, since (a) I&amp;rsquo;m not really happy with how Disqus is handling
+user registration these days and (b) I don&amp;rsquo;t know that I have the time
+to moderate anything. But we&amp;rsquo;ll see.&lt;/p></content></item><item><title>Moving to GitHub</title><link>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</link><pubDate>Wed, 13 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</guid><description>&lt;p>This blog has been hosted on &lt;a href="http://scriptogr.am/">scriptogram&lt;/a> for the past year or so.
+Unfortunately, while I like the publish-via-Dropbox mechanism, there
+have been enough problems recently that I&amp;rsquo;ve finally switched over to
+using &lt;a href="http://pages.github.com/">GitHub Pages&lt;/a> for hosting. I&amp;rsquo;ve been thinking about doing
+this for a while, but the things that finally pushed me to make the
+change were:&lt;/p>
+&lt;ul>
+&lt;li>Sync problems that would prevent new posts from appearing (and that
+at least once caused posts to disappear).&lt;/li>
+&lt;li>Lack of any response to bug reports by the site maintainers.&lt;/li>
+&lt;/ul>
+&lt;p>A benefit of the publish-via-Dropbox mechanism is, of course, that I
+already had all the data and didn&amp;rsquo;t need to go through any sort of
+export process.&lt;/p></description><content>&lt;p>This blog has been hosted on &lt;a href="http://scriptogr.am/">scriptogram&lt;/a> for the past year or so.
 Unfortunately, while I like the publish-via-Dropbox mechanism, there
 have been enough problems recently that I&amp;rsquo;ve finally switched over to
 using &lt;a href="http://pages.github.com/">GitHub Pages&lt;/a> for hosting. I&amp;rsquo;ve been thinking about doing

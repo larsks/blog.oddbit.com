@@ -1,6 +1,17 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Devicemapper on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/devicemapper/</link><description>Recent content in Devicemapper on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 25 Jan 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/devicemapper/rss.xml" rel="self" type="application/rss+xml"/><item><title>Fun with devicemapper snapshots</title><link>https://blog.oddbit.com/post/2018-01-25-fun-with-devicemapper-snapshot/</link><pubDate>Thu, 25 Jan 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-01-25-fun-with-devicemapper-snapshot/</guid><description>I find myself working with Raspbian disk images fairly often. A typical workflow is:
-Download the disk image. Mount the filesystem somewhere to check something. Make some changes or install packages just to check something else. Crap I&amp;rsquo;ve made changes. &amp;hellip;at which point I need to fetch a new copy of the image next time I want to start fresh.
-Sure, I could just make a copy of the image and work from there, but what fun is that?</description><content>&lt;p>I find myself working with &lt;a href="https://www.raspberrypi.org/downloads/raspbian/">Raspbian&lt;/a> disk images fairly often. A
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Devicemapper on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/devicemapper/</link><description>Recent content in Devicemapper on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 25 Jan 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/devicemapper/rss.xml" rel="self" type="application/rss+xml"/><item><title>Fun with devicemapper snapshots</title><link>https://blog.oddbit.com/post/2018-01-25-fun-with-devicemapper-snapshot/</link><pubDate>Thu, 25 Jan 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-01-25-fun-with-devicemapper-snapshot/</guid><description>&lt;p>I find myself working with &lt;a href="https://www.raspberrypi.org/downloads/raspbian/">Raspbian&lt;/a> disk images fairly often. A
+typical workflow is:&lt;/p>
+&lt;ul>
+&lt;li>Download the disk image.&lt;/li>
+&lt;li>Mount the filesystem somewhere to check something.&lt;/li>
+&lt;li>Make some changes or install packages just to check something else.&lt;/li>
+&lt;li>Crap I&amp;rsquo;ve made changes.&lt;/li>
+&lt;/ul>
+&lt;p>&amp;hellip;at which point I need to fetch a new copy of the image next time I
+want to start fresh.&lt;/p>
+&lt;p>Sure, I could just make a copy of the image and work from there, but
+what fun is that? This seemed like a perfect opportunity to learn more
+about the &lt;a href="https://www.kernel.org/doc/Documentation/device-mapper/">device mapper&lt;/a> and in particular how the &lt;a href="https://www.kernel.org/doc/Documentation/device-mapper/snapshot.txt">snapshot&lt;/a>
+target works.&lt;/p></description><content>&lt;p>I find myself working with &lt;a href="https://www.raspberrypi.org/downloads/raspbian/">Raspbian&lt;/a> disk images fairly often. A
 typical workflow is:&lt;/p>
 &lt;ul>
 &lt;li>Download the disk image.&lt;/li>

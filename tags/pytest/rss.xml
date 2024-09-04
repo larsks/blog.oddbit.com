@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pytest on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pytest/</link><description>Recent content in Pytest on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 15 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pytest/rss.xml" rel="self" type="application/rss+xml"/><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>A software fixture &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in Pytest to create and tear down containers as part of a test run.</description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pytest on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pytest/</link><description>Recent content in Pytest on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 15 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pytest/rss.xml" rel="self" type="application/rss+xml"/><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p></description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
 &lt;h2 id="pytest-fixtures">Pytest Fixtures&lt;/h2>
 &lt;p>Pytest &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html">fixtures&lt;/a> are created through the use of the &lt;code>fixture&lt;/code> decorator. A fixture is accessed by including a function parameter with the fixture name in our test functions. For example, if we define an &lt;code>example&lt;/code> fixture:&lt;/p>
 &lt;pre tabindex="0">&lt;code>@pytest.fixture
@@ -33,8 +33,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="917583462" type="checkbox" />
-&lt;label for="917583462">
+&lt;input id="183296547" type="checkbox" />
+&lt;label for="183296547">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -63,8 +63,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="876425391" type="checkbox" />
-&lt;label for="876425391">
+&lt;input id="153798426" type="checkbox" />
+&lt;label for="153798426">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -91,8 +91,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="481952376" type="checkbox" />
-&lt;label for="481952376">
+&lt;input id="812673945" type="checkbox" />
+&lt;label for="812673945">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -177,8 +177,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="463275918" type="checkbox" />
-&lt;label for="463275918">
+&lt;input id="694725183" type="checkbox" />
+&lt;label for="694725183">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -238,8 +238,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="271493865" type="checkbox" />
-&lt;label for="271493865">
+&lt;input id="953428716" type="checkbox" />
+&lt;label for="953428716">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>

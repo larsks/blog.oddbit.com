@@ -1,6 +1,15 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pull-Request on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pull-request/</link><description>Recent content in Pull-Request on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 26 Apr 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pull-request/rss.xml" rel="self" type="application/rss+xml"/><item><title>Adding support for privilege escalation to Ansible's docker connection driver</title><link>https://blog.oddbit.com/post/2019-04-26-adding-support-for-privilege-e/</link><pubDate>Fri, 26 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-04-26-adding-support-for-privilege-e/</guid><description>Update 2019-05-09 Pull request #55816 has merged, so you can now use sudo with the docker connection driver even when sudo is configured to require a password.
-I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:
---- - hosts: all gather_facts: false become: true tasks: - ping: And an inventory like this:</description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pull-Request on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pull-request/</link><description>Recent content in Pull-Request on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 26 Apr 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pull-request/rss.xml" rel="self" type="application/rss+xml"/><item><title>Adding support for privilege escalation to Ansible's docker connection driver</title><link>https://blog.oddbit.com/post/2019-04-26-adding-support-for-privilege-e/</link><pubDate>Fri, 26 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-04-26-adding-support-for-privilege-e/</guid><description>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
+&lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
+has merged, so you can now use &lt;code>sudo&lt;/code> with the &lt;code>docker&lt;/code> connection driver even when &lt;code>sudo&lt;/code> is configured to require a password.&lt;/p>
+&lt;hr>
+&lt;p>I often use Docker to test out Ansible playbooks. While normally that works great, I recently ran into an unexpected problem with privilege escalation. Given a simple playbook like this:&lt;/p>
+&lt;pre>&lt;code>---
+- hosts: all
+gather_facts: false
+become: true
+tasks:
+- ping:
+&lt;/code>&lt;/pr</description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
 &lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
 has merged, so you can now use &lt;code>sudo&lt;/code> with the &lt;code>docker&lt;/code> connection driver even when &lt;code>sudo&lt;/code> is configured to require a password.&lt;/p>
 &lt;hr>
@@ -49,8 +58,19 @@ Administrator. It usually boils down to these three things:
 &lt;p>Looking at the source, I was surprised: while Ansible has individual plugins for different privilege escalation methods, it is entirely up to the individual connection plugin to implement the logic necessary to make use of these mechanisms. I had expected privilege escalation support to be implemented in the base connection plugin (&lt;code>ConnectionBase&lt;/code> in &lt;code>lib/ansible/plugins/connection/__init__.py&lt;/code>), but it&amp;rsquo;s not. So while the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/ssh.py">ssh plugin&lt;/a> has a fairly complex set of logic for handing the &lt;code>become&lt;/code> prompt, and the &lt;a href="https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/connection/local.py">local plugin&lt;/a> had a relatively simple solution, the &lt;code>docker&lt;/code> connection had none.&lt;/p>
 &lt;p>Fortunately, in many ways the &lt;code>docker&lt;/code> plugin is almost identical to the &lt;code>local&lt;/code> plugin, which means that rather than doing actual work I was able to largely cut-and-paste the privilege escalation support from the &lt;code>local&lt;/code> plugin into the &lt;code>docker&lt;/code> plugin. You can find this work in pull request
 &lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
-.&lt;/p></content></item><item><title>Integrating Bitwarden with Ansible</title><link>https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/</guid><description>Bitwarden is a password management service (like LastPass or 1Password). It&amp;rsquo;s unique in that it is built entirely on open source software. In addition to the the web UI and mobile apps that you would expect, Bitwarden also provides a command-line tool for interacting with the your password store.
-At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password sharing and management solution that was better than dropping files into directories on remote hosts or sharing things over Slack.</description><content>&lt;p>&lt;a href="https://bitwarden.com">Bitwarden&lt;/a> is a password management service (like &lt;a href="https://www.lastpass.com/">LastPass&lt;/a> or
+.&lt;/p></content></item><item><title>Integrating Bitwarden with Ansible</title><link>https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-integrating-bitwarden-with-ans/</guid><description>&lt;p>&lt;a href="https://bitwarden.com">Bitwarden&lt;/a> is a password management service (like &lt;a href="https://www.lastpass.com/">LastPass&lt;/a> or
+&lt;a href="https://1password.com/">1Password&lt;/a>). It&amp;rsquo;s unique in that it is built entirely on open
+source software. In addition to the the web UI and mobile apps that
+you would expect, Bitwarden also provides a &lt;a href="https://help.bitwarden.com/article/cli/">command-line tool&lt;/a> for
+interacting with the your password store.&lt;/p>
+&lt;p>At $WORK(-ish) we&amp;rsquo;re looking into Bitwarden because we want a password
+sharing and management solution that was better than dropping files
+into directories on remote hosts or sharing things over Slack. At
+the same time, we are also thinking about bringing more automation to
+our operational environment, possibly by making more extensive use of
+&lt;a href="https://ansible.com">Ansible&lt;/a>. It looked like all the pieces were available to use
+Bitwarden as a credential storage mechanism for Ansible playbooks, so
+I set out to write a lookup plugin to implement the integration&amp;hellip;&lt;/p></description><content>&lt;p>&lt;a href="https://bitwarden.com">Bitwarden&lt;/a> is a password management service (like &lt;a href="https://www.lastpass.com/">LastPass&lt;/a> or
 &lt;a href="https://1password.com/">1Password&lt;/a>). It&amp;rsquo;s unique in that it is built entirely on open
 source software. In addition to the the web UI and mobile apps that
 you would expect, Bitwarden also provides a &lt;a href="https://help.bitwarden.com/article/cli/">command-line tool&lt;/a> for
@@ -179,8 +199,14 @@ $ export BW_SESSION=&amp;quot;...&amp;quot;
 [...]
 bash$ export BW_SESSION=&amp;quot;...&amp;quot;
 bash$ ansible-playbook inject-passwords.yml
-&lt;/code>&lt;/pre></content></item><item><title>A systemd-nspawn connection driver for Ansible</title><link>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</link><pubDate>Mon, 08 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</guid><description>I wrote earlier about systemd-nspawn, and how it can take much of the fiddly work out of setting up functional chroot environments. I&amp;rsquo;m a regular Ansible user, and I wanted to be able to apply some of those techniques to my playbooks.
-Ansible already has a chroot module, of course, but for some situations &amp;ndash; such as targeting an emulated chroot environment &amp;ndash; that just means a lot of extra work.</description><content>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
+&lt;/code>&lt;/pre></content></item><item><title>A systemd-nspawn connection driver for Ansible</title><link>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</link><pubDate>Mon, 08 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</guid><description>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
+of the fiddly work out of setting up functional &lt;code>chroot&lt;/code> environments.
+I&amp;rsquo;m a regular &lt;a href="http://ansible.com/">Ansible&lt;/a> user, and I wanted to be able to apply some
+of those techniques to my playbooks.&lt;/p>
+&lt;p>Ansible already has a &lt;code>chroot&lt;/code> module, of course, but for some
+situations &amp;ndash; such as targeting an emulated &lt;code>chroot&lt;/code> environment &amp;ndash;
+that just means a lot of extra work. Using &lt;code>systemd-nspawn&lt;/code> makes
+this trivial.&lt;/p></description><content>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
 of the fiddly work out of setting up functional &lt;code>chroot&lt;/code> environments.
 I&amp;rsquo;m a regular &lt;a href="http://ansible.com/">Ansible&lt;/a> user, and I wanted to be able to apply some
 of those techniques to my playbooks.&lt;/p>
@@ -248,8 +274,13 @@ ansible_nspawn_extra_args=&amp;quot;--bind /usr/bin/qemu-arm&amp;quot;
 &lt;/code>&lt;/pre>
 &lt;p>The above will allow you to run a playbook against a filesystem
 containing ARM architecture binaries, even though you&amp;rsquo;re running on an
-x86_64 host.&lt;/p></content></item><item><title>Folding long lines in Ansible inventory files</title><link>https://blog.oddbit.com/post/2016-02-07-folding-long-lines-in-ansible-/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-folding-long-lines-in-ansible-/</guid><description>If you have an Ansible inventory file that includes lots of per host variables, it&amp;rsquo;s not unusual for lines to get long enough that they become unwieldly, particularly if you want to discuss them in an email or write about them in some context (e.g., a blog post).
-I&amp;rsquo;ve just submitted pull request #14359 to Ansible which implements support for folding long lines using the INI-format convention of using indent to mark extended logical lines.</description><content>&lt;p>If you have an Ansible inventory file that includes lots of per host
+x86_64 host.&lt;/p></content></item><item><title>Folding long lines in Ansible inventory files</title><link>https://blog.oddbit.com/post/2016-02-07-folding-long-lines-in-ansible-/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-folding-long-lines-in-ansible-/</guid><description>&lt;p>If you have an Ansible inventory file that includes lots of per host
+variables, it&amp;rsquo;s not unusual for lines to get long enough that they
+become unwieldly, particularly if you want to discuss them in an email
+or write about them in some context (e.g., a blog post).&lt;/p>
+&lt;p>I&amp;rsquo;ve just submitted pull request &lt;a href="https://github.com/ansible/ansible/pull/14359">#14359&lt;/a> to Ansible which
+implements support for folding long lines using the INI-format
+convention of using indent to mark extended logical lines.&lt;/p></description><content>&lt;p>If you have an Ansible inventory file that includes lots of per host
 variables, it&amp;rsquo;s not unusual for lines to get long enough that they
 become unwieldly, particularly if you want to discuss them in an email
 or write about them in some context (e.g., a blog post).&lt;/p>
@@ -283,8 +314,15 @@ model it&amp;rsquo;s easy to end up with something like this:&lt;/p>
 ansible_host=a.b.c.d # &amp;lt;--- OOOPS NO BACKSLASH
 ansible_user=alice \
 ansible_become=true
-&lt;/code>&lt;/pre></content></item><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</guid><description>This is the second in a loose sequence of articles looking at new features in Ansible 2.0. In the previous article I looked at the Docker connection driver. In this article, I would like to provide an overview of the new-and-much-improved suite of modules for interacting with an OpenStack environment, and provide a few examples of their use.
-In versions of Ansible prior to 2.0, there was a small collection of OpenStack modules.</description><content>&lt;p>This is the second in a loose sequence of articles looking at new
+&lt;/code>&lt;/pre></content></item><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</guid><description>&lt;p>This is the second in a loose sequence of articles looking at new
+features in Ansible 2.0. In the previous article I looked at the
+&lt;a href="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
+provide an overview of the new-and-much-improved suite of modules for
+interacting with an &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> environment, and provide a few
+examples of their use.&lt;/p>
+&lt;p>In versions of Ansible prior to 2.0, there was a small collection of
+OpenStack modules. There was the minimum necessary to boot a Nova
+instance:&lt;/p></description><content>&lt;p>This is the second in a loose sequence of articles looking at new
 features in Ansible 2.0. In the previous article I looked at the
 &lt;a href="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
 provide an overview of the new-and-much-improved suite of modules for
@@ -582,7 +620,7 @@ tasks:
 name: docker
 state: running
 enabled: true
-&lt;/code>&lt;/pre></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>Someone named hithard on StackOverflow was trying to clone a git repository via https, and was running into an odd error: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (openhatch.org) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either OpenSSL or NSS, depending on how git was built).</description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p></description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
 &lt;p>Many applications allow the user to configure an explicit list of ciphers to consider when negotiating a secure connection. For example, &lt;a href="https://curl.haxx.se/">curl&lt;/a> has the &lt;a href="https://curl.haxx.se/libcurl/c/CURLOPT_SSL_CIPHER_LIST.html">CURLOPT_SSL_CIPHER_LIST&lt;/a> option. This turns out to be especially relevant because git relies on &lt;a href="https://curl.haxx.se/libcurl/">libcurl&lt;/a> for all of its http operations, which means all we need to do is (a) create a new configuration option for git, and then (b) pass that value through to libcurl.&lt;/p>
 &lt;p>I took a look at the code and it turned out to be surprisingly easy. The functional part of the patch ends up being less than 10 lines total:&lt;/p>
 &lt;pre tabindex="0">&lt;code>diff --git a/http.c b/http.c
@@ -619,14 +657,19 @@ init_curl_http_auth(result);
 if (ssl_cert != NULL)
 curl_easy_setopt(result, CURLOPT_SSLCERT, ssl_cert);
 if (has_cert_password())
-&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;m=143100824118409&amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-While writing that article, I encountered a number of bugs in the Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the issues I encountered:
-Bugs in the Heat plugin https://bugs.launchpad.net/heat/+bug/1364017
-docker plugin fails to delete a container resource in CREATE_FAILED state.
-https://bugs.launchpad.net/heat/+bug/1364041
-docker plugin volumes_from parameter should be a list.
-https://bugs.launchpad.net/heat/+bug/1364039
-docker plugin volumes_from parameter results in an error</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;m=143100824118409&amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>While writing that article, I encountered a number of bugs in the
+Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
+issues I encountered:&lt;/p>
+&lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>docker plugin fails to delete a container resource in
+&lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -656,8 +699,14 @@ issues I encountered:&lt;/p>
 &lt;p>&lt;a href="https://github.com/docker/docker-py/pull/310">https://github.com/docker/docker-py/pull/310&lt;/a>&lt;/p>
 &lt;p>allow ports to be specified as &lt;code>port/proto&lt;/code>.&lt;/p>
 &lt;/li>
-&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>I have been looking at both Docker and OpenStack recently. In my last post I talked a little about the Docker driver for Nova; in this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for Heat, which has been available since the Icehouse release but is surprisingly under-documented.
-The release announcement on the Docker blog includes an example Heat template, but it is unfortunately grossly inaccurate and has led many people astray.</description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
+this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
+Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
+surprisingly under-documented.&lt;/p>
+&lt;p>The &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">release announcement&lt;/a> on the Docker blog includes an
+example Heat template, but it is unfortunately grossly inaccurate and
+has led many people astray. In particular:&lt;/p></description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
 post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
 this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
 Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is

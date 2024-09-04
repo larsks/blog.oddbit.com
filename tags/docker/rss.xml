@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/docker/</link><description>Recent content in Docker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 20 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/docker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>This post is mostly for myself: I find the Traefik documentation hard to navigate, so having figured this out in response to a question on Stack Overflow, I&amp;rsquo;m putting it here to help it stick in my head.
-The question asks essentially how to perform port-based routing of requests to containers, so that a request for http://example.com goes to one container while a request for http://example.com:9090 goes to a different container.</description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/docker/</link><description>Recent content in Docker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 20 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/docker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
+&lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p></description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
 &lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
 &lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
 &lt;p>A default Traefik configuration will already have a listener on port 80, but if we want to accept connections on port 9090 we need to create a new listener: what Traefik calls an &lt;a href="https://doc.traefik.io/traefik/routing/entrypoints/">entrypoint&lt;/a>. We do this using the &lt;code>--entrypoints.&amp;lt;name&amp;gt;.address&lt;/code> option. For example, &lt;code>--entrypoints.ep1.address=80&lt;/code> creates an entrypoint named &lt;code>ep1&lt;/code> on port 80, while &lt;code>--entrypoints.ep2.address=9090&lt;/code> creates an entrypoint named &lt;code>ep2&lt;/code> on port 9090. Those names are important because we&amp;rsquo;ll use them for mapping containers to the appropriate listener later on.&lt;/p>
@@ -79,8 +79,13 @@ image: docker.io/alpinelinux/darkhttpd:latest
 labels:
 - traefik.http.routers.app2.rule=Host(`example.com`)
 - traefik.http.routers.app2.entrypoints=ep2
-&lt;/code>&lt;/pre></content></item><item><title>Building multi-architecture images with GitHub Actions</title><link>https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/</link><pubDate>Fri, 25 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/</guid><description>At work we have a cluster of IBM Power 9 systems running OpenShift. The problem with this environment is that nobody runs Power 9 on their desktop, and Docker Hub only offers automatic build support for the x86 architecture. This means there&amp;rsquo;s no convenient options for building Power 9 Docker images&amp;hellip;or so I thought.
-It turns out that Docker provides GitHub actions that make the process of producing multi-architecture images quite simple.</description><content>&lt;p>At work we have a cluster of IBM Power 9 systems running OpenShift. The
+&lt;/code>&lt;/pre></content></item><item><title>Building multi-architecture images with GitHub Actions</title><link>https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/</link><pubDate>Fri, 25 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/</guid><description>&lt;p>At work we have a cluster of IBM Power 9 systems running OpenShift. The
+problem with this environment is that nobody runs Power 9 on their desktop,
+and Docker Hub only offers automatic build support for the x86
+architecture. This means there&amp;rsquo;s no convenient options for building Power 9
+Docker images&amp;hellip;or so I thought.&lt;/p>
+&lt;p>It turns out that &lt;a href="https://github.com/docker">Docker&lt;/a> provides &lt;a href="https://github.com/features/actions">GitHub actions&lt;/a> that make the process
+of producing multi-architecture images quite simple.&lt;/p></description><content>&lt;p>At work we have a cluster of IBM Power 9 systems running OpenShift. The
 problem with this environment is that nobody runs Power 9 on their desktop,
 and Docker Hub only offers automatic build support for the x86
 architecture. This means there&amp;rsquo;s no convenient options for building Power 9
@@ -338,8 +343,9 @@ docker manifest inspect larsks/hello-flask
 For example, the busybox image supports amd64, arm32v5, arm32v6, arm32v7,
 arm64v8, i386, ppc64le, and s390x.&lt;/p>
 &lt;/blockquote>
-&lt;p>So if you are starting from one of the official images, you&amp;rsquo;ll probably be in good shape. On the other hand, if you&amp;rsquo;re attempting to use a community image as a starting point, you might find that it&amp;rsquo;s only available for a single architecture.&lt;/p></content></item><item><title>Running Keystone with Docker Compose</title><link>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</link><pubDate>Fri, 07 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</guid><description>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s Keystone service (and the requisite database server) in containers using Docker Compose.
-Running MariaDB The standard mariadb docker image can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple docker command line for starting MariaDB might look something like:</description><content>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
+&lt;p>So if you are starting from one of the official images, you&amp;rsquo;ll probably be in good shape. On the other hand, if you&amp;rsquo;re attempting to use a community image as a starting point, you might find that it&amp;rsquo;s only available for a single architecture.&lt;/p></content></item><item><title>Running Keystone with Docker Compose</title><link>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</link><pubDate>Fri, 07 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</guid><description>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
+&lt;h2 id="running-mariadb">Running MariaDB&lt;/h2>
+&lt;p>The standard &lt;a href="https://hub.docker.com/_/mariadb/">mariadb docker image&lt;/a> can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple &lt;code>docker&lt;/code> command line for starting MariaDB might look something like:&lt;/p></description><content>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
 &lt;h2 id="running-mariadb">Running MariaDB&lt;/h2>
 &lt;p>The standard &lt;a href="https://hub.docker.com/_/mariadb/">mariadb docker image&lt;/a> can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple &lt;code>docker&lt;/code> command line for starting MariaDB might look something like:&lt;/p>
 &lt;pre tabindex="0">&lt;code>docker run \
@@ -568,8 +574,13 @@ $ openstack user list
 | e8f460619a854c849feaf278b8d68e2c | admin |
 +----------------------------------+-------+
 &lt;/code>&lt;/pre>&lt;h2 id="project-sources">Project sources&lt;/h2>
-&lt;p>You can find everything reference in this article in the &lt;a href="https://github.com/cci-moc/flocx-keystone-dev">flocx-keystone-dev&lt;/a> repository.&lt;/p></content></item><item><title>Docker build learns about secrets and ssh agent forwarding</title><link>https://blog.oddbit.com/post/2019-02-24-docker-build-learns-about-secr/</link><pubDate>Sun, 24 Feb 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-02-24-docker-build-learns-about-secr/</guid><description>A common problem for folks working with Docker is accessing resources which require authentication during the image build step. A particularly common use case is getting access to private git repositories using ssh key-based authentication. Until recently there hasn&amp;rsquo;t been a great solution:
-you can embed secrets in your image, but now you can&amp;rsquo;t share the image with anybody. you can use build arguments, but this requires passing in an unenecrypted private key on the docker build command line, which is suboptimal for a number of reasons you can perform all the steps requiring authentication at runtime, but this can needlessly complicate your container startup process.</description><content>&lt;p>A common problem for folks working with Docker is accessing resources which require authentication during the image build step. A particularly common use case is getting access to private git repositories using ssh key-based authentication. Until recently there hasn&amp;rsquo;t been a great solution:&lt;/p>
+&lt;p>You can find everything reference in this article in the &lt;a href="https://github.com/cci-moc/flocx-keystone-dev">flocx-keystone-dev&lt;/a> repository.&lt;/p></content></item><item><title>Docker build learns about secrets and ssh agent forwarding</title><link>https://blog.oddbit.com/post/2019-02-24-docker-build-learns-about-secr/</link><pubDate>Sun, 24 Feb 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-02-24-docker-build-learns-about-secr/</guid><description>&lt;p>A common problem for folks working with Docker is accessing resources which require authentication during the image build step. A particularly common use case is getting access to private git repositories using ssh key-based authentication. Until recently there hasn&amp;rsquo;t been a great solution:&lt;/p>
+&lt;ul>
+&lt;li>you can embed secrets in your image, but now you can&amp;rsquo;t share the image with anybody.&lt;/li>
+&lt;li>you can use build arguments, but this requires passing in an unenecrypted private key on the &lt;code>docker build&lt;/code> command line, which is suboptimal for a number of reasons&lt;/li>
+&lt;li>you can perform all the steps requiring authentication at runtime, but this can needlessly complicate your container startup process.&lt;/li>
+&lt;/ul>
+&lt;p>With Docker 18.09, there are some experimental features available that makes this much easier. You can read the official announcement &lt;a href="https://docs.docker.com/develop/develop-images/build_enhancements/">here&lt;/a>, but I wanted to highlight the support for ssh agent forwarding and private keys.&lt;/p></description><content>&lt;p>A common problem for folks working with Docker is accessing resources which require authentication during the image build step. A particularly common use case is getting access to private git repositories using ssh key-based authentication. Until recently there hasn&amp;rsquo;t been a great solution:&lt;/p>
 &lt;ul>
 &lt;li>you can embed secrets in your image, but now you can&amp;rsquo;t share the image with anybody.&lt;/li>
 &lt;li>you can use build arguments, but this requires passing in an unenecrypted private key on the &lt;code>docker build&lt;/code> command line, which is suboptimal for a number of reasons&lt;/li>
@@ -636,7 +647,13 @@ RUN --mount=type=ssh,id=github git clone git@github.com:some/project
 RUN --mount=type=ssh,id=bitbucket git clone git@bitbucket.com:other/project
 &lt;/code>&lt;/pre>
 &lt;h2 id="other-secrets">Other secrets&lt;/h2>
-&lt;p>In this post I&amp;rsquo;ve looked specfically at providing &lt;code>docker build&lt;/code> with access to your ssh keys. Docker 18.09 also introduces support for exposing other secrets to the build process; see the official announcement (linked above) for details.&lt;/p></content></item><item><title>Using Docker macvlan networks</title><link>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</link><pubDate>Mon, 12 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</guid><description>A question that crops up regularly on #docker is &amp;ldquo;How do I attach a container directly to my local network?&amp;rdquo; One possible answer to that question is the macvlan network type, which lets you create &amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach containers directly to your local network. For the most part it works great, but it does come with some minor caveats and limitations.</description><content>&lt;p>A question that crops up regularly on &lt;a href="https://docs.docker.com/opensource/ways/#docker-users">#docker&lt;/a> is &amp;ldquo;How do I attach
+&lt;p>In this post I&amp;rsquo;ve looked specfically at providing &lt;code>docker build&lt;/code> with access to your ssh keys. Docker 18.09 also introduces support for exposing other secrets to the build process; see the official announcement (linked above) for details.&lt;/p></content></item><item><title>Using Docker macvlan networks</title><link>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</link><pubDate>Mon, 12 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</guid><description>&lt;p>A question that crops up regularly on &lt;a href="https://docs.docker.com/opensource/ways/#docker-users">#docker&lt;/a> is &amp;ldquo;How do I attach
+a container directly to my local network?&amp;rdquo; One possible answer to that
+question is the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan&lt;/a> network type, which lets you create
+&amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach
+containers directly to your local network. For the most part it works
+great, but it does come with some minor caveats and limitations. I
+would like to explore those here.&lt;/p></description><content>&lt;p>A question that crops up regularly on &lt;a href="https://docs.docker.com/opensource/ways/#docker-users">#docker&lt;/a> is &amp;ldquo;How do I attach
 a container directly to my local network?&amp;rdquo; One possible answer to that
 question is the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan&lt;/a> network type, which lets you create
 &amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach
@@ -733,8 +750,18 @@ of the local network; we just add a route to that range like this:&lt;/p>
 &lt;code>mynet&lt;/code> network.&lt;/p>
 &lt;p>Note that the interface and routing configuration presented here is
 not persistent &amp;ndash; you will lose if if you were to reboot your host.
-How to make it persistent is distribution dependent.&lt;/p></content></item><item><title>Ansible 2.0: The Docker connection driver</title><link>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</link><pubDate>Tue, 13 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</guid><description>As the release of Ansible 2.0 draws closer, I&amp;rsquo;d like to take a look at some of the new features that are coming down the pipe. In this post, we&amp;rsquo;ll look at the docker connection driver.
-A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to your target hosts. These days it uses ssh by default (which relies on the OpenSSH command line client for connectivity), and it also offers the Paramiko library as an alternative ssh implementation (this was in fact the default driver in earlier versions of Ansible).</description><content>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
+How to make it persistent is distribution dependent.&lt;/p></content></item><item><title>Ansible 2.0: The Docker connection driver</title><link>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</link><pubDate>Tue, 13 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/</guid><description>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
+look at some of the new features that are coming down the pipe. In
+this post, we&amp;rsquo;ll look at the &lt;code>docker&lt;/code> connection driver.&lt;/p>
+&lt;p>A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to
+your target hosts. These days it uses &lt;code>ssh&lt;/code> by default (which relies
+on the OpenSSH command line client for connectivity), and it also
+offers the &lt;a href="http://www.paramiko.org/">Paramiko&lt;/a> library as an alternative ssh implementation
+(this was in fact the default driver in earlier versions of Ansible).
+Alternative drivers offered by recent versions of ansible included the
+&lt;code>winrm&lt;/code> driver, for accessing Windows hosts, the &lt;code>fireball&lt;/code> driver, a
+(deprecated) driver that used &lt;a href="http://zeromq.org/">0mq&lt;/a> for communication, and &lt;code>jail&lt;/code>, a
+driver for connecting to FreeBSD jails.&lt;/p></description><content>&lt;p>As the release of &lt;a href="http://ansible.com/">Ansible&lt;/a> 2.0 draws closer, I&amp;rsquo;d like to take a
 look at some of the new features that are coming down the pipe. In
 this post, we&amp;rsquo;ll look at the &lt;code>docker&lt;/code> connection driver.&lt;/p>
 &lt;p>A &amp;ldquo;connection driver&amp;rdquo; is the mechanism by which Ansible connects to
@@ -796,9 +823,17 @@ server : ok=2 changed=0 unreachable=0 failed=0
 target : ok=2 changed=0 unreachable=0 failed=0
 &lt;/code>&lt;/pre>
 &lt;p>Now you have a unified mechanism for managing configuration changes in
-traditional hosts as well as in Docker containers.&lt;/p></content></item><item><title>Running NTP in a Container</title><link>https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/</link><pubDate>Fri, 09 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/</guid><description>Someone asked on IRC about running ntpd in a container on Atomic, so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple Dockerfile:
-FROM alpine RUN apk update RUN apk add openntpd ENTRYPOINT [&amp;quot;ntpd&amp;quot;] I&amp;rsquo;m using the alpine image as my starting point because it&amp;rsquo;s very small, which makes this whole process go a little faster. I&amp;rsquo;m installing the openntpd package, which provides the ntpd binary.
-By setting an ENTRYPOINT here, the ntpd binary will be started by default, and any arguments passed to docker run after the image name will be passed to ntpd.</description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
+traditional hosts as well as in Docker containers.&lt;/p></content></item><item><title>Running NTP in a Container</title><link>https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/</link><pubDate>Fri, 09 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/</guid><description>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
+so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple
+&lt;code>Dockerfile&lt;/code>:&lt;/p>
+&lt;pre>&lt;code>FROM alpine
+RUN apk update
+RUN apk add openntpd
+ENTRYPOINT [&amp;quot;ntpd&amp;quot;]
+&lt;/code>&lt;/pre>
+&lt;p>I&amp;rsquo;m using the &lt;code>alpine&lt;/code> image as my starting point because it&amp;rsquo;s very
+small, which makes this whole process go a little faster. I&amp;rsquo;m
+installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
 so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple
 &lt;code>Dockerfile&lt;/code>:&lt;/p>
 &lt;pre>&lt;code>FROM alpine
@@ -871,9 +906,7 @@ fails:&lt;/p>
 --restart=always -d \
 -v /etc/ntpd.conf:/etc/ntpd.conf larsks/ntpd -d -f /etc/ntpd.conf -s
 &lt;/code>&lt;/pre>
-&lt;p>And my Atomic host has an ntp service keeping the time in sync.&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>Next week is the Red Hat Summit in Boston, and I&amp;rsquo;ll be taking part in a Project Atomic presentation in which I will discuss various (well, two) options for deploying Atomic into an OpenStack environment, focusing on my heat-kubernetes templates.
-As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:
-This shows off the autoscaling behavior available with recent versions of these templates (and also serves as a very brief introduction to working with Kubernetes).</description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+&lt;p>And my Atomic host has an ntp service keeping the time in sync.&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
 in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
 (well, two) options for deploying Atomic into an OpenStack
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
@@ -884,9 +917,26 @@ environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-ku
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
-working with Kubernetes).&lt;/p></content></item><item><title>Suggestions for the Docker MAINTAINER directive</title><link>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</link><pubDate>Mon, 27 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</guid><description>Because nobody asked for it, this is my opinion on the use of the MAINTAINER directive in your Dockerfiles.
-The documentation says simply:
-The MAINTAINER instruction allows you to set the Author field of the generated images. Many people end up putting the name and email address of an actual person here. I think this is ultimately a bad idea, and does a disservice both to members of a project that produce Docker images and to people consuming those images.</description><content>&lt;p>Because nobody asked for it, this is my opinion on the use of the
+working with Kubernetes).&lt;/p></description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
+(well, two) options for deploying Atomic into an OpenStack
+environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
+&lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div>
+&lt;p>This shows off the autoscaling behavior available with recent versions
+of these templates (and also serves as a very brief introduction to
+working with Kubernetes).&lt;/p></content></item><item><title>Suggestions for the Docker MAINTAINER directive</title><link>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</link><pubDate>Mon, 27 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</guid><description>&lt;p>Because nobody asked for it, this is my opinion on the use of the
+&lt;code>MAINTAINER&lt;/code> directive in your Dockerfiles.&lt;/p>
+&lt;p>The &lt;a href="https://docs.docker.com/reference/builder/#maintainer">documentation&lt;/a> says simply:&lt;/p>
+&lt;pre>&lt;code>The MAINTAINER instruction allows you to set the Author field of the generated images.
+&lt;/code>&lt;/pre>
+&lt;p>Many people end up putting the name and email address of an actual
+person here. I think this is ultimately a bad idea, and does a
+disservice both to members of a project that produce Docker images and
+to people consuming those images.&lt;/p></description><content>&lt;p>Because nobody asked for it, this is my opinion on the use of the
 &lt;code>MAINTAINER&lt;/code> directive in your Dockerfiles.&lt;/p>
 &lt;p>The &lt;a href="https://docs.docker.com/reference/builder/#maintainer">documentation&lt;/a> says simply:&lt;/p>
 &lt;pre>&lt;code>The MAINTAINER instruction allows you to set the Author field of the generated images.
@@ -936,8 +986,13 @@ through the same tracking mechanism.&lt;/p>
 &lt;p>For all of these reasons, the &lt;code>MAINTAINER&lt;/code> field of your Dockerfiles
 should point to either a web site URL or to a common project email
 address that goes into a bug tracker or is at least distributed to
-more than one person.&lt;/p></content></item><item><title>Converting hexadecimal ip addresses to dotted quads with Bash</title><link>https://blog.oddbit.com/post/2015-03-08-converting-hexadecimal-ip-addr/</link><pubDate>Sun, 08 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-08-converting-hexadecimal-ip-addr/</guid><description>This is another post that is primarily for my own benefit for the next time I forget how to do this.
-I wanted to read routing information directly from /proc/net/route using bash, because you never know what may or may not be available in the minimal environment of a Docker container (for example, the iproute package is not installed by default in the Fedora Docker images). The contents of /proc/net/route looks something like:</description><content>&lt;p>This is another post that is primarily for my own benefit for the next
+more than one person.&lt;/p></content></item><item><title>Converting hexadecimal ip addresses to dotted quads with Bash</title><link>https://blog.oddbit.com/post/2015-03-08-converting-hexadecimal-ip-addr/</link><pubDate>Sun, 08 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-08-converting-hexadecimal-ip-addr/</guid><description>&lt;p>This is another post that is primarily for my own benefit for the next
+time I forget how to do this.&lt;/p>
+&lt;p>I wanted to read routing information directly from &lt;code>/proc/net/route&lt;/code>
+using &lt;code>bash&lt;/code>, because you never know what may or may not be available
+in the minimal environment of a Docker container (for example, the
+&lt;code>iproute&lt;/code> package is not installed by default in the Fedora Docker
+images). The contents of &lt;code>/proc/net/route&lt;/code> looks something like:&lt;/p></description><content>&lt;p>This is another post that is primarily for my own benefit for the next
 time I forget how to do this.&lt;/p>
 &lt;p>I wanted to read routing information directly from &lt;code>/proc/net/route&lt;/code>
 using &lt;code>bash&lt;/code>, because you never know what may or may not be available
@@ -988,8 +1043,12 @@ that:&lt;/p>
 &lt;pre>&lt;code>hexaddr=$(awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route)
 ipaddr=$(printf &amp;quot;%d.&amp;quot; $(
 echo $hexaddr | sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
-) | sed 's/\.$/\n/')&lt;/code>&lt;/pre></content></item><item><title>Unpacking Docker images with Undocker</title><link>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</link><pubDate>Fri, 13 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</guid><description>In some ways, the most exciting thing about Docker isn&amp;rsquo;t the ability to start containers. That&amp;rsquo;s been around for a long time in various forms, such as LXC or OpenVZ. What Docker brought to the party was a convenient method of building and distributing the filesystems necessary for running containers. Suddenly, it was easy to build a containerized service and to share it with other people.
-I was taking a closer at the systemd-nspawn command, which it seems has been developing it&amp;rsquo;s own set of container-related superpowers recently, including a number of options for setting up the network environment of a container.</description><content>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
+) | sed 's/\.$/\n/')&lt;/code>&lt;/pre></content></item><item><title>Unpacking Docker images with Undocker</title><link>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</link><pubDate>Fri, 13 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</guid><description>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
+to start containers. That&amp;rsquo;s been around for a long time in various
+forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
+party was a convenient method of building and distributing the
+filesystems necessary for running containers. Suddenly, it was easy
+to build a containerized service &lt;em>and&lt;/em> to share it with other people.&lt;/p></description><content>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
 to start containers. That&amp;rsquo;s been around for a long time in various
 forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
 party was a convenient method of building and distributing the
@@ -1108,9 +1167,14 @@ fedora: heisenbug 20 21 rawhide latest
 &lt;/code>&lt;/pre>
 &lt;p>You can specify the image (and tag) to extract on the command line:&lt;/p>
 &lt;pre>&lt;code># docker save busybox larsks/thttpd | undocker -o busybox busybox
-&lt;/code>&lt;/pre></content></item><item><title>Installing nova-docker with devstack</title><link>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</link><pubDate>Wed, 11 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</guid><description>This is a long-form response to this question, and describes how to get the nova-docker driver up running with devstack under Ubuntu 14.04 (Trusty). I wrote a similar post for Fedora 21, although that one was using the RDO Juno packages, while this one is using devstack and the upstream sources.
-Getting started We&amp;rsquo;ll be using the Ubuntu 14.04 cloud image (because my test environment runs on OpenStack).
-First, let&amp;rsquo;s install a few prerequisites:</description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+&lt;/code>&lt;/pre></content></item><item><title>Installing nova-docker with devstack</title><link>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</link><pubDate>Wed, 11 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</guid><description>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
+under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
+21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this
+one is using &lt;a href="http://devstack.org/">devstack&lt;/a> and the upstream sources.&lt;/p>
+&lt;h2 id="getting-started">Getting started&lt;/h2>
+&lt;p>We&amp;rsquo;ll be using the &lt;a href="https://cloud-images.ubuntu.com/trusty/current/">Ubuntu 14.04 cloud image&lt;/a> (because my test
+environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
 how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
 under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
 21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this
@@ -1289,8 +1353,18 @@ $ nova boot --image larsks/thttpd --flavor m1.small test0
 &amp;lt;head&amp;gt;
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 [...]
-&lt;/code>&lt;/pre></content></item><item><title>External networking for Kubernetes services</title><link>https://blog.oddbit.com/post/2015-02-10-external-networking-for-kubern/</link><pubDate>Tue, 10 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-10-external-networking-for-kubern/</guid><description>I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is, &amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of Kubernetes (running on bare metal), which means I suddenly had to confront the question of how to provide external access to Kubernetes hosted services. Kubernetes provides two solutions to this problem, neither of which is particularly attractive out of the box:
-There is a field createExternalLoadBalancer that can be set in a service description.</description><content>&lt;p>I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is,
+&lt;/code>&lt;/pre></content></item><item><title>External networking for Kubernetes services</title><link>https://blog.oddbit.com/post/2015-02-10-external-networking-for-kubern/</link><pubDate>Tue, 10 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-10-external-networking-for-kubern/</guid><description>&lt;p>I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is,
+&amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of
+Kubernetes (running on bare metal), which means I suddenly had to
+confront the question of how to provide external access to Kubernetes
+hosted services. Kubernetes provides two solutions to this problem,
+neither of which is particularly attractive out of the box:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>There is a field &lt;code>createExternalLoadBalancer&lt;/code> that can be set in a
+service description. This is meant to integrate with load
+balancers provided by your local cloud environment, but at the
+moment there is only support for this when running under &lt;a href="https://cloud.google.com/compute/">GCE&lt;/a>.&lt;/p></description><content>&lt;p>I have recently started running some &amp;ldquo;real&amp;rdquo; services (that is,
 &amp;ldquo;services being consumed by someone other than myself&amp;rdquo;) on top of
 Kubernetes (running on bare metal), which means I suddenly had to
 confront the question of how to provide external access to Kubernetes
@@ -1428,9 +1502,11 @@ Kiwi-configured addresses with &lt;code>ip addr show label eth0:kube&lt;/code>).
 &lt;p>The &lt;code>valid_lft&lt;/code> and &lt;code>preferred_lft&lt;/code> fields control the lifetime of the
 interface. When these counters reach 0, the addresses are removed by
 the kernel. This ensure that if Kiwi dies, the addresses can
-successfully be re-assigned on another node.&lt;/p></content></item><item><title>Installing nova-docker on Fedora 21/RDO Juno</title><link>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</link><pubDate>Fri, 06 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</guid><description>This post comes about indirectly by a request on IRC in #rdo for help getting nova-docker installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.
-Getting started I started with the Fedora 21 Cloud Image, because I&amp;rsquo;m installing onto OpenStack and the cloud images include some features that are useful in this environment.
-We&amp;rsquo;ll be using OpenStack packages from the RDO Juno repository.</description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+successfully be re-assigned on another node.&lt;/p></content></item><item><title>Installing nova-docker on Fedora 21/RDO Juno</title><link>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</link><pubDate>Fri, 06 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</guid><description>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+&lt;h2 id="getting-started">Getting started&lt;/h2>
+&lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
+installing onto OpenStack and the cloud images include
+some features that are useful in this environment.&lt;/p></description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
 installing onto OpenStack and the cloud images include
@@ -1596,9 +1672,13 @@ rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 .
 .
-.&lt;/code>&lt;/pre></content></item><item><title>Creating minimal Docker images from dynamically linked ELF binaries</title><link>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</guid><description>In this post, we&amp;rsquo;ll look at a method for building minimal Docker images for dynamically linked ELF binaries, and then at a tool for automating this process.
-It is tempting, when creating a simple Docker image, to start with one of the images provided by the major distributions. For example, if you need an image that provides tcpdump for use on your Atomic host, you might do something like:
-FROM fedora RUN yum -y install tcpdump And while this will work, you end up consuming 250MB for tcpdump.</description><content>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
+.&lt;/code>&lt;/pre></content></item><item><title>Creating minimal Docker images from dynamically linked ELF binaries</title><link>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</guid><description>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
+images for dynamically linked ELF binaries, and then at &lt;a href="https://github.com/larsks/dockerize">a
+tool&lt;/a> for automating this process.&lt;/p>
+&lt;p>It is tempting, when creating a simple Docker image, to start with one
+of the images provided by the major distributions. For example, if
+you need an image that provides &lt;code>tcpdump&lt;/code> for use on your &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>
+host, you might do something like:&lt;/p></description><content>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
 images for dynamically linked ELF binaries, and then at &lt;a href="https://github.com/larsks/dockerize">a
 tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one
@@ -1765,8 +1845,14 @@ so you can, for example, get yourself a minimal webserver by running:&lt;/p>
 &lt;pre>&lt;code>$ docker run -v $PWD:/content -p 8888:80 dockerizeme/thttpd -d /content
 &lt;/code>&lt;/pre>
 &lt;p>And then browse to &lt;a href="http://localhost:8888">http://localhost:8888&lt;/a> and see your current
-directory.&lt;/p></content></item><item><title>Docker vs. PrivateTmp</title><link>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</link><pubDate>Sun, 18 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</guid><description>While working with Docker the other day, I ran into an undesirable interaction between Docker and systemd services that utilize the PrivateTmp directive.
-The PrivateTmp directive, if true, &amp;ldquo;sets up a new file system namespace for the executed processes and mounts private /tmp and /var/tmp directories inside it that is not shared by processes outside of the namespace&amp;rdquo;. This is a great idea from a security perspective, but can cause some unanticipated consequences.</description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+directory.&lt;/p></content></item><item><title>Docker vs. PrivateTmp</title><link>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</link><pubDate>Sun, 18 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</guid><description>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
+utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
+&lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
+namespace for the executed processes and mounts private &lt;code>/tmp&lt;/code> and
+&lt;code>/var/tmp&lt;/code> directories inside it that is not shared by processes outside
+of the namespace&amp;rdquo;. This is a great idea from a &lt;a href="https://danwalsh.livejournal.com/51459.html">security
+perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p></description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
 undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
 utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
 &lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
@@ -1944,8 +2030,18 @@ namespace into the Docker mount namespace because of the &lt;em>private&lt;/em>
 flag.&lt;/p>
 &lt;h2 id="thanks">Thanks&lt;/h2>
 &lt;p>I had some help figuring this out. Thanks to &lt;a href="https://en.wikipedia.org/wiki/Lennart_Poettering">Lennart Poettering&lt;/a>,
-Andrey Borzenkov, and &lt;a href="http://blog.verbum.org/">Colin Walters&lt;/a>.&lt;/p></content></item><item><title>Running nova-libvirt and nova-docker on the same host</title><link>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</link><pubDate>Sat, 17 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</guid><description>I regularly use OpenStack on my laptop with libvirt as my hypervisor. I was interested in experimenting with recent versions of the nova-docker driver, but I didn&amp;rsquo;t have a spare system available on which to run the driver, and I use my regular nova-compute service often enough that I didn&amp;rsquo;t want to simply disable it temporarily in favor of nova-docker.
-NB As pointed out by gustavo in the comments, running two neutron-openvswitch-agents on the same host &amp;ndash; as suggested in this article &amp;ndash; is going to lead to nothing but sadness and doom.</description><content>&lt;p>I regularly use &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> on my laptop with &lt;a href="http://www.libvirt.org/">libvirt&lt;/a> as my
+Andrey Borzenkov, and &lt;a href="http://blog.verbum.org/">Colin Walters&lt;/a>.&lt;/p></content></item><item><title>Running nova-libvirt and nova-docker on the same host</title><link>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</link><pubDate>Sat, 17 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</guid><description>&lt;p>I regularly use &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> on my laptop with &lt;a href="http://www.libvirt.org/">libvirt&lt;/a> as my
+hypervisor. I was interested in experimenting with recent versions of
+the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver, but I didn&amp;rsquo;t have a spare system available
+on which to run the driver, and I use my regular &lt;code>nova-compute&lt;/code> service
+often enough that I didn&amp;rsquo;t want to simply disable it temporarily in
+favor of &lt;code>nova-docker&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>&lt;strong>NB&lt;/strong> As pointed out by &lt;em>gustavo&lt;/em> in the comments, running two
+&lt;code>neutron-openvswitch-agents&lt;/code> on the same host &amp;ndash; as suggested in this
+article &amp;ndash; is going to lead to nothing but sadness and doom. So
+kids, don&amp;rsquo;t try this at home. I&amp;rsquo;m leaving the article here because I
+think it still has some interesting bits.&lt;/p></description><content>&lt;p>I regularly use &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> on my laptop with &lt;a href="http://www.libvirt.org/">libvirt&lt;/a> as my
 hypervisor. I was interested in experimenting with recent versions of
 the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver, but I didn&amp;rsquo;t have a spare system available
 on which to run the driver, and I use my regular &lt;code>nova-compute&lt;/code> service
@@ -2211,8 +2307,18 @@ container:&lt;/p>
 | 642b7d61-9189-40ea-86f5-2424c3c86028 | test1 | ACTIVE |...
 | 7fec33c9-d50f-477e-957c-a05ee9bd0b0b | test2 | ACTIVE |...
 +--------------------------------------+-------+--------+...
-&lt;/code>&lt;/pre></content></item><item><title>Building a minimal web server for testing Kubernetes</title><link>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</link><pubDate>Sun, 04 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</guid><description>I have recently been doing some work with Kubernetes, and wanted to put together a minimal image with which I could test service and pod deployment. Size in this case was critical: I wanted something that would download quickly when initially deployed, because I am often setting up and tearing down Kubernetes as part of my testing (and some of my test environments have poor external bandwidth).
-Building thttpd My go-to minimal webserver is thttpd.</description><content>&lt;p>I have recently been doing some work with &lt;a href="https://github.com/googlecloudplatform/kubernetes">Kubernetes&lt;/a>, and wanted
+&lt;/code>&lt;/pre></content></item><item><title>Building a minimal web server for testing Kubernetes</title><link>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</link><pubDate>Sun, 04 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-04-building-a-minimal-web-server-/</guid><description>&lt;p>I have recently been doing some work with &lt;a href="https://github.com/googlecloudplatform/kubernetes">Kubernetes&lt;/a>, and wanted
+to put together a minimal image with which I could test service and
+pod deployment. Size in this case was critical: I wanted something
+that would download quickly when initially deployed, because I am
+often setting up and tearing down Kubernetes as part of my testing
+(and some of my test environments have poor external bandwidth).&lt;/p>
+&lt;h2 id="building-thttpd">Building thttpd&lt;/h2>
+&lt;p>My go-to minimal webserver is &lt;a href="http://acme.com/software/thttpd/">thttpd&lt;/a>. For the normal case,
+building the software is a simple matter of &lt;code>./configure&lt;/code> followed by
+&lt;code>make&lt;/code>. This gets you a dynamically linked binary; using &lt;code>ldd&lt;/code> you
+could build a Docker image containing only the necessary shared
+libraries:&lt;/p></description><content>&lt;p>I have recently been doing some work with &lt;a href="https://github.com/googlecloudplatform/kubernetes">Kubernetes&lt;/a>, and wanted
 to put together a minimal image with which I could test service and
 pod deployment. Size in this case was critical: I wanted something
 that would download quickly when initially deployed, because I am
@@ -2427,10 +2533,15 @@ via:&lt;/p>
 &lt;pre>&lt;code>docker pull larsks/thttpd
 &lt;/code>&lt;/pre>
 &lt;p>(Or you can grab the above repository from GitHub and build it
-yourself locally).&lt;/p></content></item><item><title>Building Docker images with Puppet</title><link>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</link><pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</guid><description>I like Docker, but I&amp;rsquo;m not a huge fan of using shell scripts for complex system configuration&amp;hellip;and Dockerfiles are basically giant shell scripts.
-I was curious whether or not it would be possible to use Puppet during the docker build process. As a test case, I used the ssh module included in the openstack-puppet-modules package.
-I started with a manifest like this (in puppet/node.pp):
-class { 'ssh': } And a Dockerfile like this:</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+yourself locally).&lt;/p></content></item><item><title>Building Docker images with Puppet</title><link>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</link><pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</guid><description>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+complex system configuration&amp;hellip;and Dockerfiles are basically giant
+shell scripts.&lt;/p>
+&lt;p>I was curious whether or not it would be possible to use Puppet during
+the &lt;code>docker build&lt;/code> process. As a test case, I used the
+&lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
+&lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
+&lt;pre>&lt;code>class { 'ssh': }
+&lt;/code>&lt;/pr</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
 complex system configuration&amp;hellip;and Dockerfiles are basically giant
 shell scripts.&lt;/p>
 &lt;p>I was curious whether or not it would be possible to use Puppet during
@@ -2560,8 +2671,21 @@ Successfully built e830e6adce26
 need to add an appropriate &lt;code>CMD&lt;/code> or &lt;code>ENTRYPOINT&lt;/code> script to make it
 generate host keys and start &lt;code>sshd&lt;/code>, but I think this successfully
 demonstrates what is necessary to make a stock Puppet module run
-as part of the &lt;code>docker build&lt;/code> process.&lt;/p></content></item><item><title>Docker networking with dedicated network containers</title><link>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</link><pubDate>Mon, 06 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</guid><description>The current version of Docker has a very limited set of networking options:
-bridge &amp;ndash; connect a container to the Docker bridge host &amp;ndash; run the container in the global network namespace container:xxx &amp;ndash; connect a container to the network namespace of another container none &amp;ndash; do not configure any networking If you need something more than that, you can use a tool like pipework to provision additional network interfaces inside the container, but this leads to a synchronization problem: pipework can only be used after your container is running.</description><content>&lt;p>The current version of Docker has a very limited set of networking
+as part of the &lt;code>docker build&lt;/code> process.&lt;/p></content></item><item><title>Docker networking with dedicated network containers</title><link>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</link><pubDate>Mon, 06 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</guid><description>&lt;p>The current version of Docker has a very limited set of networking
+options:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>bridge&lt;/code> &amp;ndash; connect a container to the Docker bridge&lt;/li>
+&lt;li>&lt;code>host&lt;/code> &amp;ndash; run the container in the global network namespace&lt;/li>
+&lt;li>&lt;code>container:xxx&lt;/code> &amp;ndash; connect a container to the network namespace of
+another container&lt;/li>
+&lt;li>&lt;code>none&lt;/code> &amp;ndash; do not configure any networking&lt;/li>
+&lt;/ul>
+&lt;p>If you need something more than that, you can use a tool like
+&lt;a href="https://github.com/jpetazzo/pipework">pipework&lt;/a> to provision additional network interfaces inside the
+container, but this leads to a synchronization problem: &lt;code>pipework&lt;/code> can
+only be used after your container is running. This means that when
+starting your container, you must have logic that will wait until the
+necessary networking is available before starting your service.&lt;/p></description><content>&lt;p>The current version of Docker has a very limited set of networking
 options:&lt;/p>
 &lt;ul>
 &lt;li>&lt;code>bridge&lt;/code> &amp;ndash; connect a container to the Docker bridge&lt;/li>
@@ -2607,14 +2731,19 @@ in place when the service starts.&lt;/p>
 accomplish largely the same thing without requiring the separate
 networking container (by permitting you to pre-configure a network
 namespace and then pass that to docker using something like
-&lt;code>--net=netns:&amp;lt;name-of-network-namespace&amp;gt;&lt;/code>).&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-While writing that article, I encountered a number of bugs in the Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the issues I encountered:
-Bugs in the Heat plugin https://bugs.launchpad.net/heat/+bug/1364017
-docker plugin fails to delete a container resource in CREATE_FAILED state.
-https://bugs.launchpad.net/heat/+bug/1364041
-docker plugin volumes_from parameter should be a list.
-https://bugs.launchpad.net/heat/+bug/1364039
-docker plugin volumes_from parameter results in an error</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;code>--net=netns:&amp;lt;name-of-network-namespace&amp;gt;&lt;/code>).&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>While writing that article, I encountered a number of bugs in the
+Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
+issues I encountered:&lt;/p>
+&lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>docker plugin fails to delete a container resource in
+&lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -2644,18 +2773,26 @@ issues I encountered:&lt;/p>
 &lt;p>&lt;a href="https://github.com/docker/docker-py/pull/310">https://github.com/docker/docker-py/pull/310&lt;/a>&lt;/p>
 &lt;p>allow ports to be specified as &lt;code>port/proto&lt;/code>.&lt;/p>
 &lt;/li>
-&lt;/ul></content></item><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-DockerInc::Docker::Container Properties cmd : List
-Command to run after spawning the container.
-Optional property.
-Example:
-cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi'] dns : List
-Set custom DNS servers.
-Example:
-dns: - 8.8.8.8 - 8.8.4.4 docker_endopint : String
-Docker daemon endpoint. By default the local Docker daemon will be used.
-Example:
-docker_endpoint: tcp://192.168.1.100:2375 env : String</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/ul></content></item><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
+&lt;h3 id="properties">Properties&lt;/h3>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>cmd&lt;/code> : List&lt;/p>
+&lt;p>Command to run after spawning the container.&lt;/p>
+&lt;p>Optional property.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi']
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>dns&lt;/code> : List&lt;/p>
+&lt;p>Set custom DNS servers.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> dns:
+- 8.8.8.8
+- 8.8.4.4
+&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>
@@ -2925,8 +3062,14 @@ value: {get_attr: [&amp;quot;docker_dbserver&amp;quot;, &amp;quot;network_udp_po
 &lt;pre>&lt;code> &amp;quot;8443,8080&amp;quot;
 &lt;/code>&lt;/pre>
 &lt;/li>
-&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>I have been looking at both Docker and OpenStack recently. In my last post I talked a little about the Docker driver for Nova; in this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for Heat, which has been available since the Icehouse release but is surprisingly under-documented.
-The release announcement on the Docker blog includes an example Heat template, but it is unfortunately grossly inaccurate and has led many people astray.</description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
+this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
+Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
+surprisingly under-documented.&lt;/p>
+&lt;p>The &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">release announcement&lt;/a> on the Docker blog includes an
+example Heat template, but it is unfortunately grossly inaccurate and
+has led many people astray. In particular:&lt;/p></description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
 post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
 this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
 Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
@@ -3428,8 +3571,14 @@ MySQL [mysql]&amp;gt;
 &lt;h2 id="when-things-go-wrong">When things go wrong&lt;/h2>
 &lt;p>Your &lt;code>heat-engine&lt;/code> log, generally &lt;code>/var/log/heat/engine.log&lt;/code>, is going
 to be your best source of information if things go wrong. The &lt;code>heat stack-show&lt;/code> command will generally provide useful fault information if
-your stack ends up in the &lt;code>CREATE_FAILED&lt;/code> (or &lt;code>DELETE_FAILED&lt;/code>) state.&lt;/p></content></item><item><title>nova-docker and environment variables</title><link>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</link><pubDate>Thu, 28 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</guid><description>I&amp;rsquo;ve been playing with Docker a bit recently, and decided to take a look at the nova-docker driver for OpenStack.
-The nova-docker driver lets Nova, the OpenStack Compute service, spawn Docker containers instead of hypervisor-based servers. For certain workloads, this leads to better resource utilization than you would get with a hypervisor-based solution, while at the same time givin you better support for multi-tenancy and flexible networking than you get with Docker by itself.</description><content>&lt;p>I&amp;rsquo;ve been playing with &lt;a href="https://docker.com/">Docker&lt;/a> a bit recently, and decided to take
+your stack ends up in the &lt;code>CREATE_FAILED&lt;/code> (or &lt;code>DELETE_FAILED&lt;/code>) state.&lt;/p></content></item><item><title>nova-docker and environment variables</title><link>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</link><pubDate>Thu, 28 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</guid><description>&lt;p>I&amp;rsquo;ve been playing with &lt;a href="https://docker.com/">Docker&lt;/a> a bit recently, and decided to take
+a look at the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver for &lt;a href="http://openstack.org/">OpenStack&lt;/a>.&lt;/p>
+&lt;p>The &lt;code>nova-docker&lt;/code> driver lets Nova, the OpenStack Compute service,
+spawn Docker containers instead of hypervisor-based servers. For
+certain workloads, this leads to better resource utilization than you
+would get with a hypervisor-based solution, while at the same time
+givin you better support for multi-tenancy and flexible networking
+than you get with Docker by itself.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been playing with &lt;a href="https://docker.com/">Docker&lt;/a> a bit recently, and decided to take
 a look at the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver for &lt;a href="http://openstack.org/">OpenStack&lt;/a>.&lt;/p>
 &lt;p>The &lt;code>nova-docker&lt;/code> driver lets Nova, the OpenStack Compute service,
 spawn Docker containers instead of hypervisor-based servers. For
@@ -3469,8 +3618,17 @@ compute driver itself.&lt;/p>
 &lt;p>It sounds as if there is a lot of work going on right now regarding
 container support in OpenStack, so it is very likely that a better
 solution will show up in the near future.&lt;/p>
-&lt;p>In the absence of that support, I hope others find this patch helpful.&lt;/p></content></item><item><title>Four ways to connect a docker container to a local network</title><link>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</link><pubDate>Mon, 11 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</guid><description>Update (2018-03-22) Since I wrote this document back in 2014, Docker has developed the macvlan network driver. That gives you a supported mechanism for direct connectivity to a local layer 2 network. I&amp;rsquo;ve written an article about working with the macvlan driver.
-This article discusses four ways to make a Docker container appear on a local network. These are not suggested as practical solutions, but are meant to illustrate some of the underlying network technology available in Linux.</description><content>&lt;p>&lt;strong>Update (2018-03-22)&lt;/strong> Since I wrote this document back in 2014,
+&lt;p>In the absence of that support, I hope others find this patch helpful.&lt;/p></content></item><item><title>Four ways to connect a docker container to a local network</title><link>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</link><pubDate>Mon, 11 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</guid><description>&lt;p>&lt;strong>Update (2018-03-22)&lt;/strong> Since I wrote this document back in 2014,
+Docker has developed the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan network
+driver&lt;/a>. That gives you a
+&lt;em>supported&lt;/em> mechanism for direct connectivity to a local layer 2
+network. I&amp;rsquo;ve &lt;a href="https://blog.oddbit.com/2018/03/12/using-docker-macvlan-networks/">written an article about working with the macvlan
+driver&lt;/a>.&lt;/p>
+&lt;hr>
+&lt;p>This article discusses four ways to make a Docker container appear on
+a local network. These are not suggested as practical solutions, but
+are meant to illustrate some of the underlying network technology
+available in Linux.&lt;/p></description><content>&lt;p>&lt;strong>Update (2018-03-22)&lt;/strong> Since I wrote this document back in 2014,
 Docker has developed the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan network
 driver&lt;/a>. That gives you a
 &lt;em>supported&lt;/em> mechanism for direct connectivity to a local layer 2
@@ -3756,9 +3914,16 @@ up routes to your containers via that interface:&lt;/p>
 &lt;pre>&lt;code># ip link add em1p1 link em1 type macvlan mode bridge
 # ip addr add 10.12.6.144/21 dev em1p1
 # ip route add 10.12.0.117 dev em1p1
-&lt;/code>&lt;/pre></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</guid><description>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I started running into a problem (BZ 1121345) with my Docker containers. Operations such as su or runuser would fail with the singularly unhelpful System error message:
-$ docker run -ti fedora /bin/bash bash-4.2# su -c 'uptime' su: System error Hooking up something (like, say, socat unix-listen:/dev/log -) to /dev/log revealed that the system was logging:
-Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted Downgrading the kernel to 3.</description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+&lt;/code>&lt;/pre></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</guid><description>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
+containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
+singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>
+&lt;pre>&lt;code>$ docker run -ti fedora /bin/bash
+bash-4.2# su -c 'uptime'
+su: System error
+&lt;/code>&lt;/pre>
+&lt;p>Hooking up something (like, say, &lt;code>socat unix-listen:/dev/log -&lt;/code>) to
+&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
 started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
 containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
 singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>

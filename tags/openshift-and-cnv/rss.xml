@@ -1,5 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Openshift-and-Cnv on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openshift-and-cnv/</link><description>Recent content in Openshift-and-Cnv on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 10 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openshift-and-cnv/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenShift and CNV: MAC address management in CNV 2.4</title><link>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</link><pubDate>Mon, 10 Aug 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</guid><description>This is part of a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll look at how the recently released CNV 2.4 resolves some issues in managing virtual machines that are attached directly to local layer 2 networks
-In an earlier post, I discussed some issues around the management of virtual machine MAC addresses in CNV 2.3: in particular, that virtual machines are assigned a random MAC address not just at creation time but every time they boot.</description><content>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Openshift-and-Cnv on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openshift-and-cnv/</link><description>Recent content in Openshift-and-Cnv on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 10 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openshift-and-cnv/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenShift and CNV: MAC address management in CNV 2.4</title><link>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</link><pubDate>Mon, 10 Aug 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</guid><description>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
+&lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll look at how the
+recently released CNV 2.4 resolves some issues in managing virtual
+machines that are attached directly to local layer 2 networks&lt;/p>
+&lt;p>In &lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/">an earlier post&lt;/a>, I discussed some issues around the
+management of virtual machine MAC addresses in CNV 2.3: in particular,
+that virtual machines are assigned a random MAC address not just at
+creation time but every time they boot. CNV 2.4 (re-)introduces &lt;a href="https://docs.openshift.com/container-platform/4.5/virt/virtual_machines/vm_networking/virt-using-mac-address-pool-for-vms.html">MAC
+address pools&lt;/a> to alleviate these issues. The high level description
+reads:&lt;/p></description><content>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
 &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll look at how the
 recently released CNV 2.4 resolves some issues in managing virtual
 machines that are attached directly to local layer 2 networks&lt;/p>
@@ -24,8 +32,29 @@ machines attached to host networks.&lt;/p>
 &lt;p>To enable MAC address pools for a given namespace, set the
 &lt;code>mutatevirtualmachines.kubemacpool.io&lt;/code> label to &lt;code>allocate&lt;/code>:&lt;/p>
 &lt;pre tabindex="0">&lt;code>oc label namespace &amp;lt;namespace&amp;gt; mutatevirtualmachines.kubemacpool.io=allocate
-&lt;/code>&lt;/pre></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</guid><description>This is the second in a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll be taking a look at how to expose services on a virtual machine once you&amp;rsquo;ve git it up and running.
-TL;DR Overview Connectivity options Direct attachment Using an OpenShift Service Exposing services on NodePorts Exposing services on cluster external IPso Exposing services using a LoadBalancer TL;DR Networking seems to be a weak area for CNV right now.</description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+&lt;/code>&lt;/pre></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</guid><description>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
+at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
+and running.&lt;/p>
+&lt;nav id="TableOfContents">
+&lt;ul>
+&lt;li>&lt;a href="#tldr">TL;DR&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#overview">Overview&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#connectivity-options">Connectivity options&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#direct-attachment">Direct attachment&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#exposing-services-on-nodeports">Exposing services on NodePorts&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-on-cluster-external-ipso">Exposing services on cluster external IPso&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-using-a-loadbalancer">Exposing services using a LoadBalancer&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/nav>
+&lt;h2 id="tldr">TL;DR&lt;/h2>
+&lt;p>Networking seems to be a weak area for CNV right now. Out of the box,
+your options for exposing a service on a virtual machine on a public
+address at a well known port are slim.&lt;/p></description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
 with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
 at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
 and running.&lt;/p>
@@ -263,7 +292,13 @@ at:&lt;/p>
 &lt;li>&lt;a href="https://metallb.universe.tf/">metallb&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;p>I hope we see an integrated LoadBalancer mechanism available for OpenShift on
-baremetal in a near-future release.&lt;/p></content></item><item><title>OpenShift and CNV: Installer network requirements</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</link><pubDate>Thu, 30 Jul 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</guid><description>This is the first in a series of posts about my experience working with OpenShift and CNV (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a technology that allows you to use OpenShift to manage virtualized workloads in addition to the containerized workloads for which OpenShift is known). In this post, I&amp;rsquo;ll be taking a look at the installation experience, and in particular at how restrictions in our local environment interacted with the network requirements of the installer.</description><content>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+baremetal in a near-future release.&lt;/p></content></item><item><title>OpenShift and CNV: Installer network requirements</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</link><pubDate>Thu, 30 Jul 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</guid><description>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a> (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a
+technology that allows you to use OpenShift to manage virtualized
+workloads in addition to the containerized workloads for which
+OpenShift is known). In this post, I&amp;rsquo;ll be taking a look at the
+installation experience, and in particular at how restrictions in our
+local environment interacted with the network requirements of the installer.&lt;/p></description><content>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
 with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a> (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a
 technology that allows you to use OpenShift to manage virtualized
 workloads in addition to the containerized workloads for which

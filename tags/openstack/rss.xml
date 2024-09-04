@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Openstack on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openstack/</link><description>Recent content in Openstack on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 19 Dec 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openstack/rss.xml" rel="self" type="application/rss+xml"/><item><title>OVN and DHCP: A minimal example</title><link>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</guid><description>Introduction A long time ago, I wrote an article all about OpenStack Neutron (which at that time was called Quantum). That served as an excellent reference for a number of years, but if you&amp;rsquo;ve deployed a recent version of OpenStack you may have noticed that the network architecture looks completely different. The network namespaces previously used to implement routers and dhcp servers are gone (along with iptables rules and other features), and have been replaced by OVN (&amp;ldquo;Open Virtual Network&amp;rdquo;).</description><content>&lt;h1 id="introduction">Introduction&lt;/h1>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Openstack on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openstack/</link><description>Recent content in Openstack on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 19 Dec 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openstack/rss.xml" rel="self" type="application/rss+xml"/><item><title>OVN and DHCP: A minimal example</title><link>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</guid><description>&lt;h1 id="introduction">Introduction&lt;/h1>
+&lt;p>A long time ago, I wrote an article &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">all about OpenStack Neutron&lt;/a> (which at that time was called Quantum). That served as an excellent reference for a number of years, but if you&amp;rsquo;ve deployed a recent version of OpenStack you may have noticed that the network architecture looks completely different. The network namespaces previously used to implement routers and dhcp servers are gone (along with iptables rules and other features), and have been replaced by OVN (&amp;ldquo;Open Virtual Network&amp;rdquo;). What is OVN? How does it work? In this article, I&amp;rsquo;d like to explore a minimal OVN installation to help answer these questions.&lt;/p></description><content>&lt;h1 id="introduction">Introduction&lt;/h1>
 &lt;p>A long time ago, I wrote an article &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">all about OpenStack Neutron&lt;/a> (which at that time was called Quantum). That served as an excellent reference for a number of years, but if you&amp;rsquo;ve deployed a recent version of OpenStack you may have noticed that the network architecture looks completely different. The network namespaces previously used to implement routers and dhcp servers are gone (along with iptables rules and other features), and have been replaced by OVN (&amp;ldquo;Open Virtual Network&amp;rdquo;). What is OVN? How does it work? In this article, I&amp;rsquo;d like to explore a minimal OVN installation to help answer these questions.&lt;/p>
 &lt;h2 id="goals">Goals&lt;/h2>
 &lt;p>We&amp;rsquo;re going to create a single OVN logical switch to which we will attach a few ports. We will demonstrate how we can realize a port on a physical node and configure it using DHCP, using a virtual DHCP server provided by OVN.&lt;/p>
@@ -24,26 +25,26 @@ overlays and security groups.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>Name&lt;/th>
-&lt;th>MAC address&lt;/th>
-&lt;th>IP address&lt;/th>
+&lt;th style="text-align: left">Name&lt;/th>
+&lt;th style="text-align: left">MAC address&lt;/th>
+&lt;th style="text-align: left">IP address&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>ovn0&lt;/td>
-&lt;td>de:ca:ff:00:00:64&lt;/td>
-&lt;td>192.168.122.100&lt;/td>
+&lt;td style="text-align: left">ovn0&lt;/td>
+&lt;td style="text-align: left">de:ca:ff:00:00:64&lt;/td>
+&lt;td style="text-align: left">192.168.122.100&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>ovn1&lt;/td>
-&lt;td>de:ca:ff:00:00:65&lt;/td>
-&lt;td>192.168.122.101&lt;/td>
+&lt;td style="text-align: left">ovn1&lt;/td>
+&lt;td style="text-align: left">de:ca:ff:00:00:65&lt;/td>
+&lt;td style="text-align: left">192.168.122.101&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>ovn2&lt;/td>
-&lt;td>de:ca:ff:00:00:66&lt;/td>
-&lt;td>192.168.122.102&lt;/td>
+&lt;td style="text-align: left">ovn2&lt;/td>
+&lt;td style="text-align: left">de:ca:ff:00:00:66&lt;/td>
+&lt;td style="text-align: left">192.168.122.102&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -147,22 +148,22 @@ options=&amp;#39;&amp;#34;lease_time&amp;#34;=&amp;#34;3600&amp;#34; &amp;#34;ro
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>Name&lt;/th>
-&lt;th>MAC Address&lt;/th>
+&lt;th style="text-align: left">Name&lt;/th>
+&lt;th style="text-align: left">MAC Address&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>port1&lt;/td>
-&lt;td>c0:ff:ee:00:00:11&lt;/td>
+&lt;td style="text-align: left">port1&lt;/td>
+&lt;td style="text-align: left">c0:ff:ee:00:00:11&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>port2&lt;/td>
-&lt;td>c0:ff:ee:00:00:12&lt;/td>
+&lt;td style="text-align: left">port2&lt;/td>
+&lt;td style="text-align: left">c0:ff:ee:00:00:12&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>port3&lt;/td>
-&lt;td>c0:ff:ee:00:00:13&lt;/td>
+&lt;td style="text-align: left">port3&lt;/td>
+&lt;td style="text-align: left">c0:ff:ee:00:00:13&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -412,8 +413,9 @@ rtt min/avg/max/mdev = 0.266/0.266/0.266/0.000 ms
 &lt;li>&lt;a href="https://developers.redhat.com/blog/2018/09/27/dynamic-ip-address-management-in-open-virtual-network-ovn-part-two/">Dynamic IP address management in Open Virtual Network (OVN): Part Two&lt;/a>&lt;/li>
 &lt;li>&lt;a href="https://qyx.me/2018/07/10/run-and-test-ovn/">Run Open Virtual Network (OVN) in Ubuntu&lt;/a>&lt;/li>
 &lt;li>&lt;a href="http://dani.foroselectronica.es/simple-ovn-setup-in-5-minutes-491/">Simple OVN setup in 5 minutes&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>Running Keystone with Docker Compose</title><link>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</link><pubDate>Fri, 07 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</guid><description>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s Keystone service (and the requisite database server) in containers using Docker Compose.
-Running MariaDB The standard mariadb docker image can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple docker command line for starting MariaDB might look something like:</description><content>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
+&lt;/ul></content></item><item><title>Running Keystone with Docker Compose</title><link>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</link><pubDate>Fri, 07 Jun 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-06-07-running-keystone-with-docker-c/</guid><description>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
+&lt;h2 id="running-mariadb">Running MariaDB&lt;/h2>
+&lt;p>The standard &lt;a href="https://hub.docker.com/_/mariadb/">mariadb docker image&lt;/a> can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple &lt;code>docker&lt;/code> command line for starting MariaDB might look something like:&lt;/p></description><content>&lt;p>In this article, we will look at what is necessary to run OpenStack&amp;rsquo;s &lt;a href="https://docs.openstack.org/keystone/latest/">Keystone&lt;/a> service (and the requisite database server) in containers using &lt;a href="https://docs.docker.com/compose/">Docker Compose&lt;/a>.&lt;/p>
 &lt;h2 id="running-mariadb">Running MariaDB&lt;/h2>
 &lt;p>The standard &lt;a href="https://hub.docker.com/_/mariadb/">mariadb docker image&lt;/a> can be configured via a number of environment variables. It also benefits from persistent volume storage, since in most situations you don&amp;rsquo;t want to lose your data when you remove a container. A simple &lt;code>docker&lt;/code> command line for starting MariaDB might look something like:&lt;/p>
 &lt;pre tabindex="0">&lt;code>docker run \
@@ -642,8 +644,15 @@ $ openstack user list
 | e8f460619a854c849feaf278b8d68e2c | admin |
 +----------------------------------+-------+
 &lt;/code>&lt;/pre>&lt;h2 id="project-sources">Project sources&lt;/h2>
-&lt;p>You can find everything reference in this article in the &lt;a href="https://github.com/cci-moc/flocx-keystone-dev">flocx-keystone-dev&lt;/a> repository.&lt;/p></content></item><item><title>Grouping aggregation queries in Gnocchi 4.0.x</title><link>https://blog.oddbit.com/post/2018-02-26-grouping-aggregation-queries-i/</link><pubDate>Mon, 26 Feb 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-02-26-grouping-aggregation-queries-i/</guid><description>In this article, we&amp;rsquo;re going to ask Gnocchi (the OpenStack telemetry storage service) how much memory was used, on average, over the course of each day by each project in an OpenStack environment.
-Environment I&amp;rsquo;m working with an OpenStack &amp;ldquo;Pike&amp;rdquo; deployment, which means I have Gnocchi 4.0.x. More recent versions of Gnocchi (4.1.x and later) have a new aggregation API called dynamic aggregates, but that isn&amp;rsquo;t available in 4.0.x so in this article we&amp;rsquo;ll be using the legacy /v1/aggregations API.</description><content>&lt;p>In this article, we&amp;rsquo;re going to ask Gnocchi (the OpenStack telemetry
+&lt;p>You can find everything reference in this article in the &lt;a href="https://github.com/cci-moc/flocx-keystone-dev">flocx-keystone-dev&lt;/a> repository.&lt;/p></content></item><item><title>Grouping aggregation queries in Gnocchi 4.0.x</title><link>https://blog.oddbit.com/post/2018-02-26-grouping-aggregation-queries-i/</link><pubDate>Mon, 26 Feb 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-02-26-grouping-aggregation-queries-i/</guid><description>&lt;p>In this article, we&amp;rsquo;re going to ask Gnocchi (the OpenStack telemetry
+storage service) how much memory was used, on average, over the course
+of each day by each project in an OpenStack environment.&lt;/p>
+&lt;h2 id="environment">Environment&lt;/h2>
+&lt;p>I&amp;rsquo;m working with an OpenStack &amp;ldquo;Pike&amp;rdquo; deployment, which means I have
+Gnocchi 4.0.x. More recent versions of Gnocchi (4.1.x and later) have
+a new aggregation API called &lt;a href="https://gnocchi.xyz/rest.html#dynamic-aggregates">dynamic aggregates&lt;/a>, but that isn&amp;rsquo;t
+available in 4.0.x so in this article we&amp;rsquo;ll be using the legacy
+&lt;code>/v1/aggregations&lt;/code> API.&lt;/p></description><content>&lt;p>In this article, we&amp;rsquo;re going to ask Gnocchi (the OpenStack telemetry
 storage service) how much memory was used, on average, over the course
 of each day by each project in an OpenStack environment.&lt;/p>
 &lt;h2 id="environment">Environment&lt;/h2>
@@ -802,9 +811,15 @@ empty JSON object. That makes our final request look like:&lt;/p>
 -H &amp;quot;Content-type: application/json&amp;quot; \
 -d &amp;quot;{}&amp;quot; \
 &amp;quot;$ENDPOINT/aggregation/resource/instance/metric/memory.usage?granularity=300&amp;amp;aggregation=mean&amp;amp;start=-30+days&amp;amp;resample=86400&amp;amp;groupby=project_id&amp;amp;fill=0&amp;quot;
-&lt;/code>&lt;/pre></content></item><item><title>Safely restarting an OpenStack server with Ansible</title><link>https://blog.oddbit.com/post/2018-01-24-safely-restarting-an-openstack/</link><pubDate>Wed, 24 Jan 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-01-24-safely-restarting-an-openstack/</guid><description>The other day on #ansible, someone was looking for a way to safely shut down a Nova server, wait for it to stop, and then start it up again using the openstack cli. The first part seemed easy:
-- hosts: myserver tasks: - name: shut down the server command: poweroff become: true &amp;hellip;but that will actually fail with the following result:
-TASK [shut down server] ************************************* fatal: [myserver]: UNREACHABLE! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;msg&amp;quot;: &amp;quot;Failed to connect to the host via ssh: Shared connection to 10.</description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
+&lt;/code>&lt;/pre></content></item><item><title>Safely restarting an OpenStack server with Ansible</title><link>https://blog.oddbit.com/post/2018-01-24-safely-restarting-an-openstack/</link><pubDate>Wed, 24 Jan 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-01-24-safely-restarting-an-openstack/</guid><description>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
+shut down a Nova server, wait for it to stop, and then start it up
+again using the &lt;code>openstack&lt;/code> cli. The first part seemed easy:&lt;/p>
+&lt;pre>&lt;code>- hosts: myserver
+tasks:
+- name: shut down the server
+command: poweroff
+become: true
+&lt;/code>&lt;/pr</description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
 shut down a Nova server, wait for it to stop, and then start it up
 again using the &lt;code>openstack&lt;/code> cli. The first part seemed easy:&lt;/p>
 &lt;pre>&lt;code>- hosts: myserver
@@ -905,7 +920,14 @@ wait_for_connection:
 requires a functioning connection to the target host.&lt;/p>
 &lt;p>And that&amp;rsquo;s it: a recipe for gently shutting down a remote host,
 waiting for the shutdown to complete, then later on spinning it back
-up and waiting until subsequent Ansible tasks will work correctly.&lt;/p></content></item><item><title>Ansible for Infrastructure Testing</title><link>https://blog.oddbit.com/post/2017-08-02-ansible-for-infrastructure-tes/</link><pubDate>Wed, 02 Aug 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-08-02-ansible-for-infrastructure-tes/</guid><description>At $JOB we often find ourselves at customer sites where we see the same set of basic problems that we have previously encountered elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo; or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a simple tool that could be run either by the customer or by our own engineers to test for and report on these common issues. Fundamentally, we want something that acts like a typical code test suite, but for infrastructure.</description><content>&lt;p>At &lt;code>$JOB&lt;/code> we often find ourselves at customer sites where we see the
+up and waiting until subsequent Ansible tasks will work correctly.&lt;/p></content></item><item><title>Ansible for Infrastructure Testing</title><link>https://blog.oddbit.com/post/2017-08-02-ansible-for-infrastructure-tes/</link><pubDate>Wed, 02 Aug 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-08-02-ansible-for-infrastructure-tes/</guid><description>&lt;p>At &lt;code>$JOB&lt;/code> we often find ourselves at customer sites where we see the
+same set of basic problems that we have previously encountered
+elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo;
+or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a
+simple tool that could be run either by the customer or by our own
+engineers to test for and report on these common issues.
+Fundamentally, we want something that acts like a typical code test
+suite, but for infrastructure.&lt;/p></description><content>&lt;p>At &lt;code>$JOB&lt;/code> we often find ourselves at customer sites where we see the
 same set of basic problems that we have previously encountered
 elsewhere (&amp;ldquo;your clocks aren&amp;rsquo;t in sync&amp;rdquo; or &amp;ldquo;your filesystem is full&amp;rdquo;
 or &amp;ldquo;you haven&amp;rsquo;t installed a critical update&amp;rdquo;, etc). We would like a
@@ -1104,9 +1126,14 @@ results = testresult.yml
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">test_finished_at&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:58.670802&amp;#39;&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#f92672">test_started_at&lt;/span>: &lt;span style="color:#e6db74">&amp;#39;2017-08-04T21:20:57.918412&amp;#39;&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With these tools it becomes much easier to design playbooks for
-testing your infrastructure.&lt;/p></content></item><item><title>OpenStack, Containers, and Logging</title><link>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</link><pubDate>Wed, 14 Jun 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</guid><description>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.
-There are effectively three different mechanisms that an application can use to emit log messages:
-Via some logging-specific API, such as the legacy syslog API By writing a byte stream to stdout/stderr By writing a byte stream to a file A substantial advantage to the first mechanism (using a logging API) is that the application is logging messages rather than bytes.</description><content>&lt;p>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.&lt;/p>
+testing your infrastructure.&lt;/p></content></item><item><title>OpenStack, Containers, and Logging</title><link>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</link><pubDate>Wed, 14 Jun 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</guid><description>&lt;p>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.&lt;/p>
+&lt;p>There are effectively three different mechanisms that an application can use to emit log messages:&lt;/p>
+&lt;ul>
+&lt;li>Via some logging-specific API, such as the legacy syslog API&lt;/li>
+&lt;li>By writing a byte stream to stdout/stderr&lt;/li>
+&lt;li>By writing a byte stream to a file&lt;/li>
+&lt;/ul>
+&lt;p>A substantial advantage to the first mechanism (using a logging API) is that the application is logging &lt;em>messages&lt;/em> rather than &lt;em>bytes&lt;/em>. This means that if you log a message containing embedded newlines (e.g., python or java tracebacks), you can collect that as a single message rather than having to impose some sort of structure on the byte stream after the fact in order to reconstruct those message.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.&lt;/p>
 &lt;p>There are effectively three different mechanisms that an application can use to emit log messages:&lt;/p>
 &lt;ul>
 &lt;li>Via some logging-specific API, such as the legacy syslog API&lt;/li>
@@ -1211,8 +1238,17 @@ set $!CONTAINER_ID_FULL = re_extract($!_SYSTEMD_CGROUP, &amp;quot;^/docker/(.*)&
 &lt;li>For applications that are unable to log via syslog but are able to log to stdout/stderr, ensure that Docker is using the &lt;code>journald&lt;/code> log driver.&lt;/li>
 &lt;li>For applications that can only log to files, configure rsyslog on the host to read those files using the &lt;a href="http://www.rsyslog.com/doc/v8-stable/configuration/modules/imfile.html">imfile&lt;/a> input plugin.&lt;/li>
 &lt;li>Use rsyslog on the host to forward structured messages to a remote collector.&lt;/li>
-&lt;/ol></content></item><item><title>Making sure your Gerrit changes aren't broken</title><link>https://blog.oddbit.com/post/2017-01-22-making-sure-your-gerrit-change/</link><pubDate>Sun, 22 Jan 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-01-22-making-sure-your-gerrit-change/</guid><description>It&amp;rsquo;s a bit of an embarrassment when you submit a review to Gerrit only to have it fail CI checks immediately because of something as simple as a syntax error or pep8 failure that you should have caught yourself before submitting&amp;hellip;but you forgot to run your validations before submitting the change.
-In many cases you can alleviate this through the use of the git pre-commit hook, which will run every time you commit changes locally.</description><content>&lt;p>It&amp;rsquo;s a bit of an embarrassment when you submit a review to Gerrit only
+&lt;/ol></content></item><item><title>Making sure your Gerrit changes aren't broken</title><link>https://blog.oddbit.com/post/2017-01-22-making-sure-your-gerrit-change/</link><pubDate>Sun, 22 Jan 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-01-22-making-sure-your-gerrit-change/</guid><description>&lt;p>It&amp;rsquo;s a bit of an embarrassment when you submit a review to Gerrit only
+to have it fail CI checks immediately because of something as simple
+as a syntax error or pep8 failure that you should have caught yourself
+before submitting&amp;hellip;but you forgot to run your validations before
+submitting the change.&lt;/p>
+&lt;p>In many cases you can alleviate this through the use of the git
+&lt;code>pre-commit&lt;/code> hook, which will run every time you commit changes
+locally. You can have the hook run &lt;code>tox&lt;/code> or whatever tool your
+project uses for validation on every commit. This works okay for
+simple cases, but if the validation takes more than a couple of
+seconds the delay can be disruptive to the flow of your work.&lt;/p></description><content>&lt;p>It&amp;rsquo;s a bit of an embarrassment when you submit a review to Gerrit only
 to have it fail CI checks immediately because of something as simple
 as a syntax error or pep8 failure that you should have caught yourself
 before submitting&amp;hellip;but you forgot to run your validations before
@@ -1246,9 +1282,14 @@ The following command failed with exit code 1
 &lt;code>.git/hooks/pre-review&lt;/code> script is as simple as:&lt;/p>
 &lt;pre>&lt;code>#!/bin/sh
 tox
-&lt;/code>&lt;/pre></content></item><item><title>Exploring YAQL Expressions</title><link>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</link><pubDate>Thu, 11 Aug 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</guid><description>The Newton release of Heat adds support for a yaql intrinsic function, which allows you to evaluate yaql expressions in your Heat templates. Unfortunately, the existing yaql documentation is somewhat limited, and does not offer examples of many of yaql&amp;rsquo;s more advanced features.
-I am working on a Fluentd composable service for TripleO. I want to allow each service to specify a logging source configuration fragment, for example:
-parameters: NovaAPILoggingSource: type: json description: Fluentd logging configuration for nova-api.</description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+&lt;/code>&lt;/pre></content></item><item><title>Exploring YAQL Expressions</title><link>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</link><pubDate>Thu, 11 Aug 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</guid><description>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
+in your Heat templates. Unfortunately, the existing yaql
+documentation is somewhat limited, and does not offer examples of many
+of yaql&amp;rsquo;s more advanced features.&lt;/p>
+&lt;p>I am working on a &lt;a href="http://www.fluentd.org/">Fluentd&lt;/a> composable service for &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a>. I
+want to allow each service to specify a logging source configuration
+fragment, for example:&lt;/p></description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
 intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
 in your Heat templates. Unfortunately, the existing yaql
 documentation is somewhat limited, and does not offer examples of many
@@ -1419,8 +1460,15 @@ $.data.sources.select(upperpath($))
 &lt;/code>&lt;/pre>
 &lt;p>This obviously becomes more useful as you use user-defined functions
 to encapsulate more complex yaql expressions for re-use.&lt;/p>
-&lt;p>Thanks to &lt;a href="https://github.com/sergmelikyan">sergmelikyan&lt;/a> for his help figuring this out.&lt;/p></content></item><item><title>Connecting another vm to your tripleo-quickstart deployment</title><link>https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/</link><pubDate>Thu, 19 May 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/</guid><description>Let&amp;rsquo;s say that you have set up an environment using tripleo-quickstart and you would like to add another virtual machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo; in quotes because I am using it in the same way as the quickstart does w/r/t the undercloud) and connectivity to the overcloud nodes. How would you go about setting that up?
-For a concrete example, let&amp;rsquo;s presume you have deployed an environment using the default tripleo-quickstart configuration, which looks like this:</description><content>&lt;p>Let&amp;rsquo;s say that you have set up an environment using
+&lt;p>Thanks to &lt;a href="https://github.com/sergmelikyan">sergmelikyan&lt;/a> for his help figuring this out.&lt;/p></content></item><item><title>Connecting another vm to your tripleo-quickstart deployment</title><link>https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/</link><pubDate>Thu, 19 May 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-05-19-connecting-another-vm-to-your-/</guid><description>&lt;p>Let&amp;rsquo;s say that you have set up an environment using
+&lt;a href="https://github.com/openstack/tripleo-quickstart/">tripleo-quickstart&lt;/a> and you would like to add another virtual
+machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo;
+in quotes because I am using it in the same way as the quickstart does
+w/r/t the undercloud) and connectivity to the overcloud nodes. How
+would you go about setting that up?&lt;/p>
+&lt;p>For a concrete example, let&amp;rsquo;s presume you have deployed an environment
+using the default tripleo-quickstart configuration, which looks like
+this:&lt;/p></description><content>&lt;p>Let&amp;rsquo;s say that you have set up an environment using
 &lt;a href="https://github.com/openstack/tripleo-quickstart/">tripleo-quickstart&lt;/a> and you would like to add another virtual
 machine to the mix that has both &amp;ldquo;external&amp;rdquo; connectivity (&amp;ldquo;external&amp;rdquo;
 in quotes because I am using it in the same way as the quickstart does
@@ -1596,8 +1644,15 @@ bound to 192.0.2.9 -- renewal in 42069 seconds.
 [root@localhost]# sed s/eth0/eth1/g ifcfg-eth0 &amp;gt; ifcfg-eth1
 [root@localhost]# ifup eth1
 Determining IP information for eth1... done.
-&lt;/code>&lt;/pre></content></item><item><title>Deploying an HA OpenStack development environment with tripleo-quickstart</title><link>https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/</guid><description>In this article I would like to introduce tripleo-quickstart, a tool that will automatically provision a virtual environment and then use TripleO to deploy an HA OpenStack on top of it.
-Introducing Tripleo-Quickstart The goal of the Tripleo-Quickstart project is to replace the instack-virt-setup tool for quickly setting up virtual TripleO environments, and to ultimately become the tool used by both developers and upstream CI for this purpose. The project is a set of Ansible playbooks that will take care of:</description><content>&lt;p>In this article I would like to introduce &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">tripleo-quickstart&lt;/a>, a
+&lt;/code>&lt;/pre></content></item><item><title>Deploying an HA OpenStack development environment with tripleo-quickstart</title><link>https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/</link><pubDate>Fri, 19 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-19-deploy-an-ha-openstack-develop/</guid><description>&lt;p>In this article I would like to introduce &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">tripleo-quickstart&lt;/a>, a
+tool that will automatically provision a virtual environment and then
+use &lt;a href="http://docs.openstack.org/developer/tripleo-docs/">TripleO&lt;/a> to deploy an HA OpenStack on top of it.&lt;/p>
+&lt;h2 id="introducing-tripleo-quickstart">Introducing Tripleo-Quickstart&lt;/h2>
+&lt;p>The goal of the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">Tripleo-Quickstart&lt;/a> project is to replace the
+&lt;code>instack-virt-setup&lt;/code> tool for quickly setting up virtual TripleO
+environments, and to ultimately become the tool used by both
+developers and upstream CI for this purpose. The project is a set of
+&lt;a href="http://ansible.com/">Ansible&lt;/a> playbooks that will take care of:&lt;/p></description><content>&lt;p>In this article I would like to introduce &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart">tripleo-quickstart&lt;/a>, a
 tool that will automatically provision a virtual environment and then
 use &lt;a href="http://docs.openstack.org/developer/tripleo-docs/">TripleO&lt;/a> to deploy an HA OpenStack on top of it.&lt;/p>
 &lt;h2 id="introducing-tripleo-quickstart">Introducing Tripleo-Quickstart&lt;/h2>
@@ -1910,8 +1965,15 @@ clients to interact with your deployed cloud environment.&lt;/p>
 &lt;h2 id="if-you-find-bugs">If you find bugs&lt;/h2>
 &lt;p>If anything in the above process doesn&amp;rsquo;t work as described or
 expected, feel free to visit the &lt;code>#rdo&lt;/code> channel on &lt;a href="https://freenode.net/">freenode&lt;/a>, or
-open a bug report on the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart/issues">issue tracker&lt;/a>.&lt;/p></content></item><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</guid><description>This is the second in a loose sequence of articles looking at new features in Ansible 2.0. In the previous article I looked at the Docker connection driver. In this article, I would like to provide an overview of the new-and-much-improved suite of modules for interacting with an OpenStack environment, and provide a few examples of their use.
-In versions of Ansible prior to 2.0, there was a small collection of OpenStack modules.</description><content>&lt;p>This is the second in a loose sequence of articles looking at new
+open a bug report on the &lt;a href="https://github.com/redhat-openstack/tripleo-quickstart/issues">issue tracker&lt;/a>.&lt;/p></content></item><item><title>Ansible 2.0: New OpenStack modules</title><link>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</link><pubDate>Mon, 26 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-10-26-ansible-20-new-openstack-modul/</guid><description>&lt;p>This is the second in a loose sequence of articles looking at new
+features in Ansible 2.0. In the previous article I looked at the
+&lt;a href="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
+provide an overview of the new-and-much-improved suite of modules for
+interacting with an &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> environment, and provide a few
+examples of their use.&lt;/p>
+&lt;p>In versions of Ansible prior to 2.0, there was a small collection of
+OpenStack modules. There was the minimum necessary to boot a Nova
+instance:&lt;/p></description><content>&lt;p>This is the second in a loose sequence of articles looking at new
 features in Ansible 2.0. In the previous article I looked at the
 &lt;a href="https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/">Docker connection driver&lt;/a>. In this article, I would like to
 provide an overview of the new-and-much-improved suite of modules for
@@ -2209,7 +2271,13 @@ tasks:
 name: docker
 state: running
 enabled: true
-&lt;/code>&lt;/pre></content></item><item><title>Migrating Cinder volumes between OpenStack environments using shared NFS storage</title><link>https://blog.oddbit.com/post/2015-09-29-migrating-cinder-volumes-betwe/</link><pubDate>Tue, 29 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-09-29-migrating-cinder-volumes-betwe/</guid><description>Many of the upgrade guides for OpenStack focus on in-place upgrades to your OpenStack environment. Some organizations may opt for a less risky (but more hardware intensive) option of setting up a parallel environment, and then migrating data into the new environment. In this article, we look at how to use Cinder backups with a shared NFS volume to facilitate the migration of Cinder volumes between two different OpenStack environments.</description><content>&lt;p>Many of the upgrade guides for OpenStack focus on in-place upgrades to
+&lt;/code>&lt;/pre></content></item><item><title>Migrating Cinder volumes between OpenStack environments using shared NFS storage</title><link>https://blog.oddbit.com/post/2015-09-29-migrating-cinder-volumes-betwe/</link><pubDate>Tue, 29 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-09-29-migrating-cinder-volumes-betwe/</guid><description>&lt;p>Many of the upgrade guides for OpenStack focus on in-place upgrades to
+your OpenStack environment. Some organizations may opt for a less
+risky (but more hardware intensive) option of setting up a parallel
+environment, and then migrating data into the new environment. In
+this article, we look at how to use Cinder backups with a shared NFS
+volume to facilitate the migration of Cinder volumes between two
+different OpenStack environments.&lt;/p></description><content>&lt;p>Many of the upgrade guides for OpenStack focus on in-place upgrades to
 your OpenStack environment. Some organizations may opt for a less
 risky (but more hardware intensive) option of setting up a parallel
 environment, and then migrating data into the new environment. In
@@ -2478,8 +2546,13 @@ as the source volume contained at the time of the backup.&lt;/p>
 &lt;h2 id="for-more-information">For more information&lt;/h2>
 &lt;p>The &lt;a href="http://docs.openstack.org/admin-guide-cloud/">Cloud Adminstrator Guide&lt;/a> has more information about
 &lt;a href="http://docs.openstack.org/admin-guide-cloud/blockstorage_volume_backups.html">volume backups and restores&lt;/a> and &lt;a href="http://docs.openstack.org/admin-guide-cloud/blockstorage_volume_backups_export_import.html">managing backup
-metadata&lt;/a>.&lt;/p></content></item><item><title>Provider external networks (in an appropriate amount of detail)</title><link>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</link><pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</guid><description>In Quantum in Too Much Detail, I discussed the architecture of a Neutron deployment in detail. Since that article was published, Neutron gained the ability to handle multiple external networks with a single L3 agent. While I wrote about that back in 2014, I covered the configuration side of it in much more detail than I discussed the underlying network architecture. This post addresses the architecture side.
-The players This document describes the architecture that results from a particular OpenStack configuration, specifically:</description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+metadata&lt;/a>.&lt;/p></content></item><item><title>Provider external networks (in an appropriate amount of detail)</title><link>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</link><pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</guid><description>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+Neutron deployment in detail. Since that article was published,
+Neutron gained the ability to handle multiple external networks with a
+single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
+covered the configuration side of it in much more detail than I
+discussed the underlying network architecture. This post addresses
+the architecture side.&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
 Neutron deployment in detail. Since that article was published,
 Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
@@ -2700,15 +2773,26 @@ cookie=0x0, duration=3840.085s, table=0, n_packets=26, n_bytes=1980, idle_age=37
 &lt;p>We can see that the second rule here will patch traffic on VLAN 1
 (&lt;code>priority=4,in_port=3,dl_vlan=1&lt;/code>) and strip the VLAN tag, after which
 the packet will be delivered to any other interfaces attached to this
-bridge.&lt;/p></content></item><item><title>In which we are amazed it doesn't all fall apart</title><link>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</link><pubDate>Sun, 26 Jul 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</guid><description>So, the Kilo release notes say:
-nova-manage migrate-flavor-data But nova-manage says:
-nova-manage db migrate_flavor_data But that says:
-Missing arguments: max_number And the help says:
-usage: nova-manage db migrate_flavor_data [-h] [--max-number &amp;lt;number&amp;gt;] Which indicates that &amp;ndash;max-number is optional, but whatever, so you try:
-nova-manage db migrate_flavor_data --max-number 100 And that says:
-Missing arguments: max_number So just for kicks you try:
-nova-manage db migrate_flavor_data --max_number 100 And that says:
-nova-manage: error: unrecognized arguments: --max_number So finally you try:</description><content>&lt;p>So, the Kilo release notes say:&lt;/p>
+bridge.&lt;/p></content></item><item><title>In which we are amazed it doesn't all fall apart</title><link>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</link><pubDate>Sun, 26 Jul 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/</guid><description>&lt;p>So, the Kilo release notes say:&lt;/p>
+&lt;pre>&lt;code>nova-manage migrate-flavor-data
+&lt;/code>&lt;/pre>
+&lt;p>But nova-manage says:&lt;/p>
+&lt;pre>&lt;code>nova-manage db migrate_flavor_data
+&lt;/code>&lt;/pre>
+&lt;p>But that says:&lt;/p>
+&lt;pre>&lt;code>Missing arguments: max_number
+&lt;/code>&lt;/pre>
+&lt;p>And the help says:&lt;/p>
+&lt;pre>&lt;code>usage: nova-manage db migrate_flavor_data [-h]
+[--max-number &amp;lt;number&amp;gt;]
+&lt;/code>&lt;/pre>
+&lt;p>Which indicates that &amp;ndash;max-number is optional, but whatever, so you
+try:&lt;/p>
+&lt;pre>&lt;code>nova-manage db migrate_flavor_data --max-number 100
+&lt;/code>&lt;/pre>
+&lt;p>And that says:&lt;/p>
+&lt;pre>&lt;code>Missing arguments: max_number
+&lt;/code>&lt;/pr</description><content>&lt;p>So, the Kilo release notes say:&lt;/p>
 &lt;pre>&lt;code>nova-manage migrate-flavor-data
 &lt;/code>&lt;/pre>
 &lt;p>But nova-manage says:&lt;/p>
@@ -2737,8 +2821,16 @@ try:&lt;/p>
 &lt;p>So finally you try:&lt;/p>
 &lt;pre>&lt;code>nova-manage db migrate_flavor_data 100
 &lt;/code>&lt;/pre>
-&lt;p>And holy poorly implement client, Batman, it works.&lt;/p></content></item><item><title>OpenStack Networking without DHCP</title><link>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</link><pubDate>Fri, 26 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</guid><description>In an OpenStack environment, cloud-init generally fetches information from the metadata service provided by Nova. It also has support for reading this information from a configuration drive, which under OpenStack means a virtual CD-ROM device attached to your instance containing the same information that would normally be available via the metadata service.
-It is possible to generate your network configuration from this configuration drive, rather than relying on the DHCP server provided by your OpenStack environment.</description><content>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
+&lt;p>And holy poorly implement client, Batman, it works.&lt;/p></content></item><item><title>OpenStack Networking without DHCP</title><link>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</link><pubDate>Fri, 26 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</guid><description>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
+information from the metadata service provided by Nova. It also has
+support for reading this information from a &lt;em>configuration drive&lt;/em>,
+which under OpenStack means a virtual CD-ROM device attached to your
+instance containing the same information that would normally be
+available via the metadata service.&lt;/p>
+&lt;p>It is possible to generate your network configuration from this
+configuration drive, rather than relying on the DHCP server provided
+by your OpenStack environment. In order to do this you will need to
+make the following changes to your Nova configuration:&lt;/p></description><content>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
 information from the metadata service provided by Nova. It also has
 support for reading this information from a &lt;em>configuration drive&lt;/em>,
 which under OpenStack means a virtual CD-ROM device attached to your
@@ -2786,9 +2878,7 @@ dns-nameservers {{ interface.dns }}
 system, or will get translated into
 &lt;code>/etc/sysconfig/network-scripts/ifcfg-eth0&lt;/code> on a RHEL system (a RHEL
 environment can only configure a single network interface using this
-mechanism).&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>Next week is the Red Hat Summit in Boston, and I&amp;rsquo;ll be taking part in a Project Atomic presentation in which I will discuss various (well, two) options for deploying Atomic into an OpenStack environment, focusing on my heat-kubernetes templates.
-As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:
-This shows off the autoscaling behavior available with recent versions of these templates (and also serves as a very brief introduction to working with Kubernetes).</description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+mechanism).&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
 in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
 (well, two) options for deploying Atomic into an OpenStack
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
@@ -2799,8 +2889,27 @@ environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-ku
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
-working with Kubernetes).&lt;/p></content></item><item><title>Diagnosing problems with an OpenStack deployment</title><link>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</link><pubDate>Mon, 09 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</guid><description>I recently had the chance to help a colleague debug some problems in his OpenStack installation. The environment was unique because it was booting virtualized aarch64 instances, which at the time did not have any PCI bus support&amp;hellip;which in turn precluded things like graphic consoles (i.e., VNC or SPICE consoles) for the Nova instances.
-This post began life as an email summarizing the various configuration changes we made on the systems to get things up and running.</description><content>&lt;p>I recently had the chance to help a colleague debug some problems in
+working with Kubernetes).&lt;/p></description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
+(well, two) options for deploying Atomic into an OpenStack
+environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
+&lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div>
+&lt;p>This shows off the autoscaling behavior available with recent versions
+of these templates (and also serves as a very brief introduction to
+working with Kubernetes).&lt;/p></content></item><item><title>Diagnosing problems with an OpenStack deployment</title><link>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</link><pubDate>Mon, 09 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-09-diagnosing-problems-with-an-op/</guid><description>&lt;p>I recently had the chance to help a colleague debug some problems in
+his OpenStack installation. The environment was unique because it was
+booting virtualized &lt;a href="https://fedoraproject.org/wiki/Architectures/AArch64">aarch64&lt;/a> instances, which at the time did not
+have any PCI bus support&amp;hellip;which in turn precluded things like graphic
+consoles (i.e., VNC or SPICE consoles) for the Nova instances.&lt;/p>
+&lt;p>This post began life as an email summarizing the various configuration
+changes we made on the systems to get things up and running. After
+writing it, I decided it presented an interesting summary of some
+common (and maybe not-so-common) issues, so I am posting it here in
+the hopes that other folks will find it interesting.&lt;/p></description><content>&lt;p>I recently had the chance to help a colleague debug some problems in
 his OpenStack installation. The environment was unique because it was
 booting virtualized &lt;a href="https://fedoraproject.org/wiki/Architectures/AArch64">aarch64&lt;/a> instances, which at the time did not
 have any PCI bus support&amp;hellip;which in turn precluded things like graphic
@@ -3077,9 +3186,14 @@ instance) permit access to that service).&lt;/p>
 things corrected so that this step would no longer be necessary.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/div></content></item><item><title>Installing nova-docker with devstack</title><link>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</link><pubDate>Wed, 11 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</guid><description>This is a long-form response to this question, and describes how to get the nova-docker driver up running with devstack under Ubuntu 14.04 (Trusty). I wrote a similar post for Fedora 21, although that one was using the RDO Juno packages, while this one is using devstack and the upstream sources.
-Getting started We&amp;rsquo;ll be using the Ubuntu 14.04 cloud image (because my test environment runs on OpenStack).
-First, let&amp;rsquo;s install a few prerequisites:</description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+&lt;/div></content></item><item><title>Installing nova-docker with devstack</title><link>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</link><pubDate>Wed, 11 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-11-installing-novadocker-with-dev/</guid><description>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
+under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
+21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this
+one is using &lt;a href="http://devstack.org/">devstack&lt;/a> and the upstream sources.&lt;/p>
+&lt;h2 id="getting-started">Getting started&lt;/h2>
+&lt;p>We&amp;rsquo;ll be using the &lt;a href="https://cloud-images.ubuntu.com/trusty/current/">Ubuntu 14.04 cloud image&lt;/a> (because my test
+environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
 how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
 under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
 21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this
@@ -3258,9 +3372,11 @@ $ nova boot --image larsks/thttpd --flavor m1.small test0
 &amp;lt;head&amp;gt;
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 [...]
-&lt;/code>&lt;/pre></content></item><item><title>Installing nova-docker on Fedora 21/RDO Juno</title><link>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</link><pubDate>Fri, 06 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</guid><description>This post comes about indirectly by a request on IRC in #rdo for help getting nova-docker installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.
-Getting started I started with the Fedora 21 Cloud Image, because I&amp;rsquo;m installing onto OpenStack and the cloud images include some features that are useful in this environment.
-We&amp;rsquo;ll be using OpenStack packages from the RDO Juno repository.</description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>Installing nova-docker on Fedora 21/RDO Juno</title><link>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</link><pubDate>Fri, 06 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/</guid><description>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+&lt;h2 id="getting-started">Getting started&lt;/h2>
+&lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
+installing onto OpenStack and the cloud images include
+some features that are useful in this environment.&lt;/p></description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
 installing onto OpenStack and the cloud images include
@@ -3426,8 +3542,12 @@ rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 .
 .
-.&lt;/code>&lt;/pre></content></item><item><title>Filtering libvirt XML in Nova</title><link>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</guid><description>I saw a request from a customer float by the other day regarding the ability to filter the XML used to create Nova instances in libvirt. The customer effectively wanted to blacklist a variety of devices (and device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now and upstream is unlikely to accept patches that implement this behavior&amp;rdquo;, but it sounded like an interesting problem, so&amp;hellip;
-https://github.com/larsks/nova/tree/feature/xmlfilter This is a fork of Nova (Juno) that includes support for an extensible filtering mechanism that is applied to the generated XML before it gets passed to libvirt.</description><content>&lt;p>I saw a request from a customer float by the other day regarding the
+.&lt;/code>&lt;/pre></content></item><item><title>Filtering libvirt XML in Nova</title><link>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</guid><description>&lt;p>I saw a request from a customer float by the other day regarding the
+ability to filter the XML used to create Nova instances in libvirt.
+The customer effectively wanted to blacklist a variety of devices (and
+device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now
+and upstream is unlikely to accept patches that implement this
+behavior&amp;rdquo;, but it sounded like an interesting problem, so&amp;hellip;&lt;/p></description><content>&lt;p>I saw a request from a customer float by the other day regarding the
 ability to filter the XML used to create Nova instances in libvirt.
 The customer effectively wanted to blacklist a variety of devices (and
 device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now
@@ -3510,8 +3630,18 @@ entry_points={
 &lt;p>And that&amp;rsquo;s it. This is almost entirely untested. While it works in
 some cases it doesn&amp;rsquo;t work in all cases, and it&amp;rsquo;s unlikely that I&amp;rsquo;m
 going to update this to work with any future version of Nova. This
-was really just an exercise in curiosity. Enjoy!&lt;/p></content></item><item><title>Running nova-libvirt and nova-docker on the same host</title><link>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</link><pubDate>Sat, 17 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</guid><description>I regularly use OpenStack on my laptop with libvirt as my hypervisor. I was interested in experimenting with recent versions of the nova-docker driver, but I didn&amp;rsquo;t have a spare system available on which to run the driver, and I use my regular nova-compute service often enough that I didn&amp;rsquo;t want to simply disable it temporarily in favor of nova-docker.
-NB As pointed out by gustavo in the comments, running two neutron-openvswitch-agents on the same host &amp;ndash; as suggested in this article &amp;ndash; is going to lead to nothing but sadness and doom.</description><content>&lt;p>I regularly use &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> on my laptop with &lt;a href="http://www.libvirt.org/">libvirt&lt;/a> as my
+was really just an exercise in curiosity. Enjoy!&lt;/p></content></item><item><title>Running nova-libvirt and nova-docker on the same host</title><link>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</link><pubDate>Sat, 17 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/</guid><description>&lt;p>I regularly use &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> on my laptop with &lt;a href="http://www.libvirt.org/">libvirt&lt;/a> as my
+hypervisor. I was interested in experimenting with recent versions of
+the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver, but I didn&amp;rsquo;t have a spare system available
+on which to run the driver, and I use my regular &lt;code>nova-compute&lt;/code> service
+often enough that I didn&amp;rsquo;t want to simply disable it temporarily in
+favor of &lt;code>nova-docker&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>&lt;strong>NB&lt;/strong> As pointed out by &lt;em>gustavo&lt;/em> in the comments, running two
+&lt;code>neutron-openvswitch-agents&lt;/code> on the same host &amp;ndash; as suggested in this
+article &amp;ndash; is going to lead to nothing but sadness and doom. So
+kids, don&amp;rsquo;t try this at home. I&amp;rsquo;m leaving the article here because I
+think it still has some interesting bits.&lt;/p></description><content>&lt;p>I regularly use &lt;a href="http://www.openstack.org/">OpenStack&lt;/a> on my laptop with &lt;a href="http://www.libvirt.org/">libvirt&lt;/a> as my
 hypervisor. I was interested in experimenting with recent versions of
 the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver, but I didn&amp;rsquo;t have a spare system available
 on which to run the driver, and I use my regular &lt;code>nova-compute&lt;/code> service
@@ -3777,8 +3907,21 @@ container:&lt;/p>
 | 642b7d61-9189-40ea-86f5-2424c3c86028 | test1 | ACTIVE |...
 | 7fec33c9-d50f-477e-957c-a05ee9bd0b0b | test2 | ACTIVE |...
 +--------------------------------------+-------+--------+...
-&lt;/code>&lt;/pre></content></item><item><title>Accessing the serial console of your Nova servers</title><link>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</link><pubDate>Mon, 22 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</guid><description>One of the new features available in the Juno release of OpenStack is support for serial console access to your Nova servers. This post looks into how to configure the serial console feature and then how to access the serial consoles of your Nova servers.
-Configuring serial console support In previous release of OpenStack, read-only access to the serial console of your servers was available through the os-getConsoleOutput server action (exposed via nova console-log on the command line).</description><content>&lt;p>One of the new features available in the Juno release of OpenStack is
+&lt;/code>&lt;/pre></content></item><item><title>Accessing the serial console of your Nova servers</title><link>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</link><pubDate>Mon, 22 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</guid><description>&lt;p>One of the new features available in the Juno release of OpenStack is
+support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
+servers&lt;/a>. This post looks into how to configure the
+serial console feature and then how to access the serial consoles of
+your Nova servers.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="configuring-serial-console-support">Configuring serial console support&lt;/h2>
+&lt;p>In previous release of OpenStack, read-only access to the serial
+console of your servers was available through the
+&lt;code>os-getConsoleOutput&lt;/code> server action (exposed via &lt;code>nova console-log&lt;/code> on
+the command line). Most cloud-specific Linux images are configured
+with a command line that includes something like &lt;code>console=tty0 console=ttyS0,115200n81&lt;/code>, which ensures that kernel output and other
+messages are available on the serial console. This is a useful
+mechanism for diagnosing problems in the event that you do not have
+network access to a server.&lt;/p></description><content>&lt;p>One of the new features available in the Juno release of OpenStack is
 support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
 servers&lt;/a>. This post looks into how to configure the
 serial console feature and then how to access the serial consoles of
@@ -3898,7 +4041,13 @@ see this information unless you happened to be connected to the
 console at the time the errors were generated.&lt;/p>
 &lt;p>It would be nice to have both mechanisms available &amp;ndash; serial console
 support for interactive access, and console logs for retroactive
-debugging.&lt;/p></content></item><item><title>Cloud-init and the case of the changing hostname</title><link>https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/</link><pubDate>Wed, 10 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/</guid><description>Setting the stage I ran into a problem earlier this week deploying RDO Icehouse under RHEL 6. My target systems were a set of libvirt guests deployed from the RHEL 6 KVM guest image, which includes cloud-init in order to support automatic configuration in cloud environments. I take advantage of this when using libvirt by attaching a configuration drive so that I can pass in ssh keys and a user-data script.</description><content>&lt;h2 id="setting-the-stage">Setting the stage&lt;/h2>
+debugging.&lt;/p></content></item><item><title>Cloud-init and the case of the changing hostname</title><link>https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/</link><pubDate>Wed, 10 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-10-cloudinit-and-the-case-of-the-/</guid><description>&lt;h2 id="setting-the-stage">Setting the stage&lt;/h2>
+&lt;p>I ran into a problem earlier this week deploying RDO Icehouse under
+RHEL 6. My target systems were a set of libvirt guests deployed from
+the RHEL 6 KVM guest image, which includes &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> in order to
+support automatic configuration in cloud environments. I take
+advantage of this when using &lt;code>libvirt&lt;/code> by attaching a configuration
+drive so that I can pass in ssh keys and a &lt;code>user-data&lt;/code> script.&lt;/p></description><content>&lt;h2 id="setting-the-stage">Setting the stage&lt;/h2>
 &lt;p>I ran into a problem earlier this week deploying RDO Icehouse under
 RHEL 6. My target systems were a set of libvirt guests deployed from
 the RHEL 6 KVM guest image, which includes &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> in order to
@@ -3995,8 +4144,18 @@ after your first reboot, which throws off Neutron.&lt;/p>
 &lt;p>It turns out this bug was reported upstream back in October of 2013 as
 &lt;a href="https://bugs.launchpad.net/cloud-init/+bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
 been marked as &amp;ldquo;low&amp;rdquo; priority and has been fixed. There are patches
-attached to the bug report that purport to fix the problem.&lt;/p></content></item><item><title>Fedora Atomic, OpenStack, and Kubernetes (oh my)</title><link>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</link><pubDate>Mon, 24 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</guid><description>While experimenting with Fedora Atomic, I was looking for an elegant way to automatically deploy Atomic into an OpenStack environment and then automatically schedule some Docker containers on the Atomic host. This post describes my solution.
-Like many other cloud-targeted distributions, Fedora Atomic runs cloud-init when the system boots. We can take advantage of this to configure the system at first boot by providing a user-data blob to Nova when we boot the instance.</description><content>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
+attached to the bug report that purport to fix the problem.&lt;/p></content></item><item><title>Fedora Atomic, OpenStack, and Kubernetes (oh my)</title><link>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</link><pubDate>Mon, 24 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/</guid><description>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
+elegant way to automatically deploy Atomic into an &lt;a href="http://openstack.org/">OpenStack&lt;/a>
+environment and then automatically schedule some &lt;a href="http://docker.com/">Docker&lt;/a> containers
+on the Atomic host. This post describes my solution.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>Like many other cloud-targeted distributions, Fedora Atomic runs
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> when the system boots. We can take advantage of this
+to configure the system at first boot by providing a &lt;code>user-data&lt;/code> blob
+to Nova when we boot the instance. A &lt;code>user-data&lt;/code> blob can be as
+simple as a shell script, and while we could arguably mash everything
+into a single script it wouldn&amp;rsquo;t be particularly maintainable or
+flexible in the face of different pod/service/etc descriptions.&lt;/p></description><content>&lt;p>While experimenting with &lt;a href="http://www.projectatomic.io/">Fedora Atomic&lt;/a>, I was looking for an
 elegant way to automatically deploy Atomic into an &lt;a href="http://openstack.org/">OpenStack&lt;/a>
 environment and then automatically schedule some &lt;a href="http://docker.com/">Docker&lt;/a> containers
 on the Atomic host. This post describes my solution.&lt;/p>
@@ -4130,9 +4289,17 @@ these run much later).&lt;/p>
 write the Kubernetes configs into a directory somewhere, and then
 install a service that launches after Kubernetes and (a) watches that
 directory for files, then (b) passes the configuration to Kubernetes
-and deletes (or relocates) the file.&lt;/p></content></item><item><title>Creating a Windows image for OpenStack</title><link>https://blog.oddbit.com/post/2014-11-15-creating-a-windows-image-for-o/</link><pubDate>Sat, 15 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-15-creating-a-windows-image-for-o/</guid><description>If you want to build a Windows image for use in your OpenStack environment, you can follow the example in the official documentation, or you can grab a Windows 2012r2 evaluation pre-built image from the nice folks at CloudBase.
-The CloudBase-provided image is built using a set of scripts and configuration files that CloudBase has made available on GitHub.
-The CloudBase repository is an excellent source of information, but I wanted to understand the process myself.</description><content>&lt;p>If you want to build a Windows image for use in your OpenStack
+and deletes (or relocates) the file.&lt;/p></content></item><item><title>Creating a Windows image for OpenStack</title><link>https://blog.oddbit.com/post/2014-11-15-creating-a-windows-image-for-o/</link><pubDate>Sat, 15 Nov 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-11-15-creating-a-windows-image-for-o/</guid><description>&lt;p>If you want to build a Windows image for use in your OpenStack
+environment, you can follow &lt;a href="http://docs.openstack.org/image-guide/content/windows-image.html">the example in the official
+documentation&lt;/a>, or you can grab a Windows 2012r2
+evaluation &lt;a href="http://www.cloudbase.it/ws2012r2/">pre-built image&lt;/a> from the nice folks at &lt;a href="http://www.cloudbase.it/">CloudBase&lt;/a>.&lt;/p>
+&lt;p>The CloudBase-provided image is built using a set of scripts and
+configuration files that CloudBase has &lt;a href="https://github.com/cloudbase/windows-openstack-imaging-tools/">made available on
+GitHub&lt;/a>.&lt;/p>
+&lt;p>The CloudBase repository is an excellent source of information, but I
+wanted to understand the process myself. This post describes the
+process I went through to establish an automated process for
+generating a Windows image suitable for use with OpenStack.&lt;/p></description><content>&lt;p>If you want to build a Windows image for use in your OpenStack
 environment, you can follow &lt;a href="http://docs.openstack.org/image-guide/content/windows-image.html">the example in the official
 documentation&lt;/a>, or you can grab a Windows 2012r2
 evaluation &lt;a href="http://www.cloudbase.it/ws2012r2/">pre-built image&lt;/a> from the nice folks at &lt;a href="http://www.cloudbase.it/">CloudBase&lt;/a>.&lt;/p>
@@ -4545,9 +4712,19 @@ a GUI text editor/viewer.&lt;/p>
 &lt;/code>&lt;/pre>
 &lt;p>Technet has a &lt;a href="http://technet.microsoft.com/en-us/library/hh825073.aspx">Deployment Troubleshooting and Log Files&lt;/a>
 document that discusses in more detail what is logged and where to
-find it.&lt;/p></content></item><item><title>Integrating custom code with Nova using hooks</title><link>https://blog.oddbit.com/post/2014-09-27-integrating-custom-code-with-n/</link><pubDate>Sat, 27 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-27-integrating-custom-code-with-n/</guid><description>Would you like to run some custom Python code when Nova creates and destroys virtual instances on your compute hosts? This is possible using Nova&amp;rsquo;s support for hooks, but the existing documentation is somewhat short on examples, so I&amp;rsquo;ve spent some time trying to get things working.
-The demo_nova_hooks repository contains a working example of the techniques discussed in this article.
-What&amp;rsquo;s a hook? A Nova &amp;ldquo;hook&amp;rdquo; is a mechanism that allows you to attach a class of your own design to a particular function or method call in Nova.</description><content>&lt;p>Would you like to run some custom Python code when Nova creates and
+find it.&lt;/p></content></item><item><title>Integrating custom code with Nova using hooks</title><link>https://blog.oddbit.com/post/2014-09-27-integrating-custom-code-with-n/</link><pubDate>Sat, 27 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-27-integrating-custom-code-with-n/</guid><description>&lt;p>Would you like to run some custom Python code when Nova creates and
+destroys virtual instances on your compute hosts? This is possible
+using Nova&amp;rsquo;s support for &lt;a href="http://docs.openstack.org/developer/nova/devref/hooks.html">hooks&lt;/a>, but the existing documentation is
+somewhat short on examples, so I&amp;rsquo;ve spent some time trying to get
+things working.&lt;/p>
+&lt;p>The &lt;a href="https://github.com/larsks/demo_nova_hooks">demo_nova_hooks&lt;/a> repository contains a working example of the
+techniques discussed in this article.&lt;/p>
+&lt;h2 id="whats-a-hook">What&amp;rsquo;s a hook?&lt;/h2>
+&lt;p>A Nova &amp;ldquo;hook&amp;rdquo; is a mechanism that allows you to attach a class of your
+own design to a particular function or method call in Nova. Your
+class should define a &lt;code>pre&lt;/code> method (that will be called before the
+method is called) and &lt;code>post&lt;/code> function (that will be called after the
+method is called):&lt;/p></description><content>&lt;p>Would you like to run some custom Python code when Nova creates and
 destroys virtual instances on your compute hosts? This is possible
 using Nova&amp;rsquo;s support for &lt;a href="http://docs.openstack.org/developer/nova/devref/hooks.html">hooks&lt;/a>, but the existing documentation is
 somewhat short on examples, so I&amp;rsquo;ve spent some time trying to get
@@ -4657,8 +4834,7 @@ examined this hook in any additional detail.&lt;/p>
 implementations of &lt;code>create_instance&lt;/code> and &lt;code>delete_instance&lt;/code> hooks. You
 can install this code, restart Nova services, boot an instances, and
 verify that the code has executed by looking at the logs generated in
-&lt;code>/var/log/nova&lt;/code>.&lt;/p></content></item><item><title>Heat Hangout</title><link>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</link><pubDate>Fri, 05 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</guid><description>I ran a Google Hangout this morning on Deploying with Heat. You can find the slides for the presentation on line here, and the Heat templates (as well as slide sources) are available on github.
-If you have any questions about the presentation, please feel free to ping me on irc (larsks).</description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
+&lt;code>/var/log/nova&lt;/code>.&lt;/p></content></item><item><title>Heat Hangout</title><link>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</link><pubDate>Fri, 05 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</guid><description>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
 can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
 Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
 github&lt;/a>.&lt;/p>
@@ -4667,8 +4843,25 @@ ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
-&amp;hellip;but I really like visualizing things, so I wrote a quick hack called dotstack that will generate dot language output from a Heat stack.</description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
+&lt;/div></description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
+can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
+Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
+github&lt;/a>.&lt;/p>
+&lt;p>If you have any questions about the presentation, please feel free to
+ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
+which are incredibly nifty but a little opaque from the Heat command
+line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
+nested stacks. It is possible to introspect these resources (you can
+pass the physical resource id of a nested stack to &lt;code>heat resource-list&lt;/code>, for example)&amp;hellip;&lt;/p>
+&lt;p>&amp;hellip;but I really like visualizing things, so I wrote a quick hack
+called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language output from a
+Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Graphviz&lt;/a> to produce output
+like this, in which graph nodes are automatically colorized by
+resource type:&lt;/p></description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
 nested stacks. It is possible to introspect these resources (you can
@@ -4686,14 +4879,19 @@ resource type and physical resource id:&lt;/p>
 &lt;figure class="left" >
 &lt;img src="sample-detailed.svg" />
 &lt;/figure>
-&lt;p>The source code is available on &lt;a href="http://github.com/larsks/dotstack">github&lt;/a>.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-While writing that article, I encountered a number of bugs in the Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the issues I encountered:
-Bugs in the Heat plugin https://bugs.launchpad.net/heat/+bug/1364017
-docker plugin fails to delete a container resource in CREATE_FAILED state.
-https://bugs.launchpad.net/heat/+bug/1364041
-docker plugin volumes_from parameter should be a list.
-https://bugs.launchpad.net/heat/+bug/1364039
-docker plugin volumes_from parameter results in an error</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>The source code is available on &lt;a href="http://github.com/larsks/dotstack">github&lt;/a>.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>While writing that article, I encountered a number of bugs in the
+Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
+issues I encountered:&lt;/p>
+&lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>docker plugin fails to delete a container resource in
+&lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -4723,18 +4921,26 @@ issues I encountered:&lt;/p>
 &lt;p>&lt;a href="https://github.com/docker/docker-py/pull/310">https://github.com/docker/docker-py/pull/310&lt;/a>&lt;/p>
 &lt;p>allow ports to be specified as &lt;code>port/proto&lt;/code>.&lt;/p>
 &lt;/li>
-&lt;/ul></content></item><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-DockerInc::Docker::Container Properties cmd : List
-Command to run after spawning the container.
-Optional property.
-Example:
-cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi'] dns : List
-Set custom DNS servers.
-Example:
-dns: - 8.8.8.8 - 8.8.4.4 docker_endopint : String
-Docker daemon endpoint. By default the local Docker daemon will be used.
-Example:
-docker_endpoint: tcp://192.168.1.100:2375 env : String</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/ul></content></item><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
+&lt;h3 id="properties">Properties&lt;/h3>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>cmd&lt;/code> : List&lt;/p>
+&lt;p>Command to run after spawning the container.&lt;/p>
+&lt;p>Optional property.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi']
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>dns&lt;/code> : List&lt;/p>
+&lt;p>Set custom DNS servers.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> dns:
+- 8.8.8.8
+- 8.8.4.4
+&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>
@@ -5004,8 +5210,14 @@ value: {get_attr: [&amp;quot;docker_dbserver&amp;quot;, &amp;quot;network_udp_po
 &lt;pre>&lt;code> &amp;quot;8443,8080&amp;quot;
 &lt;/code>&lt;/pre>
 &lt;/li>
-&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>I have been looking at both Docker and OpenStack recently. In my last post I talked a little about the Docker driver for Nova; in this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for Heat, which has been available since the Icehouse release but is surprisingly under-documented.
-The release announcement on the Docker blog includes an example Heat template, but it is unfortunately grossly inaccurate and has led many people astray.</description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
+this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
+Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
+surprisingly under-documented.&lt;/p>
+&lt;p>The &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">release announcement&lt;/a> on the Docker blog includes an
+example Heat template, but it is unfortunately grossly inaccurate and
+has led many people astray. In particular:&lt;/p></description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
 post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
 this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
 Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
@@ -5507,9 +5719,7 @@ MySQL [mysql]&amp;gt;
 &lt;h2 id="when-things-go-wrong">When things go wrong&lt;/h2>
 &lt;p>Your &lt;code>heat-engine&lt;/code> log, generally &lt;code>/var/log/heat/engine.log&lt;/code>, is going
 to be your best source of information if things go wrong. The &lt;code>heat stack-show&lt;/code> command will generally provide useful fault information if
-your stack ends up in the &lt;code>CREATE_FAILED&lt;/code> (or &lt;code>DELETE_FAILED&lt;/code>) state.&lt;/p></content></item><item><title>Using wait conditions with Heat</title><link>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</guid><description>This post accompanies my article on the Docker plugin for Heat.
-In order for WaitCondition resources to operate correctly in Heat, you will need to make sure that that you have:
-Created the necessary Heat domain and administrative user in Keystone, Configured appropriate values in heat.conf for stack_user_domain, stack_domain_admin, and stack_domain_admin_password. Configured an appropriate value in heat.conf for heat_waitcondition_server_url. On a single-system install this will often be pointed by default at 127.</description><content>&lt;p>This post accompanies my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for
+your stack ends up in the &lt;code>CREATE_FAILED&lt;/code> (or &lt;code>DELETE_FAILED&lt;/code>) state.&lt;/p></content></item><item><title>Using wait conditions with Heat</title><link>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</guid><description>&lt;p>This post accompanies my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for
 Heat&lt;/a>.&lt;/p>
 &lt;p>In order for &lt;code>WaitCondition&lt;/code> resources to operate correctly in Heat, you
 will need to make sure that that you have:&lt;/p>
@@ -5528,8 +5738,33 @@ obvious reasons, won&amp;rsquo;t be of any use to your Nova servers.&lt;/li>
 runs on port 8000).&lt;/li>
 &lt;/ul>
 &lt;p>Steve Hardy has a blog post on &lt;a href="http://hardysteven.blogspot.co.uk/2014/04/heat-auth-model-updates-part-2-stack.html">stack domain users&lt;/a> that goes into
-detail on configuring authentication for Heat and Keystone.&lt;/p></content></item><item><title>nova-docker and environment variables</title><link>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</link><pubDate>Thu, 28 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</guid><description>I&amp;rsquo;ve been playing with Docker a bit recently, and decided to take a look at the nova-docker driver for OpenStack.
-The nova-docker driver lets Nova, the OpenStack Compute service, spawn Docker containers instead of hypervisor-based servers. For certain workloads, this leads to better resource utilization than you would get with a hypervisor-based solution, while at the same time givin you better support for multi-tenancy and flexible networking than you get with Docker by itself.</description><content>&lt;p>I&amp;rsquo;ve been playing with &lt;a href="https://docker.com/">Docker&lt;/a> a bit recently, and decided to take
+detail on configuring authentication for Heat and Keystone.&lt;/p></description><content>&lt;p>This post accompanies my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for
+Heat&lt;/a>.&lt;/p>
+&lt;p>In order for &lt;code>WaitCondition&lt;/code> resources to operate correctly in Heat, you
+will need to make sure that that you have:&lt;/p>
+&lt;ul>
+&lt;li>Created the necessary Heat domain and administrative user in
+Keystone,&lt;/li>
+&lt;li>Configured appropriate values in &lt;code>heat.conf&lt;/code> for
+&lt;code>stack_user_domain&lt;/code>, &lt;code>stack_domain_admin&lt;/code>, and
+&lt;code>stack_domain_admin_password&lt;/code>.&lt;/li>
+&lt;li>Configured an appropriate value in &lt;code>heat.conf&lt;/code> for
+&lt;code>heat_waitcondition_server_url&lt;/code>. On a single-system install this
+will often be pointed by default at &lt;code>127.0.0.1&lt;/code>, which, hopefully for
+obvious reasons, won&amp;rsquo;t be of any use to your Nova servers.&lt;/li>
+&lt;li>Enabled the &lt;code>heat-api-cfn&lt;/code> service,&lt;/li>
+&lt;li>Configured your firewall to permit access to the CFN service (which
+runs on port 8000).&lt;/li>
+&lt;/ul>
+&lt;p>Steve Hardy has a blog post on &lt;a href="http://hardysteven.blogspot.co.uk/2014/04/heat-auth-model-updates-part-2-stack.html">stack domain users&lt;/a> that goes into
+detail on configuring authentication for Heat and Keystone.&lt;/p></content></item><item><title>nova-docker and environment variables</title><link>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</link><pubDate>Thu, 28 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/</guid><description>&lt;p>I&amp;rsquo;ve been playing with &lt;a href="https://docker.com/">Docker&lt;/a> a bit recently, and decided to take
+a look at the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver for &lt;a href="http://openstack.org/">OpenStack&lt;/a>.&lt;/p>
+&lt;p>The &lt;code>nova-docker&lt;/code> driver lets Nova, the OpenStack Compute service,
+spawn Docker containers instead of hypervisor-based servers. For
+certain workloads, this leads to better resource utilization than you
+would get with a hypervisor-based solution, while at the same time
+givin you better support for multi-tenancy and flexible networking
+than you get with Docker by itself.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been playing with &lt;a href="https://docker.com/">Docker&lt;/a> a bit recently, and decided to take
 a look at the &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> driver for &lt;a href="http://openstack.org/">OpenStack&lt;/a>.&lt;/p>
 &lt;p>The &lt;code>nova-docker&lt;/code> driver lets Nova, the OpenStack Compute service,
 spawn Docker containers instead of hypervisor-based servers. For
@@ -5569,9 +5804,14 @@ compute driver itself.&lt;/p>
 &lt;p>It sounds as if there is a lot of work going on right now regarding
 container support in OpenStack, so it is very likely that a better
 solution will show up in the near future.&lt;/p>
-&lt;p>In the absence of that support, I hope others find this patch helpful.&lt;/p></content></item><item><title>Booting an instance with multiple fixed addresses</title><link>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</guid><description>This article expands on my answer to Add multiple specific IPs to instance, a question posted to ask.openstack.org.
-In order to serve out SSL services from an OpenStack instance, you will generally want one local ip address for each SSL virtual host you support. It is possible to create an instance with multiple fixed addresses, but there are a few complications to watch out for.
-Assumptions This article assumes that the following resources exist:</description><content>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
+&lt;p>In the absence of that support, I hope others find this patch helpful.&lt;/p></content></item><item><title>Booting an instance with multiple fixed addresses</title><link>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</guid><description>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
+instance&lt;/a>, a question posted to &lt;a href="https://ask.openstack.org/">ask.openstack.org&lt;/a>.&lt;/p>
+&lt;p>In order to serve out SSL services from an OpenStack instance, you
+will generally want one local ip address for each SSL virtual host you
+support. It is possible to create an instance with multiple fixed
+addresses, but there are a few complications to watch out for.&lt;/p>
+&lt;h1 id="assumptions">Assumptions&lt;/h1>
+&lt;p>This article assumes that the following resources exist:&lt;/p></description><content>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
 instance&lt;/a>, a question posted to &lt;a href="https://ask.openstack.org/">ask.openstack.org&lt;/a>.&lt;/p>
 &lt;p>In order to serve out SSL services from an OpenStack instance, you
 will generally want one local ip address for each SSL virtual host you
@@ -5706,9 +5946,15 @@ inet 10.0.0.18/24 brd 10.0.0.255 scope global eth0
 valid_lft forever preferred_lft forever
 inet 10.0.0.19/24 brd 10.0.0.255 scope global secondary eth0:0
 valid_lft forever ...
-&lt;/code>&lt;/pre></content></item><item><title>Multiple external networks with a single L3 agent</title><link>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</guid><description>In the old days (so, like, last year), Neutron supported a single external network per L3 agent. You would run something like this&amp;hellip;
-$ neutron net-create external --router:external=true &amp;hellip;and neutron would map this to the bridge defined in external_network_bridge in /etc/neutron/l3_agent.ini. If you wanted to support more than a single external network, you would need to run multiple L3 agents, each with a unique value for external_network_bridge.
-There is now a better option available.</description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
+&lt;/code>&lt;/pre></content></item><item><title>Multiple external networks with a single L3 agent</title><link>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</guid><description>&lt;p>In the old days (so, like, last year), Neutron supported a single
+external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>$ neutron net-create external --router:external=true
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and neutron would map this to the bridge defined in
+&lt;code>external_network_bridge&lt;/code> in &lt;code>/etc/neutron/l3_agent.ini&lt;/code>. If you
+wanted to support more than a single external network, you would need
+to run multiple L3 agents, each with a unique value for
+&lt;code>external_network_bridge&lt;/code>.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
 external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
 &lt;pre>&lt;code>$ neutron net-create external --router:external=true
 &lt;/code>&lt;/pre>
@@ -5898,13 +6144,24 @@ $ neutron subnet-create --disable-dhcp external2 10.2.0.0/24
 &lt;code>10.1.0.0/24&lt;/code> and &lt;code>eth2&lt;/code> is connected to a network using
 &lt;code>10.2.0.0/24&lt;/code>, and that each network has a gateway sitting at the
 corresponding &lt;code>.1&lt;/code> address.&lt;/p>
-&lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to set up the external bridge (br-ex) on a single-interface system:</description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
+&lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
-This started as a simple attempt to set up external connectivity on an all-in-one Icehouse install deployed on an OpenStack instance. I wanted to add eth0 to br-ex in order to model a typical method for providing external connectivity, but I ran into a very odd problem: the system would boot and work fine for a few seconds, but would then promptly lose network connectivity.</description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
+&lt;/div></description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
+set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
+vexing problem to which I have not been able to find a solution.&lt;/p>
+&lt;p>This started as a simple attempt to set up external connectivity on
+an all-in-one Icehouse install deployed on an OpenStack instance. I
+wanted to add &lt;code>eth0&lt;/code> to &lt;code>br-ex&lt;/code> in order to model a typical method for
+providing external connectivity, but I ran into a very odd problem:
+the system would boot and work fine for a few seconds, but would then
+promptly lose network connectivity.&lt;/p></description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
 vexing problem to which I have not been able to find a solution.&lt;/p>
 &lt;p>This started as a simple attempt to set up external connectivity on
 an all-in-one Icehouse install deployed on an OpenStack instance. I
@@ -5971,10 +6228,22 @@ unrelated switch) will cause the same behavior.&lt;/p>
 &lt;p>I&amp;rsquo;ve seen this behavior on both versions &lt;code>1.11.0&lt;/code> and &lt;code>2.0.1&lt;/code>.&lt;/p>
 &lt;p>So far everyone I&amp;rsquo;ve asked about this behavior has been stumped. If I
 am able to figure out what&amp;rsquo;s going on I will update this post. Thanks
-for reading!&lt;/p></content></item><item><title>Solved: Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</guid><description>In my previous post I discussed a problem I was having setting a persistent MAC address on an OVS bridge device. It looks like the short answer is, &amp;ldquo;don&amp;rsquo;t use ip link set ...&amp;rdquo; for this purpose.
-You can set the bridge MAC address via ovs-vsctl like this:
-ovs-vsctl set bridge br-ex other-config:hwaddr=$MACADDR So I&amp;rsquo;ve updated my ifconfig-br-ex to look like this:
-DEVICE=br-ex DEVICETYPE=ovs TYPE=OVSBridge ONBOOT=yes OVSBOOTPROTO=dhcp OVSDHCPINTERFACES=eth0 MACADDR=fa:16:3e:ef:91:ec OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot; The OVS_EXTRA parameter gets passed to the add-br call like this:</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+for reading!&lt;/p></content></item><item><title>Solved: Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</guid><description>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+persistent MAC address on an OVS bridge device. It looks like the
+short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
+&lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
+&lt;pre>&lt;code>ovs-vsctl set bridge br-ex other-config:hwaddr=$MACADDR
+&lt;/code>&lt;/pre>
+&lt;p>So I&amp;rsquo;ve updated my &lt;code>ifconfig-br-ex&lt;/code> to look like this:&lt;/p>
+&lt;pre>&lt;code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+ONBOOT=yes
+OVSBOOTPROTO=dhcp
+OVSDHCPINTERFACES=eth0
+MACADDR=fa:16:3e:ef:91:ec
+OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
+&lt;/code>&lt;/pr</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
 persistent MAC address on an OVS bridge device. It looks like the
 short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
 &lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
@@ -5993,9 +6262,13 @@ OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
 &lt;p>The &lt;code>OVS_EXTRA&lt;/code> parameter gets passed to the &lt;code>add-br&lt;/code> call like this:&lt;/p>
 &lt;pre>&lt;code>ovs-vsctl --may-exist add-br br-ex -- set bridge br-ex other-config:hwaddr=$MACADDR
 &lt;/code>&lt;/pre>
-&lt;p>And unlike using &lt;code>ip link set&lt;/code>, this seems to stick.&lt;/p></content></item><item><title>Fedora and OVS Bridge Interfaces</title><link>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</guid><description>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious problem with OVS bridge interfaces under both F19 and F20. My OpenStack environment relies on an OVS bridge device named br-ex for external connectivity and for making services available to OpenStack instances, but after rebooting, br-ex was consistently unconfigured, which caused a variety of problems.
-This is the network configuration file for br-ex on my system:
-DEVICE=br-ex DEVICETYPE=ovs TYPE=OVSBridge BOOTPROT=static IPADDR=192.</description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+&lt;p>And unlike using &lt;code>ip link set&lt;/code>, this seems to stick.&lt;/p></content></item><item><title>Fedora and OVS Bridge Interfaces</title><link>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</guid><description>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+problem with OVS bridge interfaces under both F19 and F20. My
+OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
+external connectivity and for making services available to OpenStack
+instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
+which caused a variety of problems.&lt;/p>
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack
@@ -6071,9 +6344,16 @@ fi
 fi
 &lt;/code>&lt;/pre>
 &lt;p>With this change in place, &lt;code>br-ex&lt;/code> is correctly configured after a
-reboot.&lt;/p></content></item><item><title>Firewalld, NetworkManager, and OpenStack</title><link>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</guid><description>These are my notes on making OpenStack play well with firewalld and NetworkManager.
-NetworkManager By default, NetworkManager attempts to start a DHCP client on every new available interface. Since booting a single instance in OpenStack can result in the creation of several virtual interfaces, this results in a lot of:
-May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt; Activation (qvb512640bd-ee) starting connection 'Wired connection 2' You can disable this behavior by adding the following to /etc/NetworkManager/NetworkManager.</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+reboot.&lt;/p></content></item><item><title>Firewalld, NetworkManager, and OpenStack</title><link>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</guid><description>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
+&lt;h2 id="networkmanager">NetworkManager&lt;/h2>
+&lt;p>By default, NetworkManager attempts to start a DHCP client on every
+new available interface. Since booting a single instance in OpenStack
+can result in the creation of several virtual interfaces, this results
+in a lot of:&lt;/p>
+&lt;pre>&lt;code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt;
+Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
+&lt;/code>&lt;/pr</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
 and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
 &lt;h2 id="networkmanager">NetworkManager&lt;/h2>
 &lt;p>By default, NetworkManager attempts to start a DHCP client on every
@@ -6144,9 +6424,15 @@ public
 interfaces: int-br-ex phy-br-ex qvb58cc67ca-06 qvo58cc67ca-06
 # firewall-cmd --zone openstack --list-services
 dns
-&lt;/code>&lt;/pre></content></item><item><title>Flat networks with ML2 and OpenVSwitch</title><link>https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/</link><pubDate>Mon, 19 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/</guid><description>Due to an unfortunate incident involving sleep mode and an overheated backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant reinstalling OpenStack I used this as an excuse to finally move to the ML2 network plugin for Neutron.
-I was attempting to add an external network using the normal incantation:
-neutron net-create external -- --router:external=true \ --provider:network_type=flat \ --provider:physical_network=physnet1 While this command completed successfully, I was left without any connectivity between br-int and br-ex, despite having in my /etc/neutron/plugins/ml2/ml2_conf.</description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
+&lt;/code>&lt;/pre></content></item><item><title>Flat networks with ML2 and OpenVSwitch</title><link>https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/</link><pubDate>Mon, 19 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-19-flat-networks-with-ml-and-open/</guid><description>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
+backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant
+reinstalling OpenStack I used this as an excuse to finally move to the ML2
+network plugin for Neutron.&lt;/p>
+&lt;p>I was attempting to add an external network using the normal incantation:&lt;/p>
+&lt;pre>&lt;code>neutron net-create external -- --router:external=true \
+--provider:network_type=flat \
+--provider:physical_network=physnet1
+&lt;/code>&lt;/pr</description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
 backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant
 reinstalling OpenStack I used this as an excuse to finally move to the ML2
 network plugin for Neutron.&lt;/p>
@@ -6186,9 +6472,7 @@ is running:&lt;/p>
 &lt;code>neutron-openvswitch-agent&lt;/code> is looking explicitly at
 &lt;code>/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini&lt;/code>. The
 physical network configuration needs to go into the
-&lt;code>ovs_neutron_plugin.ini&lt;/code> configuration file.&lt;/p></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</guid><description>I was the presenter for this morning&amp;rsquo;s RDO hangout, where I ran through a simple demonstration of setting up a multinode OpenStack deployment using packstack.
-The slides are online here.
-Here&amp;rsquo;s the video (also available on the event page):</description><content>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
+&lt;code>ovs_neutron_plugin.ini&lt;/code> configuration file.&lt;/p></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</guid><description>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
 through a simple demonstration of setting up a multinode OpenStack
 deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
@@ -6196,10 +6480,32 @@ deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstac
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>This is just here as a reminder for me:
-An OVS interface has a variety of attributes associated with it, including an external-id field that can be used to associate resources outside of OpenVSwitch with the interface. You can view this field with the following command:
-$ ovs-vsctl --columns=name,external-ids list Interface Which on my system, with a single virtual instance, looks like this:
-# ovs-vsctl --columns=name,external-ids list Interface . . .</description><content>&lt;p>This is just here as a reminder for me:&lt;/p>
+&lt;/div></description><content>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
+through a simple demonstration of setting up a multinode OpenStack
+deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
+&lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
+&lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>&lt;p>This is just here as a reminder for me:&lt;/p>
+&lt;p>An OVS interface has a variety of attributes associated with it, including an
+&lt;code>external-id&lt;/code> field that can be used to associate resources outside of
+OpenVSwitch with the interface. You can view this field with the following
+command:&lt;/p>
+&lt;pre>&lt;code>$ ovs-vsctl --columns=name,external-ids list Interface
+&lt;/code>&lt;/pre>
+&lt;p>Which on my system, with a single virtual instance, looks like this:&lt;/p>
+&lt;pre>&lt;code># ovs-vsctl --columns=name,external-ids list Interface
+.
+.
+.
+name : &amp;quot;qvo519d7cc4-75&amp;quot;
+external_ids : {attached-mac=&amp;quot;fa:16:3e:f7:75:b0&amp;quot;, iface-id=&amp;quot;519d7cc4-7593-4944-af7b-4056436f2d66&amp;quot;, iface-status=active, vm-uuid=&amp;quot;0330b084-03db-4d42-a231-2cd6ad89515b&amp;quot;}
+.
+.
+.
+&lt;/code>&lt;/pr</description><content>&lt;p>This is just here as a reminder for me:&lt;/p>
 &lt;p>An OVS interface has a variety of attributes associated with it, including an
 &lt;code>external-id&lt;/code> field that can be used to associate resources outside of
 OpenVSwitch with the interface. You can view this field with the following
@@ -6245,8 +6551,14 @@ external_ids : {attached-mac=&amp;quot;fa:16:3e:f7:75:b0&amp;quot;, iface-id=&am
 .
 .
 .
-&lt;/code>&lt;/pre></content></item><item><title>Stupid OpenStack Tricks</title><link>https://blog.oddbit.com/post/2014-01-16-stupid-openstack-tricks/</link><pubDate>Thu, 16 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-16-stupid-openstack-tricks/</guid><description>I work with several different OpenStack installations. I usually work on the command line, sourcing in an appropriate stackrc with credentials as necessary, but occasionally I want to use the dashboard for something.
-For all of the deployments with which I work, the keystone endpoint is on the same host as the dashboard. So rather than trying to remember which dashboard url I want for the environment I&amp;rsquo;m currently using on the command line, I put together this shell script:</description><content>&lt;p>I work with several different OpenStack installations. I usually work
+&lt;/code>&lt;/pre></content></item><item><title>Stupid OpenStack Tricks</title><link>https://blog.oddbit.com/post/2014-01-16-stupid-openstack-tricks/</link><pubDate>Thu, 16 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-16-stupid-openstack-tricks/</guid><description>&lt;p>I work with several different OpenStack installations. I usually work
+on the command line, sourcing in an appropriate &lt;code>stackrc&lt;/code> with
+credentials as necessary, but occasionally I want to use the dashboard
+for something.&lt;/p>
+&lt;p>For all of the deployments with which I work, the keystone endpoint is
+on the same host as the dashboard. So rather than trying to remember
+which dashboard url I want for the environment I&amp;rsquo;m currently using on
+the command line, I put together this shell script:&lt;/p></description><content>&lt;p>I work with several different OpenStack installations. I usually work
 on the command line, sourcing in an appropriate &lt;code>stackrc&lt;/code> with
 credentials as necessary, but occasionally I want to use the dashboard
 for something.&lt;/p>
@@ -6260,9 +6572,20 @@ exec xdg-open $url
 &lt;/code>&lt;/pre>
 &lt;p>This takes the value of your &lt;code>OS_AUTH_URL&lt;/code> environment variable,
 strips off everything after the port specification, and passes that to
-your default browser.&lt;/p></content></item><item><title>Direct access to Nova metadata</title><link>https://blog.oddbit.com/post/2014-01-14-direct-access-to-nova-metadata/</link><pubDate>Tue, 14 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-14-direct-access-to-nova-metadata/</guid><description>When you boot a virtual instance under OpenStack, your instance has access to certain instance metadata via the Nova metadata service, which is canonically available at http://169.254.169.254/.
-In an environment running Neutron, a request from your instance must traverse a number of steps:
-From the instance to a router, Through a NAT rule in the router namespace, To an instance of the neutron-ns-metadata-proxy, To the actual Nova metadata service When there are problem accessing the metadata, it can be helpful to verify that the metadata service itself is configured correctly and returning meaningful information.</description><content>&lt;p>When you boot a virtual instance under &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>, your instance
+your default browser.&lt;/p></content></item><item><title>Direct access to Nova metadata</title><link>https://blog.oddbit.com/post/2014-01-14-direct-access-to-nova-metadata/</link><pubDate>Tue, 14 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-14-direct-access-to-nova-metadata/</guid><description>&lt;p>When you boot a virtual instance under &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>, your instance
+has access to certain &lt;a href="http://docs.openstack.org/admin-guide-cloud/content//section_metadata-service.html">instance metadata&lt;/a> via the Nova metadata service,
+which is canonically available at &lt;a href="http://169.254.169.254/">http://169.254.169.254/&lt;/a>.&lt;/p>
+&lt;p>In an environment running &lt;a href="https://wiki.openstack.org/wiki/Neutron">Neutron&lt;/a>, a request from your instance
+must traverse a number of steps:&lt;/p>
+&lt;ul>
+&lt;li>From the instance to a router,&lt;/li>
+&lt;li>Through a NAT rule in the router namespace,&lt;/li>
+&lt;li>To an instance of the neutron-ns-metadata-proxy,&lt;/li>
+&lt;li>To the actual Nova metadata service&lt;/li>
+&lt;/ul>
+&lt;p>When there are problem accessing the metadata, it can be helpful to
+verify that the metadata service itself is configured correctly and
+returning meaningful information.&lt;/p></description><content>&lt;p>When you boot a virtual instance under &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>, your instance
 has access to certain &lt;a href="http://docs.openstack.org/admin-guide-cloud/content//section_metadata-service.html">instance metadata&lt;/a> via the Nova metadata service,
 which is canonically available at &lt;a href="http://169.254.169.254/">http://169.254.169.254/&lt;/a>.&lt;/p>
 &lt;p>In an environment running &lt;a href="https://wiki.openstack.org/wiki/Neutron">Neutron&lt;/a>, a request from your instance
@@ -6348,15 +6671,29 @@ public-keys/
 ramdisk-id
 reservation-id
 &lt;/code>&lt;/pre>
-&lt;p>And you&amp;rsquo;re done!&lt;/p></content></item><item><title>RDO Bug Triage</title><link>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</link><pubDate>Mon, 13 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</guid><description>This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or date -d &amp;quot;14:00 UTC&amp;quot; in your local timezone) I will be helping out with the RDO bug triage day. We&amp;rsquo;ll be trying to validate all the untriaged bugs opened against RDO.
-Feel free to drop by on #rdo and help out or ask questions.</description><content>&lt;p>This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or
+&lt;p>And you&amp;rsquo;re done!&lt;/p></content></item><item><title>RDO Bug Triage</title><link>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</link><pubDate>Mon, 13 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</guid><description>&lt;p>This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or
 &lt;code>date -d &amp;quot;14:00 UTC&amp;quot;&lt;/code> in your local timezone) I will be helping out
 with the
 &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> &lt;a href="http://openstack.redhat.com/RDO-BugTriage">bug triage day&lt;/a>. We&amp;rsquo;ll be trying to validate all the
 &lt;a href="http://goo.gl/NqW2LN">untriaged bugs&lt;/a> opened against RDO.&lt;/p>
-&lt;p>Feel free to drop by on &lt;code>#rdo&lt;/code> and help out or ask questions.&lt;/p></content></item><item><title>Visualizing Neutron Networking with GraphViz</title><link>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</link><pubDate>Mon, 23 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</guid><description>I&amp;rsquo;ve put together a few tools to help gather information about your Neutron and network configuration and visualize it in different ways. All of these tools are available as part of my neutron-diag repository on GitHub.
-In this post I&amp;rsquo;m going to look at a tool that will help you visualize the connectivity of network devices on your system.
-mk-network-dot There are a lot of devices involved in your Neutron network configuration.</description><content>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
+&lt;p>Feel free to drop by on &lt;code>#rdo&lt;/code> and help out or ask questions.&lt;/p></description><content>&lt;p>This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or
+&lt;code>date -d &amp;quot;14:00 UTC&amp;quot;&lt;/code> in your local timezone) I will be helping out
+with the
+&lt;a href="http://openstack.redhat.com/">RDO&lt;/a> &lt;a href="http://openstack.redhat.com/RDO-BugTriage">bug triage day&lt;/a>. We&amp;rsquo;ll be trying to validate all the
+&lt;a href="http://goo.gl/NqW2LN">untriaged bugs&lt;/a> opened against RDO.&lt;/p>
+&lt;p>Feel free to drop by on &lt;code>#rdo&lt;/code> and help out or ask questions.&lt;/p></content></item><item><title>Visualizing Neutron Networking with GraphViz</title><link>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</link><pubDate>Mon, 23 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</guid><description>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
+Neutron and network configuration and visualize it in different ways.
+All of these tools are available as part of my &lt;a href="http://github.com/larsks/neutron-diag/">neutron-diag&lt;/a>
+repository on GitHub.&lt;/p>
+&lt;p>In this post I&amp;rsquo;m going to look at a tool that will help you visualize
+the connectivity of network devices on your system.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="mk-network-dot">mk-network-dot&lt;/h2>
+&lt;p>There are a lot of devices involved in your Neutron network
+configuration. Information originating in one of your instances has
+two traverse &lt;em>at least&lt;/em> seven network devices before seeing the light
+of day. Understanding how everything connects is critical if you&amp;rsquo;re
+trying to debug problems in your envionment.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
 Neutron and network configuration and visualize it in different ways.
 All of these tools are available as part of my &lt;a href="http://github.com/larsks/neutron-diag/">neutron-diag&lt;/a>
 repository on GitHub.&lt;/p>
@@ -6400,9 +6737,20 @@ VLAN interfaces.&lt;/li>
 &lt;li>It&amp;rsquo;s had only limited testing.&lt;/li>
 &lt;/ul>
 &lt;p>If you try this out and something doesn&amp;rsquo;t work as you expect, please
-open a new issues on the &lt;a href="https://github.com/larsks/neutron-diag/issues">GitHub issues page&lt;/a>.&lt;/p></content></item><item><title>An introduction to OpenStack Heat</title><link>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</link><pubDate>Fri, 06 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</guid><description>Heat is a template-based orchestration mechanism for use with OpenStack. With Heat, you can deploy collections of resources &amp;ndash; networks, servers, storage, and more &amp;ndash; all from a single, parameterized template.
-In this article I will introduce Heat templates and the heat command line client.
-Writing templates Because Heat began life as an analog of AWS CloudFormation, it supports the template formats used by the CloudFormation (CFN) tools. It also supports its own native template format, called HOT (&amp;ldquo;Heat Orchestration Templates&amp;rdquo;).</description><content>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
+open a new issues on the &lt;a href="https://github.com/larsks/neutron-diag/issues">GitHub issues page&lt;/a>.&lt;/p></content></item><item><title>An introduction to OpenStack Heat</title><link>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</link><pubDate>Fri, 06 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</guid><description>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
+OpenStack. With Heat, you can deploy collections of resources &amp;ndash;
+networks, servers, storage, and more &amp;ndash; all from a single,
+parameterized template.&lt;/p>
+&lt;p>In this article I will introduce Heat templates and the &lt;code>heat&lt;/code> command
+line client.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="writing-templates">Writing templates&lt;/h2>
+&lt;p>Because Heat began life as an analog of AWS &lt;a href="http://aws.amazon.com/cloudformation/">CloudFormation&lt;/a>, it
+supports the template formats used by the CloudFormation (CFN) tools.
+It also supports its own native template format, called HOT (&amp;ldquo;Heat
+Orchestration Templates&amp;rdquo;). In this article I will be using the HOT
+template syntax, which is fully specified on &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html">the OpenStack
+website&lt;/a>.&lt;/p></description><content>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
 OpenStack. With Heat, you can deploy collections of resources &amp;ndash;
 networks, servers, storage, and more &amp;ndash; all from a single,
 parameterized template.&lt;/p>
@@ -6703,10 +7051,19 @@ UUID:&lt;/p>
 &lt;ul>
 &lt;li>The Heat project maintains a &lt;a href="https://github.com/openstack/heat-templates">repository of example
 templates&lt;/a>.&lt;/li>
-&lt;/ul></content></item><item><title>A unified CLI for OpenStack</title><link>https://blog.oddbit.com/post/2013-11-22-a-unified-cli-for-op/</link><pubDate>Fri, 22 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-22-a-unified-cli-for-op/</guid><description>The python-openstackclient project, by Dean Troyer and others, is a new command line tool to replace the existing command line clients (including commands such as nova, keystone, cinder, etc).
-This tool solves two problems I&amp;rsquo;ve encountered in the past:
-Command line options between different command line clients are sometimes inconsistent.
-The output from the legacy command line tools is not designed to be machine parse-able (and yet people do it anyway).</description><content>&lt;p>The &lt;a href="https://github.com/openstack/python-openstackclient">python-openstackclient&lt;/a> project, by &lt;a href="https://github.com/dtroyer">Dean Troyer&lt;/a> and
+&lt;/ul></content></item><item><title>A unified CLI for OpenStack</title><link>https://blog.oddbit.com/post/2013-11-22-a-unified-cli-for-op/</link><pubDate>Fri, 22 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-22-a-unified-cli-for-op/</guid><description>&lt;p>The &lt;a href="https://github.com/openstack/python-openstackclient">python-openstackclient&lt;/a> project, by &lt;a href="https://github.com/dtroyer">Dean Troyer&lt;/a> and
+others, is a new command line tool to replace the existing command
+line clients (including commands such as &lt;code>nova&lt;/code>, &lt;code>keystone&lt;/code>, &lt;code>cinder&lt;/code>,
+etc).&lt;/p>
+&lt;p>This tool solves two problems I&amp;rsquo;ve encountered in the past:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Command line options between different command line clients are
+sometimes inconsistent.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The output from the legacy command line tools is not designed to be
+machine parse-able (and yet people &lt;a href="https://github.com/openstack/python-openstackclient">do it anyway&lt;/a>).&lt;/p></description><content>&lt;p>The &lt;a href="https://github.com/openstack/python-openstackclient">python-openstackclient&lt;/a> project, by &lt;a href="https://github.com/dtroyer">Dean Troyer&lt;/a> and
 others, is a new command line tool to replace the existing command
 line clients (including commands such as &lt;code>nova&lt;/code>, &lt;code>keystone&lt;/code>, &lt;code>cinder&lt;/code>,
 etc).&lt;/p>
@@ -6753,9 +7110,16 @@ service_id=&amp;quot;14a1479f77274dd485e9fb52af2e1721&amp;quot;
 service_name=&amp;quot;glance&amp;quot;
 service_type=&amp;quot;image&amp;quot;
 &lt;/code>&lt;/pre>
-&lt;p>This output could easily be sourced into a shell script.&lt;/p></content></item><item><title>json-tools: cli for generating and filtering json</title><link>https://blog.oddbit.com/post/2013-11-17-json-tools/</link><pubDate>Sun, 17 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-17-json-tools/</guid><description>Interacting with JSON-based APIs from the command line can be difficult, and OpenStack is filled with REST APIs that consume or produce JSON. I&amp;rsquo;ve just put pair of tools for generating and filtering JSON on the command line, called collectively json-tools.
-Both make use of the Python dpath module to populate or filter JSON objects.
-The jsong command generates JSON on stdout. You provide /-delimited paths on the command line to represent the JSON structure.</description><content>&lt;p>Interacting with JSON-based APIs from the command line can be
+&lt;p>This output could easily be sourced into a shell script.&lt;/p></content></item><item><title>json-tools: cli for generating and filtering json</title><link>https://blog.oddbit.com/post/2013-11-17-json-tools/</link><pubDate>Sun, 17 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-17-json-tools/</guid><description>&lt;p>Interacting with JSON-based APIs from the command line can be
+difficult, and OpenStack is filled with REST APIs that consume or
+produce JSON. I&amp;rsquo;ve just put pair of tools for generating and
+filtering JSON on the command line, called collectively
+&lt;a href="http://github.com/larsks/json-tools/">json-tools&lt;/a>.&lt;/p>
+&lt;p>Both make use of the Python &lt;a href="https://github.com/akesterson/dpath-python">dpath&lt;/a> module to populate or filter
+JSON objects.&lt;/p>
+&lt;p>The &lt;code>jsong&lt;/code> command generates JSON on &lt;code>stdout&lt;/code>. You provide &lt;code>/&lt;/code>-delimited paths
+on the command line to represent the JSON structure. For example, if
+you run:&lt;/p></description><content>&lt;p>Interacting with JSON-based APIs from the command line can be
 difficult, and OpenStack is filled with REST APIs that consume or
 produce JSON. I&amp;rsquo;ve just put pair of tools for generating and
 filtering JSON on the command line, called collectively
@@ -6791,9 +7155,22 @@ paths; without the &lt;code>-v&lt;/code> the output would have been:&lt;/p>
 &lt;pre>&lt;code>auth/passwordCredentials/password secret
 &lt;/code>&lt;/pre>
 &lt;p>There are more examples &amp;ndash; including some use of the OpenStack APIs &amp;ndash;
-in the &lt;a href="https://github.com/larsks/json-tools/blob/master/README.md">README&lt;/a> document.&lt;/p></content></item><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</guid><description>I originally posted this article on the RDO website.
-The players This document describes the architecture that results from a particular OpenStack configuration, specifically:
-Quantum networking using GRE tunnels; A dedicated network controller; A single instance running on a compute host Much of the document will be relevant to other configurations, but details will vary based on your choice of layer 2 connectivity, number of running instances, and so forth.</description><content>&lt;blockquote>
+in the &lt;a href="https://github.com/larsks/json-tools/blob/master/README.md">README&lt;/a> document.&lt;/p></content></item><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</guid><description>&lt;blockquote>
+&lt;p>I originally posted this article on
+the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
+website.&lt;/p>
+&lt;/blockquote>
+&lt;h1 id="the-players">The players&lt;/h1>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p>
+&lt;ul>
+&lt;li>Quantum networking using GRE tunnels;&lt;/li>
+&lt;li>A dedicated network controller;&lt;/li>
+&lt;li>A single instance running on a compute host&lt;/li>
+&lt;/ul>
+&lt;p>Much of the document will be relevant to other configurations, but
+details will vary based on your choice of layer 2 connectivity, number
+of running instances, and so forth.&lt;/p></description><content>&lt;blockquote>
 &lt;p>I originally posted this article on
 the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
 website.&lt;/p>
@@ -7162,8 +7539,10 @@ public network, you can add an interface on that network to the
 bridge. For example, assuming that &lt;code>eth2&lt;/code> was on the same network as
 &lt;code>172.24.4.225&lt;/code>:&lt;/p>
 &lt;pre>&lt;code># ovs-vsctl add-port br-ex eth2
-&lt;/code>&lt;/pre></content></item><item><title>A random collection of OpenStack Tools</title><link>https://blog.oddbit.com/post/2013-11-12-a-random-collection/</link><pubDate>Tue, 12 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-12-a-random-collection/</guid><description>I&amp;rsquo;ve been working with OpenStack a lot recently, and I&amp;rsquo;ve ended up with a small collection of utilities that make my life easier. On the odd chance that they&amp;rsquo;ll make your life easier, too, I thought I&amp;rsquo;d hilight them here.
-Crux Crux is a tool for provisioning tenants, users, and roles in keystone. Instead of a sequence of keystone command, you can provision new tenants, users, and roles with a single comand.</description><content>&lt;p>I&amp;rsquo;ve been working with &lt;a href="http://openstack.org/">OpenStack&lt;/a> a lot recently, and I&amp;rsquo;ve ended up with a small collection of utilities that make my life easier. On the odd chance that they&amp;rsquo;ll make your life easier, too, I thought I&amp;rsquo;d hilight them here.&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>A random collection of OpenStack Tools</title><link>https://blog.oddbit.com/post/2013-11-12-a-random-collection/</link><pubDate>Tue, 12 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-12-a-random-collection/</guid><description>&lt;p>I&amp;rsquo;ve been working with &lt;a href="http://openstack.org/">OpenStack&lt;/a> a lot recently, and I&amp;rsquo;ve ended up with a small collection of utilities that make my life easier. On the odd chance that they&amp;rsquo;ll make your life easier, too, I thought I&amp;rsquo;d hilight them here.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="crux">Crux&lt;/h2>
+&lt;p>&lt;a href="http://github.com/larsks/crux">Crux&lt;/a> is a tool for provisioning tenants, users, and roles in keystone. Instead of a sequence of keystone command, you can provision new tenants, users, and roles with a single comand.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been working with &lt;a href="http://openstack.org/">OpenStack&lt;/a> a lot recently, and I&amp;rsquo;ve ended up with a small collection of utilities that make my life easier. On the odd chance that they&amp;rsquo;ll make your life easier, too, I thought I&amp;rsquo;d hilight them here.&lt;/p>
 &lt;!-- raw HTML omitted -->
 &lt;h2 id="crux">Crux&lt;/h2>
 &lt;p>&lt;a href="http://github.com/larsks/crux">Crux&lt;/a> is a tool for provisioning tenants, users, and roles in keystone. Instead of a sequence of keystone command, you can provision new tenants, users, and roles with a single comand.&lt;/p>
@@ -7219,9 +7598,18 @@ Starting openstack-cinder-volume: [ OK ]
 Starting openstack-glance-api: [ OK ]
 Starting openstack-glance-registry: [ OK ]
 &lt;/code>&lt;/pre>
-&lt;p>Without any additional arguments &lt;code>openstack-service stop&lt;/code> will stop all OpenStack services on the current host.&lt;/p></content></item><item><title>Why does the Neutron documentation recommend three interfaces?</title><link>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</link><pubDate>Mon, 28 Oct 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</guid><description>The documentation for configuring Neutron recommends that a network controller has three physical interfaces:
-Before you start, set up a machine to be a dedicated network node. Dedicated network nodes should have the following NICs: the management NIC (called MGMT_INTERFACE), the data NIC (called DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).
-People occasionally ask, &amp;ldquo;why three interfaces? What if I only have two?&amp;rdquo;, so I wanted to provide an extended answer that might help people understand what the interfaces are for and what trade-offs are involved in using fewer interfaces.</description><content>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
+&lt;p>Without any additional arguments &lt;code>openstack-service stop&lt;/code> will stop all OpenStack services on the current host.&lt;/p></content></item><item><title>Why does the Neutron documentation recommend three interfaces?</title><link>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</link><pubDate>Mon, 28 Oct 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</guid><description>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
+that a network controller has three physical interfaces:&lt;/p>
+&lt;blockquote>
+&lt;p>Before you start, set up a machine to be a dedicated network node.
+Dedicated network nodes should have the following NICs: the
+management NIC (called MGMT_INTERFACE), the data NIC (called
+DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p>
+&lt;/blockquote>
+&lt;p>People occasionally ask, &amp;ldquo;why three interfaces? What if I only have
+two?&amp;rdquo;, so I wanted to provide an extended answer that might help
+people understand what the interfaces are for and what trade-offs are
+involved in using fewer interfaces.&lt;/p></description><content>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
 that a network controller has three physical interfaces:&lt;/p>
 &lt;blockquote>
 &lt;p>Before you start, set up a machine to be a dedicated network node.
@@ -7277,8 +7665,15 @@ are not actually providing public access, you can elect to not have an
 &lt;code>EXTERNAL_INTERFACE&lt;/code>. Rather than adding this device to &lt;code>br-ex&lt;/code>, you
 will set up outbound NAT rules so that &amp;ldquo;external&amp;rdquo; traffic from your
 instances will masquerade using the primary ip address of your network
-controller.&lt;/p></content></item><item><title>Automatic configuration of Windows instances in OpenStack, part 1</title><link>https://blog.oddbit.com/post/2012-11-04-openstack-windows-config-part1/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-openstack-windows-config-part1/</guid><description>This is the first of two articles in which I discuss my work in getting some Windows instances up and running in our OpenStack environment. This article is primarily about problems I encountered along the way.
-Motivations Like many organizations, we have a mix of Linux and Windows in our environment. Some folks in my group felt that it would be nice to let our Windows admins take advantage of OpenStack for prototyping and sandboxing in the same ways our Linux admins can use it.</description><content>&lt;p>This is the first of two articles in which I discuss my work in
+controller.&lt;/p></content></item><item><title>Automatic configuration of Windows instances in OpenStack, part 1</title><link>https://blog.oddbit.com/post/2012-11-04-openstack-windows-config-part1/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-openstack-windows-config-part1/</guid><description>&lt;p>This is the first of two articles in which I discuss my work in
+getting some Windows instances up and running in our &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>
+environment. This article is primarily about problems I encountered
+along the way.&lt;/p>
+&lt;h2 id="motivations">Motivations&lt;/h2>
+&lt;p>Like many organizations, we have a mix of Linux and Windows in our
+environment. Some folks in my group felt that it would be nice to let
+our Windows admins take advantage of OpenStack for prototyping and
+sandboxing in the same ways our Linux admins can use it.&lt;/p></description><content>&lt;p>This is the first of two articles in which I discuss my work in
 getting some Windows instances up and running in our &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>
 environment. This article is primarily about problems I encountered
 along the way.&lt;/p>
@@ -7403,9 +7798,19 @@ admins&lt;/a>).
 In the absence of a partition map, Windows assumes that the device is
 empty.&lt;/p>
 &lt;p>Oops. At this point it was obvious I was treading on ground best left
-undisturbed.&lt;/p></content></item><item><title>Chasing OpenStack idle connection timeouts</title><link>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</link><pubDate>Mon, 30 Jul 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</guid><description>The original problem I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a problem in which the compute service would frequently stop communicating with the AMQP message broker (qpidd).
-In order to gather some data on the problem, I ran the following simple test:
-Wait n minutes Run nova boot ... to create an instance Wait a minute and see if the new instance becomes ACTIVE If it works, delete the instance, set n = 2n and repeat This demonstrated that communication was failing after about an hour, which correlates rather nicely with the idle connection timeout on the firewall.</description><content>&lt;h2 id="the-original-problem">The original problem&lt;/h2>
+undisturbed.&lt;/p></content></item><item><title>Chasing OpenStack idle connection timeouts</title><link>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</link><pubDate>Mon, 30 Jul 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</guid><description>&lt;h2 id="the-original-problem">The original problem&lt;/h2>
+&lt;p>I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a
+problem in which the &lt;a href="http://docs.openstack.org/trunk/openstack-compute/starter/content/Compute_Worker_nova-compute_-d1e232.html">compute service&lt;/a> would frequently stop communicating
+with the &lt;a href="http://www.amqp.org/">AMQP&lt;/a> message broker (&lt;code>qpidd&lt;/code>).&lt;/p>
+&lt;p>In order to gather some data on the problem, I ran the following simple test:&lt;/p>
+&lt;ul>
+&lt;li>Wait &lt;code>n&lt;/code> minutes&lt;/li>
+&lt;li>Run &lt;code>nova boot ...&lt;/code> to create an instance&lt;/li>
+&lt;li>Wait a minute and see if the new instance becomes &lt;code>ACTIVE&lt;/code>&lt;/li>
+&lt;li>If it works, delete the instance, set &lt;code>n&lt;/code> = &lt;code>2n&lt;/code> and repeat&lt;/li>
+&lt;/ul>
+&lt;p>This demonstrated that communication was failing after about an hour, which
+correlates rather nicely with the idle connection timeout on the firewall.&lt;/p></description><content>&lt;h2 id="the-original-problem">The original problem&lt;/h2>
 &lt;p>I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a
 problem in which the &lt;a href="http://docs.openstack.org/trunk/openstack-compute/starter/content/Compute_Worker_nova-compute_-d1e232.html">compute service&lt;/a> would frequently stop communicating
 with the &lt;a href="http://www.amqp.org/">AMQP&lt;/a> message broker (&lt;code>qpidd&lt;/code>).&lt;/p>

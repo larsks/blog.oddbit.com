@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Python on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/python/</link><description>Recent content in Python on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 15 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/python/rss.xml" rel="self" type="application/rss+xml"/><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>A software fixture &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in Pytest to create and tear down containers as part of a test run.</description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Python on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/python/</link><description>Recent content in Python on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 15 Jul 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/python/rss.xml" rel="self" type="application/rss+xml"/><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p></description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
 &lt;h2 id="pytest-fixtures">Pytest Fixtures&lt;/h2>
 &lt;p>Pytest &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html">fixtures&lt;/a> are created through the use of the &lt;code>fixture&lt;/code> decorator. A fixture is accessed by including a function parameter with the fixture name in our test functions. For example, if we define an &lt;code>example&lt;/code> fixture:&lt;/p>
 &lt;pre tabindex="0">&lt;code>@pytest.fixture
@@ -33,8 +33,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="917583462" type="checkbox" />
-&lt;label for="917583462">
+&lt;input id="183296547" type="checkbox" />
+&lt;label for="183296547">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -63,8 +63,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="876425391" type="checkbox" />
-&lt;label for="876425391">
+&lt;input id="153798426" type="checkbox" />
+&lt;label for="153798426">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -91,8 +91,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="481952376" type="checkbox" />
-&lt;label for="481952376">
+&lt;input id="812673945" type="checkbox" />
+&lt;label for="812673945">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -177,8 +177,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="463275918" type="checkbox" />
-&lt;label for="463275918">
+&lt;input id="694725183" type="checkbox" />
+&lt;label for="694725183">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -238,8 +238,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="271493865" type="checkbox" />
-&lt;label for="271493865">
+&lt;input id="953428716" type="checkbox" />
+&lt;label for="953428716">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -303,8 +303,13 @@ assert res[0] == 1
 &lt;p>The advantage here is that the impact on the test run time is minimal. The disadvantage is that we have to be very careful about the interaction between tests, since we would no longer be starting each test with a clean version of the database.&lt;/p>
 &lt;p>Keep in mind that in Pytest, a fixture can only reference other fixtures that come from the same or &amp;ldquo;broader&amp;rdquo; scope (so, a &lt;code>function&lt;/code> scoped fixture can use a &lt;code>session&lt;/code> scoped fixture, but the opposite is not true). In particular, that means if we were to make our &lt;code>mariadb_container&lt;/code> fixture &lt;code>session&lt;/code>-scoped, we would need to make the same change to its dependencies (&lt;code>mariadb_dbname&lt;/code>, &lt;code>mariadb_dbpass&lt;/code>, etc).&lt;/p>
 &lt;hr>
-&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>Remediating poor PyPi performance with DevPi</title><link>https://blog.oddbit.com/post/2021-02-08-remediating-poor-pypi-performa/</link><pubDate>Mon, 08 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-08-remediating-poor-pypi-performa/</guid><description>Performance of the primary PyPi service has been so bad lately that it&amp;rsquo;s become very disruptive. Tasks that used to take a few seconds will now churn along for 15-20 minutes or longer before completing, which is incredibly frustrating.
-I first went looking to see if there was a PyPi mirror infrastructure, like we see with CPAN for Perl or CTAN for Tex (and similarly for most Linux distributions). There is apparently no such beast,</description><content>&lt;p>Performance of the primary PyPi service has been so bad lately that
+&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>Remediating poor PyPi performance with DevPi</title><link>https://blog.oddbit.com/post/2021-02-08-remediating-poor-pypi-performa/</link><pubDate>Mon, 08 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-08-remediating-poor-pypi-performa/</guid><description>&lt;p>Performance of the primary PyPi service has been so bad lately that
+it&amp;rsquo;s become very disruptive. Tasks that used to take a few seconds
+will now churn along for 15-20 minutes or longer before completing,
+which is incredibly frustrating.&lt;/p>
+&lt;p>I first went looking to see if there was a PyPi mirror infrastructure,
+like we see with &lt;a href="https://www.cpan.org/">CPAN&lt;/a> for Perl or &lt;a href="https://ctan.org/">CTAN&lt;/a> for Tex (and similarly
+for most Linux distributions). There is apparently no such beast,&lt;/p></description><content>&lt;p>Performance of the primary PyPi service has been so bad lately that
 it&amp;rsquo;s become very disruptive. Tasks that used to take a few seconds
 will now churn along for 15-20 minutes or longer before completing,
 which is incredibly frustrating.&lt;/p>
@@ -397,8 +402,17 @@ the upstream PyPi server, and things are generally much, much faster.&lt;/p>
 &lt;a href="https://github.com/pypa/pipenv/issues/2075">2&lt;/a>], so you will
 need to set the &lt;code>PIPENV_PYPI_MIRROR&lt;/code> environment variable. E.g:&lt;/p>
 &lt;pre tabindex="0">&lt;code>export PIPENV_PYPI_MIRROR=http://localhost:3141/root/pypi/+simple/
-&lt;/code>&lt;/pre></content></item><item><title>symtool: a tool for interacting with your SYM-1</title><link>https://blog.oddbit.com/post/2021-02-06-symtool-a-tool-for-interacting/</link><pubDate>Sat, 06 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-06-symtool-a-tool-for-interacting/</guid><description>The SYM-1 is a 6502-based single-board computer produced by Synertek Systems Corp in the mid 1970&amp;rsquo;s. I&amp;rsquo;ve had one floating around in a box for many, many years, and after a recent foray into the world of 6502 assembly language programming I decided to pull it out, dust it off, and see if it still works.
-The board I have has a whopping 8KB of memory, and in addition to the standard SUPERMON monitor it has the expansion ROMs for the Synertek BASIC interpreter (yet another Microsoft BASIC) and RAE (the &amp;ldquo;Resident Assembler Editor&amp;rdquo;).</description><content>&lt;p>The &lt;a href="https://en.wikipedia.org/wiki/SYM-1">SYM-1&lt;/a> is a &lt;a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502&lt;/a>-based single-board computer produced by
+&lt;/code>&lt;/pre></content></item><item><title>symtool: a tool for interacting with your SYM-1</title><link>https://blog.oddbit.com/post/2021-02-06-symtool-a-tool-for-interacting/</link><pubDate>Sat, 06 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-06-symtool-a-tool-for-interacting/</guid><description>&lt;p>The &lt;a href="https://en.wikipedia.org/wiki/SYM-1">SYM-1&lt;/a> is a &lt;a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502&lt;/a>-based single-board computer produced by
+&lt;a href="https://en.wikipedia.org/wiki/Synertek">Synertek Systems Corp&lt;/a> in the mid 1970&amp;rsquo;s. I&amp;rsquo;ve had one
+floating around in a box for many, many years, and after a recent
+foray into the world of 6502 assembly language programming I decided
+to pull it out, dust it off, and see if it still works.&lt;/p>
+&lt;p>The board I have has a whopping 8KB of memory, and in addition to the
+standard SUPERMON monitor it has the expansion ROMs for the Synertek
+BASIC interpreter (yet another Microsoft BASIC) and RAE (the &amp;ldquo;Resident
+Assembler Editor&amp;rdquo;). One interacts with the board either through the
+onboard hex keypad and six-digit display, or via a serial connection
+at 4800bps (or lower).&lt;/p></description><content>&lt;p>The &lt;a href="https://en.wikipedia.org/wiki/SYM-1">SYM-1&lt;/a> is a &lt;a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502&lt;/a>-based single-board computer produced by
 &lt;a href="https://en.wikipedia.org/wiki/Synertek">Synertek Systems Corp&lt;/a> in the mid 1970&amp;rsquo;s. I&amp;rsquo;ve had one
 floating around in a box for many, many years, and after a recent
 foray into the world of 6502 assembly language programming I decided
@@ -631,9 +645,26 @@ monitor&lt;/a>.&lt;/p>
 &lt;li>
 &lt;p>&lt;a href="http://www.6502.org/">6502.org&lt;/a> hosts just about &lt;a href="http://www.6502.org/trainers/synertek/">all the SYM-1 documentation&lt;/a>.&lt;/p>
 &lt;/li>
-&lt;/ul></content></item><item><title>To sleep or not to sleep?</title><link>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</link><pubDate>Fri, 18 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</guid><description>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running MicroPython. You&amp;rsquo;d like to sample them at different frequencies (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like to do it as efficiently as possible in terms of power consumption. What are your options?
-If we don&amp;rsquo;t care about power efficiency, the simplest solution is probably a loop like this:
-import machine lastrun_1 = 0 lastrun_2 = 0 while True: now = time.</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;/ul></content></item><item><title>To sleep or not to sleep?</title><link>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</link><pubDate>Fri, 18 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</guid><description>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
+(say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
+to do it as efficiently as possible in terms of power consumption.
+What are your options?&lt;/p>
+&lt;p>If we don&amp;rsquo;t care about power efficiency, the simplest solution is
+probably a loop like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+lastrun_1 = 0
+lastrun_2 = 0
+while True:
+now = time.time()
+if (lastrun_1 == 0) or (now - lastrun_1 &amp;gt;= 60):
+read_sensor_1()
+lastrun_1 = now
+if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
+read_sensor_2()
+lastrun_2 = now
+machine.idle()
+&lt;/code>&lt;/pr</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
 &lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
 (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
 to do it as efficiently as possible in terms of power consumption.
@@ -762,7 +793,13 @@ else:
 machine.idle()
 &lt;/code>&lt;/pre>&lt;p>If the variable &lt;code>use_deepsleep&lt;/code> is &lt;code>True&lt;/code>, this code will perform as
 described in the previous section, waking once every 60 seconds. If
-&lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</guid><description>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and for me that means leaping at the chance to turn a small problem into a slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go into here I wanted to generate an alert when a certain WiFi BSSID becomes visible. A simple solution to this problem would have been a few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t about simple solutions!</description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+&lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</guid><description>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+for me that means leaping at the chance to turn a small problem into a
+slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
+into here I wanted to generate an alert when a certain WiFi BSSID
+becomes visible. A simple solution to this problem would have been a
+few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t
+about simple solutions!&lt;/p></description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
 for me that means leaping at the chance to turn a small problem into a
 slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
 into here I wanted to generate an alert when a certain WiFi BSSID
@@ -912,7 +949,7 @@ was due to flyback voltage from the relay, which is simple to fix if
 you happen to have an appropriate diode handy&amp;hellip;but if you don&amp;rsquo;t, it
 means calling around to all your aquaintenances to find someone who
 happens to have some lying around. With a diode in place, everything
-worked swimmingly.&lt;/p></content></item><item><title>How long is a cold spell in Boston?</title><link>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</link><pubDate>Thu, 23 Jan 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</guid><description>We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about Pandas, the Python data analysis framework.</description><content>&lt;p>We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about &lt;a href="https://pandas.pydata.org">Pandas&lt;/a>, the Python data analysis framework.&lt;/p>
+worked swimmingly.&lt;/p></content></item><item><title>How long is a cold spell in Boston?</title><link>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</link><pubDate>Thu, 23 Jan 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</guid><description>&lt;p>We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about &lt;a href="https://pandas.pydata.org">Pandas&lt;/a>, the Python data analysis framework.&lt;/p></description><content>&lt;p>We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about &lt;a href="https://pandas.pydata.org">Pandas&lt;/a>, the Python data analysis framework.&lt;/p>
 &lt;p>The first step was finding an appropriate dataset. &lt;a href="https://www.noaa.gov/">NOAA&lt;/a> provides a &lt;a href="https://www.ncdc.noaa.gov/cdo-web/search?datasetid=GHCND">daily summaries&lt;/a> dataset that includes daily high and low temperature; for Boston, this data extends back to about 1936.&lt;/p>
 &lt;p>The next step was figuring how to solve the problem. To be explicit, the question I&amp;rsquo;m trying to answer is:&lt;/p>
 &lt;blockquote>
@@ -1019,166 +1056,166 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>DATE&lt;/th>
-&lt;th>TMAX&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">DATE&lt;/th>
+&lt;th style="text-align: left">TMAX&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>2018-01-01&lt;/td>
-&lt;td>13&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">2018-01-01&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>2018-01-02&lt;/td>
-&lt;td>19&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2018-01-02&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>2018-01-03&lt;/td>
-&lt;td>29&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2018-01-03&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>2018-01-04&lt;/td>
-&lt;td>30&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2018-01-04&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>2018-01-05&lt;/td>
-&lt;td>24&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2018-01-05&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>5&lt;/td>
-&lt;td>2018-01-06&lt;/td>
-&lt;td>12&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">2018-01-06&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>6&lt;/td>
-&lt;td>2018-01-07&lt;/td>
-&lt;td>17&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2018-01-07&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>7&lt;/td>
-&lt;td>2018-01-08&lt;/td>
-&lt;td>35&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">2018-01-08&lt;/td>
+&lt;td style="text-align: left">35&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>8&lt;/td>
-&lt;td>2018-01-09&lt;/td>
-&lt;td>43&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2018-01-09&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>9&lt;/td>
-&lt;td>2018-01-10&lt;/td>
-&lt;td>36&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2018-01-10&lt;/td>
+&lt;td style="text-align: left">36&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>10&lt;/td>
-&lt;td>2018-01-11&lt;/td>
-&lt;td>51&lt;/td>
+&lt;td style="text-align: left">10&lt;/td>
+&lt;td style="text-align: left">2018-01-11&lt;/td>
+&lt;td style="text-align: left">51&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>11&lt;/td>
-&lt;td>2018-01-12&lt;/td>
-&lt;td>60&lt;/td>
+&lt;td style="text-align: left">11&lt;/td>
+&lt;td style="text-align: left">2018-01-12&lt;/td>
+&lt;td style="text-align: left">60&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>12&lt;/td>
-&lt;td>2018-01-13&lt;/td>
-&lt;td>61&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">2018-01-13&lt;/td>
+&lt;td style="text-align: left">61&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>13&lt;/td>
-&lt;td>2018-01-14&lt;/td>
-&lt;td>23&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">2018-01-14&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>14&lt;/td>
-&lt;td>2018-01-15&lt;/td>
-&lt;td>21&lt;/td>
+&lt;td style="text-align: left">14&lt;/td>
+&lt;td style="text-align: left">2018-01-15&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>15&lt;/td>
-&lt;td>2018-01-16&lt;/td>
-&lt;td>33&lt;/td>
+&lt;td style="text-align: left">15&lt;/td>
+&lt;td style="text-align: left">2018-01-16&lt;/td>
+&lt;td style="text-align: left">33&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>16&lt;/td>
-&lt;td>2018-01-17&lt;/td>
-&lt;td>34&lt;/td>
+&lt;td style="text-align: left">16&lt;/td>
+&lt;td style="text-align: left">2018-01-17&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>17&lt;/td>
-&lt;td>2018-01-18&lt;/td>
-&lt;td>32&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">2018-01-18&lt;/td>
+&lt;td style="text-align: left">32&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>18&lt;/td>
-&lt;td>2018-01-19&lt;/td>
-&lt;td>34&lt;/td>
+&lt;td style="text-align: left">18&lt;/td>
+&lt;td style="text-align: left">2018-01-19&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>19&lt;/td>
-&lt;td>2018-01-20&lt;/td>
-&lt;td>47&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">2018-01-20&lt;/td>
+&lt;td style="text-align: left">47&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>20&lt;/td>
-&lt;td>2018-01-21&lt;/td>
-&lt;td>49&lt;/td>
+&lt;td style="text-align: left">20&lt;/td>
+&lt;td style="text-align: left">2018-01-21&lt;/td>
+&lt;td style="text-align: left">49&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>21&lt;/td>
-&lt;td>2018-01-22&lt;/td>
-&lt;td>39&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">2018-01-22&lt;/td>
+&lt;td style="text-align: left">39&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>22&lt;/td>
-&lt;td>2018-01-23&lt;/td>
-&lt;td>55&lt;/td>
+&lt;td style="text-align: left">22&lt;/td>
+&lt;td style="text-align: left">2018-01-23&lt;/td>
+&lt;td style="text-align: left">55&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>23&lt;/td>
-&lt;td>2018-01-24&lt;/td>
-&lt;td>42&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">2018-01-24&lt;/td>
+&lt;td style="text-align: left">42&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>24&lt;/td>
-&lt;td>2018-01-25&lt;/td>
-&lt;td>30&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">2018-01-25&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>25&lt;/td>
-&lt;td>2018-01-26&lt;/td>
-&lt;td>34&lt;/td>
+&lt;td style="text-align: left">25&lt;/td>
+&lt;td style="text-align: left">2018-01-26&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>26&lt;/td>
-&lt;td>2018-01-27&lt;/td>
-&lt;td>53&lt;/td>
+&lt;td style="text-align: left">26&lt;/td>
+&lt;td style="text-align: left">2018-01-27&lt;/td>
+&lt;td style="text-align: left">53&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>27&lt;/td>
-&lt;td>2018-01-28&lt;/td>
-&lt;td>52&lt;/td>
+&lt;td style="text-align: left">27&lt;/td>
+&lt;td style="text-align: left">2018-01-28&lt;/td>
+&lt;td style="text-align: left">52&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>28&lt;/td>
-&lt;td>2018-01-29&lt;/td>
-&lt;td>43&lt;/td>
+&lt;td style="text-align: left">28&lt;/td>
+&lt;td style="text-align: left">2018-01-29&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>29&lt;/td>
-&lt;td>2018-01-30&lt;/td>
-&lt;td>31&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">2018-01-30&lt;/td>
+&lt;td style="text-align: left">31&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>30&lt;/td>
-&lt;td>2018-01-31&lt;/td>
-&lt;td>30&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">2018-01-31&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -1189,198 +1226,198 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>DATE&lt;/th>
-&lt;th>TMAX&lt;/th>
-&lt;th>freezing&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">DATE&lt;/th>
+&lt;th style="text-align: left">TMAX&lt;/th>
+&lt;th style="text-align: left">freezing&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>2018-01-01&lt;/td>
-&lt;td>13&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">2018-01-01&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>2018-01-02&lt;/td>
-&lt;td>19&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2018-01-02&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>2018-01-03&lt;/td>
-&lt;td>29&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2018-01-03&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>2018-01-04&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2018-01-04&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>2018-01-05&lt;/td>
-&lt;td>24&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2018-01-05&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>5&lt;/td>
-&lt;td>2018-01-06&lt;/td>
-&lt;td>12&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">2018-01-06&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>6&lt;/td>
-&lt;td>2018-01-07&lt;/td>
-&lt;td>17&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2018-01-07&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>7&lt;/td>
-&lt;td>2018-01-08&lt;/td>
-&lt;td>35&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">2018-01-08&lt;/td>
+&lt;td style="text-align: left">35&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>8&lt;/td>
-&lt;td>2018-01-09&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2018-01-09&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>9&lt;/td>
-&lt;td>2018-01-10&lt;/td>
-&lt;td>36&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2018-01-10&lt;/td>
+&lt;td style="text-align: left">36&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>10&lt;/td>
-&lt;td>2018-01-11&lt;/td>
-&lt;td>51&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">10&lt;/td>
+&lt;td style="text-align: left">2018-01-11&lt;/td>
+&lt;td style="text-align: left">51&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>11&lt;/td>
-&lt;td>2018-01-12&lt;/td>
-&lt;td>60&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">11&lt;/td>
+&lt;td style="text-align: left">2018-01-12&lt;/td>
+&lt;td style="text-align: left">60&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>12&lt;/td>
-&lt;td>2018-01-13&lt;/td>
-&lt;td>61&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">2018-01-13&lt;/td>
+&lt;td style="text-align: left">61&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>13&lt;/td>
-&lt;td>2018-01-14&lt;/td>
-&lt;td>23&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">2018-01-14&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>14&lt;/td>
-&lt;td>2018-01-15&lt;/td>
-&lt;td>21&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">14&lt;/td>
+&lt;td style="text-align: left">2018-01-15&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>15&lt;/td>
-&lt;td>2018-01-16&lt;/td>
-&lt;td>33&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">15&lt;/td>
+&lt;td style="text-align: left">2018-01-16&lt;/td>
+&lt;td style="text-align: left">33&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>16&lt;/td>
-&lt;td>2018-01-17&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">16&lt;/td>
+&lt;td style="text-align: left">2018-01-17&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>17&lt;/td>
-&lt;td>2018-01-18&lt;/td>
-&lt;td>32&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">2018-01-18&lt;/td>
+&lt;td style="text-align: left">32&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>18&lt;/td>
-&lt;td>2018-01-19&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">18&lt;/td>
+&lt;td style="text-align: left">2018-01-19&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>19&lt;/td>
-&lt;td>2018-01-20&lt;/td>
-&lt;td>47&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">2018-01-20&lt;/td>
+&lt;td style="text-align: left">47&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>20&lt;/td>
-&lt;td>2018-01-21&lt;/td>
-&lt;td>49&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">20&lt;/td>
+&lt;td style="text-align: left">2018-01-21&lt;/td>
+&lt;td style="text-align: left">49&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>21&lt;/td>
-&lt;td>2018-01-22&lt;/td>
-&lt;td>39&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">2018-01-22&lt;/td>
+&lt;td style="text-align: left">39&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>22&lt;/td>
-&lt;td>2018-01-23&lt;/td>
-&lt;td>55&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">22&lt;/td>
+&lt;td style="text-align: left">2018-01-23&lt;/td>
+&lt;td style="text-align: left">55&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>23&lt;/td>
-&lt;td>2018-01-24&lt;/td>
-&lt;td>42&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">2018-01-24&lt;/td>
+&lt;td style="text-align: left">42&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>24&lt;/td>
-&lt;td>2018-01-25&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">2018-01-25&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>25&lt;/td>
-&lt;td>2018-01-26&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">25&lt;/td>
+&lt;td style="text-align: left">2018-01-26&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>26&lt;/td>
-&lt;td>2018-01-27&lt;/td>
-&lt;td>53&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">26&lt;/td>
+&lt;td style="text-align: left">2018-01-27&lt;/td>
+&lt;td style="text-align: left">53&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>27&lt;/td>
-&lt;td>2018-01-28&lt;/td>
-&lt;td>52&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">27&lt;/td>
+&lt;td style="text-align: left">2018-01-28&lt;/td>
+&lt;td style="text-align: left">52&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>28&lt;/td>
-&lt;td>2018-01-29&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">28&lt;/td>
+&lt;td style="text-align: left">2018-01-29&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>29&lt;/td>
-&lt;td>2018-01-30&lt;/td>
-&lt;td>31&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">2018-01-30&lt;/td>
+&lt;td style="text-align: left">31&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>30&lt;/td>
-&lt;td>2018-01-31&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">2018-01-31&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -1393,230 +1430,230 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>DATE&lt;/th>
-&lt;th>TMAX&lt;/th>
-&lt;th>freezing&lt;/th>
-&lt;th>step2&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">DATE&lt;/th>
+&lt;th style="text-align: left">TMAX&lt;/th>
+&lt;th style="text-align: left">freezing&lt;/th>
+&lt;th style="text-align: left">step2&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>2018-01-01&lt;/td>
-&lt;td>13&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">2018-01-01&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>2018-01-02&lt;/td>
-&lt;td>19&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2018-01-02&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>2018-01-03&lt;/td>
-&lt;td>29&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2018-01-03&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>2018-01-04&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2018-01-04&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>2018-01-05&lt;/td>
-&lt;td>24&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2018-01-05&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>5&lt;/td>
-&lt;td>2018-01-06&lt;/td>
-&lt;td>12&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">2018-01-06&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>6&lt;/td>
-&lt;td>2018-01-07&lt;/td>
-&lt;td>17&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2018-01-07&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>7&lt;/td>
-&lt;td>2018-01-08&lt;/td>
-&lt;td>35&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">2018-01-08&lt;/td>
+&lt;td style="text-align: left">35&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>8&lt;/td>
-&lt;td>2018-01-09&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2018-01-09&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>9&lt;/td>
-&lt;td>2018-01-10&lt;/td>
-&lt;td>36&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2018-01-10&lt;/td>
+&lt;td style="text-align: left">36&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>10&lt;/td>
-&lt;td>2018-01-11&lt;/td>
-&lt;td>51&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">10&lt;/td>
+&lt;td style="text-align: left">2018-01-11&lt;/td>
+&lt;td style="text-align: left">51&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>11&lt;/td>
-&lt;td>2018-01-12&lt;/td>
-&lt;td>60&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">11&lt;/td>
+&lt;td style="text-align: left">2018-01-12&lt;/td>
+&lt;td style="text-align: left">60&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>12&lt;/td>
-&lt;td>2018-01-13&lt;/td>
-&lt;td>61&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">2018-01-13&lt;/td>
+&lt;td style="text-align: left">61&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>13&lt;/td>
-&lt;td>2018-01-14&lt;/td>
-&lt;td>23&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">2018-01-14&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>14&lt;/td>
-&lt;td>2018-01-15&lt;/td>
-&lt;td>21&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">14&lt;/td>
+&lt;td style="text-align: left">2018-01-15&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>15&lt;/td>
-&lt;td>2018-01-16&lt;/td>
-&lt;td>33&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">15&lt;/td>
+&lt;td style="text-align: left">2018-01-16&lt;/td>
+&lt;td style="text-align: left">33&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>16&lt;/td>
-&lt;td>2018-01-17&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">16&lt;/td>
+&lt;td style="text-align: left">2018-01-17&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>17&lt;/td>
-&lt;td>2018-01-18&lt;/td>
-&lt;td>32&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">2018-01-18&lt;/td>
+&lt;td style="text-align: left">32&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>18&lt;/td>
-&lt;td>2018-01-19&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">18&lt;/td>
+&lt;td style="text-align: left">2018-01-19&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>19&lt;/td>
-&lt;td>2018-01-20&lt;/td>
-&lt;td>47&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">2018-01-20&lt;/td>
+&lt;td style="text-align: left">47&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>20&lt;/td>
-&lt;td>2018-01-21&lt;/td>
-&lt;td>49&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">20&lt;/td>
+&lt;td style="text-align: left">2018-01-21&lt;/td>
+&lt;td style="text-align: left">49&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>21&lt;/td>
-&lt;td>2018-01-22&lt;/td>
-&lt;td>39&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">2018-01-22&lt;/td>
+&lt;td style="text-align: left">39&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>22&lt;/td>
-&lt;td>2018-01-23&lt;/td>
-&lt;td>55&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">22&lt;/td>
+&lt;td style="text-align: left">2018-01-23&lt;/td>
+&lt;td style="text-align: left">55&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>23&lt;/td>
-&lt;td>2018-01-24&lt;/td>
-&lt;td>42&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">2018-01-24&lt;/td>
+&lt;td style="text-align: left">42&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>24&lt;/td>
-&lt;td>2018-01-25&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">2018-01-25&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>25&lt;/td>
-&lt;td>2018-01-26&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">25&lt;/td>
+&lt;td style="text-align: left">2018-01-26&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>26&lt;/td>
-&lt;td>2018-01-27&lt;/td>
-&lt;td>53&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">26&lt;/td>
+&lt;td style="text-align: left">2018-01-27&lt;/td>
+&lt;td style="text-align: left">53&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>27&lt;/td>
-&lt;td>2018-01-28&lt;/td>
-&lt;td>52&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">27&lt;/td>
+&lt;td style="text-align: left">2018-01-28&lt;/td>
+&lt;td style="text-align: left">52&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>28&lt;/td>
-&lt;td>2018-01-29&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">28&lt;/td>
+&lt;td style="text-align: left">2018-01-29&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>29&lt;/td>
-&lt;td>2018-01-30&lt;/td>
-&lt;td>31&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">2018-01-30&lt;/td>
+&lt;td style="text-align: left">31&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>30&lt;/td>
-&lt;td>2018-01-31&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">2018-01-31&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -1629,262 +1666,262 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>DATE&lt;/th>
-&lt;th>TMAX&lt;/th>
-&lt;th>freezing&lt;/th>
-&lt;th>step2&lt;/th>
-&lt;th>step3&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">DATE&lt;/th>
+&lt;th style="text-align: left">TMAX&lt;/th>
+&lt;th style="text-align: left">freezing&lt;/th>
+&lt;th style="text-align: left">step2&lt;/th>
+&lt;th style="text-align: left">step3&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>2018-01-01&lt;/td>
-&lt;td>13&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">2018-01-01&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>2018-01-02&lt;/td>
-&lt;td>19&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2018-01-02&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>2018-01-03&lt;/td>
-&lt;td>29&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2018-01-03&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>2018-01-04&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2018-01-04&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>2018-01-05&lt;/td>
-&lt;td>24&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2018-01-05&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>5&lt;/td>
-&lt;td>2018-01-06&lt;/td>
-&lt;td>12&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">2018-01-06&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>6&lt;/td>
-&lt;td>2018-01-07&lt;/td>
-&lt;td>17&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2018-01-07&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>7&lt;/td>
-&lt;td>2018-01-08&lt;/td>
-&lt;td>35&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">2018-01-08&lt;/td>
+&lt;td style="text-align: left">35&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>8&lt;/td>
-&lt;td>2018-01-09&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2018-01-09&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>9&lt;/td>
-&lt;td>2018-01-10&lt;/td>
-&lt;td>36&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2018-01-10&lt;/td>
+&lt;td style="text-align: left">36&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>10&lt;/td>
-&lt;td>2018-01-11&lt;/td>
-&lt;td>51&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">10&lt;/td>
+&lt;td style="text-align: left">2018-01-11&lt;/td>
+&lt;td style="text-align: left">51&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>11&lt;/td>
-&lt;td>2018-01-12&lt;/td>
-&lt;td>60&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">11&lt;/td>
+&lt;td style="text-align: left">2018-01-12&lt;/td>
+&lt;td style="text-align: left">60&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>12&lt;/td>
-&lt;td>2018-01-13&lt;/td>
-&lt;td>61&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">2018-01-13&lt;/td>
+&lt;td style="text-align: left">61&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>13&lt;/td>
-&lt;td>2018-01-14&lt;/td>
-&lt;td>23&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">2018-01-14&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>14&lt;/td>
-&lt;td>2018-01-15&lt;/td>
-&lt;td>21&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">14&lt;/td>
+&lt;td style="text-align: left">2018-01-15&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>15&lt;/td>
-&lt;td>2018-01-16&lt;/td>
-&lt;td>33&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">15&lt;/td>
+&lt;td style="text-align: left">2018-01-16&lt;/td>
+&lt;td style="text-align: left">33&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>16&lt;/td>
-&lt;td>2018-01-17&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">16&lt;/td>
+&lt;td style="text-align: left">2018-01-17&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>17&lt;/td>
-&lt;td>2018-01-18&lt;/td>
-&lt;td>32&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>5&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">2018-01-18&lt;/td>
+&lt;td style="text-align: left">32&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>18&lt;/td>
-&lt;td>2018-01-19&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">18&lt;/td>
+&lt;td style="text-align: left">2018-01-19&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>19&lt;/td>
-&lt;td>2018-01-20&lt;/td>
-&lt;td>47&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">2018-01-20&lt;/td>
+&lt;td style="text-align: left">47&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>20&lt;/td>
-&lt;td>2018-01-21&lt;/td>
-&lt;td>49&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">20&lt;/td>
+&lt;td style="text-align: left">2018-01-21&lt;/td>
+&lt;td style="text-align: left">49&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>21&lt;/td>
-&lt;td>2018-01-22&lt;/td>
-&lt;td>39&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">2018-01-22&lt;/td>
+&lt;td style="text-align: left">39&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>22&lt;/td>
-&lt;td>2018-01-23&lt;/td>
-&lt;td>55&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">22&lt;/td>
+&lt;td style="text-align: left">2018-01-23&lt;/td>
+&lt;td style="text-align: left">55&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>23&lt;/td>
-&lt;td>2018-01-24&lt;/td>
-&lt;td>42&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">2018-01-24&lt;/td>
+&lt;td style="text-align: left">42&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>24&lt;/td>
-&lt;td>2018-01-25&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>7&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">2018-01-25&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>25&lt;/td>
-&lt;td>2018-01-26&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>8&lt;/td>
+&lt;td style="text-align: left">25&lt;/td>
+&lt;td style="text-align: left">2018-01-26&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>26&lt;/td>
-&lt;td>2018-01-27&lt;/td>
-&lt;td>53&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
+&lt;td style="text-align: left">26&lt;/td>
+&lt;td style="text-align: left">2018-01-27&lt;/td>
+&lt;td style="text-align: left">53&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>27&lt;/td>
-&lt;td>2018-01-28&lt;/td>
-&lt;td>52&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
+&lt;td style="text-align: left">27&lt;/td>
+&lt;td style="text-align: left">2018-01-28&lt;/td>
+&lt;td style="text-align: left">52&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>28&lt;/td>
-&lt;td>2018-01-29&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
+&lt;td style="text-align: left">28&lt;/td>
+&lt;td style="text-align: left">2018-01-29&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>29&lt;/td>
-&lt;td>2018-01-30&lt;/td>
-&lt;td>31&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>9&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">2018-01-30&lt;/td>
+&lt;td style="text-align: left">31&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>30&lt;/td>
-&lt;td>2018-01-31&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>9&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">2018-01-31&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -1898,294 +1935,294 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>DATE&lt;/th>
-&lt;th>TMAX&lt;/th>
-&lt;th>freezing&lt;/th>
-&lt;th>step2&lt;/th>
-&lt;th>step3&lt;/th>
-&lt;th>step4&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">DATE&lt;/th>
+&lt;th style="text-align: left">TMAX&lt;/th>
+&lt;th style="text-align: left">freezing&lt;/th>
+&lt;th style="text-align: left">step2&lt;/th>
+&lt;th style="text-align: left">step3&lt;/th>
+&lt;th style="text-align: left">step4&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>2018-01-01&lt;/td>
-&lt;td>13&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">2018-01-01&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>2018-01-02&lt;/td>
-&lt;td>19&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2018-01-02&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>2018-01-03&lt;/td>
-&lt;td>29&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2018-01-03&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>2018-01-04&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2018-01-04&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>2018-01-05&lt;/td>
-&lt;td>24&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>5&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2018-01-05&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>5&lt;/td>
-&lt;td>2018-01-06&lt;/td>
-&lt;td>12&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">2018-01-06&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>6&lt;/td>
-&lt;td>2018-01-07&lt;/td>
-&lt;td>17&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>7&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2018-01-07&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>7&lt;/td>
-&lt;td>2018-01-08&lt;/td>
-&lt;td>35&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">2018-01-08&lt;/td>
+&lt;td style="text-align: left">35&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>8&lt;/td>
-&lt;td>2018-01-09&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2018-01-09&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>9&lt;/td>
-&lt;td>2018-01-10&lt;/td>
-&lt;td>36&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2018-01-10&lt;/td>
+&lt;td style="text-align: left">36&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>10&lt;/td>
-&lt;td>2018-01-11&lt;/td>
-&lt;td>51&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">10&lt;/td>
+&lt;td style="text-align: left">2018-01-11&lt;/td>
+&lt;td style="text-align: left">51&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>11&lt;/td>
-&lt;td>2018-01-12&lt;/td>
-&lt;td>60&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>5&lt;/td>
+&lt;td style="text-align: left">11&lt;/td>
+&lt;td style="text-align: left">2018-01-12&lt;/td>
+&lt;td style="text-align: left">60&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>12&lt;/td>
-&lt;td>2018-01-13&lt;/td>
-&lt;td>61&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">2018-01-13&lt;/td>
+&lt;td style="text-align: left">61&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>13&lt;/td>
-&lt;td>2018-01-14&lt;/td>
-&lt;td>23&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">2018-01-14&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>14&lt;/td>
-&lt;td>2018-01-15&lt;/td>
-&lt;td>21&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">14&lt;/td>
+&lt;td style="text-align: left">2018-01-15&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>15&lt;/td>
-&lt;td>2018-01-16&lt;/td>
-&lt;td>33&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">15&lt;/td>
+&lt;td style="text-align: left">2018-01-16&lt;/td>
+&lt;td style="text-align: left">33&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>16&lt;/td>
-&lt;td>2018-01-17&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">16&lt;/td>
+&lt;td style="text-align: left">2018-01-17&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>17&lt;/td>
-&lt;td>2018-01-18&lt;/td>
-&lt;td>32&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>5&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">2018-01-18&lt;/td>
+&lt;td style="text-align: left">32&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>18&lt;/td>
-&lt;td>2018-01-19&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">18&lt;/td>
+&lt;td style="text-align: left">2018-01-19&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>19&lt;/td>
-&lt;td>2018-01-20&lt;/td>
-&lt;td>47&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">2018-01-20&lt;/td>
+&lt;td style="text-align: left">47&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>20&lt;/td>
-&lt;td>2018-01-21&lt;/td>
-&lt;td>49&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">20&lt;/td>
+&lt;td style="text-align: left">2018-01-21&lt;/td>
+&lt;td style="text-align: left">49&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>21&lt;/td>
-&lt;td>2018-01-22&lt;/td>
-&lt;td>39&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">2018-01-22&lt;/td>
+&lt;td style="text-align: left">39&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>22&lt;/td>
-&lt;td>2018-01-23&lt;/td>
-&lt;td>55&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>5&lt;/td>
+&lt;td style="text-align: left">22&lt;/td>
+&lt;td style="text-align: left">2018-01-23&lt;/td>
+&lt;td style="text-align: left">55&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>23&lt;/td>
-&lt;td>2018-01-24&lt;/td>
-&lt;td>42&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">2018-01-24&lt;/td>
+&lt;td style="text-align: left">42&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>24&lt;/td>
-&lt;td>2018-01-25&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>7&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">2018-01-25&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>25&lt;/td>
-&lt;td>2018-01-26&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">25&lt;/td>
+&lt;td style="text-align: left">2018-01-26&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>26&lt;/td>
-&lt;td>2018-01-27&lt;/td>
-&lt;td>53&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">26&lt;/td>
+&lt;td style="text-align: left">2018-01-27&lt;/td>
+&lt;td style="text-align: left">53&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>27&lt;/td>
-&lt;td>2018-01-28&lt;/td>
-&lt;td>52&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">27&lt;/td>
+&lt;td style="text-align: left">2018-01-28&lt;/td>
+&lt;td style="text-align: left">52&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>28&lt;/td>
-&lt;td>2018-01-29&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">28&lt;/td>
+&lt;td style="text-align: left">2018-01-29&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>29&lt;/td>
-&lt;td>2018-01-30&lt;/td>
-&lt;td>31&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>9&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">2018-01-30&lt;/td>
+&lt;td style="text-align: left">31&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>30&lt;/td>
-&lt;td>2018-01-31&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>9&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">2018-01-31&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -2197,326 +2234,326 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>DATE&lt;/th>
-&lt;th>TMAX&lt;/th>
-&lt;th>freezing&lt;/th>
-&lt;th>step2&lt;/th>
-&lt;th>step3&lt;/th>
-&lt;th>step4&lt;/th>
-&lt;th>step5&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">DATE&lt;/th>
+&lt;th style="text-align: left">TMAX&lt;/th>
+&lt;th style="text-align: left">freezing&lt;/th>
+&lt;th style="text-align: left">step2&lt;/th>
+&lt;th style="text-align: left">step3&lt;/th>
+&lt;th style="text-align: left">step4&lt;/th>
+&lt;th style="text-align: left">step5&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>2018-01-01&lt;/td>
-&lt;td>13&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">2018-01-01&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>2018-01-02&lt;/td>
-&lt;td>19&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2018-01-02&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>2018-01-03&lt;/td>
-&lt;td>29&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>3&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2018-01-03&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>2018-01-04&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>4&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2018-01-04&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>2018-01-05&lt;/td>
-&lt;td>24&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>5&lt;/td>
-&lt;td>5&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2018-01-05&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>5&lt;/td>
-&lt;td>2018-01-06&lt;/td>
-&lt;td>12&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>6&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">2018-01-06&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>6&lt;/td>
-&lt;td>2018-01-07&lt;/td>
-&lt;td>17&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>7&lt;/td>
-&lt;td>7&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2018-01-07&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>7&lt;/td>
-&lt;td>2018-01-08&lt;/td>
-&lt;td>35&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">2018-01-08&lt;/td>
+&lt;td style="text-align: left">35&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>8&lt;/td>
-&lt;td>2018-01-09&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2018-01-09&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>9&lt;/td>
-&lt;td>2018-01-10&lt;/td>
-&lt;td>36&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2018-01-10&lt;/td>
+&lt;td style="text-align: left">36&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>10&lt;/td>
-&lt;td>2018-01-11&lt;/td>
-&lt;td>51&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">10&lt;/td>
+&lt;td style="text-align: left">2018-01-11&lt;/td>
+&lt;td style="text-align: left">51&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>11&lt;/td>
-&lt;td>2018-01-12&lt;/td>
-&lt;td>60&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>5&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">11&lt;/td>
+&lt;td style="text-align: left">2018-01-12&lt;/td>
+&lt;td style="text-align: left">60&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>12&lt;/td>
-&lt;td>2018-01-13&lt;/td>
-&lt;td>61&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">12&lt;/td>
+&lt;td style="text-align: left">2018-01-13&lt;/td>
+&lt;td style="text-align: left">61&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>13&lt;/td>
-&lt;td>2018-01-14&lt;/td>
-&lt;td>23&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">13&lt;/td>
+&lt;td style="text-align: left">2018-01-14&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>14&lt;/td>
-&lt;td>2018-01-15&lt;/td>
-&lt;td>21&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">14&lt;/td>
+&lt;td style="text-align: left">2018-01-15&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>15&lt;/td>
-&lt;td>2018-01-16&lt;/td>
-&lt;td>33&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">15&lt;/td>
+&lt;td style="text-align: left">2018-01-16&lt;/td>
+&lt;td style="text-align: left">33&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>16&lt;/td>
-&lt;td>2018-01-17&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">16&lt;/td>
+&lt;td style="text-align: left">2018-01-17&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>17&lt;/td>
-&lt;td>2018-01-18&lt;/td>
-&lt;td>32&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>5&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">17&lt;/td>
+&lt;td style="text-align: left">2018-01-18&lt;/td>
+&lt;td style="text-align: left">32&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>18&lt;/td>
-&lt;td>2018-01-19&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">18&lt;/td>
+&lt;td style="text-align: left">2018-01-19&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>19&lt;/td>
-&lt;td>2018-01-20&lt;/td>
-&lt;td>47&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">19&lt;/td>
+&lt;td style="text-align: left">2018-01-20&lt;/td>
+&lt;td style="text-align: left">47&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>20&lt;/td>
-&lt;td>2018-01-21&lt;/td>
-&lt;td>49&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">20&lt;/td>
+&lt;td style="text-align: left">2018-01-21&lt;/td>
+&lt;td style="text-align: left">49&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>21&lt;/td>
-&lt;td>2018-01-22&lt;/td>
-&lt;td>39&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">21&lt;/td>
+&lt;td style="text-align: left">2018-01-22&lt;/td>
+&lt;td style="text-align: left">39&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>22&lt;/td>
-&lt;td>2018-01-23&lt;/td>
-&lt;td>55&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>5&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">22&lt;/td>
+&lt;td style="text-align: left">2018-01-23&lt;/td>
+&lt;td style="text-align: left">55&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">5&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>23&lt;/td>
-&lt;td>2018-01-24&lt;/td>
-&lt;td>42&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>6&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">23&lt;/td>
+&lt;td style="text-align: left">2018-01-24&lt;/td>
+&lt;td style="text-align: left">42&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">6&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>24&lt;/td>
-&lt;td>2018-01-25&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>7&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">24&lt;/td>
+&lt;td style="text-align: left">2018-01-25&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">7&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>25&lt;/td>
-&lt;td>2018-01-26&lt;/td>
-&lt;td>34&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">25&lt;/td>
+&lt;td style="text-align: left">2018-01-26&lt;/td>
+&lt;td style="text-align: left">34&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>26&lt;/td>
-&lt;td>2018-01-27&lt;/td>
-&lt;td>53&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">26&lt;/td>
+&lt;td style="text-align: left">2018-01-27&lt;/td>
+&lt;td style="text-align: left">53&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>27&lt;/td>
-&lt;td>2018-01-28&lt;/td>
-&lt;td>52&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>3&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">27&lt;/td>
+&lt;td style="text-align: left">2018-01-28&lt;/td>
+&lt;td style="text-align: left">52&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>28&lt;/td>
-&lt;td>2018-01-29&lt;/td>
-&lt;td>43&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>8&lt;/td>
-&lt;td>4&lt;/td>
-&lt;td>0&lt;/td>
+&lt;td style="text-align: left">28&lt;/td>
+&lt;td style="text-align: left">2018-01-29&lt;/td>
+&lt;td style="text-align: left">43&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">8&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>29&lt;/td>
-&lt;td>2018-01-30&lt;/td>
-&lt;td>31&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>9&lt;/td>
-&lt;td>1&lt;/td>
-&lt;td>1&lt;/td>
+&lt;td style="text-align: left">29&lt;/td>
+&lt;td style="text-align: left">2018-01-30&lt;/td>
+&lt;td style="text-align: left">31&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>30&lt;/td>
-&lt;td>2018-01-31&lt;/td>
-&lt;td>30&lt;/td>
-&lt;td>True&lt;/td>
-&lt;td>False&lt;/td>
-&lt;td>9&lt;/td>
-&lt;td>2&lt;/td>
-&lt;td>2&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">2018-01-31&lt;/td>
+&lt;td style="text-align: left">30&lt;/td>
+&lt;td style="text-align: left">True&lt;/td>
+&lt;td style="text-align: left">False&lt;/td>
+&lt;td style="text-align: left">9&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -2530,7 +2567,7 @@ df = pandas.DataFrame({&amp;#39;DATE&amp;#39;: data_unzipped[0], &amp;#39;TMAX&a
 &lt;figure class="left" >
 &lt;img src="sample-results.png" />
 &lt;/figure>
-&lt;p>For data used in the above chart, the average stretch in which the temperature stays below freezing is 6.45 days (the average for the entire dataset is 6.33 days).&lt;/p></content></item><item><title>Unpacking a Python regular expression</title><link>https://blog.oddbit.com/post/2019-05-07-unpacking-a-python-regular-exp/</link><pubDate>Tue, 07 May 2019 10:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-07-unpacking-a-python-regular-exp/</guid><description>I recently answered a question from Harsha Nalore on StackOverflow that involved using Ansible to extract the output of a command sent to a BigIP device of some sort. My solution &amp;ndash; which I claim to be functional, but probably not optimal &amp;ndash; involved writing an Ansible filter module to parse the output. That filter made use of a complex-looking regular expression. Harsha asked for some details on that regular expression works, and the existing StackOverflow answer didn&amp;rsquo;t really seem the write place for that: so, here we are.</description><content>&lt;p>I recently answered &lt;a href="https://stackoverflow.com/q/55965819/147356">a question&lt;/a> from &lt;a href="https://stackoverflow.com/users/7738974/harsha-nalore">Harsha Nalore&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> that involved using Ansible to extract the output of a command sent to a BigIP device of some sort. My solution &amp;ndash; which I claim to be functional, but probably not optimal &amp;ndash; involved writing an &lt;a href="https://ansible.com/">Ansible&lt;/a> filter module to parse the output. That filter made use of a complex-looking regular expression. Harsha asked for some details on that regular expression works, and the existing StackOverflow answer didn&amp;rsquo;t really seem the write place for that: so, here we are.&lt;/p>
+&lt;p>For data used in the above chart, the average stretch in which the temperature stays below freezing is 6.45 days (the average for the entire dataset is 6.33 days).&lt;/p></content></item><item><title>Unpacking a Python regular expression</title><link>https://blog.oddbit.com/post/2019-05-07-unpacking-a-python-regular-exp/</link><pubDate>Tue, 07 May 2019 10:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-07-unpacking-a-python-regular-exp/</guid><description>&lt;p>I recently answered &lt;a href="https://stackoverflow.com/q/55965819/147356">a question&lt;/a> from &lt;a href="https://stackoverflow.com/users/7738974/harsha-nalore">Harsha Nalore&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> that involved using Ansible to extract the output of a command sent to a BigIP device of some sort. My solution &amp;ndash; which I claim to be functional, but probably not optimal &amp;ndash; involved writing an &lt;a href="https://ansible.com/">Ansible&lt;/a> filter module to parse the output. That filter made use of a complex-looking regular expression. Harsha asked for some details on that regular expression works, and the existing StackOverflow answer didn&amp;rsquo;t really seem the write place for that: so, here we are.&lt;/p></description><content>&lt;p>I recently answered &lt;a href="https://stackoverflow.com/q/55965819/147356">a question&lt;/a> from &lt;a href="https://stackoverflow.com/users/7738974/harsha-nalore">Harsha Nalore&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> that involved using Ansible to extract the output of a command sent to a BigIP device of some sort. My solution &amp;ndash; which I claim to be functional, but probably not optimal &amp;ndash; involved writing an &lt;a href="https://ansible.com/">Ansible&lt;/a> filter module to parse the output. That filter made use of a complex-looking regular expression. Harsha asked for some details on that regular expression works, and the existing StackOverflow answer didn&amp;rsquo;t really seem the write place for that: so, here we are.&lt;/p>
 &lt;p>The output in question looks like this:&lt;/p>
 &lt;pre tabindex="0">&lt;code>gtm wideip a wideip {
 description wideip
@@ -2660,7 +2697,7 @@ pool-lb-mode topology
 &lt;ul>
 &lt;li>The documentation for the &lt;a href="https://docs.python.org/3/library/re.html">re&lt;/a> module.&lt;/li>
 &lt;li>The &lt;a href="https://docs.python.org/3/howto/regex.html">Regular expression HOWTO&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>Writing Ansible filter plugins</title><link>https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/</link><pubDate>Thu, 25 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/</guid><description>I often see questions from people who are attemping to perform complex text transformations in their Ansible playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone asked a question on Stack Overflow in which they were attempting to convert the output of the keytool command into a list of dictionaries. The output of the keytool -list -v command looks something like this:</description><content>&lt;p>I often see questions from people who are attemping to perform complex text transformations in their &lt;a href="https://www.ansible.com/">Ansible&lt;/a> playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone &lt;a href="https://stackoverflow.com/questions/55853384/ansible-build-list-dictionary-with-from-list-of-strings/55854394">asked a question&lt;/a> on Stack Overflow in which they were attempting to convert the output of the &lt;a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html">keytool&lt;/a> command into a list of dictionaries. The output of the &lt;code>keytool -list -v&lt;/code> command looks something like this:&lt;/p>
+&lt;/ul></content></item><item><title>Writing Ansible filter plugins</title><link>https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/</link><pubDate>Thu, 25 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-04-25-writing-ansible-filter-plugins/</guid><description>&lt;p>I often see questions from people who are attemping to perform complex text transformations in their &lt;a href="https://www.ansible.com/">Ansible&lt;/a> playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone &lt;a href="https://stackoverflow.com/questions/55853384/ansible-build-list-dictionary-with-from-list-of-strings/55854394">asked a question&lt;/a> on Stack Overflow in which they were attempting to convert the output of the &lt;a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html">keytool&lt;/a> command into a list of dictionaries. The output of the &lt;code>keytool -list -v&lt;/code> command looks something like this:&lt;/p></description><content>&lt;p>I often see questions from people who are attemping to perform complex text transformations in their &lt;a href="https://www.ansible.com/">Ansible&lt;/a> playbooks. While I am a huge fan of Ansible, data transformation is not one of its strong points. For example, this past week someone &lt;a href="https://stackoverflow.com/questions/55853384/ansible-build-list-dictionary-with-from-list-of-strings/55854394">asked a question&lt;/a> on Stack Overflow in which they were attempting to convert the output of the &lt;a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html">keytool&lt;/a> command into a list of dictionaries. The output of the &lt;code>keytool -list -v&lt;/code> command looks something like this:&lt;/p>
 &lt;pre tabindex="0">&lt;code>Keystore type: PKCS12
 Keystore provider: SUN
 Your keystore contains 2 entries
@@ -2827,8 +2864,15 @@ the start of key data.&lt;/li>
 &lt;li>&lt;a href="https://github.com/larsks/blog-2019-04-25-filter-plugins">Playbook and filter plugin referenced in this article&lt;/a>&lt;/li>
 &lt;li>&lt;a href="https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html">Ansible &amp;ldquo;Filters&amp;rdquo; documentation&lt;/a>&lt;/li>
 &lt;li>&lt;a href="https://github.com/ansible/ansible/tree/devel/lib/ansible/plugins/filter">Existing filter plugins in Ansible&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>Using a TM1637 LED module with CircuitPython</title><link>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</link><pubDate>Thu, 03 May 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</guid><description>CircuitPython is &amp;ldquo;an education friendly open source derivative of MicroPython&amp;rdquo;. MicroPython is a port of Python to microcontroller environments; it can run on boards with very few resources such as the ESP8266. I&amp;rsquo;ve recently started experimenting with CircuitPython on a Wemos D1 mini, which is a small form-factor ESP8266 board.
-I had previously been using Mike Causer&amp;rsquo;s micropython-tm1637 for MicroPython to drive a 4 digit LED display. I was hoping to get the same code working under CircuitPython, but when I tried to build an image that included the tm1637 module I ran into:</description><content>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
+&lt;/ul></content></item><item><title>Using a TM1637 LED module with CircuitPython</title><link>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</link><pubDate>Thu, 03 May 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</guid><description>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>&amp;rdquo;. MicroPython is a port of Python to microcontroller
+environments; it can run on boards with very few resources such as the
+&lt;a href="https://en.wikipedia.org/wiki/ESP8266">ESP8266&lt;/a>. I&amp;rsquo;ve recently started experimenting with CircuitPython
+on a &lt;a href="https://wiki.wemos.cc/products:d1:d1_mini">Wemos D1 mini&lt;/a>, which is a small form-factor ESP8266 board.&lt;/p>
+&lt;p>I had previously been using Mike Causer&amp;rsquo;s &lt;a href="https://github.com/mcauser/micropython-tm1637/">micropython-tm1637&lt;/a> for
+MicroPython to drive a &lt;a href="http://a.co/gQVPtPr">4 digit LED display&lt;/a>. I was hoping to
+get the same code working under CircuitPython, but when I tried to
+build an image that included the &lt;code>tm1637&lt;/code> module I ran into:&lt;/p></description><content>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
 &lt;a href="https://micropython.org/">MicroPython&lt;/a>&amp;rdquo;. MicroPython is a port of Python to microcontroller
 environments; it can run on boards with very few resources such as the
 &lt;a href="https://en.wikipedia.org/wiki/ESP8266">ESP8266&lt;/a>. I&amp;rsquo;ve recently started experimenting with CircuitPython
@@ -2943,9 +2987,14 @@ are now able to drive our display:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/laH7HY-wlCk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>A Python interface to signalfd() using FFI</title><link>https://blog.oddbit.com/post/2013-11-28-a-python-interface-to-signalfd/</link><pubDate>Thu, 28 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-28-a-python-interface-to-signalfd/</guid><description>I just recently learned about the signalfd(2) system call, which was introduced to the Linux kernel back in 2007:
-signalfd() creates a file descriptor that can be used to accept signals targeted at the caller. This provides an alternative to the use of a signal handler or sigwaitinfo(2), and has the advantage that the file descriptor may be monitored by select(2), poll(2), and epoll(7).
-The traditional asynchronous delivery mechanism can be tricky to get right, whereas this provides a convenient fd interface that integrates nicely with your existing event-based code.</description><content>&lt;p>I just recently learned about the &lt;code>signalfd(2)&lt;/code> system call, which was
+&lt;/div></content></item><item><title>A Python interface to signalfd() using FFI</title><link>https://blog.oddbit.com/post/2013-11-28-a-python-interface-to-signalfd/</link><pubDate>Thu, 28 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-28-a-python-interface-to-signalfd/</guid><description>&lt;p>I just recently learned about the &lt;code>signalfd(2)&lt;/code> system call, which was
+introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/">back in 2007&lt;/a>:&lt;/p>
+&lt;blockquote>
+&lt;p>signalfd() creates a file descriptor that can be used to accept
+signals targeted at the caller. This provides an alternative to
+the use of a signal handler or sigwaitinfo(2), and has the
+advantage that the file descriptor may be monitored by select(2),
+poll(2), and epoll(7).&lt;/p></description><content>&lt;p>I just recently learned about the &lt;code>signalfd(2)&lt;/code> system call, which was
 introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/">back in 2007&lt;/a>:&lt;/p>
 &lt;blockquote>
 &lt;p>signalfd() creates a file descriptor that can be used to accept
@@ -3106,8 +3155,15 @@ and generating a &lt;code>KeyboardInterrupt&lt;/code> exception.&lt;/p>
 interface in my &lt;a href="https://github.com/larsks/python-signalfd">python-signalfd&lt;/a> repository on GitHub.&lt;/p>
 &lt;hr>
 &lt;p>&lt;a href="http://gabrbedd.wordpress.com/">Gabe&amp;rsquo;s Geek Log&lt;/a> has an &lt;a href="http://gabrbedd.wordpress.com/2013/07/29/handling-signals-with-signalfd/">article about signalfd&lt;/a> that is also
-worth reading.&lt;/p></content></item><item><title>Long polling with Javascript and Python</title><link>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</guid><description>In this post I&amp;rsquo;m going to step through an example web chat system implemented in Python (with Bottle and gevent) that uses long polling to implement a simple publish/subscribe mechanism for efficiently updating connected clients.
-My pubsub_example repository on GitHub has a complete project that implements the ideas discussed in this article. This project can be deployed directly on OpenShift if you want to try things out on your own. You can also try it out online at http://pubsub.</description><content>&lt;p>In this post I&amp;rsquo;m going to step through an example web chat system
+worth reading.&lt;/p></content></item><item><title>Long polling with Javascript and Python</title><link>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</guid><description>&lt;p>In this post I&amp;rsquo;m going to step through an example web chat system
+implemented in Python (with &lt;a href="http://bottlepy.org/docs/">Bottle&lt;/a> and &lt;a href="http://www.gevent.org/">gevent&lt;/a>) that uses long
+polling to implement a simple publish/subscribe mechanism for
+efficiently updating connected clients.&lt;/p>
+&lt;p>My &lt;a href="http://github.com/larsks/pusub_example/">pubsub_example&lt;/a> repository on &lt;a href="http://github.com/">GitHub&lt;/a> has a complete
+project that implements the ideas discussed in this article. This
+project can be deployed directly on &lt;a href="http://openshift.com/">OpenShift&lt;/a> if you want to try
+things out on your own. You can also try it out online at
+&lt;a href="http://pubsub.example.oddbit.com/">http://pubsub.example.oddbit.com/&lt;/a>.&lt;/p></description><content>&lt;p>In this post I&amp;rsquo;m going to step through an example web chat system
 implemented in Python (with &lt;a href="http://bottlepy.org/docs/">Bottle&lt;/a> and &lt;a href="http://www.gevent.org/">gevent&lt;/a>) that uses long
 polling to implement a simple publish/subscribe mechanism for
 efficiently updating connected clients.&lt;/p>
@@ -3438,8 +3494,13 @@ parts put together into a functioning project in the
 slightly more complete than the snippets presented in this article.&lt;/p>
 &lt;p>If you encounter any problems with the code (or this article), or if
 I&amp;rsquo;ve gotten something terribly wrong, please open a new issue
-&lt;a href="https://github.com/larsks/pubsub_example/issues">here&lt;/a>.&lt;/p></content></item><item><title>Interrupts on the PiFace</title><link>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</link><pubDate>Mon, 05 Aug 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</guid><description>I recently acquired both a Raspberry Pi and a PiFace IO board. I had a rough time finding examples of how to read the input ports via interrupts (rather than periodically polling for values), especially for the newer versions of the PiFace python libraries.
-After a little research, here&amp;rsquo;s some simple code that will print out pin names as you press the input buttons. Button 3 will cause the code to exit:</description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+&lt;a href="https://github.com/larsks/pubsub_example/issues">here&lt;/a>.&lt;/p></content></item><item><title>Interrupts on the PiFace</title><link>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</link><pubDate>Mon, 05 Aug 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</guid><description>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+I had a rough time finding examples of how to read the input ports via
+interrupts (rather than periodically polling for values), especially
+for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
+&lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
+will print out pin names as you press the input buttons. Button 3
+will cause the code to exit:&lt;/p></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
 I had a rough time finding examples of how to read the input ports via
 interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
@@ -3473,8 +3534,8 @@ while not quit:
 time.sleep(1)
 print 'you pressed button 3 (quitting)'
 listener.deactivate()
-&lt;/code>&lt;/pre></content></item><item><title>Python ctypes module</title><link>https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/</link><pubDate>Tue, 10 Aug 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/</guid><description>I just learned about the Python ctypes module, which is a Python module for interfacing with C code. Among other things, ctypes lets you call arbitrary functions in shared libraries. This is, from my perspective, some very cool magic. I thought I would provide a short example here, since it took me a little time to get everything working smoothly.
-For this example, we&amp;rsquo;ll write a wrapper for the standard statvfs(2) function:</description><content>&lt;p>I just learned about the Python &lt;code>ctypes&lt;/code> module, which is a Python module for interfacing with C code. Among other things, &lt;code>ctypes&lt;/code> lets you call arbitrary functions in shared libraries. This is, from my perspective, some very cool magic. I thought I would provide a short example here, since it took me a little time to get everything working smoothly.&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>Python ctypes module</title><link>https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/</link><pubDate>Tue, 10 Aug 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-08-10-python-ctypes-module/</guid><description>&lt;p>I just learned about the Python &lt;code>ctypes&lt;/code> module, which is a Python module for interfacing with C code. Among other things, &lt;code>ctypes&lt;/code> lets you call arbitrary functions in shared libraries. This is, from my perspective, some very cool magic. I thought I would provide a short example here, since it took me a little time to get everything working smoothly.&lt;/p>
+&lt;p>For this example, we&amp;rsquo;ll write a wrapper for the standard &lt;code>statvfs(2)&lt;/code> function:&lt;/p></description><content>&lt;p>I just learned about the Python &lt;code>ctypes&lt;/code> module, which is a Python module for interfacing with C code. Among other things, &lt;code>ctypes&lt;/code> lets you call arbitrary functions in shared libraries. This is, from my perspective, some very cool magic. I thought I would provide a short example here, since it took me a little time to get everything working smoothly.&lt;/p>
 &lt;p>For this example, we&amp;rsquo;ll write a wrapper for the standard &lt;code>statvfs(2)&lt;/code> function:&lt;/p>
 &lt;pre>&lt;code>SYNOPSIS
 #include &amp;lt;sys/statvfs.h&amp;gt;
@@ -3569,8 +3630,8 @@ f_fsid: 18446744071962486827
 f_flag: 4096
 f_namemax: 255
 __f_spare: &amp;lt;__main__.c_int_Array_6 object at 0x7f718fb6b3b0&amp;gt;
-&lt;/code>&lt;/pre></content></item><item><title>Retrieving Blogger posts by post id</title><link>https://blog.oddbit.com/post/2010-01-29-retrieving-blogger-posts-by-po/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-retrieving-blogger-posts-by-po/</guid><description>I spent some time recently trying to figure out, using Google&amp;rsquo;s gdata API, how to retrieve a post from a Blogger blog if I know corresponding post id. As far as I can tell there is no obvious way of doing this, at least not using the gdata.blogger.client api, but after much nashing of teeth I came up with the following solution.
-Given client, a gdata.blogger.client instance, and blog, a gdata.</description><content>&lt;p>I spent some time recently trying to figure out, using Google&amp;rsquo;s &lt;a href="http://code.google.com/apis/gdata/docs/2.0/basics.html">gdata&lt;/a> API, how to retrieve a post from a &lt;a href="http://www.blogger.com/">Blogger&lt;/a> blog if I know corresponding post id. As far as I can tell there is no obvious way of doing this, at least not using the gdata.blogger.client api, but after much nashing of teeth I came up with the following solution.&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>Retrieving Blogger posts by post id</title><link>https://blog.oddbit.com/post/2010-01-29-retrieving-blogger-posts-by-po/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-retrieving-blogger-posts-by-po/</guid><description>&lt;p>I spent some time recently trying to figure out, using Google&amp;rsquo;s &lt;a href="http://code.google.com/apis/gdata/docs/2.0/basics.html">gdata&lt;/a> API, how to retrieve a post from a &lt;a href="http://www.blogger.com/">Blogger&lt;/a> blog if I know corresponding post id. As far as I can tell there is no obvious way of doing this, at least not using the gdata.blogger.client api, but after much nashing of teeth I came up with the following solution.&lt;/p>
+&lt;p>Given client, a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.client.html">gdata.blogger.client&lt;/a> instance, and blog, a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.data.html">gdata.blogger.data.Blog&lt;/a> instance, the following code will return a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.data.html">gdata.blogger.data.BlogPost&lt;/a> instance:&lt;/p></description><content>&lt;p>I spent some time recently trying to figure out, using Google&amp;rsquo;s &lt;a href="http://code.google.com/apis/gdata/docs/2.0/basics.html">gdata&lt;/a> API, how to retrieve a post from a &lt;a href="http://www.blogger.com/">Blogger&lt;/a> blog if I know corresponding post id. As far as I can tell there is no obvious way of doing this, at least not using the gdata.blogger.client api, but after much nashing of teeth I came up with the following solution.&lt;/p>
 &lt;p>Given client, a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.client.html">gdata.blogger.client&lt;/a> instance, and blog, a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.data.html">gdata.blogger.data.Blog&lt;/a> instance, the following code will return a &lt;a href="http://gdata-python-client.googlecode.com/svn/trunk/pydocs/gdata.blogger.data.html">gdata.blogger.data.BlogPost&lt;/a> instance:&lt;/p>
 &lt;pre>&lt;code>post = client.get_feed(blog.get_post_link().href
 + '/%s' % post_id,

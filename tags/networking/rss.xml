@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networking on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networking/</link><description>Recent content in Networking on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networking/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>Last week, Oskar Stenberg asked on Unix &amp;amp; Linux if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;
-&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range 192.168.3.0/24, and similarly for communication in the other direction?</description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networking on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/networking/</link><description>Recent content in Networking on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/networking/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
+&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
+&lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p></description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
 &lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
 &lt;h2 id="setting-up-a-lab">Setting up a lab&lt;/h2>
@@ -203,13 +204,73 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/Kws98JNKcxE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>In this question, August Vrubel has some C code that sets up a tun interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at my answer because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.
-The original code looked like this:
-c original sendpacket.c #include &amp;lt;arpa/inet.h&amp;gt; #include &amp;lt;fcntl.</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
+&lt;/div></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="754639182" type="checkbox" />
-&lt;label for="754639182">
+&lt;input id="129875436" type="checkbox" />
+&lt;label for="129875436">
+&lt;span class="collapsable-code__language">c&lt;/span>
+&lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
+&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
+&lt;/label>
+&lt;pre class="language-c" >&lt;code>
+#include &amp;lt;arpa/inet.h&amp;gt;
+#include &amp;lt;fcntl.h&amp;gt;
+#include &amp;lt;linux/if.h&amp;gt;
+#include &amp;lt;linux/if_tun.h&amp;gt;
+#include &amp;lt;netinet/in.h&amp;gt;
+#include &amp;lt;poll.h&amp;gt;
+#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;string.h&amp;gt;
+#include &amp;lt;sys/ioctl.h&amp;gt;
+#include &amp;lt;sys/socket.h&amp;gt;
+#include &amp;lt;sys/stat.h&amp;gt;
+#include &amp;lt;sys/types.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+static int tunAlloc(void) {
+int fd;
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
+ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr);
+ioctl(fd, TUNSETOWNER, geteuid());
+return fd;
+}
+// this is a test
+static void bringInterfaceUp(void) {
+int sock;
+struct sockaddr_in addr = {.sin_family = AF_INET};
+struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
+inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
+memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
+sock = socket(AF_INET, SOCK_DGRAM, 0);
+ioctl(sock, SIOCSIFADDR, &amp;amp;ifr);
+ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr);
+ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr);
+close(sock);
+}
+static void emitPacket(int tap_fd) {
+unsigned char packet[] = {
+0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
+0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+write(tap_fd, packet, sizeof(packet));
+}
+int main() {
+int tap_fd;
+tap_fd = tunAlloc();
+bringInterfaceUp();
+emitPacket(tap_fd);
+close(tap_fd);
+return 0;
+}
+&lt;/code>&lt;/pr</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
+&lt;p>The original code looked like this:&lt;/p>
+&lt;div class="collapsable-code">
+&lt;input id="129875436" type="checkbox" />
+&lt;label for="129875436">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -272,8 +333,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="549318672" type="checkbox" />
-&lt;label for="549318672">
+&lt;input id="847231659" type="checkbox" />
+&lt;label for="847231659">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -483,8 +544,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="769352418" type="checkbox" />
-&lt;label for="769352418">
+&lt;input id="741832956" type="checkbox" />
+&lt;label for="741832956">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -562,7 +623,7 @@ printf(&amp;#34;all done&amp;#34;);
 return 0;
 }
 &lt;/code>&lt;/pre>
-&lt;/div></content></item><item><title>Setting up an IPv6 VLAN</title><link>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</link><pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</guid><description>My internet service provider (FIOS) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the Hurricane Electric tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to all systems in my house 1. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN.</description><content>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p>
+&lt;/div></content></item><item><title>Setting up an IPv6 VLAN</title><link>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</link><pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-16-home-ipv6-vlan/</guid><description>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p></description><content>&lt;p>My internet service provider (&lt;a href="https://www.verizon.com/home/fios/">FIOS&lt;/a>) doesn&amp;rsquo;t yet (sad face) offer IPv6 capable service, so I&amp;rsquo;ve set up an IPv6 tunnel using the &lt;a href="https://www.tunnelbroker.net/">Hurricane Electric&lt;/a> tunnel broker. I want to provide IPv6 connectivity to multiple systems in my house, but not to &lt;strong>all&lt;/strong> systems in my house &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. In order to meet those requirements, I&amp;rsquo;m going to set up the tunnel on the router, and then expose connectivity over an IPv6-only VLAN. In this post, we&amp;rsquo;ll walk through the steps necessary to set that up.&lt;/p>
 &lt;p>Parts of this post are going to be device specific: for example, I&amp;rsquo;m using a Ubiquiti &lt;a href="https://store.ui.com/collections/operator-edgemax-routers/products/edgerouter-x">EdgeRouter X&lt;/a> as my Internet router, so the tunnel setup is going to be specific to that device. The section about setting things up on my Linux desktop will be more generally applicable.&lt;/p>
 &lt;p>There are three major parts to this post:&lt;/p>
 &lt;ul>
@@ -587,26 +648,26 @@ my desktop and the router; you can probably skip this.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>Server IPv4 Address&lt;/td>
-&lt;td>209.51.161.14&lt;/td>
+&lt;td style="text-align: left">Server IPv4 Address&lt;/td>
+&lt;td style="text-align: left">209.51.161.14&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>Server IPv6 Address&lt;/td>
-&lt;td>2001:470:1236:1212::1/64&lt;/td>
+&lt;td style="text-align: left">Server IPv6 Address&lt;/td>
+&lt;td style="text-align: left">2001:470:1236:1212::1/64&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>Client IPv4 Address&lt;/td>
-&lt;td>1.2.3.4&lt;/td>
+&lt;td style="text-align: left">Client IPv4 Address&lt;/td>
+&lt;td style="text-align: left">1.2.3.4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>Client IPv6 Address&lt;/td>
-&lt;td>2001:470:1236:1212::2/64&lt;/td>
+&lt;td style="text-align: left">Client IPv6 Address&lt;/td>
+&lt;td style="text-align: left">2001:470:1236:1212::2/64&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -614,14 +675,14 @@ my desktop and the router; you can probably skip this.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>&lt;/th>
-&lt;th>&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
+&lt;th style="text-align: left">&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>Routed /64&lt;/td>
-&lt;td>2001:470:1237:1212::/64&lt;/td>
+&lt;td style="text-align: left">Routed /64&lt;/td>
+&lt;td style="text-align: left">2001:470:1237:1212::/64&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -763,9 +824,18 @@ default via fe80::7a8a:20ff:febb:5db dev vlan10 proto ra metric 404 pref medium
 &lt;p>Some services (Netflix is a notable example) block access over the IPv6 tunnels because it breaks their geolocation process and prevents them from determining your country of origin. I don&amp;rsquo;t want to break things for other folks in my house just because I want to play with IPv6.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/div></content></item><item><title>Creating a VXLAN overlay network with Open vSwitch</title><link>https://blog.oddbit.com/post/2021-04-17-vm-ovs-vxlan/</link><pubDate>Sat, 17 Apr 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-04-17-vm-ovs-vxlan/</guid><description>In this post, we&amp;rsquo;ll walk through the process of getting virtual machines on two different hosts to communicate over an overlay network created using the support for VXLAN in Open vSwitch (or OVS).
-The test environment For this post, I&amp;rsquo;ll be working with two systems:
-node0.ovs.virt at address 192.168.122.107 node1.ovs.virt at address 192.168.122.174 These hosts are running CentOS 8, although once we get past the package installs the instructions will be similar for other distributions.</description><content>&lt;p>In this post, we&amp;rsquo;ll walk through the process of getting virtual
+&lt;/div></content></item><item><title>Creating a VXLAN overlay network with Open vSwitch</title><link>https://blog.oddbit.com/post/2021-04-17-vm-ovs-vxlan/</link><pubDate>Sat, 17 Apr 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-04-17-vm-ovs-vxlan/</guid><description>&lt;p>In this post, we&amp;rsquo;ll walk through the process of getting virtual
+machines on two different hosts to communicate over an overlay network
+created using the support for VXLAN in &lt;a href="https://www.openvswitch.org/">Open vSwitch&lt;/a> (or OVS).&lt;/p>
+&lt;h2 id="the-test-environment">The test environment&lt;/h2>
+&lt;p>For this post, I&amp;rsquo;ll be working with two systems:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>node0.ovs.virt&lt;/code> at address 192.168.122.107&lt;/li>
+&lt;li>&lt;code>node1.ovs.virt&lt;/code> at address 192.168.122.174&lt;/li>
+&lt;/ul>
+&lt;p>These hosts are running CentOS 8, although once we get past the
+package installs the instructions will be similar for other
+distributions.&lt;/p></description><content>&lt;p>In this post, we&amp;rsquo;ll walk through the process of getting virtual
 machines on two different hosts to communicate over an overlay network
 created using the support for VXLAN in &lt;a href="https://www.openvswitch.org/">Open vSwitch&lt;/a> (or OVS).&lt;/p>
 &lt;h2 id="the-test-environment">The test environment&lt;/h2>
@@ -992,8 +1062,29 @@ this &amp;ldquo;for real&amp;rdquo;, you would probably want to make a number of
 for example, the network configuration we&amp;rsquo;ve applied in many cases
 will not persist across a reboot; handling persistent network
 configuration is still very distribution dependent, so I&amp;rsquo;ve left it
-out of this post.&lt;/p></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</guid><description>This is the second in a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll be taking a look at how to expose services on a virtual machine once you&amp;rsquo;ve git it up and running.
-TL;DR Overview Connectivity options Direct attachment Using an OpenShift Service Exposing services on NodePorts Exposing services on cluster external IPso Exposing services using a LoadBalancer TL;DR Networking seems to be a weak area for CNV right now.</description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+out of this post.&lt;/p></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</guid><description>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
+at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
+and running.&lt;/p>
+&lt;nav id="TableOfContents">
+&lt;ul>
+&lt;li>&lt;a href="#tldr">TL;DR&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#overview">Overview&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#connectivity-options">Connectivity options&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#direct-attachment">Direct attachment&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#exposing-services-on-nodeports">Exposing services on NodePorts&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-on-cluster-external-ipso">Exposing services on cluster external IPso&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-using-a-loadbalancer">Exposing services using a LoadBalancer&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/nav>
+&lt;h2 id="tldr">TL;DR&lt;/h2>
+&lt;p>Networking seems to be a weak area for CNV right now. Out of the box,
+your options for exposing a service on a virtual machine on a public
+address at a well known port are slim.&lt;/p></description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
 with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
 at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
 and running.&lt;/p>
@@ -1231,7 +1322,7 @@ at:&lt;/p>
 &lt;li>&lt;a href="https://metallb.universe.tf/">metallb&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;p>I hope we see an integrated LoadBalancer mechanism available for OpenShift on
-baremetal in a near-future release.&lt;/p></content></item><item><title>Configuring Open vSwitch with nmcli</title><link>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</link><pubDate>Sat, 15 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</guid><description>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy /etc/sysconfig/network-scripts scripts or rolling my own set of services. These are my notes in case I ever have to do this again.</description><content>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p>
+baremetal in a near-future release.&lt;/p></content></item><item><title>Configuring Open vSwitch with nmcli</title><link>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</link><pubDate>Sat, 15 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</guid><description>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p></description><content>&lt;p>I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code>/etc/sysconfig/network-scripts&lt;/code> scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p>
 &lt;p>First, we need the openvswitch plugin for NetworkManager:&lt;/p>
 &lt;pre tabindex="0">&lt;code>yum install NetworkManager-ovs
 &lt;/code>&lt;/pre>&lt;p>Without the plugin, &lt;code>nmcli&lt;/code> will happily accept all your configuration commands, but you&amp;rsquo;ll get an error when you try to bring an interface up.&lt;/p>
@@ -1274,7 +1365,8 @@ nmcli c add type ovs-port conn.interface vlan101 master br-house ovs-port.tag 10
 nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan101 master ovs-port-vlan101 con-name ovs-if-vlan101 ipv4.method static ipv4.address 192.168.11.1/24
 nmcli c add type ovs-port conn.interface vlan102 master br-house ovs-port.tag 102 con-name ovs-port-vlan102
 nmcli c add type ovs-interface slave-type ovs-port conn.interface vlan102 master ovs-port-vlan102 con-name ovs-if-vlan102 ipv4.method static ipv4.address 192.168.13.1/24
-&lt;/code>&lt;/pre></content></item><item><title>OVN and DHCP: A minimal example</title><link>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</guid><description>Introduction A long time ago, I wrote an article all about OpenStack Neutron (which at that time was called Quantum). That served as an excellent reference for a number of years, but if you&amp;rsquo;ve deployed a recent version of OpenStack you may have noticed that the network architecture looks completely different. The network namespaces previously used to implement routers and dhcp servers are gone (along with iptables rules and other features), and have been replaced by OVN (&amp;ldquo;Open Virtual Network&amp;rdquo;).</description><content>&lt;h1 id="introduction">Introduction&lt;/h1>
+&lt;/code>&lt;/pre></content></item><item><title>OVN and DHCP: A minimal example</title><link>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</guid><description>&lt;h1 id="introduction">Introduction&lt;/h1>
+&lt;p>A long time ago, I wrote an article &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">all about OpenStack Neutron&lt;/a> (which at that time was called Quantum). That served as an excellent reference for a number of years, but if you&amp;rsquo;ve deployed a recent version of OpenStack you may have noticed that the network architecture looks completely different. The network namespaces previously used to implement routers and dhcp servers are gone (along with iptables rules and other features), and have been replaced by OVN (&amp;ldquo;Open Virtual Network&amp;rdquo;). What is OVN? How does it work? In this article, I&amp;rsquo;d like to explore a minimal OVN installation to help answer these questions.&lt;/p></description><content>&lt;h1 id="introduction">Introduction&lt;/h1>
 &lt;p>A long time ago, I wrote an article &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">all about OpenStack Neutron&lt;/a> (which at that time was called Quantum). That served as an excellent reference for a number of years, but if you&amp;rsquo;ve deployed a recent version of OpenStack you may have noticed that the network architecture looks completely different. The network namespaces previously used to implement routers and dhcp servers are gone (along with iptables rules and other features), and have been replaced by OVN (&amp;ldquo;Open Virtual Network&amp;rdquo;). What is OVN? How does it work? In this article, I&amp;rsquo;d like to explore a minimal OVN installation to help answer these questions.&lt;/p>
 &lt;h2 id="goals">Goals&lt;/h2>
 &lt;p>We&amp;rsquo;re going to create a single OVN logical switch to which we will attach a few ports. We will demonstrate how we can realize a port on a physical node and configure it using DHCP, using a virtual DHCP server provided by OVN.&lt;/p>
@@ -1300,26 +1392,26 @@ overlays and security groups.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>Name&lt;/th>
-&lt;th>MAC address&lt;/th>
-&lt;th>IP address&lt;/th>
+&lt;th style="text-align: left">Name&lt;/th>
+&lt;th style="text-align: left">MAC address&lt;/th>
+&lt;th style="text-align: left">IP address&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>ovn0&lt;/td>
-&lt;td>de:ca:ff:00:00:64&lt;/td>
-&lt;td>192.168.122.100&lt;/td>
+&lt;td style="text-align: left">ovn0&lt;/td>
+&lt;td style="text-align: left">de:ca:ff:00:00:64&lt;/td>
+&lt;td style="text-align: left">192.168.122.100&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>ovn1&lt;/td>
-&lt;td>de:ca:ff:00:00:65&lt;/td>
-&lt;td>192.168.122.101&lt;/td>
+&lt;td style="text-align: left">ovn1&lt;/td>
+&lt;td style="text-align: left">de:ca:ff:00:00:65&lt;/td>
+&lt;td style="text-align: left">192.168.122.101&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>ovn2&lt;/td>
-&lt;td>de:ca:ff:00:00:66&lt;/td>
-&lt;td>192.168.122.102&lt;/td>
+&lt;td style="text-align: left">ovn2&lt;/td>
+&lt;td style="text-align: left">de:ca:ff:00:00:66&lt;/td>
+&lt;td style="text-align: left">192.168.122.102&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -1423,22 +1515,22 @@ options=&amp;#39;&amp;#34;lease_time&amp;#34;=&amp;#34;3600&amp;#34; &amp;#34;ro
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>Name&lt;/th>
-&lt;th>MAC Address&lt;/th>
+&lt;th style="text-align: left">Name&lt;/th>
+&lt;th style="text-align: left">MAC Address&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>port1&lt;/td>
-&lt;td>c0:ff:ee:00:00:11&lt;/td>
+&lt;td style="text-align: left">port1&lt;/td>
+&lt;td style="text-align: left">c0:ff:ee:00:00:11&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>port2&lt;/td>
-&lt;td>c0:ff:ee:00:00:12&lt;/td>
+&lt;td style="text-align: left">port2&lt;/td>
+&lt;td style="text-align: left">c0:ff:ee:00:00:12&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>port3&lt;/td>
-&lt;td>c0:ff:ee:00:00:13&lt;/td>
+&lt;td style="text-align: left">port3&lt;/td>
+&lt;td style="text-align: left">c0:ff:ee:00:00:13&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -1688,11 +1780,22 @@ rtt min/avg/max/mdev = 0.266/0.266/0.266/0.000 ms
 &lt;li>&lt;a href="https://developers.redhat.com/blog/2018/09/27/dynamic-ip-address-management-in-open-virtual-network-ovn-part-two/">Dynamic IP address management in Open Virtual Network (OVN): Part Two&lt;/a>&lt;/li>
 &lt;li>&lt;a href="https://qyx.me/2018/07/10/run-and-test-ovn/">Run Open Virtual Network (OVN) in Ubuntu&lt;/a>&lt;/li>
 &lt;li>&lt;a href="http://dani.foroselectronica.es/simple-ovn-setup-in-5-minutes-491/">Simple OVN setup in 5 minutes&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>Configuring a static address for wlan0 on Raspbian Stretch</title><link>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</link><pubDate>Thu, 14 Jun 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</guid><description>Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
-First, disable dhcpcd and wpa_supplicant.
-systemctl disable --now dhdpcd wpa_supplicant You will need a wpa_supplicant configuration for wlan0 in /etc/wpa_supplicant/wpa_supplicant-wlan0.conf.
-If you already have an appropriate configuration in /etc/wpa_supplicant/wpa_supplicant.conf, you can just symlink the file:
-cd /etc/wpa_supplicant ln -s wpa_supplicant.</description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+&lt;/ul></content></item><item><title>Configuring a static address for wlan0 on Raspbian Stretch</title><link>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</link><pubDate>Thu, 14 Jun 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</guid><description>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+manage both dynamic and static interface configuration. If you would
+prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
+instead, follow these steps.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>First, disable &lt;code>dhcpcd&lt;/code> and &lt;code>wpa_supplicant&lt;/code>.&lt;/p>
+&lt;pre>&lt;code> systemctl disable --now dhdpcd wpa_supplicant
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>You will need a &lt;code>wpa_supplicant&lt;/code> configuration for &lt;code>wlan0&lt;/code> in
+&lt;code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf&lt;/code>.&lt;/p>
+&lt;p>If you already have an appropriate configuration in
+&lt;code>/etc/wpa_supplicant/wpa_supplicant.conf&lt;/code>, you can just symlink the
+file:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
 manage both dynamic and static interface configuration. If you would
 prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
 instead, follow these steps.&lt;/p>
@@ -1743,7 +1846,13 @@ inet6 fe80::2e1:b0ff:fe67:9867/64 scope link
 valid_lft forever preferred_lft forever
 &lt;/code>&lt;/pre>
 &lt;/li>
-&lt;/ol></content></item><item><title>Using Docker macvlan networks</title><link>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</link><pubDate>Mon, 12 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</guid><description>A question that crops up regularly on #docker is &amp;ldquo;How do I attach a container directly to my local network?&amp;rdquo; One possible answer to that question is the macvlan network type, which lets you create &amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach containers directly to your local network. For the most part it works great, but it does come with some minor caveats and limitations.</description><content>&lt;p>A question that crops up regularly on &lt;a href="https://docs.docker.com/opensource/ways/#docker-users">#docker&lt;/a> is &amp;ldquo;How do I attach
+&lt;/ol></content></item><item><title>Using Docker macvlan networks</title><link>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</link><pubDate>Mon, 12 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/</guid><description>&lt;p>A question that crops up regularly on &lt;a href="https://docs.docker.com/opensource/ways/#docker-users">#docker&lt;/a> is &amp;ldquo;How do I attach
+a container directly to my local network?&amp;rdquo; One possible answer to that
+question is the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan&lt;/a> network type, which lets you create
+&amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach
+containers directly to your local network. For the most part it works
+great, but it does come with some minor caveats and limitations. I
+would like to explore those here.&lt;/p></description><content>&lt;p>A question that crops up regularly on &lt;a href="https://docs.docker.com/opensource/ways/#docker-users">#docker&lt;/a> is &amp;ldquo;How do I attach
 a container directly to my local network?&amp;rdquo; One possible answer to that
 question is the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan&lt;/a> network type, which lets you create
 &amp;ldquo;clones&amp;rdquo; of a physical interface on your host and use that to attach
@@ -1840,8 +1949,17 @@ of the local network; we just add a route to that range like this:&lt;/p>
 &lt;code>mynet&lt;/code> network.&lt;/p>
 &lt;p>Note that the interface and routing configuration presented here is
 not persistent &amp;ndash; you will lose if if you were to reboot your host.
-How to make it persistent is distribution dependent.&lt;/p></content></item><item><title>Listening for connections on all ports/any port</title><link>https://blog.oddbit.com/post/2018-02-27-listening-for-connections-on-a/</link><pubDate>Tue, 27 Feb 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-02-27-listening-for-connections-on-a/</guid><description>On IRC &amp;ndash; and other online communities &amp;ndash; it is common to use a &amp;ldquo;pastebin&amp;rdquo; service to share snippets of code, logs, and other material, rather than pasting them directly into a conversation. These services will typically return a URL that you can share with others so that they can see the content in their browser.
-One of my favorite pastebin services is termbin.com, because it works from the command line using tools you probably already have installed.</description><content>&lt;p>On &lt;a href="https://en.wikipedia.org/wiki/Internet_Relay_Chat">IRC&lt;/a> &amp;ndash; and other online communities &amp;ndash; it is common to use a
+How to make it persistent is distribution dependent.&lt;/p></content></item><item><title>Listening for connections on all ports/any port</title><link>https://blog.oddbit.com/post/2018-02-27-listening-for-connections-on-a/</link><pubDate>Tue, 27 Feb 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-02-27-listening-for-connections-on-a/</guid><description>&lt;p>On &lt;a href="https://en.wikipedia.org/wiki/Internet_Relay_Chat">IRC&lt;/a> &amp;ndash; and other online communities &amp;ndash; it is common to use a
+&amp;ldquo;pastebin&amp;rdquo; service to share snippets of code, logs, and other
+material, rather than pasting them directly into a conversation.
+These services will typically return a URL that you can share with
+others so that they can see the content in their browser.&lt;/p>
+&lt;p>One of my favorite pastebin services is &lt;a href="http://termbin.com">termbin.com&lt;/a>, because it
+works from the command line using tools you probably already have
+installed. Termbin runs the &lt;a href="https://github.com/solusipse/fiche">fiche&lt;/a> service, which listens for TCP
+connections on port 9999, reads any content that you provide, and then
+returns a URL. For example, if I wanted to share my &lt;code>iptables&lt;/code>
+configuration with someone I could just run:&lt;/p></description><content>&lt;p>On &lt;a href="https://en.wikipedia.org/wiki/Internet_Relay_Chat">IRC&lt;/a> &amp;ndash; and other online communities &amp;ndash; it is common to use a
 &amp;ldquo;pastebin&amp;rdquo; service to share snippets of code, logs, and other
 material, rather than pasting them directly into a conversation.
 These services will typically return a URL that you can share with
@@ -1907,8 +2025,13 @@ http://example.com/u4fq
 &lt;p>This solution will work with any TCP service. The service will need
 to be listening on &lt;code>INADDR_ANY&lt;/code> (&lt;code>0.0.0.0&lt;/code>), because the &lt;code>REDIRECT&lt;/code>
 rule rewrites the destination address to &amp;ldquo;the primary address of the
-incoming interface&amp;rdquo;.&lt;/p></content></item><item><title>Provider external networks (in an appropriate amount of detail)</title><link>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</link><pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</guid><description>In Quantum in Too Much Detail, I discussed the architecture of a Neutron deployment in detail. Since that article was published, Neutron gained the ability to handle multiple external networks with a single L3 agent. While I wrote about that back in 2014, I covered the configuration side of it in much more detail than I discussed the underlying network architecture. This post addresses the architecture side.
-The players This document describes the architecture that results from a particular OpenStack configuration, specifically:</description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+incoming interface&amp;rdquo;.&lt;/p></content></item><item><title>Provider external networks (in an appropriate amount of detail)</title><link>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</link><pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/</guid><description>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+Neutron deployment in detail. Since that article was published,
+Neutron gained the ability to handle multiple external networks with a
+single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
+covered the configuration side of it in much more detail than I
+discussed the underlying network architecture. This post addresses
+the architecture side.&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
 Neutron deployment in detail. Since that article was published,
 Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
@@ -2129,8 +2252,21 @@ cookie=0x0, duration=3840.085s, table=0, n_packets=26, n_bytes=1980, idle_age=37
 &lt;p>We can see that the second rule here will patch traffic on VLAN 1
 (&lt;code>priority=4,in_port=3,dl_vlan=1&lt;/code>) and strip the VLAN tag, after which
 the packet will be delivered to any other interfaces attached to this
-bridge.&lt;/p></content></item><item><title>Docker networking with dedicated network containers</title><link>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</link><pubDate>Mon, 06 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</guid><description>The current version of Docker has a very limited set of networking options:
-bridge &amp;ndash; connect a container to the Docker bridge host &amp;ndash; run the container in the global network namespace container:xxx &amp;ndash; connect a container to the network namespace of another container none &amp;ndash; do not configure any networking If you need something more than that, you can use a tool like pipework to provision additional network interfaces inside the container, but this leads to a synchronization problem: pipework can only be used after your container is running.</description><content>&lt;p>The current version of Docker has a very limited set of networking
+bridge.&lt;/p></content></item><item><title>Docker networking with dedicated network containers</title><link>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</link><pubDate>Mon, 06 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-06-docker-networking-with-dedicat/</guid><description>&lt;p>The current version of Docker has a very limited set of networking
+options:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>bridge&lt;/code> &amp;ndash; connect a container to the Docker bridge&lt;/li>
+&lt;li>&lt;code>host&lt;/code> &amp;ndash; run the container in the global network namespace&lt;/li>
+&lt;li>&lt;code>container:xxx&lt;/code> &amp;ndash; connect a container to the network namespace of
+another container&lt;/li>
+&lt;li>&lt;code>none&lt;/code> &amp;ndash; do not configure any networking&lt;/li>
+&lt;/ul>
+&lt;p>If you need something more than that, you can use a tool like
+&lt;a href="https://github.com/jpetazzo/pipework">pipework&lt;/a> to provision additional network interfaces inside the
+container, but this leads to a synchronization problem: &lt;code>pipework&lt;/code> can
+only be used after your container is running. This means that when
+starting your container, you must have logic that will wait until the
+necessary networking is available before starting your service.&lt;/p></description><content>&lt;p>The current version of Docker has a very limited set of networking
 options:&lt;/p>
 &lt;ul>
 &lt;li>&lt;code>bridge&lt;/code> &amp;ndash; connect a container to the Docker bridge&lt;/li>
@@ -2176,8 +2312,17 @@ in place when the service starts.&lt;/p>
 accomplish largely the same thing without requiring the separate
 networking container (by permitting you to pre-configure a network
 namespace and then pass that to docker using something like
-&lt;code>--net=netns:&amp;lt;name-of-network-namespace&amp;gt;&lt;/code>).&lt;/p></content></item><item><title>Four ways to connect a docker container to a local network</title><link>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</link><pubDate>Mon, 11 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</guid><description>Update (2018-03-22) Since I wrote this document back in 2014, Docker has developed the macvlan network driver. That gives you a supported mechanism for direct connectivity to a local layer 2 network. I&amp;rsquo;ve written an article about working with the macvlan driver.
-This article discusses four ways to make a Docker container appear on a local network. These are not suggested as practical solutions, but are meant to illustrate some of the underlying network technology available in Linux.</description><content>&lt;p>&lt;strong>Update (2018-03-22)&lt;/strong> Since I wrote this document back in 2014,
+&lt;code>--net=netns:&amp;lt;name-of-network-namespace&amp;gt;&lt;/code>).&lt;/p></content></item><item><title>Four ways to connect a docker container to a local network</title><link>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</link><pubDate>Mon, 11 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-11-four-ways-to-connect-a-docker/</guid><description>&lt;p>&lt;strong>Update (2018-03-22)&lt;/strong> Since I wrote this document back in 2014,
+Docker has developed the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan network
+driver&lt;/a>. That gives you a
+&lt;em>supported&lt;/em> mechanism for direct connectivity to a local layer 2
+network. I&amp;rsquo;ve &lt;a href="https://blog.oddbit.com/2018/03/12/using-docker-macvlan-networks/">written an article about working with the macvlan
+driver&lt;/a>.&lt;/p>
+&lt;hr>
+&lt;p>This article discusses four ways to make a Docker container appear on
+a local network. These are not suggested as practical solutions, but
+are meant to illustrate some of the underlying network technology
+available in Linux.&lt;/p></description><content>&lt;p>&lt;strong>Update (2018-03-22)&lt;/strong> Since I wrote this document back in 2014,
 Docker has developed the &lt;a href="https://docs.docker.com/network/macvlan/">macvlan network
 driver&lt;/a>. That gives you a
 &lt;em>supported&lt;/em> mechanism for direct connectivity to a local layer 2
@@ -2463,9 +2608,14 @@ up routes to your containers via that interface:&lt;/p>
 &lt;pre>&lt;code># ip link add em1p1 link em1 type macvlan mode bridge
 # ip addr add 10.12.6.144/21 dev em1p1
 # ip route add 10.12.0.117 dev em1p1
-&lt;/code>&lt;/pre></content></item><item><title>Booting an instance with multiple fixed addresses</title><link>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</guid><description>This article expands on my answer to Add multiple specific IPs to instance, a question posted to ask.openstack.org.
-In order to serve out SSL services from an OpenStack instance, you will generally want one local ip address for each SSL virtual host you support. It is possible to create an instance with multiple fixed addresses, but there are a few complications to watch out for.
-Assumptions This article assumes that the following resources exist:</description><content>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
+&lt;/code>&lt;/pre></content></item><item><title>Booting an instance with multiple fixed addresses</title><link>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</guid><description>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
+instance&lt;/a>, a question posted to &lt;a href="https://ask.openstack.org/">ask.openstack.org&lt;/a>.&lt;/p>
+&lt;p>In order to serve out SSL services from an OpenStack instance, you
+will generally want one local ip address for each SSL virtual host you
+support. It is possible to create an instance with multiple fixed
+addresses, but there are a few complications to watch out for.&lt;/p>
+&lt;h1 id="assumptions">Assumptions&lt;/h1>
+&lt;p>This article assumes that the following resources exist:&lt;/p></description><content>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
 instance&lt;/a>, a question posted to &lt;a href="https://ask.openstack.org/">ask.openstack.org&lt;/a>.&lt;/p>
 &lt;p>In order to serve out SSL services from an OpenStack instance, you
 will generally want one local ip address for each SSL virtual host you
@@ -2600,9 +2750,15 @@ inet 10.0.0.18/24 brd 10.0.0.255 scope global eth0
 valid_lft forever preferred_lft forever
 inet 10.0.0.19/24 brd 10.0.0.255 scope global secondary eth0:0
 valid_lft forever ...
-&lt;/code>&lt;/pre></content></item><item><title>Multiple external networks with a single L3 agent</title><link>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</guid><description>In the old days (so, like, last year), Neutron supported a single external network per L3 agent. You would run something like this&amp;hellip;
-$ neutron net-create external --router:external=true &amp;hellip;and neutron would map this to the bridge defined in external_network_bridge in /etc/neutron/l3_agent.ini. If you wanted to support more than a single external network, you would need to run multiple L3 agents, each with a unique value for external_network_bridge.
-There is now a better option available.</description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
+&lt;/code>&lt;/pre></content></item><item><title>Multiple external networks with a single L3 agent</title><link>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/</guid><description>&lt;p>In the old days (so, like, last year), Neutron supported a single
+external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
+&lt;pre>&lt;code>$ neutron net-create external --router:external=true
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;and neutron would map this to the bridge defined in
+&lt;code>external_network_bridge&lt;/code> in &lt;code>/etc/neutron/l3_agent.ini&lt;/code>. If you
+wanted to support more than a single external network, you would need
+to run multiple L3 agents, each with a unique value for
+&lt;code>external_network_bridge&lt;/code>.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
 external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
 &lt;pre>&lt;code>$ neutron net-create external --router:external=true
 &lt;/code>&lt;/pre>
@@ -2792,13 +2948,24 @@ $ neutron subnet-create --disable-dhcp external2 10.2.0.0/24
 &lt;code>10.1.0.0/24&lt;/code> and &lt;code>eth2&lt;/code> is connected to a network using
 &lt;code>10.2.0.0/24&lt;/code>, and that each network has a gateway sitting at the
 corresponding &lt;code>.1&lt;/code> address.&lt;/p>
-&lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to set up the external bridge (br-ex) on a single-interface system:</description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
+&lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>Normally I like to post solutions, but today&amp;rsquo;s post is about a vexing problem to which I have not been able to find a solution.
-This started as a simple attempt to set up external connectivity on an all-in-one Icehouse install deployed on an OpenStack instance. I wanted to add eth0 to br-ex in order to model a typical method for providing external connectivity, but I ran into a very odd problem: the system would boot and work fine for a few seconds, but would then promptly lose network connectivity.</description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
+&lt;/div></description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
+set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
+vexing problem to which I have not been able to find a solution.&lt;/p>
+&lt;p>This started as a simple attempt to set up external connectivity on
+an all-in-one Icehouse install deployed on an OpenStack instance. I
+wanted to add &lt;code>eth0&lt;/code> to &lt;code>br-ex&lt;/code> in order to model a typical method for
+providing external connectivity, but I ran into a very odd problem:
+the system would boot and work fine for a few seconds, but would then
+promptly lose network connectivity.&lt;/p></description><content>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
 vexing problem to which I have not been able to find a solution.&lt;/p>
 &lt;p>This started as a simple attempt to set up external connectivity on
 an all-in-one Icehouse install deployed on an OpenStack instance. I
@@ -2865,10 +3032,22 @@ unrelated switch) will cause the same behavior.&lt;/p>
 &lt;p>I&amp;rsquo;ve seen this behavior on both versions &lt;code>1.11.0&lt;/code> and &lt;code>2.0.1&lt;/code>.&lt;/p>
 &lt;p>So far everyone I&amp;rsquo;ve asked about this behavior has been stumped. If I
 am able to figure out what&amp;rsquo;s going on I will update this post. Thanks
-for reading!&lt;/p></content></item><item><title>Solved: Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</guid><description>In my previous post I discussed a problem I was having setting a persistent MAC address on an OVS bridge device. It looks like the short answer is, &amp;ldquo;don&amp;rsquo;t use ip link set ...&amp;rdquo; for this purpose.
-You can set the bridge MAC address via ovs-vsctl like this:
-ovs-vsctl set bridge br-ex other-config:hwaddr=$MACADDR So I&amp;rsquo;ve updated my ifconfig-br-ex to look like this:
-DEVICE=br-ex DEVICETYPE=ovs TYPE=OVSBridge ONBOOT=yes OVSBOOTPROTO=dhcp OVSDHCPINTERFACES=eth0 MACADDR=fa:16:3e:ef:91:ec OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot; The OVS_EXTRA parameter gets passed to the add-br call like this:</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+for reading!&lt;/p></content></item><item><title>Solved: Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-solved-open-vswitch-and-persis/</guid><description>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+persistent MAC address on an OVS bridge device. It looks like the
+short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
+&lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
+&lt;pre>&lt;code>ovs-vsctl set bridge br-ex other-config:hwaddr=$MACADDR
+&lt;/code>&lt;/pre>
+&lt;p>So I&amp;rsquo;ve updated my &lt;code>ifconfig-br-ex&lt;/code> to look like this:&lt;/p>
+&lt;pre>&lt;code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+ONBOOT=yes
+OVSBOOTPROTO=dhcp
+OVSDHCPINTERFACES=eth0
+MACADDR=fa:16:3e:ef:91:ec
+OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
+&lt;/code>&lt;/pr</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
 persistent MAC address on an OVS bridge device. It looks like the
 short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
 &lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
@@ -2887,9 +3066,13 @@ OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
 &lt;p>The &lt;code>OVS_EXTRA&lt;/code> parameter gets passed to the &lt;code>add-br&lt;/code> call like this:&lt;/p>
 &lt;pre>&lt;code>ovs-vsctl --may-exist add-br br-ex -- set bridge br-ex other-config:hwaddr=$MACADDR
 &lt;/code>&lt;/pre>
-&lt;p>And unlike using &lt;code>ip link set&lt;/code>, this seems to stick.&lt;/p></content></item><item><title>Fedora and OVS Bridge Interfaces</title><link>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</guid><description>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious problem with OVS bridge interfaces under both F19 and F20. My OpenStack environment relies on an OVS bridge device named br-ex for external connectivity and for making services available to OpenStack instances, but after rebooting, br-ex was consistently unconfigured, which caused a variety of problems.
-This is the network configuration file for br-ex on my system:
-DEVICE=br-ex DEVICETYPE=ovs TYPE=OVSBridge BOOTPROT=static IPADDR=192.</description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+&lt;p>And unlike using &lt;code>ip link set&lt;/code>, this seems to stick.&lt;/p></content></item><item><title>Fedora and OVS Bridge Interfaces</title><link>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-fedora-and-ovs-bridge-interfac/</guid><description>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+problem with OVS bridge interfaces under both F19 and F20. My
+OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
+external connectivity and for making services available to OpenStack
+instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
+which caused a variety of problems.&lt;/p>
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack
@@ -2965,9 +3148,16 @@ fi
 fi
 &lt;/code>&lt;/pre>
 &lt;p>With this change in place, &lt;code>br-ex&lt;/code> is correctly configured after a
-reboot.&lt;/p></content></item><item><title>Firewalld, NetworkManager, and OpenStack</title><link>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</guid><description>These are my notes on making OpenStack play well with firewalld and NetworkManager.
-NetworkManager By default, NetworkManager attempts to start a DHCP client on every new available interface. Since booting a single instance in OpenStack can result in the creation of several virtual interfaces, this results in a lot of:
-May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt; Activation (qvb512640bd-ee) starting connection 'Wired connection 2' You can disable this behavior by adding the following to /etc/NetworkManager/NetworkManager.</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+reboot.&lt;/p></content></item><item><title>Firewalld, NetworkManager, and OpenStack</title><link>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</link><pubDate>Tue, 20 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-20-firewalld-and-openstack/</guid><description>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
+&lt;h2 id="networkmanager">NetworkManager&lt;/h2>
+&lt;p>By default, NetworkManager attempts to start a DHCP client on every
+new available interface. Since booting a single instance in OpenStack
+can result in the creation of several virtual interfaces, this results
+in a lot of:&lt;/p>
+&lt;pre>&lt;code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt;
+Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
+&lt;/code>&lt;/pr</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
 and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
 &lt;h2 id="networkmanager">NetworkManager&lt;/h2>
 &lt;p>By default, NetworkManager attempts to start a DHCP client on every
@@ -3038,9 +3228,19 @@ public
 interfaces: int-br-ex phy-br-ex qvb58cc67ca-06 qvo58cc67ca-06
 # firewall-cmd --zone openstack --list-services
 dns
-&lt;/code>&lt;/pre></content></item><item><title>Visualizing Neutron Networking with GraphViz</title><link>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</link><pubDate>Mon, 23 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</guid><description>I&amp;rsquo;ve put together a few tools to help gather information about your Neutron and network configuration and visualize it in different ways. All of these tools are available as part of my neutron-diag repository on GitHub.
-In this post I&amp;rsquo;m going to look at a tool that will help you visualize the connectivity of network devices on your system.
-mk-network-dot There are a lot of devices involved in your Neutron network configuration.</description><content>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
+&lt;/code>&lt;/pre></content></item><item><title>Visualizing Neutron Networking with GraphViz</title><link>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</link><pubDate>Mon, 23 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/</guid><description>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
+Neutron and network configuration and visualize it in different ways.
+All of these tools are available as part of my &lt;a href="http://github.com/larsks/neutron-diag/">neutron-diag&lt;/a>
+repository on GitHub.&lt;/p>
+&lt;p>In this post I&amp;rsquo;m going to look at a tool that will help you visualize
+the connectivity of network devices on your system.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="mk-network-dot">mk-network-dot&lt;/h2>
+&lt;p>There are a lot of devices involved in your Neutron network
+configuration. Information originating in one of your instances has
+two traverse &lt;em>at least&lt;/em> seven network devices before seeing the light
+of day. Understanding how everything connects is critical if you&amp;rsquo;re
+trying to debug problems in your envionment.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve put together a few tools to help gather information about your
 Neutron and network configuration and visualize it in different ways.
 All of these tools are available as part of my &lt;a href="http://github.com/larsks/neutron-diag/">neutron-diag&lt;/a>
 repository on GitHub.&lt;/p>
@@ -3084,9 +3284,22 @@ VLAN interfaces.&lt;/li>
 &lt;li>It&amp;rsquo;s had only limited testing.&lt;/li>
 &lt;/ul>
 &lt;p>If you try this out and something doesn&amp;rsquo;t work as you expect, please
-open a new issues on the &lt;a href="https://github.com/larsks/neutron-diag/issues">GitHub issues page&lt;/a>.&lt;/p></content></item><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</guid><description>I originally posted this article on the RDO website.
-The players This document describes the architecture that results from a particular OpenStack configuration, specifically:
-Quantum networking using GRE tunnels; A dedicated network controller; A single instance running on a compute host Much of the document will be relevant to other configurations, but details will vary based on your choice of layer 2 connectivity, number of running instances, and so forth.</description><content>&lt;blockquote>
+open a new issues on the &lt;a href="https://github.com/larsks/neutron-diag/issues">GitHub issues page&lt;/a>.&lt;/p></content></item><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</guid><description>&lt;blockquote>
+&lt;p>I originally posted this article on
+the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
+website.&lt;/p>
+&lt;/blockquote>
+&lt;h1 id="the-players">The players&lt;/h1>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p>
+&lt;ul>
+&lt;li>Quantum networking using GRE tunnels;&lt;/li>
+&lt;li>A dedicated network controller;&lt;/li>
+&lt;li>A single instance running on a compute host&lt;/li>
+&lt;/ul>
+&lt;p>Much of the document will be relevant to other configurations, but
+details will vary based on your choice of layer 2 connectivity, number
+of running instances, and so forth.&lt;/p></description><content>&lt;blockquote>
 &lt;p>I originally posted this article on
 the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
 website.&lt;/p>
@@ -3455,9 +3668,18 @@ public network, you can add an interface on that network to the
 bridge. For example, assuming that &lt;code>eth2&lt;/code> was on the same network as
 &lt;code>172.24.4.225&lt;/code>:&lt;/p>
 &lt;pre>&lt;code># ovs-vsctl add-port br-ex eth2
-&lt;/code>&lt;/pre></content></item><item><title>Why does the Neutron documentation recommend three interfaces?</title><link>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</link><pubDate>Mon, 28 Oct 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</guid><description>The documentation for configuring Neutron recommends that a network controller has three physical interfaces:
-Before you start, set up a machine to be a dedicated network node. Dedicated network nodes should have the following NICs: the management NIC (called MGMT_INTERFACE), the data NIC (called DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).
-People occasionally ask, &amp;ldquo;why three interfaces? What if I only have two?&amp;rdquo;, so I wanted to provide an extended answer that might help people understand what the interfaces are for and what trade-offs are involved in using fewer interfaces.</description><content>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
+&lt;/code>&lt;/pre></content></item><item><title>Why does the Neutron documentation recommend three interfaces?</title><link>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</link><pubDate>Mon, 28 Oct 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-10-28-why-does-the-neutron/</guid><description>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
+that a network controller has three physical interfaces:&lt;/p>
+&lt;blockquote>
+&lt;p>Before you start, set up a machine to be a dedicated network node.
+Dedicated network nodes should have the following NICs: the
+management NIC (called MGMT_INTERFACE), the data NIC (called
+DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p>
+&lt;/blockquote>
+&lt;p>People occasionally ask, &amp;ldquo;why three interfaces? What if I only have
+two?&amp;rdquo;, so I wanted to provide an extended answer that might help
+people understand what the interfaces are for and what trade-offs are
+involved in using fewer interfaces.&lt;/p></description><content>&lt;p>The &lt;a href="http://docs.openstack.org/havana/install-guide/install/yum/content/neutron-install.dedicated-network-node.html">documentation for configuring Neutron&lt;/a> recommends
 that a network controller has three physical interfaces:&lt;/p>
 &lt;blockquote>
 &lt;p>Before you start, set up a machine to be a dedicated network node.
@@ -3513,10 +3735,17 @@ are not actually providing public access, you can elect to not have an
 &lt;code>EXTERNAL_INTERFACE&lt;/code>. Rather than adding this device to &lt;code>br-ex&lt;/code>, you
 will set up outbound NAT rules so that &amp;ldquo;external&amp;rdquo; traffic from your
 instances will masquerade using the primary ip address of your network
-controller.&lt;/p></content></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran into a small problem: I was running a script at system startup, and the script was running before the network interface (which was using DHCP) was configured.
-There are a number of common solutions proposed to this problem:
-Just wait for some period of time.
-This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually verify the network state it can result in things breaking if some problem prevents Windows from pulling a valid DHCP lease.</description><content>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
+controller.&lt;/p></content></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
+into a small problem: I was running a script at system startup, and
+the script was running before the network interface (which was using
+DHCP) was configured.&lt;/p>
+&lt;p>There are a number of common solutions proposed to this problem:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Just wait for some period of time.&lt;/p>
+&lt;p>This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually
+verify the network state it can result in things breaking if some
+problem prevents Windows from pulling a valid DHCP lease.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
 into a small problem: I was running a script at system startup, and
 the script was running before the network interface (which was using
 DHCP) was configured.&lt;/p>
@@ -3572,9 +3801,19 @@ start-sleep -s 1
 interfaces that have a default gateway (the &lt;code>DefaultIPGateway&lt;/code>
 attribute). It will poll the state of things once/second up to &lt;code>$tries&lt;/code>
 times, and if nothing is available it will ultimately throw an
-exception.&lt;/p></content></item><item><title>Chasing OpenStack idle connection timeouts</title><link>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</link><pubDate>Mon, 30 Jul 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</guid><description>The original problem I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a problem in which the compute service would frequently stop communicating with the AMQP message broker (qpidd).
-In order to gather some data on the problem, I ran the following simple test:
-Wait n minutes Run nova boot ... to create an instance Wait a minute and see if the new instance becomes ACTIVE If it works, delete the instance, set n = 2n and repeat This demonstrated that communication was failing after about an hour, which correlates rather nicely with the idle connection timeout on the firewall.</description><content>&lt;h2 id="the-original-problem">The original problem&lt;/h2>
+exception.&lt;/p></content></item><item><title>Chasing OpenStack idle connection timeouts</title><link>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</link><pubDate>Mon, 30 Jul 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/</guid><description>&lt;h2 id="the-original-problem">The original problem&lt;/h2>
+&lt;p>I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a
+problem in which the &lt;a href="http://docs.openstack.org/trunk/openstack-compute/starter/content/Compute_Worker_nova-compute_-d1e232.html">compute service&lt;/a> would frequently stop communicating
+with the &lt;a href="http://www.amqp.org/">AMQP&lt;/a> message broker (&lt;code>qpidd&lt;/code>).&lt;/p>
+&lt;p>In order to gather some data on the problem, I ran the following simple test:&lt;/p>
+&lt;ul>
+&lt;li>Wait &lt;code>n&lt;/code> minutes&lt;/li>
+&lt;li>Run &lt;code>nova boot ...&lt;/code> to create an instance&lt;/li>
+&lt;li>Wait a minute and see if the new instance becomes &lt;code>ACTIVE&lt;/code>&lt;/li>
+&lt;li>If it works, delete the instance, set &lt;code>n&lt;/code> = &lt;code>2n&lt;/code> and repeat&lt;/li>
+&lt;/ul>
+&lt;p>This demonstrated that communication was failing after about an hour, which
+correlates rather nicely with the idle connection timeout on the firewall.&lt;/p></description><content>&lt;h2 id="the-original-problem">The original problem&lt;/h2>
 &lt;p>I&amp;rsquo;ve recently spent some time working on an OpenStack deployment. I ran into a
 problem in which the &lt;a href="http://docs.openstack.org/trunk/openstack-compute/starter/content/Compute_Worker_nova-compute_-d1e232.html">compute service&lt;/a> would frequently stop communicating
 with the &lt;a href="http://www.amqp.org/">AMQP&lt;/a> message broker (&lt;code>qpidd&lt;/code>).&lt;/p>
@@ -3763,7 +4002,16 @@ self.connection.tcp_nodelay = FLAGS.qpid_tcp_nodelay
 &lt;/code>&lt;/pre>
 &lt;p>If it&amp;rsquo;s not obvious, &lt;code>heartbeat&lt;/code> was mispelled &lt;code>hearbeat&lt;/code> in the above block of
 code. Putting this change into production has completely resolved the idle
-connection timeout problem.&lt;/p></content></item><item><title>Rate limiting made simple</title><link>https://blog.oddbit.com/post/2011-12-26-simple-rate-limiting/</link><pubDate>Mon, 26 Dec 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-12-26-simple-rate-limiting/</guid><description>I use CrashPlan as a backup service. It works and is very simple to set up, but has limited options for controlling bandwidth. In fact, if you&amp;rsquo;re running it on a headless system (e.g., a fileserver of some sort), your options are effectively &amp;ldquo;too slow&amp;rdquo; and &amp;ldquo;CONSUME EVERYTHING&amp;rdquo;. There is an open request to add time-based limitations to the application itself, but for now I&amp;rsquo;ve solved this using a very simple traffic shaping configuration.</description><content>&lt;p>I use &lt;a href="http://www.crashplan.com/">CrashPlan&lt;/a> as a backup service. It works and is very simple to set
+connection timeout problem.&lt;/p></content></item><item><title>Rate limiting made simple</title><link>https://blog.oddbit.com/post/2011-12-26-simple-rate-limiting/</link><pubDate>Mon, 26 Dec 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-12-26-simple-rate-limiting/</guid><description>&lt;p>I use &lt;a href="http://www.crashplan.com/">CrashPlan&lt;/a> as a backup service. It works and is very simple to set
+up, but has limited options for controlling bandwidth. In fact, if you&amp;rsquo;re
+running it on a headless system (e.g., a fileserver of some sort), your options
+are effectively &amp;ldquo;too slow&amp;rdquo; and &amp;ldquo;CONSUME EVERYTHING&amp;rdquo;. There is an &lt;a href="https://crashplan.zendesk.com/entries/446273-throttle-bandwidth-by-hours?page=1#post_20799486">open
+request&lt;/a> to add time-based limitations to the application itself, but for
+now I&amp;rsquo;ve solved this using a very simple traffic shaping configuration.
+Because the learning curve for &amp;ldquo;tc&amp;rdquo; and friends is surprisingly high, I&amp;rsquo;m
+putting &lt;a href="https://gist.github.com/larsks/4014881">my script&lt;/a> here in the hopes
+that other people might find it useful, and so that I can find it when I need
+to do this again someday.&lt;/p></description><content>&lt;p>I use &lt;a href="http://www.crashplan.com/">CrashPlan&lt;/a> as a backup service. It works and is very simple to set
 up, but has limited options for controlling bandwidth. In fact, if you&amp;rsquo;re
 running it on a headless system (e.g., a fileserver of some sort), your options
 are effectively &amp;ldquo;too slow&amp;rdquo; and &amp;ldquo;CONSUME EVERYTHING&amp;rdquo;. There is an &lt;a href="https://crashplan.zendesk.com/entries/446273-throttle-bandwidth-by-hours?page=1#post_20799486">open
@@ -3810,7 +4058,7 @@ tc class show dev $dev
 tc filter show dev $dev
 iptables -t mangle -vnL OUTPUT
 fi
-&lt;/code>&lt;/pre></content></item><item><title>Linux UPnP Gateway</title><link>https://blog.oddbit.com/post/2010-01-29-linux-upnp-gateway/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-linux-upnp-gateway/</guid><description>Like many other folks out there, I have several computers in my house connected to the outside world via a Linux box acting as a NAT gateway. I often want to use application such as BitTorrent and Freenet, which require that a number of ports be forwarded from my external connection to the particular computer on which I happen to be working. It turns out there&amp;rsquo;s a protocol for this, called UPnP.</description><content>&lt;p>Like many other folks out there, I have several computers in my house connected to the outside world via a Linux box acting as a NAT gateway. I often want to use application such as BitTorrent and Freenet, which require that a number of ports be forwarded from my external connection to the particular computer on which I happen to be working. It turns out there&amp;rsquo;s a protocol for this, called &lt;a href="http://en.wikipedia.org/wiki/Universal_Plug_and_Play">UPnP&lt;/a>. From Wikipedia:&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>Linux UPnP Gateway</title><link>https://blog.oddbit.com/post/2010-01-29-linux-upnp-gateway/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-linux-upnp-gateway/</guid><description>&lt;p>Like many other folks out there, I have several computers in my house connected to the outside world via a Linux box acting as a NAT gateway. I often want to use application such as BitTorrent and Freenet, which require that a number of ports be forwarded from my external connection to the particular computer on which I happen to be working. It turns out there&amp;rsquo;s a protocol for this, called &lt;a href="http://en.wikipedia.org/wiki/Universal_Plug_and_Play">UPnP&lt;/a>. From Wikipedia:&lt;/p></description><content>&lt;p>Like many other folks out there, I have several computers in my house connected to the outside world via a Linux box acting as a NAT gateway. I often want to use application such as BitTorrent and Freenet, which require that a number of ports be forwarded from my external connection to the particular computer on which I happen to be working. It turns out there&amp;rsquo;s a protocol for this, called &lt;a href="http://en.wikipedia.org/wiki/Universal_Plug_and_Play">UPnP&lt;/a>. From Wikipedia:&lt;/p>
 &lt;blockquote>
 &lt;p>Universal Plug and Play (UPnP) is a set of networking protocols
 promulgated by the UPnP Forum. The goals of UPnP are to allow

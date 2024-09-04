@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Openshift on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openshift/</link><description>Recent content in Openshift on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 10 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openshift/rss.xml" rel="self" type="application/rss+xml"/><item><title>Kubernetes, connection timeouts, and the importance of labels</title><link>https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/</link><pubDate>Sat, 10 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/</guid><description>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause.</description><content>&lt;p>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause. Absent a solid reproducer of the behavior in question, we looked at other aspects of our infrastructure:&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Openshift on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/openshift/</link><description>Recent content in Openshift on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 10 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/openshift/rss.xml" rel="self" type="application/rss+xml"/><item><title>Kubernetes, connection timeouts, and the importance of labels</title><link>https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/</link><pubDate>Sat, 10 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-10-kubernetes-labels/</guid><description>&lt;p>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause. Absent a solid reproducer of the behavior in question, we looked at other aspects of our infrastructure:&lt;/p></description><content>&lt;p>We are working with an application that produces resource utilization reports for clients of our OpenShift-based cloud environments. The developers working with the application have been reporting mysterious issues concerning connection timeouts between the application and the database (a MariaDB instance). For a long time we had only high-level verbal descriptions of the problem (&amp;ldquo;I&amp;rsquo;m seeing a lot of connection timeouts!&amp;rdquo;) and a variety of unsubstantiated theories (from multiple sources) about the cause. Absent a solid reproducer of the behavior in question, we looked at other aspects of our infrastructure:&lt;/p>
 &lt;ul>
 &lt;li>Networking seemed fine (we weren&amp;rsquo;t able to find any evidence of interface errors, packet loss, or bandwidth issues)&lt;/li>
 &lt;li>Storage in most of our cloud environments is provided by remote Ceph clusters. In addition to not seeing any evidence of network problems in general, we weren&amp;rsquo;t able to demonstrate specific problems with our storage, either (we did spot some performance variation between our Ceph clusters that may be worth investigating in the future, but it wasn&amp;rsquo;t the sort that would cause the problems we&amp;rsquo;re seeing)&lt;/li>
@@ -254,7 +254,7 @@ component: mariadb
 01:57:38 OKAY 0
 01:57:39 OKAY 0
 01:57:40 OKAY 0
-&lt;/code>&lt;/pre>&lt;p>There is no variability in connection time, and there are no timeouts.&lt;/p></content></item><item><title>Kubernetes External Secrets</title><link>https://blog.oddbit.com/post/2021-09-03-kubernetes-external-secrets/</link><pubDate>Fri, 03 Sep 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-09-03-kubernetes-external-secrets/</guid><description>At $JOB we maintain the configuration for our OpenShift clusters in a public git repository. Changes in the git repository are applied automatically using ArgoCD and Kustomize. This works great, but the public nature of the repository means we need to find a secure solution for managing secrets (such as passwords and other credentials necessary for authenticating to external services). In particular, we need a solution that permits our public repository to be the source of truth for our cluster configuration, without compromising our credentials.</description><content>&lt;p>At &lt;em>$JOB&lt;/em> we maintain the configuration for our OpenShift clusters in a public git repository. Changes in the git repository are applied automatically using &lt;a href="https://argo-cd.readthedocs.io/en/stable/">ArgoCD&lt;/a> and &lt;a href="https://kustomize.io/">Kustomize&lt;/a>. This works great, but the public nature of the repository means we need to find a secure solution for managing secrets (such as passwords and other credentials necessary for authenticating to external services). In particular, we need a solution that permits our public repository to be the source of truth for our cluster configuration, without compromising our credentials.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>There is no variability in connection time, and there are no timeouts.&lt;/p></content></item><item><title>Kubernetes External Secrets</title><link>https://blog.oddbit.com/post/2021-09-03-kubernetes-external-secrets/</link><pubDate>Fri, 03 Sep 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-09-03-kubernetes-external-secrets/</guid><description>&lt;p>At &lt;em>$JOB&lt;/em> we maintain the configuration for our OpenShift clusters in a public git repository. Changes in the git repository are applied automatically using &lt;a href="https://argo-cd.readthedocs.io/en/stable/">ArgoCD&lt;/a> and &lt;a href="https://kustomize.io/">Kustomize&lt;/a>. This works great, but the public nature of the repository means we need to find a secure solution for managing secrets (such as passwords and other credentials necessary for authenticating to external services). In particular, we need a solution that permits our public repository to be the source of truth for our cluster configuration, without compromising our credentials.&lt;/p></description><content>&lt;p>At &lt;em>$JOB&lt;/em> we maintain the configuration for our OpenShift clusters in a public git repository. Changes in the git repository are applied automatically using &lt;a href="https://argo-cd.readthedocs.io/en/stable/">ArgoCD&lt;/a> and &lt;a href="https://kustomize.io/">Kustomize&lt;/a>. This works great, but the public nature of the repository means we need to find a secure solution for managing secrets (such as passwords and other credentials necessary for authenticating to external services). In particular, we need a solution that permits our public repository to be the source of truth for our cluster configuration, without compromising our credentials.&lt;/p>
 &lt;h2 id="rejected-options">Rejected options&lt;/h2>
 &lt;p>We initially looked at including secrets directly in the repository through the use of the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin for Kustomize, which uses &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt secrets with GPG keys. There are some advantages to this arrangement:&lt;/p>
 &lt;ul>
@@ -386,8 +386,19 @@ username: Zm9v
 &lt;p>E.g. Azure Key Vault, Google Secret Manager, Alibaba Cloud KMS Secret Manager, Akeyless&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/div></content></item><item><title>Connecting OpenShift to an External Ceph Cluster</title><link>https://blog.oddbit.com/post/2021-08-23-external-ocs/</link><pubDate>Mon, 23 Aug 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-08-23-external-ocs/</guid><description>Red Hat&amp;rsquo;s OpenShift Data Foundation (formerly &amp;ldquo;OpenShift Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically set up a Ceph cluster as an application running on your OpenShift cluster, or (b) connect your OpenShift cluster to an externally managed Ceph cluster. While setting up Ceph as an OpenShift application is a relatively polished experienced, connecting to an external cluster still has some rough edges.
-NB I am not a Ceph expert.</description><content>&lt;p>Red Hat&amp;rsquo;s &lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-data-foundation">OpenShift Data Foundation&lt;/a> (formerly &amp;ldquo;OpenShift
+&lt;/div></content></item><item><title>Connecting OpenShift to an External Ceph Cluster</title><link>https://blog.oddbit.com/post/2021-08-23-external-ocs/</link><pubDate>Mon, 23 Aug 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-08-23-external-ocs/</guid><description>&lt;p>Red Hat&amp;rsquo;s &lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-data-foundation">OpenShift Data Foundation&lt;/a> (formerly &amp;ldquo;OpenShift
+Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically
+set up a Ceph cluster as an application running on your OpenShift
+cluster, or (b) connect your OpenShift cluster to an externally
+managed Ceph cluster. While setting up Ceph as an OpenShift
+application is a relatively polished experienced, connecting to an
+external cluster still has some rough edges.&lt;/p>
+&lt;p>&lt;strong>NB&lt;/strong> I am not a Ceph expert. If you read this and think I&amp;rsquo;ve made a
+mistake with respect to permissions or anything else, please feel free
+to leave a comment and I will update the article as necessary. In
+particular, I think it may be possible to further restrict the &lt;code>mgr&lt;/code>
+permissions shown in this article and I&amp;rsquo;m interested in feedback on
+that topic.&lt;/p></description><content>&lt;p>Red Hat&amp;rsquo;s &lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-data-foundation">OpenShift Data Foundation&lt;/a> (formerly &amp;ldquo;OpenShift
 Container Storage&amp;rdquo;, or &amp;ldquo;OCS&amp;rdquo;) allows you to either (a) automatically
 set up a Ceph cluster as an application running on your OpenShift
 cluster, or (b) connect your OpenShift cluster to an externally
@@ -805,9 +816,13 @@ principals&amp;rdquo;&lt;/li>
 &lt;li>&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1996829">#1996829&lt;/a>
 &amp;ldquo;Permissions assigned to ceph auth principals when using external
 storage are too broad&amp;rdquo;&lt;/li>
-&lt;/ul></content></item><item><title>Getting started with KSOPS</title><link>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</link><pubDate>Tue, 09 Mar 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</guid><description>Kustomize is a tool for assembling Kubernetes manifests from a collection of files. We&amp;rsquo;re making extensive use of Kustomize in the operate-first project. In order to keep secrets stored in our configuration repositories, we&amp;rsquo;re using the KSOPS plugin, which enables Kustomize to use sops to encrypt/files using GPG.
-In this post, I&amp;rsquo;d like to walk through the steps necessary to get everything up and running.
-Set up GPG We encrypt files using GPG, so the first step is making sure that you have a GPG keypair and that your public key is published where other people can find it.</description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+&lt;/ul></content></item><item><title>Getting started with KSOPS</title><link>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</link><pubDate>Tue, 09 Mar 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</guid><description>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
+&lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
+configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
+enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
+&lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
+everything up and running.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
 collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 &lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
@@ -1023,8 +1038,17 @@ name: example-secret
 type: Opaque
 stringData:
 message: this is a test
-&lt;/code>&lt;/pre></content></item><item><title>Object storage with OpenShift Container Storage</title><link>https://blog.oddbit.com/post/2021-02-10-object-storage-with-openshift/</link><pubDate>Wed, 10 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-10-object-storage-with-openshift/</guid><description>OpenShift Container Storage (OCS) from Red Hat deploys Ceph in your OpenShift cluster (or allows you to integrate with an external Ceph cluster). In addition to the file- and block- based volume services provided by Ceph, OCS includes two S3-api compatible object storage implementations.
-The first option is the Ceph Object Gateway (radosgw), Ceph&amp;rsquo;s native object storage interface. The second option called the &amp;ldquo;Multicloud Object Gateway&amp;rdquo;, which is in fact a piece of software named Noobaa, a storage abstraction layer that was acquired by Red Hat in 2018.</description><content>&lt;p>&lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage">OpenShift Container Storage&lt;/a> (OCS) from Red Hat deploys Ceph in your
+&lt;/code>&lt;/pre></content></item><item><title>Object storage with OpenShift Container Storage</title><link>https://blog.oddbit.com/post/2021-02-10-object-storage-with-openshift/</link><pubDate>Wed, 10 Feb 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-02-10-object-storage-with-openshift/</guid><description>&lt;p>&lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage">OpenShift Container Storage&lt;/a> (OCS) from Red Hat deploys Ceph in your
+OpenShift cluster (or allows you to integrate with an external Ceph
+cluster). In addition to the file- and block- based volume services
+provided by Ceph, OCS includes two S3-api compatible object storage
+implementations.&lt;/p>
+&lt;p>The first option is the &lt;a href="https://docs.ceph.com/en/latest/radosgw/">Ceph Object Gateway&lt;/a> (radosgw),
+Ceph&amp;rsquo;s native object storage interface. The second option called the
+&amp;ldquo;&lt;a href="https://www.openshift.com/blog/introducing-multi-cloud-object-gateway-for-openshift">Multicloud Object Gateway&lt;/a>&amp;rdquo;, which is in fact a piece of software
+named &lt;a href="https://www.noobaa.io/">Noobaa&lt;/a>, a storage abstraction layer that was &lt;a href="https://www.redhat.com/en/blog/faq-red-hat-acquires-noobaa">acquired by
+Red Hat&lt;/a> in 2018. In this article I&amp;rsquo;d like to demonstrate how to
+take advantage of these storage options.&lt;/p></description><content>&lt;p>&lt;a href="https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage">OpenShift Container Storage&lt;/a> (OCS) from Red Hat deploys Ceph in your
 OpenShift cluster (or allows you to integrate with an external Ceph
 cluster). In addition to the file- and block- based volume services
 provided by Ceph, OCS includes two S3-api compatible object storage
@@ -1330,7 +1354,13 @@ pod:&lt;/p>
 release&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/div></content></item><item><title>Installing metallb on OpenShift with Kustomize</title><link>https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/</link><pubDate>Sun, 27 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/</guid><description>Out of the box, OpenShift (4.x) on bare metal doesn&amp;rsquo;t come with any integrated load balancer support (when installed in a cloud environment, OpenShift typically makes use of the load balancing features available from the cloud provider). Fortunately, there are third party solutions available that are designed to work in bare metal environments. MetalLB is a popular choice, but requires some minor fiddling to get it to run properly on OpenShift.</description><content>&lt;p>Out of the box, OpenShift (4.x) on bare metal doesn&amp;rsquo;t come with any
+&lt;/div></content></item><item><title>Installing metallb on OpenShift with Kustomize</title><link>https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/</link><pubDate>Sun, 27 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-27-installing-metallb-on-openshif/</guid><description>&lt;p>Out of the box, OpenShift (4.x) on bare metal doesn&amp;rsquo;t come with any
+integrated load balancer support (when installed in a cloud environment,
+OpenShift typically makes use of the load balancing features available from
+the cloud provider). Fortunately, there are third party solutions available
+that are designed to work in bare metal environments. &lt;a href="https://metallb.universe.tf/">MetalLB&lt;/a> is a
+popular choice, but requires some minor fiddling to get it to run properly
+on OpenShift.&lt;/p></description><content>&lt;p>Out of the box, OpenShift (4.x) on bare metal doesn&amp;rsquo;t come with any
 integrated load balancer support (when installed in a cloud environment,
 OpenShift typically makes use of the load balancing features available from
 the cloud provider). Fortunately, there are third party solutions available
@@ -1458,8 +1488,16 @@ patch: |-
 path: /spec/template/spec/securityContext/runAsUser
 &lt;/code>&lt;/pre>&lt;h2 id="conclusion">Conclusion&lt;/h2>
 &lt;p>The changes described here will result in a successful MetalLB deployment
-into your OpenShift environment.&lt;/p></content></item><item><title>OpenShift and CNV: MAC address management in CNV 2.4</title><link>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</link><pubDate>Mon, 10 Aug 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</guid><description>This is part of a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll look at how the recently released CNV 2.4 resolves some issues in managing virtual machines that are attached directly to local layer 2 networks
-In an earlier post, I discussed some issues around the management of virtual machine MAC addresses in CNV 2.3: in particular, that virtual machines are assigned a random MAC address not just at creation time but every time they boot.</description><content>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
+into your OpenShift environment.&lt;/p></content></item><item><title>OpenShift and CNV: MAC address management in CNV 2.4</title><link>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</link><pubDate>Mon, 10 Aug 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-08-10-mac-address-management-in-cnv/</guid><description>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
+&lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll look at how the
+recently released CNV 2.4 resolves some issues in managing virtual
+machines that are attached directly to local layer 2 networks&lt;/p>
+&lt;p>In &lt;a href="https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/">an earlier post&lt;/a>, I discussed some issues around the
+management of virtual machine MAC addresses in CNV 2.3: in particular,
+that virtual machines are assigned a random MAC address not just at
+creation time but every time they boot. CNV 2.4 (re-)introduces &lt;a href="https://docs.openshift.com/container-platform/4.5/virt/virtual_machines/vm_networking/virt-using-mac-address-pool-for-vms.html">MAC
+address pools&lt;/a> to alleviate these issues. The high level description
+reads:&lt;/p></description><content>&lt;p>This is part of a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working with
 &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll look at how the
 recently released CNV 2.4 resolves some issues in managing virtual
 machines that are attached directly to local layer 2 networks&lt;/p>
@@ -1484,8 +1522,29 @@ machines attached to host networks.&lt;/p>
 &lt;p>To enable MAC address pools for a given namespace, set the
 &lt;code>mutatevirtualmachines.kubemacpool.io&lt;/code> label to &lt;code>allocate&lt;/code>:&lt;/p>
 &lt;pre tabindex="0">&lt;code>oc label namespace &amp;lt;namespace&amp;gt; mutatevirtualmachines.kubemacpool.io=allocate
-&lt;/code>&lt;/pre></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</guid><description>This is the second in a series of posts about my experience working with OpenShift and CNV. In this post, I&amp;rsquo;ll be taking a look at how to expose services on a virtual machine once you&amp;rsquo;ve git it up and running.
-TL;DR Overview Connectivity options Direct attachment Using an OpenShift Service Exposing services on NodePorts Exposing services on cluster external IPso Exposing services using a LoadBalancer TL;DR Networking seems to be a weak area for CNV right now.</description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+&lt;/code>&lt;/pre></content></item><item><title>OpenShift and CNV: Exposing virtualized services</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</link><pubDate>Thu, 30 Jul 2020 01:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-2-expos/</guid><description>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
+at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
+and running.&lt;/p>
+&lt;nav id="TableOfContents">
+&lt;ul>
+&lt;li>&lt;a href="#tldr">TL;DR&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#overview">Overview&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#connectivity-options">Connectivity options&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#direct-attachment">Direct attachment&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#using-an-openshift-service">Using an OpenShift Service&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#exposing-services-on-nodeports">Exposing services on NodePorts&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-on-cluster-external-ipso">Exposing services on cluster external IPso&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#exposing-services-using-a-loadbalancer">Exposing services using a LoadBalancer&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/nav>
+&lt;h2 id="tldr">TL;DR&lt;/h2>
+&lt;p>Networking seems to be a weak area for CNV right now. Out of the box,
+your options for exposing a service on a virtual machine on a public
+address at a well known port are slim.&lt;/p></description><content>&lt;p>This is the second in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
 with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a>. In this post, I&amp;rsquo;ll be taking a look
 at how to expose services on a virtual machine once you&amp;rsquo;ve git it up
 and running.&lt;/p>
@@ -1723,7 +1782,13 @@ at:&lt;/p>
 &lt;li>&lt;a href="https://metallb.universe.tf/">metallb&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;p>I hope we see an integrated LoadBalancer mechanism available for OpenShift on
-baremetal in a near-future release.&lt;/p></content></item><item><title>OpenShift and CNV: Installer network requirements</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</link><pubDate>Thu, 30 Jul 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</guid><description>This is the first in a series of posts about my experience working with OpenShift and CNV (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a technology that allows you to use OpenShift to manage virtualized workloads in addition to the containerized workloads for which OpenShift is known). In this post, I&amp;rsquo;ll be taking a look at the installation experience, and in particular at how restrictions in our local environment interacted with the network requirements of the installer.</description><content>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+baremetal in a near-future release.&lt;/p></content></item><item><title>OpenShift and CNV: Installer network requirements</title><link>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</link><pubDate>Thu, 30 Jul 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-07-30-openshift-and-cnv-part-1-worki/</guid><description>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
+with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a> (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a
+technology that allows you to use OpenShift to manage virtualized
+workloads in addition to the containerized workloads for which
+OpenShift is known). In this post, I&amp;rsquo;ll be taking a look at the
+installation experience, and in particular at how restrictions in our
+local environment interacted with the network requirements of the installer.&lt;/p></description><content>&lt;p>This is the first in a &lt;a href="https://blog.oddbit.com/tag/openshift-and-cnv">series of posts&lt;/a> about my experience working
 with &lt;a href="https://www.openshift.com/">OpenShift&lt;/a> and &lt;a href="https://www.redhat.com/en/topics/containers/what-is-container-native-virtualization">CNV&lt;/a> (&amp;ldquo;Container Native Virtualization&amp;rdquo;, a
 technology that allows you to use OpenShift to manage virtualized
 workloads in addition to the containerized workloads for which
@@ -1890,9 +1955,21 @@ dhcp-option=tag:ocp,option:classless-static-route,10.0.0.0/19,10.1.2.101
 static address configuration for the bootstrap vm using the
 &lt;code>install-config.yaml&lt;/code> file. The bootstrap vm should continue to boot
 even if it can&amp;rsquo;t initially configure an interface using DHCP (one
-should be able to disable that initial DHCP attempt).&lt;/p></content></item><item><title>Sockets on OpenShift</title><link>https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/</guid><description>In this article, a followup to my previous post regarding long-poll servers and Python, we investigate the code changes that were necessary to make the code work when deployed on OpenShift.
-In the previous post, we implemented IO polling to watch for client disconnects at the same time we were waiting for messages on a message bus:
-poll = zmq.Poller() poll.register(subsock, zmq.POLLIN) poll.register(rfile, zmq.POLLIN) events = dict(poll.poll()) . . . If you were to try this at home, you would find that everything worked as described&amp;hellip;but if you were to deploy the same code to OpenShift, you would find that the problem we were trying to solve (the server holding file descriptors open after a client disconnected) would still exist.</description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
+should be able to disable that initial DHCP attempt).&lt;/p></content></item><item><title>Sockets on OpenShift</title><link>https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-openshift-socket-pro/</guid><description>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
+long-poll servers and Python, we investigate the code changes that
+were necessary to make the code work when deployed on OpenShift.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>In the previous post, we implemented IO polling to watch for client
+disconnects at the same time we were waiting for messages on a message
+bus:&lt;/p>
+&lt;pre>&lt;code>poll = zmq.Poller()
+poll.register(subsock, zmq.POLLIN)
+poll.register(rfile, zmq.POLLIN)
+events = dict(poll.poll())
+.
+.
+.
+&lt;/code>&lt;/pr</description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
 long-poll servers and Python, we investigate the code changes that
 were necessary to make the code work when deployed on OpenShift.&lt;/p>
 &lt;!-- raw HTML omitted -->

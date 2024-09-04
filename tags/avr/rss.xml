@@ -1,6 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Avr on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/avr/</link><description>Recent content in Avr on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 11 Feb 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/avr/rss.xml" rel="self" type="application/rss+xml"/><item><title>In which I PEBKAC so you don't have to</title><link>https://blog.oddbit.com/post/2019-02-11-in-which-i-pebkac-so-you-dont-/</link><pubDate>Mon, 11 Feb 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-02-11-in-which-i-pebkac-so-you-dont-/</guid><description>Say you have a simple bit of code:
-#include &amp;lt;avr/io.h&amp;gt; #include &amp;lt;util/delay.h&amp;gt; #define LED_BUILTIN _BV(PORTB5) int main(void) { DDRB |= LED_BUILTIN; while (1) { PORTB |= LED_BUILTIN; // turn on led _delay_ms(1000); // delay 1s PORTB &amp;amp;= ~LED_BUILTIN; // turn off led _delay_ms(1000); // delay 1s } } You have a Makefile that compiles that into an object (.o) file like this:
-avr-gcc -mmcu=atmega328p -DF_CPU=16000000 -Os -c blink.c If you were to forget to set the device type when compiling your .</description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Avr on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/avr/</link><description>Recent content in Avr on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 11 Feb 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/avr/rss.xml" rel="self" type="application/rss+xml"/><item><title>In which I PEBKAC so you don't have to</title><link>https://blog.oddbit.com/post/2019-02-11-in-which-i-pebkac-so-you-dont-/</link><pubDate>Mon, 11 Feb 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-02-11-in-which-i-pebkac-so-you-dont-/</guid><description>&lt;p>Say you have a simple bit of code:&lt;/p>
+&lt;pre>&lt;code>#include &amp;lt;avr/io.h&amp;gt;
+#include &amp;lt;util/delay.h&amp;gt;
+#define LED_BUILTIN _BV(PORTB5)
+int main(void)
+{
+DDRB |= LED_BUILTIN;
+while (1)
+{
+PORTB |= LED_BUILTIN; // turn on led
+_delay_ms(1000); // delay 1s
+PORTB &amp;amp;= ~LED_BUILTIN; // turn off led
+_delay_ms(1000); // delay 1s
+}
+}
+&lt;/code>&lt;/pr</description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
 &lt;pre>&lt;code>#include &amp;lt;avr/io.h&amp;gt;
 #include &amp;lt;util/delay.h&amp;gt;
 #define LED_BUILTIN _BV(PORTB5)
@@ -132,9 +145,12 @@ ac: f8 94 cli
 ae: ff cf rjmp .-2 ; 0xae &amp;lt;__stop_program&amp;gt;
 &lt;/code>&lt;/pre>
 &lt;p>You can see that this code includes things like the jump table, without which your code won&amp;rsquo;t run.&lt;/p>
-&lt;p>The moral of this story is: don&amp;rsquo;t forget to set the device type.&lt;/p></content></item><item><title>ATOMIC_BLOCK magic in avr-libc</title><link>https://blog.oddbit.com/post/2019-02-01-atomicblock-magic-in-avrlibc/</link><pubDate>Fri, 01 Feb 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-02-01-atomicblock-magic-in-avrlibc/</guid><description>The AVR C library, avr-libc, provide an ATOMIC_BLOCK macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the ATOMIC_BLOCK macro (when called using ATOMIC_FORCEON) does something like this:
-cli(); ...your code here... seti(); But it&amp;rsquo;s more than that. If you read the documentation for the macro, it says:
-Creates a block of code that is guaranteed to be executed atomically.</description><content>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
+&lt;p>The moral of this story is: don&amp;rsquo;t forget to set the device type.&lt;/p></content></item><item><title>ATOMIC_BLOCK magic in avr-libc</title><link>https://blog.oddbit.com/post/2019-02-01-atomicblock-magic-in-avrlibc/</link><pubDate>Fri, 01 Feb 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-02-01-atomicblock-magic-in-avrlibc/</guid><description>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
+&lt;pre>&lt;code>cli();
+...your code here...
+seti();
+&lt;/code>&lt;/pre>
+&lt;p>But it&amp;rsquo;s more than that. If you read &lt;a href="https://www.nongnu.org/avr-libc/user-manual/group__util__atomic.html#gaaaea265b31dabcfb3098bec7685c39e4">the documentation&lt;/a> for the macro, it says:&lt;/p></description><content>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
 &lt;pre>&lt;code>cli();
 ...your code here...
 seti();
@@ -189,8 +205,16 @@ __asm__ volatile (&amp;quot;&amp;quot; ::: &amp;quot;memory&amp;quot;);
 (void)__s;
 }
 &lt;/code>&lt;/pre>
-&lt;p>In other words, this is very much like a &lt;code>try&lt;/code>/&lt;code>finally&lt;/code> block in Python, although the cleanup action is attached to a particular variable rather than to the block of code itself. I think that&amp;rsquo;s pretty neat.&lt;/p></content></item><item><title>AVR micro-optimization: Avr-gcc and --short-enums</title><link>https://blog.oddbit.com/post/2019-01-28-avr-gcc-short-enums/</link><pubDate>Mon, 28 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-28-avr-gcc-short-enums/</guid><description>How big is an enum? I noticed something odd while browsing through the assembly output of some AVR C code I wrote recently. In the code, I have the following expression:
-int main() { setup(); while (state != STATE_QUIT) { loop(); } } Here, state is a variable of type enum STATE, which looks something like this (not exactly like this; there are actually 19 possible values but I didn&amp;rsquo;t want to clutter this post with unnecessary code listings):</description><content>&lt;h2 id="how-big-is-an-enum">How big is an enum?&lt;/h2>
+&lt;p>In other words, this is very much like a &lt;code>try&lt;/code>/&lt;code>finally&lt;/code> block in Python, although the cleanup action is attached to a particular variable rather than to the block of code itself. I think that&amp;rsquo;s pretty neat.&lt;/p></content></item><item><title>AVR micro-optimization: Avr-gcc and --short-enums</title><link>https://blog.oddbit.com/post/2019-01-28-avr-gcc-short-enums/</link><pubDate>Mon, 28 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-28-avr-gcc-short-enums/</guid><description>&lt;h2 id="how-big-is-an-enum">How big is an enum?&lt;/h2>
+&lt;p>I noticed something odd while browsing through the assembly output of some AVR C code &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">I wrote recently&lt;/a>. In the code, I have the following expression:&lt;/p>
+&lt;pre>&lt;code>int main() {
+setup();
+while (state != STATE_QUIT) {
+loop();
+}
+}
+&lt;/code>&lt;/pre>
+&lt;p>Here, &lt;code>state&lt;/code> is a variable of type &lt;code>enum STATE&lt;/code>, which looks something like this (not exactly like this; there are actually &lt;a href="https://github.com/larsks/pipower/blob/master/states.h">19 possible values&lt;/a> but I didn&amp;rsquo;t want to clutter this post with unnecessary code listings):&lt;/p></description><content>&lt;h2 id="how-big-is-an-enum">How big is an enum?&lt;/h2>
 &lt;p>I noticed something odd while browsing through the assembly output of some AVR C code &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">I wrote recently&lt;/a>. In the code, I have the following expression:&lt;/p>
 &lt;pre>&lt;code>int main() {
 setup();
@@ -290,9 +314,14 @@ cpc r25,__zero_reg__
 &lt;pre>&lt;code> ldi r24,lo8(1)
 sts state,r24
 &lt;/code>&lt;/pre>
-&lt;p>So, the tl;dr is that the &lt;code>--short-enums&lt;/code> flag makes a lot of sense when compiling code for an 8-bit device, and arguably makes the compiler generate code that is more intuitive.&lt;/p></content></item><item><title>AVR micro-optimization: Losing malloc</title><link>https://blog.oddbit.com/post/2019-01-28-losing-malloc/</link><pubDate>Mon, 28 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-28-losing-malloc/</guid><description>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?
-When I write OO-style code in C, I usually start with something like the following, in which I use malloc() to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:
-Button *button_new(uint8_t pin, uint8_t poll_freq) { Button *button = (Button *)malloc(sizeof(Button)); // do some initialization stuff return button; } And when initially writing pipower, that&amp;rsquo;s exactly what I did.</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;p>So, the tl;dr is that the &lt;code>--short-enums&lt;/code> flag makes a lot of sense when compiling code for an 8-bit device, and arguably makes the compiler generate code that is more intuitive.&lt;/p></content></item><item><title>AVR micro-optimization: Losing malloc</title><link>https://blog.oddbit.com/post/2019-01-28-losing-malloc/</link><pubDate>Mon, 28 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-28-losing-malloc/</guid><description>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
+&lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
+Button *button = (Button *)malloc(sizeof(Button));
+// do some initialization stuff
+return button;
+}
+&lt;/code>&lt;/pr</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
 &lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
 &lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
 Button *button = (Button *)malloc(sizeof(Button));
@@ -335,8 +364,8 @@ Data: 29 bytes (5.7% Full)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">malloc&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>);
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
-&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>__attribute__((optimize(&amp;quot;O0&amp;quot;)))&lt;/code> directive disables all optimizations for this function, which should prevent gcc from optimizing out the reference to &lt;code>malloc()&lt;/code>.&lt;/p></content></item><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>In a case of awful timing, after my recent project involving some attiny85 programming I finally got around to learning how to use simavr and gdb to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!
-I&amp;rsquo;ve split this into three posts:</description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>__attribute__((optimize(&amp;quot;O0&amp;quot;)))&lt;/code> directive disables all optimizations for this function, which should prevent gcc from optimizing out the reference to &lt;code>malloc()&lt;/code>.&lt;/p></content></item><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
 &lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -438,42 +467,42 @@ Continuing.
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th>Pin&lt;/th>
-&lt;th>Name&lt;/th>
-&lt;th>I/O&lt;/th>
-&lt;th>Description&lt;/th>
+&lt;th style="text-align: left">Pin&lt;/th>
+&lt;th style="text-align: left">Name&lt;/th>
+&lt;th style="text-align: left">I/O&lt;/th>
+&lt;th style="text-align: left">Description&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td>0&lt;/td>
-&lt;td>&lt;code>POWER&lt;/code>&lt;/td>
-&lt;td>I&lt;/td>
-&lt;td>Connected to active-low power button&lt;/td>
+&lt;td style="text-align: left">0&lt;/td>
+&lt;td style="text-align: left">&lt;code>POWER&lt;/code>&lt;/td>
+&lt;td style="text-align: left">I&lt;/td>
+&lt;td style="text-align: left">Connected to active-low power button&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>1&lt;/td>
-&lt;td>&lt;code>USB&lt;/code>&lt;/td>
-&lt;td>I&lt;/td>
-&lt;td>USB signal from powerboost&lt;/td>
+&lt;td style="text-align: left">1&lt;/td>
+&lt;td style="text-align: left">&lt;code>USB&lt;/code>&lt;/td>
+&lt;td style="text-align: left">I&lt;/td>
+&lt;td style="text-align: left">USB signal from powerboost&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>2&lt;/td>
-&lt;td>&lt;code>EN&lt;/code>&lt;/td>
-&lt;td>O&lt;/td>
-&lt;td>EN signal to powerboost (turns on power)&lt;/td>
+&lt;td style="text-align: left">2&lt;/td>
+&lt;td style="text-align: left">&lt;code>EN&lt;/code>&lt;/td>
+&lt;td style="text-align: left">O&lt;/td>
+&lt;td style="text-align: left">EN signal to powerboost (turns on power)&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>3&lt;/td>
-&lt;td>&lt;code>SHUTDOWN&lt;/code>&lt;/td>
-&lt;td>O&lt;/td>
-&lt;td>Signal to Pi requesting shutdown&lt;/td>
+&lt;td style="text-align: left">3&lt;/td>
+&lt;td style="text-align: left">&lt;code>SHUTDOWN&lt;/code>&lt;/td>
+&lt;td style="text-align: left">O&lt;/td>
+&lt;td style="text-align: left">Signal to Pi requesting shutdown&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td>4&lt;/td>
-&lt;td>&lt;code>BOOT&lt;/code>&lt;/td>
-&lt;td>I&lt;/td>
-&lt;td>Signal from Pi that it has booted&lt;/td>
+&lt;td style="text-align: left">4&lt;/td>
+&lt;td style="text-align: left">&lt;code>BOOT&lt;/code>&lt;/td>
+&lt;td style="text-align: left">I&lt;/td>
+&lt;td style="text-align: left">Signal from Pi that it has booted&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -556,13 +585,18 @@ Temporary breakpoint 2, loop () at ../pipower.c:98
 &lt;p>This works by disabling the unqualified breakpoint at the top of &lt;code>loop()&lt;/code> and creating a new temporary breakpoint (meaning it will be removed once it triggers) that will only trigger when the global &lt;code>state&lt;/code> value has changed.&lt;/p>
 &lt;p>From &lt;a href="https://github.com/larsks/pipower/blob/b822b91af88d8baeb4e0e69fa5e69c074b96c32f/pipower.c#L213">STATE_POWEROFF2&lt;/a>, Pipower will enter the various &lt;code>IDLE*&lt;/code> stages, during which it enters a very low power sleep mode.&lt;/p>
 &lt;hr>
-&lt;p>That&amp;rsquo;s it for the walk-through! Hopefully that has given you some idea of how you can use &lt;code>simavr&lt;/code> and a debugger to test your AVR code without having to flash it to a device first.&lt;/p></content></item><item><title>Debugging attiny85 code, part 2: Automating GDB with scripts</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</guid><description>This is the second of three posts about using gdb and simavr to debug AVR code. The complete series is:
-Part 1: Using GDB
-A walkthrough of using GDB to manually inspect the behavior of our code.
-Part 2: Automating GDB with scripts
-Creating GDB scripts to automatically test the behavior of our code.
-Part 3: Tracing with simavr
-Using simavr to collect information about the state of microcontroller pins while our code is running.</description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;p>That&amp;rsquo;s it for the walk-through! Hopefully that has given you some idea of how you can use &lt;code>simavr&lt;/code> and a debugger to test your AVR code without having to flash it to a device first.&lt;/p></content></item><item><title>Debugging attiny85 code, part 2: Automating GDB with scripts</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/</guid><description>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
+&lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p>
+&lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
@@ -893,13 +927,17 @@ main () at ../pipower.c:280
 1: state = STATE_QUIT
 2: /t PORTB = 10001
 3: /t PINB = 10011
-&lt;/code>&lt;/pre></content></item><item><title>Debugging attiny85 code, part 3: Tracing with simavr</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</guid><description>This is the third of three posts about using gdb and simavr to debug AVR code. The complete series is:
-Part 1: Using GDB
-A walkthrough of using GDB to manually inspect the behavior of our code.
-Part 2: Automating GDB with scripts
-Creating GDB scripts to automatically test the behavior of our code.
-Part 3: Tracing with simavr
-Using simavr to collect information about the state of microcontroller pins while our code is running.</description><content>
+&lt;/code>&lt;/pre></content></item><item><title>Debugging attiny85 code, part 3: Tracing with simavr</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/</guid><description>&lt;figure class="left" >
+&lt;img src="pipower_trace.png" />
+&lt;/figure>
+&lt;p>This is the third of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
+&lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p></description><content>
 &lt;figure class="left" >
 &lt;img src="pipower_trace.png" />
 &lt;/figure>

@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Awk on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/awk/</link><description>Recent content in Awk on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 16 Jul 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/awk/rss.xml" rel="self" type="application/rss+xml"/><item><title>Split concatenated certificates with awk</title><link>https://blog.oddbit.com/post/2013-07-16-split-concatenated-c/</link><pubDate>Tue, 16 Jul 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-07-16-split-concatenated-c/</guid><description>This is a short script that takes a list of concatenated certificates as input (such as a collection of CA certificates) and produces a collection of numbered files, each containing a single certificate.
-#!/bin/awk -f # This script expects a list of concatenated certificates on input and # produces a collection of individual numbered files each containing # a single certificate. BEGIN {incert=0} /-----BEGIN( TRUSTED)? CERTIFICATE-----/ { certno++ certfile=sprintf(&amp;quot;cert-%d.crt&amp;quot;, certno) incert=1 } /-----END( TRUSTED)?</description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Awk on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/awk/</link><description>Recent content in Awk on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 16 Jul 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/awk/rss.xml" rel="self" type="application/rss+xml"/><item><title>Split concatenated certificates with awk</title><link>https://blog.oddbit.com/post/2013-07-16-split-concatenated-c/</link><pubDate>Tue, 16 Jul 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-07-16-split-concatenated-c/</guid><description>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
 certificates as input (such as a collection of CA certificates) and
 produces a collection of numbered files, each containing a single
 certificate.&lt;/p>
@@ -18,8 +17,31 @@ print &amp;gt;&amp;gt; certfile
 incert=0
 }
 incert==1 { print &amp;gt;&amp;gt; certfile }
-&lt;/code>&lt;/pre></content></item><item><title>Parsing XML with Awk</title><link>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</link><pubDate>Mon, 10 Sep 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</guid><description>Recently, changes from the xmlgawk project have been integrated into GNU awk, and xmlgawk has been renamed to gawkextlib. With both a recent (post-4.0.70) gawk and gawkextlib built and installed correctly, you can write simple XML parsing scripts using gawk.
-For example, let&amp;rsquo;s say you would like to generate a list of disk image files associated with a KVM virtual instance. You can use the virsh dumpxml command to get output like the following:</description><content>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
+&lt;/code>&lt;/pr</description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
+certificates as input (such as a collection of CA certificates) and
+produces a collection of numbered files, each containing a single
+certificate.&lt;/p>
+&lt;pre>&lt;code>#!/bin/awk -f
+# This script expects a list of concatenated certificates on input and
+# produces a collection of individual numbered files each containing
+# a single certificate.
+BEGIN {incert=0}
+/-----BEGIN( TRUSTED)? CERTIFICATE-----/ {
+certno++
+certfile=sprintf(&amp;quot;cert-%d.crt&amp;quot;, certno)
+incert=1
+}
+/-----END( TRUSTED)? CERTIFICATE-----/ {
+print &amp;gt;&amp;gt; certfile
+incert=0
+}
+incert==1 { print &amp;gt;&amp;gt; certfile }
+&lt;/code>&lt;/pre></content></item><item><title>Parsing XML with Awk</title><link>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</link><pubDate>Mon, 10 Sep 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-09-10-awk-parsing-xml/</guid><description>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
+&lt;a href="https://www.gnu.org/software/gawk/">GNU awk&lt;/a>, and xmlgawk has been renamed to &lt;a href="http://gawkextlib.sourceforge.net/">gawkextlib&lt;/a>. With both a
+recent (post-4.0.70) gawk and gawkextlib built and installed
+correctly, you can write simple XML parsing scripts using gawk.&lt;/p>
+&lt;p>For example, let&amp;rsquo;s say you would like to generate a list of disk image
+files associated with a KVM virtual instance. You can use the &lt;code>virsh dumpxml&lt;/code> command to get output like the following:&lt;/p></description><content>&lt;p>Recently, changes from the &lt;a href="http://gawkextlib.sourceforge.net/">xmlgawk&lt;/a> project have been integrated into
 &lt;a href="https://www.gnu.org/software/gawk/">GNU awk&lt;/a>, and xmlgawk has been renamed to &lt;a href="http://gawkextlib.sourceforge.net/">gawkextlib&lt;/a>. With both a
 recent (post-4.0.70) gawk and gawkextlib built and installed
 correctly, you can write simple XML parsing scripts using gawk.&lt;/p>

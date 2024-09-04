@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Rsa on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/rsa/</link><description>Recent content in Rsa on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 09 May 2011 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/rsa/rss.xml" rel="self" type="application/rss+xml"/><item><title>Signing data with ssh-agent</title><link>https://blog.oddbit.com/post/2011-05-09-signing-data-with-ssh-agent/</link><pubDate>Mon, 09 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-05-09-signing-data-with-ssh-agent/</guid><description>This is follow-up to my previous post, Converting OpenSSH public keys.
-OpenSSH allows one to use an agent that acts as a proxy to your private key. When using an agent &amp;ndash; particularly with agent forwarding enabled &amp;ndash; this allows you to authenticate to a remote host without having to (a) repeatedly type in your password or (b) expose an unencrypted private key to remote systems.
-If one is temtped to use SSH keys as authentication credentials outside of ssh, one would ideally be able to take advantage of the ssh agent for these same reasons.</description><content>&lt;p>This is follow-up to my previous post, &lt;a href="http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/">Converting OpenSSH public keys&lt;/a>.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Rsa on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/rsa/</link><description>Recent content in Rsa on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 09 May 2011 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/rsa/rss.xml" rel="self" type="application/rss+xml"/><item><title>Signing data with ssh-agent</title><link>https://blog.oddbit.com/post/2011-05-09-signing-data-with-ssh-agent/</link><pubDate>Mon, 09 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-05-09-signing-data-with-ssh-agent/</guid><description>&lt;p>This is follow-up to my previous post, &lt;a href="http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/">Converting OpenSSH public keys&lt;/a>.&lt;/p>
+&lt;p>OpenSSH allows one to use an &lt;em>agent&lt;/em> that acts as a proxy to your private key. When using an agent &amp;ndash; particularly with agent forwarding enabled &amp;ndash; this allows you to authenticate to a remote host without having to (a) repeatedly type in your password or (b) expose an unencrypted private key to remote systems.&lt;/p>
+&lt;p>If one is temtped to use SSH keys as authentication credentials outside of ssh, one would ideally be able to take advantage of the ssh agent for these same reasons.&lt;/p></description><content>&lt;p>This is follow-up to my previous post, &lt;a href="http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/">Converting OpenSSH public keys&lt;/a>.&lt;/p>
 &lt;p>OpenSSH allows one to use an &lt;em>agent&lt;/em> that acts as a proxy to your private key. When using an agent &amp;ndash; particularly with agent forwarding enabled &amp;ndash; this allows you to authenticate to a remote host without having to (a) repeatedly type in your password or (b) expose an unencrypted private key to remote systems.&lt;/p>
 &lt;p>If one is temtped to use SSH keys as authentication credentials outside of ssh, one would ideally be able to take advantage of the ssh agent for these same reasons.&lt;/p>
 &lt;p>This article discusses what is required to programmatically interact with the agent and with the OpenSSL libraries for signing data and verifying signatures.&lt;/p>
@@ -109,10 +109,27 @@ print 'Failed!'
 openssl sha1 -binary |
 openssl pkeyutl -verify -sigfile signature \
 -pubin -inkey testkey.pubssl -pkeyopt digest:sha1
-&lt;/code>&lt;/pre></content></item><item><title>Converting OpenSSH public keys</title><link>https://blog.oddbit.com/post/2011-05-08-converting-openssh-public-keys/</link><pubDate>Sun, 08 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-05-08-converting-openssh-public-keys/</guid><description>I&amp;rsquo;ve posted a followup to this article that discusses ssh-agent.
-For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7EZn/BzP26AWk/Ts2ymjpTXuXRiEWIWn HFTilOTcuJ/P1HfOwiy4RHC1rv59Yh/E6jbTx623+OGySJWh1IS3dAEaHhcGKnJaikrBn3c cdoNVkAAuL/YD7FMG1Z0SjtcZS6MoO8Lb9pkq6R+Ok6JQjwCEsB+OaVwP9RnVA+HSYeyCVE 0KakLCbBJcD1U2aHP4+IH4OaXhZacpb9Ueja6NNfGrv558xTgfZ+fLdJ7cpg6wU8UZnVM1B JiUW5KFasc+2IuZR0+g/oJXaYwvW2T6XsMgipetCEtQoMAJ4zmugzHSQuFRYHw/7S6PUI2U 03glFmULvEV+qIxsVFT1ng3pj lars@tiamat.house To this:
------BEGIN RSA PUBLIC KEY----- MIIBCgKCAQEA+xGZ/wcz9ugFpP07Nspo6U17l0YhFiFpxxU4pTk3Lifz9R3zsIsu ERwta7+fWIfxOo208ett/jhskiVodSEt3QBGh4XBipyWopKwZ93HHaDVZAALi/2A +xTBtWdEo7XGUujKDvC2/aZKukfjpOiUI8AhLAfjmlcD/UZ1QPh0mHsglRNCmpCw mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P +0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB -----END RSA PUBLIC KEY----- If you have a recent version of OpenSSH (where recent means 5.</description><content>&lt;blockquote>
+&lt;/code>&lt;/pre></content></item><item><title>Converting OpenSSH public keys</title><link>https://blog.oddbit.com/post/2011-05-08-converting-openssh-public-keys/</link><pubDate>Sun, 08 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-05-08-converting-openssh-public-keys/</guid><description>&lt;blockquote>
+&lt;p>I&amp;rsquo;ve posted a &lt;a href="http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/">followup&lt;/a> to this article that discusses ssh-agent.&lt;/p>
+&lt;/blockquote>
+&lt;p>For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:&lt;/p>
+&lt;pre>&lt;code>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7EZn/BzP26AWk/Ts2ymjpTXuXRiEWIWn
+HFTilOTcuJ/P1HfOwiy4RHC1rv59Yh/E6jbTx623+OGySJWh1IS3dAEaHhcGKnJaikrBn3c
+cdoNVkAAuL/YD7FMG1Z0SjtcZS6MoO8Lb9pkq6R+Ok6JQjwCEsB+OaVwP9RnVA+HSYeyCVE
+0KakLCbBJcD1U2aHP4+IH4OaXhZacpb9Ueja6NNfGrv558xTgfZ+fLdJ7cpg6wU8UZnVM1B
+JiUW5KFasc+2IuZR0+g/oJXaYwvW2T6XsMgipetCEtQoMAJ4zmugzHSQuFRYHw/7S6PUI2U
+03glFmULvEV+qIxsVFT1ng3pj lars@tiamat.house
+&lt;/code>&lt;/pre>
+&lt;p>To this:&lt;/p>
+&lt;pre>&lt;code>-----BEGIN RSA PUBLIC KEY-----
+MIIBCgKCAQEA+xGZ/wcz9ugFpP07Nspo6U17l0YhFiFpxxU4pTk3Lifz9R3zsIsu
+ERwta7+fWIfxOo208ett/jhskiVodSEt3QBGh4XBipyWopKwZ93HHaDVZAALi/2A
++xTBtWdEo7XGUujKDvC2/aZKukfjpOiUI8AhLAfjmlcD/UZ1QPh0mHsglRNCmpCw
+mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN
+QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P
++0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB
+-----END RSA PUBLIC KEY-----
+&lt;/code>&lt;/pr</description><content>&lt;blockquote>
 &lt;p>I&amp;rsquo;ve posted a &lt;a href="http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/">followup&lt;/a> to this article that discusses ssh-agent.&lt;/p>
 &lt;/blockquote>
 &lt;p>For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:&lt;/p>

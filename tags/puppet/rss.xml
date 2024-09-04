@@ -1,7 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Puppet on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/puppet/</link><description>Recent content in Puppet on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 22 Oct 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/puppet/rss.xml" rel="self" type="application/rss+xml"/><item><title>Building Docker images with Puppet</title><link>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</link><pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</guid><description>I like Docker, but I&amp;rsquo;m not a huge fan of using shell scripts for complex system configuration&amp;hellip;and Dockerfiles are basically giant shell scripts.
-I was curious whether or not it would be possible to use Puppet during the docker build process. As a test case, I used the ssh module included in the openstack-puppet-modules package.
-I started with a manifest like this (in puppet/node.pp):
-class { 'ssh': } And a Dockerfile like this:</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Puppet on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/puppet/</link><description>Recent content in Puppet on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 22 Oct 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/puppet/rss.xml" rel="self" type="application/rss+xml"/><item><title>Building Docker images with Puppet</title><link>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</link><pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</guid><description>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+complex system configuration&amp;hellip;and Dockerfiles are basically giant
+shell scripts.&lt;/p>
+&lt;p>I was curious whether or not it would be possible to use Puppet during
+the &lt;code>docker build&lt;/code> process. As a test case, I used the
+&lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
+&lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
+&lt;pre>&lt;code>class { 'ssh': }
+&lt;/code>&lt;/pr</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
 complex system configuration&amp;hellip;and Dockerfiles are basically giant
 shell scripts.&lt;/p>
 &lt;p>I was curious whether or not it would be possible to use Puppet during
@@ -131,8 +136,7 @@ Successfully built e830e6adce26
 need to add an appropriate &lt;code>CMD&lt;/code> or &lt;code>ENTRYPOINT&lt;/code> script to make it
 generate host keys and start &lt;code>sshd&lt;/code>, but I think this successfully
 demonstrates what is necessary to make a stock Puppet module run
-as part of the &lt;code>docker build&lt;/code> process.&lt;/p></content></item><item><title>Extending Puppet</title><link>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</link><pubDate>Wed, 16 Apr 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</guid><description>I wanted to learn about writing custom Puppet types and providers. The official documentation is a little sparse, but I finally stumbled upon the following series of articles by Gary Larizza that provide a great deal of insight into the process and a bunch of example code:
-Fun With Puppet Providers Who Abstracted My Ruby? Seriously, What Is This Provider Doing?</description><content>&lt;p>I wanted to learn about writing custom Puppet types and providers.
+as part of the &lt;code>docker build&lt;/code> process.&lt;/p></content></item><item><title>Extending Puppet</title><link>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</link><pubDate>Wed, 16 Apr 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</guid><description>&lt;p>I wanted to learn about writing custom Puppet types and providers.
 The official documentation is a little sparse, but I finally stumbled
 upon the following series of articles by &lt;a href="http://garylarizza.com/">Gary Larizza&lt;/a> that provide
 a great deal of insight into the process and a bunch of example code:&lt;/p>
@@ -140,10 +144,15 @@ a great deal of insight into the process and a bunch of example code:&lt;/p>
 &lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/25/fun-with-providers/">Fun With Puppet Providers&lt;/a>&lt;/li>
 &lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/26/fun-with-providers-part-2/">Who Abstracted My Ruby?&lt;/a>&lt;/li>
 &lt;li>&lt;a href="http://garylarizza.com/blog/2013/12/15/seriously-what-is-this-provider-doing/">Seriously, What Is This Provider Doing?&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>A quote about XMLRPC</title><link>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</link><pubDate>Mon, 25 Feb 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</guid><description>I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the following:
-XMLRPC was the new hotness when development on Puppet started. Now, XMLRPC is that horrible thing with the XML and the angle brackets and the pain and sad.
-(from http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/)
-&amp;hellip;which also accurately sums up my feelings when I come across yet another piece of software where someone has decided that XML (or even JSON) is a good user-facing configuration syntax.</description><content>&lt;p>I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the
+&lt;/ul></description><content>&lt;p>I wanted to learn about writing custom Puppet types and providers.
+The official documentation is a little sparse, but I finally stumbled
+upon the following series of articles by &lt;a href="http://garylarizza.com/">Gary Larizza&lt;/a> that provide
+a great deal of insight into the process and a bunch of example code:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/25/fun-with-providers/">Fun With Puppet Providers&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/26/fun-with-providers-part-2/">Who Abstracted My Ruby?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://garylarizza.com/blog/2013/12/15/seriously-what-is-this-provider-doing/">Seriously, What Is This Provider Doing?&lt;/a>&lt;/li>
+&lt;/ul></content></item><item><title>A quote about XMLRPC</title><link>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</link><pubDate>Mon, 25 Feb 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</guid><description>&lt;p>I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the
 following:&lt;/p>
 &lt;blockquote>
 &lt;p>XMLRPC was the new hotness when development on Puppet started. Now,
@@ -153,11 +162,25 @@ the pain and sad.&lt;/p>
 &lt;p>(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/">http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a>)&lt;/p>
 &lt;p>&amp;hellip;which also accurately sums up my feelings when I come across yet
 another piece of software where someone has decided that XML (or even
-JSON) is a good user-facing configuration syntax.&lt;/p></content></item><item><title>Puppet, scope, and inheritance</title><link>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</link><pubDate>Tue, 16 Aug 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</guid><description>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.
-If you have a Puppet class like this:
-class foo { File { ensure =&amp;gt; file, mode =&amp;gt; 600, } } And you use it like this:
-class bar { include foo file { '/tmp/myfile': } } Then /tmp/myfile will not be created. But if instead you do this:
-class bar inherits foo { file { '/tmp/myfile': } } It will be created with mode 0600.</description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
+JSON) is a good user-facing configuration syntax.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the
+following:&lt;/p>
+&lt;blockquote>
+&lt;p>XMLRPC was the new hotness when development on Puppet started. Now,
+XMLRPC is that horrible thing with the XML and the angle brackets and
+the pain and sad.&lt;/p>
+&lt;/blockquote>
+&lt;p>(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/">http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a>)&lt;/p>
+&lt;p>&amp;hellip;which also accurately sums up my feelings when I come across yet
+another piece of software where someone has decided that XML (or even
+JSON) is a good user-facing configuration syntax.&lt;/p></content></item><item><title>Puppet, scope, and inheritance</title><link>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</link><pubDate>Tue, 16 Aug 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</guid><description>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
+&lt;p>If you have a Puppet class like this:&lt;/p>
+&lt;pre>&lt;code>class foo {
+File { ensure =&amp;gt; file,
+mode =&amp;gt; 600,
+}
+}
+&lt;/code>&lt;/pre>
+&lt;p>And you use it like this:&lt;/p></description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
 &lt;p>If you have a Puppet class like this:&lt;/p>
 &lt;pre>&lt;code>class foo {
 File { ensure =&amp;gt; file,

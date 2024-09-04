@@ -1,5 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Systemd on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/systemd/</link><description>Recent content in Systemd on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Feb 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/systemd/rss.xml" rel="self" type="application/rss+xml"/><item><title>A systemd-nspawn connection driver for Ansible</title><link>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</link><pubDate>Mon, 08 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</guid><description>I wrote earlier about systemd-nspawn, and how it can take much of the fiddly work out of setting up functional chroot environments. I&amp;rsquo;m a regular Ansible user, and I wanted to be able to apply some of those techniques to my playbooks.
-Ansible already has a chroot module, of course, but for some situations &amp;ndash; such as targeting an emulated chroot environment &amp;ndash; that just means a lot of extra work.</description><content>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Systemd on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/systemd/</link><description>Recent content in Systemd on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Feb 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/systemd/rss.xml" rel="self" type="application/rss+xml"/><item><title>A systemd-nspawn connection driver for Ansible</title><link>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</link><pubDate>Mon, 08 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-08-a-systemd-nspawn-connection-dr/</guid><description>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
+of the fiddly work out of setting up functional &lt;code>chroot&lt;/code> environments.
+I&amp;rsquo;m a regular &lt;a href="http://ansible.com/">Ansible&lt;/a> user, and I wanted to be able to apply some
+of those techniques to my playbooks.&lt;/p>
+&lt;p>Ansible already has a &lt;code>chroot&lt;/code> module, of course, but for some
+situations &amp;ndash; such as targeting an emulated &lt;code>chroot&lt;/code> environment &amp;ndash;
+that just means a lot of extra work. Using &lt;code>systemd-nspawn&lt;/code> makes
+this trivial.&lt;/p></description><content>&lt;p>I wrote &lt;a href="https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/">earlier&lt;/a> about &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a>, and how it can take much
 of the fiddly work out of setting up functional &lt;code>chroot&lt;/code> environments.
 I&amp;rsquo;m a regular &lt;a href="http://ansible.com/">Ansible&lt;/a> user, and I wanted to be able to apply some
 of those techniques to my playbooks.&lt;/p>
@@ -67,8 +73,13 @@ ansible_nspawn_extra_args=&amp;quot;--bind /usr/bin/qemu-arm&amp;quot;
 &lt;/code>&lt;/pre>
 &lt;p>The above will allow you to run a playbook against a filesystem
 containing ARM architecture binaries, even though you&amp;rsquo;re running on an
-x86_64 host.&lt;/p></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>systemd-nspawn has been called &amp;ldquo;chroot on steroids&amp;rdquo;, but if you think of it as Docker with a slightly different target you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers on your host, and has a variety of options for configuring the containerized environment through the use of private networking, bind mounts, capability controls, and a variety of other facilities that give you flexible container management.
-There are many different ways in which it can be used.</description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+x86_64 host.&lt;/p></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
+you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
+on your host, and has a variety of options for configuring the
+containerized environment through the use of private networking, bind
+mounts, capability controls, and a variety of other facilities that
+give you flexible container management.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
 but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
 you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
@@ -240,8 +251,14 @@ $ tar xf data.tar.xz ./usr/bin/qemu-arm-static
 &lt;p>And now our earlier command will work without further modification:&lt;/p>
 &lt;pre>&lt;code># systemd-nspawn -q --bind /usr/bin/qemu-arm -D /mnt /bin/bash
 root@mnt:/#
-&lt;/code>&lt;/pre></content></item><item><title>Docker vs. PrivateTmp</title><link>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</link><pubDate>Sun, 18 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</guid><description>While working with Docker the other day, I ran into an undesirable interaction between Docker and systemd services that utilize the PrivateTmp directive.
-The PrivateTmp directive, if true, &amp;ldquo;sets up a new file system namespace for the executed processes and mounts private /tmp and /var/tmp directories inside it that is not shared by processes outside of the namespace&amp;rdquo;. This is a great idea from a security perspective, but can cause some unanticipated consequences.</description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+&lt;/code>&lt;/pre></content></item><item><title>Docker vs. PrivateTmp</title><link>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</link><pubDate>Sun, 18 Jan 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-01-18-docker-vs-privatetmp/</guid><description>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
+utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
+&lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
+namespace for the executed processes and mounts private &lt;code>/tmp&lt;/code> and
+&lt;code>/var/tmp&lt;/code> directories inside it that is not shared by processes outside
+of the namespace&amp;rdquo;. This is a great idea from a &lt;a href="https://danwalsh.livejournal.com/51459.html">security
+perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p></description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
 undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
 utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
 &lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
@@ -419,9 +436,14 @@ namespace into the Docker mount namespace because of the &lt;em>private&lt;/em>
 flag.&lt;/p>
 &lt;h2 id="thanks">Thanks&lt;/h2>
 &lt;p>I had some help figuring this out. Thanks to &lt;a href="https://en.wikipedia.org/wiki/Lennart_Poettering">Lennart Poettering&lt;/a>,
-Andrey Borzenkov, and &lt;a href="http://blog.verbum.org/">Colin Walters&lt;/a>.&lt;/p></content></item><item><title>Starting systemd services without blocking</title><link>https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/</link><pubDate>Tue, 02 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/</guid><description>Recently, I&amp;rsquo;ve been playing around with Fedora Atomic and Kubernetes. I ran into a frustrating problem in which I would attempt to start a service from within a script launched by cloud-init, only to have have systemctl block indefinitely because the service I was attempting to start was dependent on cloud-init finishing first.
-It turns out that systemctl has a flag meant exactly for this situation:
---no-block Do not synchronously wait for the requested operation to finish.</description><content>&lt;p>Recently, I&amp;rsquo;ve been playing around with &lt;a href="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/">Fedora Atomic and
+Andrey Borzenkov, and &lt;a href="http://blog.verbum.org/">Colin Walters&lt;/a>.&lt;/p></content></item><item><title>Starting systemd services without blocking</title><link>https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/</link><pubDate>Tue, 02 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/</guid><description>&lt;p>Recently, I&amp;rsquo;ve been playing around with &lt;a href="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/">Fedora Atomic and
+Kubernetes&lt;/a>. I ran into a frustrating problem in which I
+would attempt to start a service from within a script launched by
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a>, only to have have &lt;code>systemctl&lt;/code> block indefinitely
+because the service I was attempting to start was dependent on
+&lt;code>cloud-init&lt;/code> finishing first.&lt;/p>
+&lt;p>It turns out that &lt;code>systemctl&lt;/code> has a flag meant exactly for this
+situation:&lt;/p></description><content>&lt;p>Recently, I&amp;rsquo;ve been playing around with &lt;a href="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/">Fedora Atomic and
 Kubernetes&lt;/a>. I ran into a frustrating problem in which I
 would attempt to start a service from within a script launched by
 &lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a>, only to have have &lt;code>systemctl&lt;/code> block indefinitely
@@ -435,8 +457,16 @@ this is not specified, the job will be verified, enqueued and
 systemctl will wait until it is completed. By passing this
 argument, it is only verified and enqueued.
 &lt;/code>&lt;/pre>
-&lt;p>Replacing &lt;code>systemctl start &amp;lt;service&amp;gt;&lt;/code> with &lt;code>systemctl start --no-block &amp;lt;service&amp;gt;&lt;/code> has solved that particular problem.&lt;/p></content></item><item><title>Private /tmp directories in Fedora</title><link>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</link><pubDate>Mon, 05 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</guid><description>I ran into an odd problem the other day: I was testing out some configuration changes for a web application by dropping files into /tmp and pointing the application configuration at the appropriate directory. Everything worked out great when testing it by hand&amp;hellip;but when starting up the httpd service, the application behaved as if it was unable to find any of the files in /tmp.
-My first assumption was that had simply missed something obvious like file permissions or that I had a typo in my configuration, but after repeated checks and lots of testing it was obvious that something else was going on.</description><content>&lt;p>I ran into an odd problem the other day: I was testing out some
+&lt;p>Replacing &lt;code>systemctl start &amp;lt;service&amp;gt;&lt;/code> with &lt;code>systemctl start --no-block &amp;lt;service&amp;gt;&lt;/code> has solved that particular problem.&lt;/p></content></item><item><title>Private /tmp directories in Fedora</title><link>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</link><pubDate>Mon, 05 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-05-fedora-private-tmp/</guid><description>&lt;p>I ran into an odd problem the other day: I was testing out some
+configuration changes for a web application by dropping files into
+&lt;code>/tmp&lt;/code> and pointing the application configuration at the appropriate
+directory. Everything worked out great when testing it by hand&amp;hellip;but
+when starting up the &lt;code>httpd&lt;/code> service, the application behaved as if it
+was unable to find any of the files in &lt;code>/tmp&lt;/code>.&lt;/p>
+&lt;p>My first assumption was that had simply missed something obvious like
+file permissions or that I had a typo in my configuration, but after
+repeated checks and lots of testing it was obvious that something else
+was going on.&lt;/p></description><content>&lt;p>I ran into an odd problem the other day: I was testing out some
 configuration changes for a web application by dropping files into
 &lt;code>/tmp&lt;/code> and pointing the application configuration at the appropriate
 directory. Everything worked out great when testing it by hand&amp;hellip;but

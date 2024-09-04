@@ -1,7 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pacemaker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pacemaker/</link><description>Recent content in Pacemaker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 24 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pacemaker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>If a picture is worth a thousand words, then code that generates pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that produces dot output from Pacemaker start and colocation constraints:
-https://github.com/larsks/pacemaker-tools/
-You can pass this output to graphviz to create visualizations of your Pacemaker resource constraints.
-The graph-constraints.py script in that repository consumes the output of cibadmin -Q and can produce output for either start constraints (-S, the default) or colocation constraints (-C).</description><content>&lt;p>If a picture is worth a thousand words, then code that generates
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pacemaker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/pacemaker/</link><description>Recent content in Pacemaker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 24 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/pacemaker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>&lt;p>If a picture is worth a thousand words, then code that generates
+pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that
+produces &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> output from Pacemaker start and colocation
+constraints:&lt;/p>
+&lt;p>&lt;a href="https://github.com/larsks/pacemaker-tools/">https://github.com/larsks/pacemaker-tools/&lt;/a>&lt;/p>
+&lt;p>You can pass this output to &lt;a href="http://www.graphviz.org/">graphviz&lt;/a> to create visualizations of
+your Pacemaker resource constraints.&lt;/p>
+&lt;p>The &lt;code>graph-constraints.py&lt;/code> script in that repository consumes the
+output of &lt;code>cibadmin -Q&lt;/code> and can produce output for either start
+constraints (&lt;code>-S&lt;/code>, the default) or colocation constraints (&lt;code>-C&lt;/code>).&lt;/p></description><content>&lt;p>If a picture is worth a thousand words, then code that generates
 pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that
 produces &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> output from Pacemaker start and colocation
 constraints:&lt;/p>
@@ -19,8 +25,16 @@ python graph-constraints.py -o cib.svg
 &lt;figure class="left" >
 &lt;img src="cib.svg" />
 &lt;/figure>
-&lt;p>Nodes are colored by their tag (so, &lt;code>primitive&lt;/code>, &lt;code>clone&lt;/code>, etc).&lt;/p></content></item><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>I&amp;rsquo;ve recently spent some time working with Pacemaker, and ended up with an interesting collection of XPath snippets that I am publishing here for your use and/or amusement.
-Check if there are any inactive resources pcs status xml | xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp; echo &amp;quot;There are inactive resources&amp;quot; This selects any resource (//resource) in the output of pcs status xml that has the attribute active set to false. If there are no matches to this query, xmllint exits with an error code.</description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
+&lt;p>Nodes are colored by their tag (so, &lt;code>primitive&lt;/code>, &lt;code>clone&lt;/code>, etc).&lt;/p></content></item><item><title>Stupid Pacemaker XML tricks</title><link>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</link><pubDate>Thu, 19 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-19-stupid-pacemaker-xml-tricks/</guid><description>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
+with an interesting collection of &lt;a href="http://www.w3.org/TR/xpath/">XPath&lt;/a> snippets that I am publishing
+here for your use and/or amusement.&lt;/p>
+&lt;h2 id="check-if-there-are-any-inactive-resources">Check if there are any inactive resources&lt;/h2>
+&lt;pre>&lt;code>pcs status xml |
+xmllint --xpath '//resource[@active=&amp;quot;false&amp;quot;]' - &amp;gt;&amp;amp;/dev/null &amp;amp;&amp;amp;
+echo &amp;quot;There are inactive resources&amp;quot;
+&lt;/code>&lt;/pre>
+&lt;p>This selects &lt;em>any&lt;/em> resource (&lt;code>//resource&lt;/code>) in the output of &lt;code>pcs status xml&lt;/code> that has the attribute &lt;code>active&lt;/code> set to &lt;code>false&lt;/code>. If there
+are no matches to this query, &lt;code>xmllint&lt;/code> exits with an error code.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve recently spent some time working with &lt;a href="http://clusterlabs.org/">Pacemaker&lt;/a>, and ended up
 with an interesting collection of &lt;a href="http://www.w3.org/TR/xpath/">XPath&lt;/a> snippets that I am publishing
 here for your use and/or amusement.&lt;/p>
 &lt;h2 id="check-if-there-are-any-inactive-resources">Check if there are any inactive resources&lt;/h2>

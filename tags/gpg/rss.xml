@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gpg on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gpg/</link><description>Recent content in Gpg on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gpg/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using KeyOxide</title><link>https://blog.oddbit.com/post/2022-11-13-using-keyoxide/</link><pubDate>Sun, 13 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-13-using-keyoxide/</guid><description>In today&amp;rsquo;s post, we look at KeyOxide, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.
-We&amp;rsquo;re going to look at the following high-level tasks:
-Create a GPG key
-Publish the GPG key</description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gpg on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/gpg/</link><description>Recent content in Gpg on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 13 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/gpg/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using KeyOxide</title><link>https://blog.oddbit.com/post/2022-11-13-using-keyoxide/</link><pubDate>Sun, 13 Nov 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-11-13-using-keyoxide/</guid><description>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
+&lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
@@ -191,9 +192,13 @@ sub cv25519 2022-11-13 [E]
 &lt;p>For some thoughts on key expiration, see &lt;a href="https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security">this question&lt;/a> on the Information Security StackExchange.&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/div></content></item><item><title>Getting started with KSOPS</title><link>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</link><pubDate>Tue, 09 Mar 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</guid><description>Kustomize is a tool for assembling Kubernetes manifests from a collection of files. We&amp;rsquo;re making extensive use of Kustomize in the operate-first project. In order to keep secrets stored in our configuration repositories, we&amp;rsquo;re using the KSOPS plugin, which enables Kustomize to use sops to encrypt/files using GPG.
-In this post, I&amp;rsquo;d like to walk through the steps necessary to get everything up and running.
-Set up GPG We encrypt files using GPG, so the first step is making sure that you have a GPG keypair and that your public key is published where other people can find it.</description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+&lt;/div></content></item><item><title>Getting started with KSOPS</title><link>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</link><pubDate>Tue, 09 Mar 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-03-09-getting-started-with-ksops/</guid><description>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
+&lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
+configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
+enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
+&lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
+everything up and running.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
 collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 &lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
@@ -409,8 +414,14 @@ name: example-secret
 type: Opaque
 stringData:
 message: this is a test
-&lt;/code>&lt;/pre></content></item><item><title>A note about running gpgv</title><link>https://blog.oddbit.com/post/2020-10-05-a-note-about-running-gpgv/</link><pubDate>Mon, 05 Oct 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-10-05-a-note-about-running-gpgv/</guid><description>I found the following error from gpgv to be a little opaque:
-gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39; gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error gpgv: Can&amp;#39;t check signature: No public key It turns out that&amp;rsquo;s gpg-speak for &amp;ldquo;your trustedkeys.kbx keyring doesn&amp;rsquo;t exist&amp;rdquo;. That took longer to figure out than I care to admit. To get a key from your regular public keyring into your trusted keyring, you can run something like the following:</description><content>&lt;p>I found the following error from &lt;code>gpgv&lt;/code> to be a little opaque:&lt;/p>
+&lt;/code>&lt;/pre></content></item><item><title>A note about running gpgv</title><link>https://blog.oddbit.com/post/2020-10-05-a-note-about-running-gpgv/</link><pubDate>Mon, 05 Oct 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-10-05-a-note-about-running-gpgv/</guid><description>&lt;p>I found the following error from &lt;code>gpgv&lt;/code> to be a little opaque:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39;
+gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error
+gpgv: Can&amp;#39;t check signature: No public key
+&lt;/code>&lt;/pre>&lt;p>It turns out that&amp;rsquo;s gpg-speak for &amp;ldquo;your &lt;code>trustedkeys.kbx&lt;/code> keyring doesn&amp;rsquo;t
+exist&amp;rdquo;. That took longer to figure out than I care to admit. To get a key
+from your regular public keyring into your trusted keyring, you can run
+something like the following:&lt;/p></description><content>&lt;p>I found the following error from &lt;code>gpgv&lt;/code> to be a little opaque:&lt;/p>
 &lt;pre tabindex="0">&lt;code>gpgv: unknown type of key resource &amp;#39;trustedkeys.kbx&amp;#39;
 gpgv: keyblock resource &amp;#39;/home/lars/.gnupg/trustedkeys.kbx&amp;#39;: General error
 gpgv: Can&amp;#39;t check signature: No public key

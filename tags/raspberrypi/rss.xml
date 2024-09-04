@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Raspberrypi on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/raspberrypi/</link><description>Recent content in Raspberrypi on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 19 Jan 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/raspberrypi/rss.xml" rel="self" type="application/rss+xml"/><item><title>PiPower: A Raspberry Pi UPS</title><link>https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/</link><pubDate>Sat, 19 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/</guid><description>I have a Raspberry Pi running RetroPie hooked up to a television. It&amp;rsquo;s powered from a USB port on the TV, which is convenient, but it means that whenever we shut off the TV we&amp;rsquo;re pulling the plug on the Pi. While there haven&amp;rsquo;t been any problems so far, this is a classic recipe for filesystem problems or data loss at some point. I started looking into UPS options to alleviate this issue.</description><content>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Raspberrypi on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/raspberrypi/</link><description>Recent content in Raspberrypi on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 19 Jan 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/raspberrypi/rss.xml" rel="self" type="application/rss+xml"/><item><title>PiPower: A Raspberry Pi UPS</title><link>https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/</link><pubDate>Sat, 19 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/</guid><description>&lt;figure class="left" >
+&lt;img src="pipower-top.jpg" />
+&lt;/figure>
+&lt;p>I have a Raspberry Pi running &lt;a href="https://retropie.org.uk/">RetroPie&lt;/a> hooked up to a television. It&amp;rsquo;s powered from a USB port on the TV, which is convenient, but it means that whenever we shut off the TV we&amp;rsquo;re pulling the plug on the Pi. While there haven&amp;rsquo;t been any problems so far, this is a classic recipe for filesystem problems or data loss at some point. I started looking into UPS options to alleviate this issue. I wanted something with the following features:&lt;/p></description><content>
 &lt;figure class="left" >
 &lt;img src="pipower-top.jpg" />
 &lt;/figure>
@@ -85,9 +88,12 @@ WantedBy=multi-user.target
 &lt;/figure>
 &lt;figure class="left" >
 &lt;img src="pipower-eth-right.jpg" />
-&lt;/figure></content></item><item><title>Systemd unit for managing USB gadgets</title><link>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</guid><description>The Pi Zero (and Zero W) have support for acting as a USB gadget: that means that they can be configured to act as a USB device &amp;ndash; like a serial port, an ethernet interface, a mass storage device, etc.
-There are two different ways of configuring this support. The first only allows you to configure a single type of gadget at a time, and boils down to:
-Enable the dwc2 overlay in /boot/config.</description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+&lt;/figure></content></item><item><title>Systemd unit for managing USB gadgets</title><link>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</link><pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-10-19-systemd-unit-for-managing-usb-/</guid><description>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+that means that they can be configured to act as a USB device &amp;ndash; like
+a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
+&lt;p>There are two different ways of configuring this support. The first
+only allows you to configure a single type of gadget at a time, and
+boils down to:&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
 that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first
@@ -126,11 +132,22 @@ automatically when your system boots by running &lt;code>systemctl enable usb-ga
 &lt;p>The &lt;a href="https://github.com/larsks/systemd-usb-gadget">systemd-usb-gadget&lt;/a> project can be found at:&lt;/p>
 &lt;ul>
 &lt;li>&lt;a href="https://github.com/larsks/systemd-usb-gadget">https://github.com/larsks/systemd-usb-gadget&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>Configuring a static address for wlan0 on Raspbian Stretch</title><link>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</link><pubDate>Thu, 14 Jun 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</guid><description>Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
-First, disable dhcpcd and wpa_supplicant.
-systemctl disable --now dhdpcd wpa_supplicant You will need a wpa_supplicant configuration for wlan0 in /etc/wpa_supplicant/wpa_supplicant-wlan0.conf.
-If you already have an appropriate configuration in /etc/wpa_supplicant/wpa_supplicant.conf, you can just symlink the file:
-cd /etc/wpa_supplicant ln -s wpa_supplicant.</description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+&lt;/ul></content></item><item><title>Configuring a static address for wlan0 on Raspbian Stretch</title><link>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</link><pubDate>Thu, 14 Jun 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-06-14-configuring-a-static-address-f/</guid><description>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+manage both dynamic and static interface configuration. If you would
+prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
+instead, follow these steps.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>First, disable &lt;code>dhcpcd&lt;/code> and &lt;code>wpa_supplicant&lt;/code>.&lt;/p>
+&lt;pre>&lt;code> systemctl disable --now dhdpcd wpa_supplicant
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>You will need a &lt;code>wpa_supplicant&lt;/code> configuration for &lt;code>wlan0&lt;/code> in
+&lt;code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf&lt;/code>.&lt;/p>
+&lt;p>If you already have an appropriate configuration in
+&lt;code>/etc/wpa_supplicant/wpa_supplicant.conf&lt;/code>, you can just symlink the
+file:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
 manage both dynamic and static interface configuration. If you would
 prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
 instead, follow these steps.&lt;/p>
@@ -181,7 +198,14 @@ inet6 fe80::2e1:b0ff:fe67:9867/64 scope link
 valid_lft forever preferred_lft forever
 &lt;/code>&lt;/pre>
 &lt;/li>
-&lt;/ol></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+&lt;/ol></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+protocol for communication. Recent versions of the Linux kernel
+include a kernel driver for this protocol, making it relatively
+convenient to connect one or more of these devices to a Raspberry Pi
+or similar device. 1-Wire devices can be daisy chained, so it is
+possible to connect several devices to your Pi using only a single
+GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to
+do so.&lt;/p></description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
 protocol for communication. Recent versions of the Linux kernel
 include a kernel driver for this protocol, making it relatively
 convenient to connect one or more of these devices to a Raspberry Pi
@@ -229,8 +253,17 @@ temperature sensors):&lt;/p>
 Much like the 1-Wire overlay, the kernel driver for the DHT22 can be
 associated with an arbitrary GPIO pin like this:&lt;/p>
 &lt;pre>&lt;code>dtoverlay=dht11,gpiopin=27
-&lt;/code>&lt;/pre></content></item><item><title>Some notes on PWM on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2017-09-26-some-notes-on-pwm-on-the-raspb/</link><pubDate>Tue, 26 Sep 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-09-26-some-notes-on-pwm-on-the-raspb/</guid><description>I was recently working on a project in which I wanted to drive a simple piezo buzzer attached to a GPIO pin on a Raspberry Pi. I was already using the RPi.GPIO module in my project so that seemed like a logical place to start, but I ran into a few issues.
-You drive a piezo buzzer by generating a PWM signal with the appropriate frequency. The RPi.GPIO module implements PWM via software, which is tricky on a non-realtime system.</description><content>&lt;p>I was recently working on a project in which I wanted to drive a
+&lt;/code>&lt;/pre></content></item><item><title>Some notes on PWM on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2017-09-26-some-notes-on-pwm-on-the-raspb/</link><pubDate>Tue, 26 Sep 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-09-26-some-notes-on-pwm-on-the-raspb/</guid><description>&lt;p>I was recently working on a project in which I wanted to drive a
+simple &lt;a href="https://www.adafruit.com/product/160">piezo buzzer&lt;/a> attached to a GPIO pin on a Raspberry Pi. I
+was already using the &lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a> module in my project so that seemed
+like a logical place to start, but I ran into a few issues.&lt;/p>
+&lt;p>You drive a piezo buzzer by generating a &lt;a href="https://learn.sparkfun.com/tutorials/pulse-width-modulation">PWM&lt;/a> signal with the
+appropriate frequency. The &lt;code>RPi.GPIO&lt;/code> module implements PWM via
+software, which is tricky on a non-realtime system. It&amp;rsquo;s difficult to
+get the timing completely accurate, which results in sounds that are a
+little wobbly at best. Since I&amp;rsquo;m simply generating tones with a
+buzzer (rather than, say, controlling a servo) this is mostly just an
+annoyance.&lt;/p></description><content>&lt;p>I was recently working on a project in which I wanted to drive a
 simple &lt;a href="https://www.adafruit.com/product/160">piezo buzzer&lt;/a> attached to a GPIO pin on a Raspberry Pi. I
 was already using the &lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a> module in my project so that seemed
 like a logical place to start, but I ran into a few issues.&lt;/p>
@@ -343,8 +376,13 @@ chmod -R g+rwX $PWM/*
 will run before my application starts up. To use the above, drop the
 unit file into &lt;code>/etc/systemd/system/rpi-configure-pwm.service&lt;/code>, and
 drop the script into &lt;code>/usr/bin/rpi-configure-pwm&lt;/code>. Don&amp;rsquo;t forget to
-&lt;code>systemctl enable rpi-configure-pwm&lt;/code>.&lt;/p></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>systemd-nspawn has been called &amp;ldquo;chroot on steroids&amp;rdquo;, but if you think of it as Docker with a slightly different target you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers on your host, and has a variety of options for configuring the containerized environment through the use of private networking, bind mounts, capability controls, and a variety of other facilities that give you flexible container management.
-There are many different ways in which it can be used.</description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+&lt;code>systemctl enable rpi-configure-pwm&lt;/code>.&lt;/p></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
+you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
+on your host, and has a variety of options for configuring the
+containerized environment through the use of private networking, bind
+mounts, capability controls, and a variety of other facilities that
+give you flexible container management.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
 but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
 you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
@@ -516,8 +554,13 @@ $ tar xf data.tar.xz ./usr/bin/qemu-arm-static
 &lt;p>And now our earlier command will work without further modification:&lt;/p>
 &lt;pre>&lt;code># systemd-nspawn -q --bind /usr/bin/qemu-arm -D /mnt /bin/bash
 root@mnt:/#
-&lt;/code>&lt;/pre></content></item><item><title>gpio-watch: Run scripts in response to GPIO signals</title><link>https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/</link><pubDate>Sat, 26 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/</guid><description>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to a Raspberry Pi and have some code execute in response to the button presses.
-Normally I would reach for Python for a simple project like this, but constraints of the project made it necessary to implement something in C with minimal dependencies. I didn&amp;rsquo;t want to write something that was tied closely to my project&amp;hellip;</description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
+&lt;/code>&lt;/pre></content></item><item><title>gpio-watch: Run scripts in response to GPIO signals</title><link>https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/</link><pubDate>Sat, 26 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-26-gpiowatch-run-scripts-in-respo/</guid><description>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
+a &lt;a href="http://raspberrypi.org/">Raspberry Pi&lt;/a> and have some code execute in response to the
+button presses.&lt;/p>
+&lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
+but constraints of the project made it necessary to implement
+something in C with minimal dependencies. I didn&amp;rsquo;t want to write
+something that was tied closely to my project&amp;hellip;&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
 a &lt;a href="http://raspberrypi.org/">Raspberry Pi&lt;/a> and have some code execute in response to the
 button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
@@ -650,8 +693,13 @@ cc -c -o logging.o logging.c
 cc -o gpio-watch main.o gpio.o fileutil.o logging.o -lrt
 &lt;/code>&lt;/pre>
 &lt;p>There is basic documentation in &lt;code>README.md&lt;/code> in the distribution. If
-you run into any problems, feel free to &lt;a href="https://github.com/larsks/gpio-watch/issues/new">open a new issue&lt;/a>.&lt;/p></content></item><item><title>Interrupts on the PiFace</title><link>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</link><pubDate>Mon, 05 Aug 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</guid><description>I recently acquired both a Raspberry Pi and a PiFace IO board. I had a rough time finding examples of how to read the input ports via interrupts (rather than periodically polling for values), especially for the newer versions of the PiFace python libraries.
-After a little research, here&amp;rsquo;s some simple code that will print out pin names as you press the input buttons. Button 3 will cause the code to exit:</description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+you run into any problems, feel free to &lt;a href="https://github.com/larsks/gpio-watch/issues/new">open a new issue&lt;/a>.&lt;/p></content></item><item><title>Interrupts on the PiFace</title><link>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</link><pubDate>Mon, 05 Aug 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-08-05-interrupts-on-the-pi/</guid><description>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+I had a rough time finding examples of how to read the input ports via
+interrupts (rather than periodically polling for values), especially
+for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
+&lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
+will print out pin names as you press the input buttons. Button 3
+will cause the code to exit:&lt;/p></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
 I had a rough time finding examples of how to read the input ports via
 interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
@@ -685,8 +733,22 @@ while not quit:
 time.sleep(1)
 print 'you pressed button 3 (quitting)'
 listener.deactivate()
-&lt;/code>&lt;/pre></content></item><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>I&amp;rsquo;ve set up my Raspberry Pi to communicate with my Arduino via I2C. The Raspberry Pi is a 3.3v device and the Arduino is a 5v device. While in general this means that you need to use a level converter when connecting the two devices, you don&amp;rsquo;t need to use a level converter when connecting the Arduino to the Raspberry Pi via I2C.
-The design of the I2C bus is such that the only device driving a voltage on the bus is the master (in this case, the Raspberry Pi), via pull-up resistors.</description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;/code>&lt;/pre></content></item><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
+device. While in general this means that you need to use a level
+converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
+level converter when connecting the Arduino to the Raspberry Pi via
+I2C.&lt;/strong>&lt;/p>
+&lt;p>The design of the I2C bus is such that the only device driving a
+voltage on the bus is the master (in this case, the Raspberry Pi), via
+pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
+the Pi, which is perfectly safe for the Arduino (and compatible with
+it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
+bus low by connecting it to ground. In other words, slave devices
+&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
+never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
+mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
+Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
 &lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
 device. While in general this means that you need to use a level
 converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
@@ -710,8 +772,17 @@ Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;
 (&lt;code>SCL&lt;/code>):&lt;/p>
 &lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
-the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
-RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses.</description><content>&lt;p>There are several Python libraries out there for interacting with the
+the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>&lt;p>There are several Python libraries out there for interacting with the
+&lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>
+&lt;li>The &lt;a href="https://github.com/WiringPi/WiringPi-Python">WiringPi&lt;/a> bindings for Python, and&lt;/li>
+&lt;li>The &lt;a href="https://github.com/quick2wire/quick2wire-python-api">Quick2Wire&lt;/a> Python API (which depends on Python 3)&lt;/li>
+&lt;/ul>
+&lt;p>All of them are reasonably easy to use, but the Quick2Wire API
+provides a uniquely useful feature: &lt;code>epoll&lt;/code>-enabled GPIO interrupts.
+This makes it trivial to write code that efficiently waits for and
+responds to things like button presses.&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
 &lt;ul>
 &lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>

@@ -1,5 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>I2c on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/i2c/</link><description>Recent content in I2c on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 12 Mar 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/i2c/rss.xml" rel="self" type="application/rss+xml"/><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>I&amp;rsquo;ve set up my Raspberry Pi to communicate with my Arduino via I2C. The Raspberry Pi is a 3.3v device and the Arduino is a 5v device. While in general this means that you need to use a level converter when connecting the two devices, you don&amp;rsquo;t need to use a level converter when connecting the Arduino to the Raspberry Pi via I2C.
-The design of the I2C bus is such that the only device driving a voltage on the bus is the master (in this case, the Raspberry Pi), via pull-up resistors.</description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>I2c on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/i2c/</link><description>Recent content in I2c on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 12 Mar 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/i2c/rss.xml" rel="self" type="application/rss+xml"/><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
+device. While in general this means that you need to use a level
+converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
+level converter when connecting the Arduino to the Raspberry Pi via
+I2C.&lt;/strong>&lt;/p>
+&lt;p>The design of the I2C bus is such that the only device driving a
+voltage on the bus is the master (in this case, the Raspberry Pi), via
+pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
+the Pi, which is perfectly safe for the Arduino (and compatible with
+it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
+bus low by connecting it to ground. In other words, slave devices
+&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
+never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
+mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
+Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
 &lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
 device. While in general this means that you need to use a level
 converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a

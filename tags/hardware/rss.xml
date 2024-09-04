@@ -1,5 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hardware on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/hardware/</link><description>Recent content in Hardware on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 26 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/hardware/rss.xml" rel="self" type="application/rss+xml"/><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>I&amp;rsquo;ve had my eye on the Vortex Core keyboard for a few months now, and this past week I finally broke down and bought one (with Cherry MX Brown switches). The Vortex Core is a 40% keyboard, which means it consists primarily of letter keys, a few lonely bits of punctuation, and several modifier keys to activate different layers on the keyboard.
-Physical impressions It&amp;rsquo;s a really cute keyboard. I&amp;rsquo;m a big fan of MX brown switches, and this keyboard is really a joy to type on, at least when you&amp;rsquo;re working primarily with the alpha keys.</description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hardware on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/hardware/</link><description>Recent content in Hardware on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 26 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/hardware/rss.xml" rel="self" type="application/rss+xml"/><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+past week I finally broke down and bought one (with Cherry MX Brown switches).
+The Vortex Core is a 40% keyboard, which means it consists primarily of letter
+keys, a few lonely bits of punctuation, and several modifier keys to activate
+different layers on the keyboard.&lt;/p>
+&lt;h2 id="physical-impressions">Physical impressions&lt;/h2>
+&lt;p>It&amp;rsquo;s a really cute keyboard. I&amp;rsquo;m a big fan of MX brown switches, and this
+keyboard is really a joy to type on, at least when you&amp;rsquo;re working primarily
+with the alpha keys. I&amp;rsquo;m still figuring out where some of the punctuation
+is, and with a few exceptions I haven&amp;rsquo;t yet spent time trying to remap
+things into more convenient positions.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
 past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
@@ -71,7 +80,14 @@ of the keyboard.&lt;/p>
 &lt;/ul>
 &lt;h2 id="final-thoughts">Final thoughts&lt;/h2>
 &lt;p>It&amp;rsquo;s a fun keyboard. I&amp;rsquo;m not sure it&amp;rsquo;s going to become my primary keyboard,
-especially for writing code, but I&amp;rsquo;m definitely happy with it.&lt;/p></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>The DS18B20 is a popular temperature sensor that uses the 1-Wire protocol for communication. Recent versions of the Linux kernel include a kernel driver for this protocol, making it relatively convenient to connect one or more of these devices to a Raspberry Pi or similar device. 1-Wire devices can be daisy chained, so it is possible to connect several devices to your Pi using only a single GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to do so.</description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+especially for writing code, but I&amp;rsquo;m definitely happy with it.&lt;/p></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
+protocol for communication. Recent versions of the Linux kernel
+include a kernel driver for this protocol, making it relatively
+convenient to connect one or more of these devices to a Raspberry Pi
+or similar device. 1-Wire devices can be daisy chained, so it is
+possible to connect several devices to your Pi using only a single
+GPIO pin, and you&amp;rsquo;ll find many articles out there that describe how to
+do so.&lt;/p></description><content>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
 protocol for communication. Recent versions of the Linux kernel
 include a kernel driver for this protocol, making it relatively
 convenient to connect one or more of these devices to a Raspberry Pi
@@ -119,8 +135,22 @@ temperature sensors):&lt;/p>
 Much like the 1-Wire overlay, the kernel driver for the DHT22 can be
 associated with an arbitrary GPIO pin like this:&lt;/p>
 &lt;pre>&lt;code>dtoverlay=dht11,gpiopin=27
-&lt;/code>&lt;/pre></content></item><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>I&amp;rsquo;ve set up my Raspberry Pi to communicate with my Arduino via I2C. The Raspberry Pi is a 3.3v device and the Arduino is a 5v device. While in general this means that you need to use a level converter when connecting the two devices, you don&amp;rsquo;t need to use a level converter when connecting the Arduino to the Raspberry Pi via I2C.
-The design of the I2C bus is such that the only device driving a voltage on the bus is the master (in this case, the Raspberry Pi), via pull-up resistors.</description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;/code>&lt;/pre></content></item><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
+&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
+device. While in general this means that you need to use a level
+converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
+level converter when connecting the Arduino to the Raspberry Pi via
+I2C.&lt;/strong>&lt;/p>
+&lt;p>The design of the I2C bus is such that the only device driving a
+voltage on the bus is the master (in this case, the Raspberry Pi), via
+pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
+the Pi, which is perfectly safe for the Arduino (and compatible with
+it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
+bus low by connecting it to ground. In other words, slave devices
+&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
+never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
+mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
+Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
 &lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
 device. While in general this means that you need to use a level
 converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
@@ -144,8 +174,17 @@ Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;
 (&lt;code>SCL&lt;/code>):&lt;/p>
 &lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
-the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>There are several Python libraries out there for interacting with the GPIO pins on a Raspberry Pi:
-RPi.GPIO The WiringPi bindings for Python, and The Quick2Wire Python API (which depends on Python 3) All of them are reasonably easy to use, but the Quick2Wire API provides a uniquely useful feature: epoll-enabled GPIO interrupts. This makes it trivial to write code that efficiently waits for and responds to things like button presses.</description><content>&lt;p>There are several Python libraries out there for interacting with the
+the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>&lt;p>There are several Python libraries out there for interacting with the
+&lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>
+&lt;li>The &lt;a href="https://github.com/WiringPi/WiringPi-Python">WiringPi&lt;/a> bindings for Python, and&lt;/li>
+&lt;li>The &lt;a href="https://github.com/quick2wire/quick2wire-python-api">Quick2Wire&lt;/a> Python API (which depends on Python 3)&lt;/li>
+&lt;/ul>
+&lt;p>All of them are reasonably easy to use, but the Quick2Wire API
+provides a uniquely useful feature: &lt;code>epoll&lt;/code>-enabled GPIO interrupts.
+This makes it trivial to write code that efficiently waits for and
+responds to things like button presses.&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
 &lt;ul>
 &lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>
@@ -226,8 +265,14 @@ active = False
 led.value = 0
 &lt;/code>&lt;/pre>
 &lt;p>All of these examples rely on Python&amp;rsquo;s &lt;a href="http://docs.python.org/3/reference/compound_stmts.html#the-with-statement">with statement&lt;/a>. If you&amp;rsquo;re
-unfamiliar with &lt;code>with&lt;/code>, you can find more information &lt;a href="http://docs.python.org/3/reference/compound_stmts.html#the-with-statement">here&lt;/a>.&lt;/p></content></item><item><title>Controlling a servo with your Arduino</title><link>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</link><pubDate>Thu, 07 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</guid><description>I&amp;rsquo;ve recently started playing with an Arduino kit I purchased a year ago (and only just now got around to unboxing). I purchased the kit from SparkFun, and it includes a motley collection of resistors, LEDs, a motor, a servo, and more.
-I was fiddling around with this exercise, which uses the SoftwareServo library to control a servo. Using this library, you just pass it an angle and the library takes care of everything else, e.</description><content>&lt;p>I&amp;rsquo;ve recently started playing with an &lt;a href="http://arduino.cc/">Arduino&lt;/a> kit I purchased a year
+unfamiliar with &lt;code>with&lt;/code>, you can find more information &lt;a href="http://docs.python.org/3/reference/compound_stmts.html#the-with-statement">here&lt;/a>.&lt;/p></content></item><item><title>Controlling a servo with your Arduino</title><link>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</link><pubDate>Thu, 07 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-07-controlling-a-servo/</guid><description>&lt;p>I&amp;rsquo;ve recently started playing with an &lt;a href="http://arduino.cc/">Arduino&lt;/a> kit I purchased a year
+ago (and only just now got around to unboxing). I purchased the kit
+from &lt;a href="https://www.sparkfun.com/">SparkFun&lt;/a>, and it includes a motley collection of resistors,
+LEDs, a motor, a servo, and more.&lt;/p>
+&lt;p>I was fiddling around with &lt;a href="http://oomlout.com/a/products/ardx/circ-04/">this exercise&lt;/a>, which uses the
+&lt;code>SoftwareServo&lt;/code> library to control a servo. Using this library,
+you just pass it an angle and the library takes care of everything
+else, e.g. to rotate to 90 degrees you would do this:&lt;/p></description><content>&lt;p>I&amp;rsquo;ve recently started playing with an &lt;a href="http://arduino.cc/">Arduino&lt;/a> kit I purchased a year
 ago (and only just now got around to unboxing). I purchased the kit
 from &lt;a href="https://www.sparkfun.com/">SparkFun&lt;/a>, and it includes a motley collection of resistors,
 LEDs, a motor, a servo, and more.&lt;/p>

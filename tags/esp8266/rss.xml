@@ -1,6 +1,23 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Esp8266 on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/esp8266/</link><description>Recent content in Esp8266 on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 18 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/esp8266/rss.xml" rel="self" type="application/rss+xml"/><item><title>To sleep or not to sleep?</title><link>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</link><pubDate>Fri, 18 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</guid><description>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running MicroPython. You&amp;rsquo;d like to sample them at different frequencies (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like to do it as efficiently as possible in terms of power consumption. What are your options?
-If we don&amp;rsquo;t care about power efficiency, the simplest solution is probably a loop like this:
-import machine lastrun_1 = 0 lastrun_2 = 0 while True: now = time.</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Esp8266 on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/esp8266/</link><description>Recent content in Esp8266 on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 18 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/esp8266/rss.xml" rel="self" type="application/rss+xml"/><item><title>To sleep or not to sleep?</title><link>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</link><pubDate>Fri, 18 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-18-to-sleep-or-not-to-sleep/</guid><description>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
+(say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
+to do it as efficiently as possible in terms of power consumption.
+What are your options?&lt;/p>
+&lt;p>If we don&amp;rsquo;t care about power efficiency, the simplest solution is
+probably a loop like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>import machine
+lastrun_1 = 0
+lastrun_2 = 0
+while True:
+now = time.time()
+if (lastrun_1 == 0) or (now - lastrun_1 &amp;gt;= 60):
+read_sensor_1()
+lastrun_1 = now
+if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
+read_sensor_2()
+lastrun_2 = now
+machine.idle()
+&lt;/code>&lt;/pr</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
 &lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
 (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
 to do it as efficiently as possible in terms of power consumption.
@@ -129,7 +146,13 @@ else:
 machine.idle()
 &lt;/code>&lt;/pre>&lt;p>If the variable &lt;code>use_deepsleep&lt;/code> is &lt;code>True&lt;/code>, this code will perform as
 described in the previous section, waking once every 60 seconds. If
-&lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</guid><description>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and for me that means leaping at the chance to turn a small problem into a slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go into here I wanted to generate an alert when a certain WiFi BSSID becomes visible. A simple solution to this problem would have been a few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t about simple solutions!</description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+&lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>I see you have the machine that goes ping...</title><link>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</link><pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/</guid><description>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
+for me that means leaping at the chance to turn a small problem into a
+slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
+into here I wanted to generate an alert when a certain WiFi BSSID
+becomes visible. A simple solution to this problem would have been a
+few lines of shell script to send me an email&amp;hellip;but this article isn&amp;rsquo;t
+about simple solutions!&lt;/p></description><content>&lt;p>We&amp;rsquo;re all looking for ways to keep ourselves occupied these days, and
 for me that means leaping at the chance to turn a small problem into a
 slightly ridiculous electronics project. For reasons that I won&amp;rsquo;t go
 into here I wanted to generate an alert when a certain WiFi BSSID
@@ -279,8 +302,15 @@ was due to flyback voltage from the relay, which is simple to fix if
 you happen to have an appropriate diode handy&amp;hellip;but if you don&amp;rsquo;t, it
 means calling around to all your aquaintenances to find someone who
 happens to have some lying around. With a diode in place, everything
-worked swimmingly.&lt;/p></content></item><item><title>Using a TM1637 LED module with CircuitPython</title><link>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</link><pubDate>Thu, 03 May 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</guid><description>CircuitPython is &amp;ldquo;an education friendly open source derivative of MicroPython&amp;rdquo;. MicroPython is a port of Python to microcontroller environments; it can run on boards with very few resources such as the ESP8266. I&amp;rsquo;ve recently started experimenting with CircuitPython on a Wemos D1 mini, which is a small form-factor ESP8266 board.
-I had previously been using Mike Causer&amp;rsquo;s micropython-tm1637 for MicroPython to drive a 4 digit LED display. I was hoping to get the same code working under CircuitPython, but when I tried to build an image that included the tm1637 module I ran into:</description><content>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
+worked swimmingly.&lt;/p></content></item><item><title>Using a TM1637 LED module with CircuitPython</title><link>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</link><pubDate>Thu, 03 May 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-05-03-using-a-tm-led-module-with-cir/</guid><description>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
+&lt;a href="https://micropython.org/">MicroPython&lt;/a>&amp;rdquo;. MicroPython is a port of Python to microcontroller
+environments; it can run on boards with very few resources such as the
+&lt;a href="https://en.wikipedia.org/wiki/ESP8266">ESP8266&lt;/a>. I&amp;rsquo;ve recently started experimenting with CircuitPython
+on a &lt;a href="https://wiki.wemos.cc/products:d1:d1_mini">Wemos D1 mini&lt;/a>, which is a small form-factor ESP8266 board.&lt;/p>
+&lt;p>I had previously been using Mike Causer&amp;rsquo;s &lt;a href="https://github.com/mcauser/micropython-tm1637/">micropython-tm1637&lt;/a> for
+MicroPython to drive a &lt;a href="http://a.co/gQVPtPr">4 digit LED display&lt;/a>. I was hoping to
+get the same code working under CircuitPython, but when I tried to
+build an image that included the &lt;code>tm1637&lt;/code> module I ran into:&lt;/p></description><content>&lt;p>&lt;a href="https://learn.adafruit.com/welcome-to-circuitpython/overview">CircuitPython&lt;/a> is &amp;ldquo;an education friendly open source derivative of
 &lt;a href="https://micropython.org/">MicroPython&lt;/a>&amp;rdquo;. MicroPython is a port of Python to microcontroller
 environments; it can run on boards with very few resources such as the
 &lt;a href="https://en.wikipedia.org/wiki/ESP8266">ESP8266&lt;/a>. I&amp;rsquo;ve recently started experimenting with CircuitPython

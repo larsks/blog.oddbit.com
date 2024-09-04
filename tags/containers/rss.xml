@@ -1,6 +1,8 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Containers on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/containers/</link><description>Recent content in Containers on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 17 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/containers/rss.xml" rel="self" type="application/rss+xml"/><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the NGINX Gateway Fabric.
-What&amp;rsquo;s the NGINX Gateway Fabric? The NGINX Gateway Fabric is an implementation of the Kubernetes Gateway API.
-What&amp;rsquo;s the Gateway API? The Gateway API is an evolution of the Ingress API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster).</description><content>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Containers on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/containers/</link><description>Recent content in Containers on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 17 Nov 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/containers/rss.xml" rel="self" type="application/rss+xml"/><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
+&lt;h2 id="whats-the-nginx-gateway-fabric">What&amp;rsquo;s the NGINX Gateway Fabric?&lt;/h2>
+&lt;p>The NGINX Gateway Fabric is an implementation of the Kubernetes &lt;a href="https://gateway-api.sigs.k8s.io/">Gateway API&lt;/a>.&lt;/p>
+&lt;h2 id="whats-the-gateway-api">What&amp;rsquo;s the Gateway API?&lt;/h2>
+&lt;p>The Gateway API is an evolution of the &lt;a href="https://kubernetes.io/docs/concepts/services-networking/ingress/">Ingress&lt;/a> API; it aims to provide a flexible mechanism for managing north/south network traffic (that is, traffic entering or exiting your Kubernetes cluster), with additional work to support east/west traffic (traffic between pods in your cluster).&lt;/p></description><content>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
 &lt;h2 id="whats-the-nginx-gateway-fabric">What&amp;rsquo;s the NGINX Gateway Fabric?&lt;/h2>
 &lt;p>The NGINX Gateway Fabric is an implementation of the Kubernetes &lt;a href="https://gateway-api.sigs.k8s.io/">Gateway API&lt;/a>.&lt;/p>
 &lt;h2 id="whats-the-gateway-api">What&amp;rsquo;s the Gateway API?&lt;/h2>
@@ -92,7 +94,7 @@ files:
 &lt;pre tabindex="0">&lt;code>kubectl apply -k . --server-side
 &lt;/code>&lt;/pre>&lt;p>&amp;hellip;the deployment includes our patched &lt;code>nginx.conf&lt;/code> and we are able to successfully push images into the cluster registry.&lt;/p>
 &lt;hr>
-&lt;p>I&amp;rsquo;ve included the complete &lt;a href="https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/kustomization.yaml">&lt;code>kustomization.yaml&lt;/code>&lt;/a> alongside this post.&lt;/p></content></item><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>A software fixture &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in Pytest to create and tear down containers as part of a test run.</description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
+&lt;p>I&amp;rsquo;ve included the complete &lt;a href="https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/kustomization.yaml">&lt;code>kustomization.yaml&lt;/code>&lt;/a> alongside this post.&lt;/p></content></item><item><title>Managing containers with Pytest fixtures</title><link>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</link><pubDate>Sat, 15 Jul 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/</guid><description>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p></description><content>&lt;p>A &lt;a href="https://en.wikipedia.org/wiki/Test_fixture#Software">software fixture&lt;/a> &amp;ldquo;sets up a system for the software testing process by initializing it, thereby satisfying any preconditions the system may have&amp;rdquo;. They allow us to perform setup and teardown tasks, provide state or set up services required for our tests, and perform other initialization tasks. In this article, we&amp;rsquo;re going to explore how to use fixtures in &lt;a href="https://docs.pytest.org/en/7.4.x/">Pytest&lt;/a> to create and tear down containers as part of a test run.&lt;/p>
 &lt;h2 id="pytest-fixtures">Pytest Fixtures&lt;/h2>
 &lt;p>Pytest &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html">fixtures&lt;/a> are created through the use of the &lt;code>fixture&lt;/code> decorator. A fixture is accessed by including a function parameter with the fixture name in our test functions. For example, if we define an &lt;code>example&lt;/code> fixture:&lt;/p>
 &lt;pre tabindex="0">&lt;code>@pytest.fixture
@@ -127,8 +129,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="917583462" type="checkbox" />
-&lt;label for="917583462">
+&lt;input id="183296547" type="checkbox" />
+&lt;label for="183296547">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -157,8 +159,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="876425391" type="checkbox" />
-&lt;label for="876425391">
+&lt;input id="153798426" type="checkbox" />
+&lt;label for="153798426">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -185,8 +187,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="481952376" type="checkbox" />
-&lt;label for="481952376">
+&lt;input id="812673945" type="checkbox" />
+&lt;label for="812673945">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -271,8 +273,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="463275918" type="checkbox" />
-&lt;label for="463275918">
+&lt;input id="694725183" type="checkbox" />
+&lt;label for="694725183">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -332,8 +334,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="271493865" type="checkbox" />
-&lt;label for="271493865">
+&lt;input id="953428716" type="checkbox" />
+&lt;label for="953428716">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -397,8 +399,8 @@ assert res[0] == 1
 &lt;p>The advantage here is that the impact on the test run time is minimal. The disadvantage is that we have to be very careful about the interaction between tests, since we would no longer be starting each test with a clean version of the database.&lt;/p>
 &lt;p>Keep in mind that in Pytest, a fixture can only reference other fixtures that come from the same or &amp;ldquo;broader&amp;rdquo; scope (so, a &lt;code>function&lt;/code> scoped fixture can use a &lt;code>session&lt;/code> scoped fixture, but the opposite is not true). In particular, that means if we were to make our &lt;code>mariadb_container&lt;/code> fixture &lt;code>session&lt;/code>-scoped, we would need to make the same change to its dependencies (&lt;code>mariadb_dbname&lt;/code>, &lt;code>mariadb_dbpass&lt;/code>, etc).&lt;/p>
 &lt;hr>
-&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>This post is mostly for myself: I find the Traefik documentation hard to navigate, so having figured this out in response to a question on Stack Overflow, I&amp;rsquo;m putting it here to help it stick in my head.
-The question asks essentially how to perform port-based routing of requests to containers, so that a request for http://example.com goes to one container while a request for http://example.com:9090 goes to a different container.</description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
+&lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
+&lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p></description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
 &lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
 &lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
 &lt;p>A default Traefik configuration will already have a listener on port 80, but if we want to accept connections on port 9090 we need to create a new listener: what Traefik calls an &lt;a href="https://doc.traefik.io/traefik/routing/entrypoints/">entrypoint&lt;/a>. We do this using the &lt;code>--entrypoints.&amp;lt;name&amp;gt;.address&lt;/code> option. For example, &lt;code>--entrypoints.ep1.address=80&lt;/code> creates an entrypoint named &lt;code>ep1&lt;/code> on port 80, while &lt;code>--entrypoints.ep2.address=9090&lt;/code> creates an entrypoint named &lt;code>ep2&lt;/code> on port 9090. Those names are important because we&amp;rsquo;ll use them for mapping containers to the appropriate listener later on.&lt;/p>
@@ -478,8 +480,13 @@ image: docker.io/alpinelinux/darkhttpd:latest
 labels:
 - traefik.http.routers.app2.rule=Host(`example.com`)
 - traefik.http.routers.app2.entrypoints=ep2
-&lt;/code>&lt;/pre></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>systemd-nspawn has been called &amp;ldquo;chroot on steroids&amp;rdquo;, but if you think of it as Docker with a slightly different target you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers on your host, and has a variety of options for configuring the containerized environment through the use of private networking, bind mounts, capability controls, and a variety of other facilities that give you flexible container management.
-There are many different ways in which it can be used.</description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+&lt;/code>&lt;/pre></content></item><item><title>Systemd-nspawn for fun and...well, mostly for fun</title><link>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</link><pubDate>Sun, 07 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-02-07-systemd-nspawn-for-fun-and-wel/</guid><description>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
+you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
+on your host, and has a variety of options for configuring the
+containerized environment through the use of private networking, bind
+mounts, capability controls, and a variety of other facilities that
+give you flexible container management.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
 but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
 you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the

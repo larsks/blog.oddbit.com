@@ -1,6 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Heat on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/heat/</link><description>Recent content in Heat on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 11 Aug 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/heat/rss.xml" rel="self" type="application/rss+xml"/><item><title>Exploring YAQL Expressions</title><link>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</link><pubDate>Thu, 11 Aug 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</guid><description>The Newton release of Heat adds support for a yaql intrinsic function, which allows you to evaluate yaql expressions in your Heat templates. Unfortunately, the existing yaql documentation is somewhat limited, and does not offer examples of many of yaql&amp;rsquo;s more advanced features.
-I am working on a Fluentd composable service for TripleO. I want to allow each service to specify a logging source configuration fragment, for example:
-parameters: NovaAPILoggingSource: type: json description: Fluentd logging configuration for nova-api.</description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Heat on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/heat/</link><description>Recent content in Heat on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 11 Aug 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/heat/rss.xml" rel="self" type="application/rss+xml"/><item><title>Exploring YAQL Expressions</title><link>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</link><pubDate>Thu, 11 Aug 2016 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2016-08-11-exploring-yaql-expressions/</guid><description>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
+in your Heat templates. Unfortunately, the existing yaql
+documentation is somewhat limited, and does not offer examples of many
+of yaql&amp;rsquo;s more advanced features.&lt;/p>
+&lt;p>I am working on a &lt;a href="http://www.fluentd.org/">Fluentd&lt;/a> composable service for &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a>. I
+want to allow each service to specify a logging source configuration
+fragment, for example:&lt;/p></description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
 intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
 in your Heat templates. Unfortunately, the existing yaql
 documentation is somewhat limited, and does not offer examples of many
@@ -171,9 +176,7 @@ $.data.sources.select(upperpath($))
 &lt;/code>&lt;/pre>
 &lt;p>This obviously becomes more useful as you use user-defined functions
 to encapsulate more complex yaql expressions for re-use.&lt;/p>
-&lt;p>Thanks to &lt;a href="https://github.com/sergmelikyan">sergmelikyan&lt;/a> for his help figuring this out.&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>Next week is the Red Hat Summit in Boston, and I&amp;rsquo;ll be taking part in a Project Atomic presentation in which I will discuss various (well, two) options for deploying Atomic into an OpenStack environment, focusing on my heat-kubernetes templates.
-As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:
-This shows off the autoscaling behavior available with recent versions of these templates (and also serves as a very brief introduction to working with Kubernetes).</description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+&lt;p>Thanks to &lt;a href="https://github.com/sergmelikyan">sergmelikyan&lt;/a> for his help figuring this out.&lt;/p></content></item><item><title>Heat-kubernetes Demo with Autoscaling</title><link>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</link><pubDate>Fri, 19 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-19-heatkubernetes-demo-with-autos/</guid><description>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
 in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
 (well, two) options for deploying Atomic into an OpenStack
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
@@ -184,8 +187,18 @@ environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-ku
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
-working with Kubernetes).&lt;/p></content></item><item><title>Heat Hangout</title><link>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</link><pubDate>Fri, 05 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</guid><description>I ran a Google Hangout this morning on Deploying with Heat. You can find the slides for the presentation on line here, and the Heat templates (as well as slide sources) are available on github.
-If you have any questions about the presentation, please feel free to ping me on irc (larsks).</description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
+working with Kubernetes).&lt;/p></description><content>&lt;p>Next week is the &lt;a href="http://www.redhat.com/summit/">Red Hat Summit&lt;/a> in Boston, and I&amp;rsquo;ll be taking part
+in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentation in which I will discuss various
+(well, two) options for deploying Atomic into an OpenStack
+environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
+&lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div>
+&lt;p>This shows off the autoscaling behavior available with recent versions
+of these templates (and also serves as a very brief introduction to
+working with Kubernetes).&lt;/p></content></item><item><title>Heat Hangout</title><link>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</link><pubDate>Fri, 05 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</guid><description>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
 can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
 Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
 github&lt;/a>.&lt;/p>
@@ -194,8 +207,25 @@ ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
 &lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
 >&lt;/iframe>
-&lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>I spent some time today learning about Heat autoscaling groups, which are incredibly nifty but a little opaque from the Heat command line, since commands such as heat resource-list don&amp;rsquo;t recurse into nested stacks. It is possible to introspect these resources (you can pass the physical resource id of a nested stack to heat resource-list, for example)&amp;hellip;
-&amp;hellip;but I really like visualizing things, so I wrote a quick hack called dotstack that will generate dot language output from a Heat stack.</description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
+&lt;/div></description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
+can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
+Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
+github&lt;/a>.&lt;/p>
+&lt;p>If you have any questions about the presentation, please feel free to
+ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
+&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
+&lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
+which are incredibly nifty but a little opaque from the Heat command
+line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
+nested stacks. It is possible to introspect these resources (you can
+pass the physical resource id of a nested stack to &lt;code>heat resource-list&lt;/code>, for example)&amp;hellip;&lt;/p>
+&lt;p>&amp;hellip;but I really like visualizing things, so I wrote a quick hack
+called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language output from a
+Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Graphviz&lt;/a> to produce output
+like this, in which graph nodes are automatically colorized by
+resource type:&lt;/p></description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
 nested stacks. It is possible to introspect these resources (you can
@@ -213,14 +243,19 @@ resource type and physical resource id:&lt;/p>
 &lt;figure class="left" >
 &lt;img src="sample-detailed.svg" />
 &lt;/figure>
-&lt;p>The source code is available on &lt;a href="http://github.com/larsks/dotstack">github&lt;/a>.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-While writing that article, I encountered a number of bugs in the Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the issues I encountered:
-Bugs in the Heat plugin https://bugs.launchpad.net/heat/+bug/1364017
-docker plugin fails to delete a container resource in CREATE_FAILED state.
-https://bugs.launchpad.net/heat/+bug/1364041
-docker plugin volumes_from parameter should be a list.
-https://bugs.launchpad.net/heat/+bug/1364039
-docker plugin volumes_from parameter results in an error</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>The source code is available on &lt;a href="http://github.com/larsks/dotstack">github&lt;/a>.&lt;/p></content></item><item><title>Docker plugin bugs</title><link>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</link><pubDate>Mon, 01 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-01-docker-plugin-bugs/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>While writing that article, I encountered a number of bugs in the
+Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
+issues I encountered:&lt;/p>
+&lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>docker plugin fails to delete a container resource in
+&lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -250,18 +285,26 @@ issues I encountered:&lt;/p>
 &lt;p>&lt;a href="https://github.com/docker/docker-py/pull/310">https://github.com/docker/docker-py/pull/310&lt;/a>&lt;/p>
 &lt;p>allow ports to be specified as &lt;code>port/proto&lt;/code>.&lt;/p>
 &lt;/li>
-&lt;/ul></content></item><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>This is a companion to my article on the Docker plugin for Heat.
-DockerInc::Docker::Container Properties cmd : List
-Command to run after spawning the container.
-Optional property.
-Example:
-cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi'] dns : List
-Set custom DNS servers.
-Example:
-dns: - 8.8.8.8 - 8.8.4.4 docker_endopint : String
-Docker daemon endpoint. By default the local Docker daemon will be used.
-Example:
-docker_endpoint: tcp://192.168.1.100:2375 env : String</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/ul></content></item><item><title>Annotated documentation for DockerInc::Docker::Container</title><link>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-contain-doc/</guid><description>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
+&lt;h3 id="properties">Properties&lt;/h3>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>cmd&lt;/code> : List&lt;/p>
+&lt;p>Command to run after spawning the container.&lt;/p>
+&lt;p>Optional property.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> cmd: [ 'thttpd', '-C', '/etc/thttpd.conf', '-D', '-c', '*.cgi']
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>dns&lt;/code> : List&lt;/p>
+&lt;p>Set custom DNS servers.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> dns:
+- 8.8.8.8
+- 8.8.4.4
+&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>
@@ -531,8 +574,14 @@ value: {get_attr: [&amp;quot;docker_dbserver&amp;quot;, &amp;quot;network_udp_po
 &lt;pre>&lt;code> &amp;quot;8443,8080&amp;quot;
 &lt;/code>&lt;/pre>
 &lt;/li>
-&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>I have been looking at both Docker and OpenStack recently. In my last post I talked a little about the Docker driver for Nova; in this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for Heat, which has been available since the Icehouse release but is surprisingly under-documented.
-The release announcement on the Docker blog includes an example Heat template, but it is unfortunately grossly inaccurate and has led many people astray.</description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+&lt;/ul></content></item><item><title>Docker plugin for OpenStack Heat</title><link>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/</guid><description>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
+post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
+this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
+Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
+surprisingly under-documented.&lt;/p>
+&lt;p>The &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">release announcement&lt;/a> on the Docker blog includes an
+example Heat template, but it is unfortunately grossly inaccurate and
+has led many people astray. In particular:&lt;/p></description><content>&lt;p>I have been looking at both Docker and OpenStack recently. In my &lt;a href="https://blog.oddbit.com/post/2014-08-28-novadocker-and-environment-var/">last
 post&lt;/a> I talked a little about the &lt;a href="https://github.com/stackforge/nova-docker">Docker driver for Nova&lt;/a>; in
 this post I&amp;rsquo;ll be taking an in-depth look at the Docker plugin for
 Heat, which has been available &lt;a href="https://blog.docker.com/2014/03/docker-will-be-in-openstack-icehouse/">since the Icehouse release&lt;/a> but is
@@ -1034,9 +1083,7 @@ MySQL [mysql]&amp;gt;
 &lt;h2 id="when-things-go-wrong">When things go wrong&lt;/h2>
 &lt;p>Your &lt;code>heat-engine&lt;/code> log, generally &lt;code>/var/log/heat/engine.log&lt;/code>, is going
 to be your best source of information if things go wrong. The &lt;code>heat stack-show&lt;/code> command will generally provide useful fault information if
-your stack ends up in the &lt;code>CREATE_FAILED&lt;/code> (or &lt;code>DELETE_FAILED&lt;/code>) state.&lt;/p></content></item><item><title>Using wait conditions with Heat</title><link>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</guid><description>This post accompanies my article on the Docker plugin for Heat.
-In order for WaitCondition resources to operate correctly in Heat, you will need to make sure that that you have:
-Created the necessary Heat domain and administrative user in Keystone, Configured appropriate values in heat.conf for stack_user_domain, stack_domain_admin, and stack_domain_admin_password. Configured an appropriate value in heat.conf for heat_waitcondition_server_url. On a single-system install this will often be pointed by default at 127.</description><content>&lt;p>This post accompanies my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for
+your stack ends up in the &lt;code>CREATE_FAILED&lt;/code> (or &lt;code>DELETE_FAILED&lt;/code>) state.&lt;/p></content></item><item><title>Using wait conditions with Heat</title><link>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</link><pubDate>Sat, 30 Aug 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-08-30-using-wait-conditions-with-hea/</guid><description>&lt;p>This post accompanies my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for
 Heat&lt;/a>.&lt;/p>
 &lt;p>In order for &lt;code>WaitCondition&lt;/code> resources to operate correctly in Heat, you
 will need to make sure that that you have:&lt;/p>
@@ -1055,9 +1102,39 @@ obvious reasons, won&amp;rsquo;t be of any use to your Nova servers.&lt;/li>
 runs on port 8000).&lt;/li>
 &lt;/ul>
 &lt;p>Steve Hardy has a blog post on &lt;a href="http://hardysteven.blogspot.co.uk/2014/04/heat-auth-model-updates-part-2-stack.html">stack domain users&lt;/a> that goes into
-detail on configuring authentication for Heat and Keystone.&lt;/p></content></item><item><title>An introduction to OpenStack Heat</title><link>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</link><pubDate>Fri, 06 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</guid><description>Heat is a template-based orchestration mechanism for use with OpenStack. With Heat, you can deploy collections of resources &amp;ndash; networks, servers, storage, and more &amp;ndash; all from a single, parameterized template.
-In this article I will introduce Heat templates and the heat command line client.
-Writing templates Because Heat began life as an analog of AWS CloudFormation, it supports the template formats used by the CloudFormation (CFN) tools. It also supports its own native template format, called HOT (&amp;ldquo;Heat Orchestration Templates&amp;rdquo;).</description><content>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
+detail on configuring authentication for Heat and Keystone.&lt;/p></description><content>&lt;p>This post accompanies my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for
+Heat&lt;/a>.&lt;/p>
+&lt;p>In order for &lt;code>WaitCondition&lt;/code> resources to operate correctly in Heat, you
+will need to make sure that that you have:&lt;/p>
+&lt;ul>
+&lt;li>Created the necessary Heat domain and administrative user in
+Keystone,&lt;/li>
+&lt;li>Configured appropriate values in &lt;code>heat.conf&lt;/code> for
+&lt;code>stack_user_domain&lt;/code>, &lt;code>stack_domain_admin&lt;/code>, and
+&lt;code>stack_domain_admin_password&lt;/code>.&lt;/li>
+&lt;li>Configured an appropriate value in &lt;code>heat.conf&lt;/code> for
+&lt;code>heat_waitcondition_server_url&lt;/code>. On a single-system install this
+will often be pointed by default at &lt;code>127.0.0.1&lt;/code>, which, hopefully for
+obvious reasons, won&amp;rsquo;t be of any use to your Nova servers.&lt;/li>
+&lt;li>Enabled the &lt;code>heat-api-cfn&lt;/code> service,&lt;/li>
+&lt;li>Configured your firewall to permit access to the CFN service (which
+runs on port 8000).&lt;/li>
+&lt;/ul>
+&lt;p>Steve Hardy has a blog post on &lt;a href="http://hardysteven.blogspot.co.uk/2014/04/heat-auth-model-updates-part-2-stack.html">stack domain users&lt;/a> that goes into
+detail on configuring authentication for Heat and Keystone.&lt;/p></content></item><item><title>An introduction to OpenStack Heat</title><link>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</link><pubDate>Fri, 06 Dec 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-12-06-an-introduction-to-openstack-h/</guid><description>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
+OpenStack. With Heat, you can deploy collections of resources &amp;ndash;
+networks, servers, storage, and more &amp;ndash; all from a single,
+parameterized template.&lt;/p>
+&lt;p>In this article I will introduce Heat templates and the &lt;code>heat&lt;/code> command
+line client.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="writing-templates">Writing templates&lt;/h2>
+&lt;p>Because Heat began life as an analog of AWS &lt;a href="http://aws.amazon.com/cloudformation/">CloudFormation&lt;/a>, it
+supports the template formats used by the CloudFormation (CFN) tools.
+It also supports its own native template format, called HOT (&amp;ldquo;Heat
+Orchestration Templates&amp;rdquo;). In this article I will be using the HOT
+template syntax, which is fully specified on &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html">the OpenStack
+website&lt;/a>.&lt;/p></description><content>&lt;p>&lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> is a template-based orchestration mechanism for use with
 OpenStack. With Heat, you can deploy collections of resources &amp;ndash;
 networks, servers, storage, and more &amp;ndash; all from a single,
 parameterized template.&lt;/p>

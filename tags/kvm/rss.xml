@@ -1,4 +1,10 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Kvm on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/kvm/</link><description>Recent content in Kvm on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Apr 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/kvm/rss.xml" rel="self" type="application/rss+xml"/><item><title>Did Arch Linux eat your KVM?</title><link>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</link><pubDate>Mon, 08 Apr 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</guid><description>A recent update to Arch Linux replaced the qemu-kvm package with an updated version of qemu. A side effect of this change is that the qemu-kvm binary is no longer available, and any libvirt guests on your system utilizing that binary will no longer operate. As is typical with Arch, there is no announcement about this incompatible change, and queries to #archlinux will be met with the knowledge, grace and decorum you would expect of that channel:</description><content>&lt;p>A recent update to &lt;a href="https://www.archlinux.org/">Arch Linux&lt;/a> replaced the &lt;code>qemu-kvm&lt;/code> package with
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Kvm on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/kvm/</link><description>Recent content in Kvm on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 08 Apr 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/kvm/rss.xml" rel="self" type="application/rss+xml"/><item><title>Did Arch Linux eat your KVM?</title><link>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</link><pubDate>Mon, 08 Apr 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-04-08-did-archlinux-eat-yo/</guid><description>&lt;p>A recent update to &lt;a href="https://www.archlinux.org/">Arch Linux&lt;/a> replaced the &lt;code>qemu-kvm&lt;/code> package with
+an updated version of &lt;code>qemu&lt;/code>. A side effect of this change is that
+the &lt;code>qemu-kvm&lt;/code> binary is no longer available, and any &lt;code>libvirt&lt;/code> guests
+on your system utilizing that binary will no longer operate. As is
+typical with Arch, there is no announcement about this incompatible
+change, and queries to &lt;code>#archlinux&lt;/code> will be met with the knowledge,
+grace and decorum you would expect of that channel:&lt;/p></description><content>&lt;p>A recent update to &lt;a href="https://www.archlinux.org/">Arch Linux&lt;/a> replaced the &lt;code>qemu-kvm&lt;/code> package with
 an updated version of &lt;code>qemu&lt;/code>. A side effect of this change is that
 the &lt;code>qemu-kvm&lt;/code> binary is no longer available, and any &lt;code>libvirt&lt;/code> guests
 on your system utilizing that binary will no longer operate. As is
@@ -58,8 +64,21 @@ virsh list --inactive --name | while read vm; do
 [ &amp;quot;$vm&amp;quot; ] || continue
 virsh edit $vm
 done
-&lt;/code>&lt;/pre></content></item><item><title>Growing a filesystem on a virtual disk</title><link>https://blog.oddbit.com/post/2012-10-24-resizing-virtual-disk/</link><pubDate>Wed, 24 Oct 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-10-24-resizing-virtual-disk/</guid><description>Occasionally we will deploy a virtual instance into our KVM infrastructure and realize after the fact that we need more local disk space available. This is the process we use to expand the disk image. This process assumes the following:
-You&amp;rsquo;re using legacy disk partitions. The process for LVM is similar and I will describe that in another post (it&amp;rsquo;s generally identical except for an additional pvresize thrown in and lvextend in place of resize2fs).</description><content>&lt;p>Occasionally we will deploy a virtual instance into our KVM
+&lt;/code>&lt;/pre></content></item><item><title>Growing a filesystem on a virtual disk</title><link>https://blog.oddbit.com/post/2012-10-24-resizing-virtual-disk/</link><pubDate>Wed, 24 Oct 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-10-24-resizing-virtual-disk/</guid><description>&lt;p>Occasionally we will deploy a virtual instance into our KVM
+infrastructure and realize after the fact that we need more local disk
+space available. This is the process we use to expand the disk image.
+This process assumes the following:&lt;/p>
+&lt;ul>
+&lt;li>You&amp;rsquo;re using legacy disk partitions. The process for LVM is similar
+and I will describe that in another post (it&amp;rsquo;s generally identical
+except for an additional &lt;code>pvresize&lt;/code> thrown in and &lt;code>lvextend&lt;/code> in
+place of &lt;code>resize2fs&lt;/code>).&lt;/li>
+&lt;li>The partition you need to resize is the last partition on the disk.&lt;/li>
+&lt;/ul>
+&lt;p>This process will work with either a &lt;code>qcow2&lt;/code> or &lt;code>raw&lt;/code> disk image. For
+&lt;code>raw&lt;/code> images you can also run &lt;code>fdisk&lt;/code> on the host, potentially saving
+yourself a reboot, but that&amp;rsquo;s less convenient for &lt;code>qcow2&lt;/code> format
+images.&lt;/p></description><content>&lt;p>Occasionally we will deploy a virtual instance into our KVM
 infrastructure and realize after the fact that we need more local disk
 space available. This is the process we use to expand the disk image.
 This process assumes the following:&lt;/p>

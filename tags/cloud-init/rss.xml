@@ -1,5 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Cloud-Init on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/cloud-init/</link><description>Recent content in Cloud-Init on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 26 Jun 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/cloud-init/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenStack Networking without DHCP</title><link>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</link><pubDate>Fri, 26 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</guid><description>In an OpenStack environment, cloud-init generally fetches information from the metadata service provided by Nova. It also has support for reading this information from a configuration drive, which under OpenStack means a virtual CD-ROM device attached to your instance containing the same information that would normally be available via the metadata service.
-It is possible to generate your network configuration from this configuration drive, rather than relying on the DHCP server provided by your OpenStack environment.</description><content>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Cloud-Init on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/cloud-init/</link><description>Recent content in Cloud-Init on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 26 Jun 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/cloud-init/rss.xml" rel="self" type="application/rss+xml"/><item><title>OpenStack Networking without DHCP</title><link>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</link><pubDate>Fri, 26 Jun 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/</guid><description>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
+information from the metadata service provided by Nova. It also has
+support for reading this information from a &lt;em>configuration drive&lt;/em>,
+which under OpenStack means a virtual CD-ROM device attached to your
+instance containing the same information that would normally be
+available via the metadata service.&lt;/p>
+&lt;p>It is possible to generate your network configuration from this
+configuration drive, rather than relying on the DHCP server provided
+by your OpenStack environment. In order to do this you will need to
+make the following changes to your Nova configuration:&lt;/p></description><content>&lt;p>In an OpenStack environment, &lt;a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init&lt;/a> generally fetches
 information from the metadata service provided by Nova. It also has
 support for reading this information from a &lt;em>configuration drive&lt;/em>,
 which under OpenStack means a virtual CD-ROM device attached to your
@@ -47,8 +55,19 @@ dns-nameservers {{ interface.dns }}
 system, or will get translated into
 &lt;code>/etc/sysconfig/network-scripts/ifcfg-eth0&lt;/code> on a RHEL system (a RHEL
 environment can only configure a single network interface using this
-mechanism).&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</guid><description>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed for use in cloud environments like OpenStack and AWS. These images are usually differentiated by (a) being relatively small, and (b) running cloud-init at boot to perform initial system configuration tasks using metadata provided by the cloud environment.
-Because of their small size and support for automatic configuration (including such useful tasks as provisioning ssh keys), these images are attractive for use outside of a cloud environment.</description><content>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
+mechanism).&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</guid><description>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
+for use in cloud environments like OpenStack and AWS. These images
+are usually differentiated by (a) being relatively small, and (b) running
+&lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> at boot to perform initial system configuration tasks
+using metadata provided by the cloud environment.&lt;/p>
+&lt;p>Because of their small size and support for automatic configuration
+(including such useful tasks as provisioning ssh keys), these images
+are attractive for use &lt;em>outside&lt;/em> of a cloud environment.
+Unfortunately, when people first try to boot them they are met with
+frustration as first the image takes forever to boot as it tries to
+contact a non-existent metadata service, and then when it finally does
+boot they are unable to log in because the images typically only
+support key-based login.&lt;/p></description><content>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
 for use in cloud environments like OpenStack and AWS. These images
 are usually differentiated by (a) being relatively small, and (b) running
 &lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a> at boot to perform initial system configuration tasks

@@ -1,5 +1,15 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Powershell on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/powershell/</link><description>Recent content in Powershell on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 04 Nov 2012 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/powershell/rss.xml" rel="self" type="application/rss+xml"/><item><title>Generating random passwords in PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</guid><description>I was looking for PowerShell solutions for generating a random password (in order to set the Administrator password on a Windows instance provisioned in OpenStack), and found several solutions using the GeneratePassword method of System.Web.Security.Membership (documentation here), along the lines of this:
-Function New-RandomComplexPassword ($length=8) { $Assembly = Add-Type -AssemblyName System.Web $password = [System.Web.Security.Membership]::GeneratePassword($length,2) return $password } While this works, I was unhappy with the generated passwords: they were difficult to type or transcribe because they make heavy use of punctuation.</description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Powershell on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/powershell/</link><description>Recent content in Powershell on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 04 Nov 2012 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/powershell/rss.xml" rel="self" type="application/rss+xml"/><item><title>Generating random passwords in PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</guid><description>&lt;p>I was looking for PowerShell solutions for generating a random password (in
+order to set the Administrator password on a Windows instance provisioned in
+&lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
+of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),
+along the lines of &lt;a href="https://gist.github.com/4011878">this&lt;/a>:&lt;/p>
+&lt;pre>&lt;code>Function New-RandomComplexPassword ($length=8)
+{
+$Assembly = Add-Type -AssemblyName System.Web
+$password = [System.Web.Security.Membership]::GeneratePassword($length,2)
+return $password
+}
+&lt;/code>&lt;/pr</description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
 order to set the Administrator password on a Windows instance provisioned in
 &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
 of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),
@@ -46,10 +56,17 @@ return $password
 &lt;li>&lt;code>2JQ0bW7VMqcm4UB&lt;/code>&lt;/li>
 &lt;li>&lt;code>V4DObnQl0vJX1wC&lt;/code>&lt;/li>
 &lt;/ul>
-&lt;p>I&amp;rsquo;m a lot happier with this.&lt;/p></content></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran into a small problem: I was running a script at system startup, and the script was running before the network interface (which was using DHCP) was configured.
-There are a number of common solutions proposed to this problem:
-Just wait for some period of time.
-This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually verify the network state it can result in things breaking if some problem prevents Windows from pulling a valid DHCP lease.</description><content>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
+&lt;p>I&amp;rsquo;m a lot happier with this.&lt;/p></content></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
+into a small problem: I was running a script at system startup, and
+the script was running before the network interface (which was using
+DHCP) was configured.&lt;/p>
+&lt;p>There are a number of common solutions proposed to this problem:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>Just wait for some period of time.&lt;/p>
+&lt;p>This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually
+verify the network state it can result in things breaking if some
+problem prevents Windows from pulling a valid DHCP lease.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
 into a small problem: I was running a script at system startup, and
 the script was running before the network interface (which was using
 DHCP) was configured.&lt;/p>
