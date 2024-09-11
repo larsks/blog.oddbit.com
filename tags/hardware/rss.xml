@@ -184,7 +184,11 @@ the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire 
 &lt;p>All of them are reasonably easy to use, but the Quick2Wire API
 provides a uniquely useful feature: &lt;code>epoll&lt;/code>-enabled GPIO interrupts.
 This makes it trivial to write code that efficiently waits for and
-responds to things like button presses.&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
+responds to things like button presses.&lt;/p>
+&lt;p>The following simple example waits for a button press attached to
+&lt;code>GPIO1&lt;/code> (but refer to the chart in &lt;a href="https://projects.drogon.net/raspberry-pi/wiringpi/pins/">this document&lt;/a> to see
+exactly what that means; this is pin 12 on a Raspberry Pi v2 board)
+and lights an LED attached to &lt;code>GPIO0&lt;/code> when the button is pressed:&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
 &lt;ul>
 &lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>

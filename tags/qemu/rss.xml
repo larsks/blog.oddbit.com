@@ -4,7 +4,12 @@ you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
 containerized environment through the use of private networking, bind
 mounts, capability controls, and a variety of other facilities that
-give you flexible container management.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+give you flexible container management.&lt;/p>
+&lt;p>There are many different ways in which it can be used. I&amp;rsquo;m going to
+focus on one that&amp;rsquo;s a bit of a corner use case that I find
+particularly interesting. In this article we&amp;rsquo;re going to explore how
+we can use &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> to spawn lightweight containers for
+architectures other than that of our host system.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
 but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
 you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the

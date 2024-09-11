@@ -21,7 +21,9 @@ if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
     lastrun_2 = now
 
 machine.idle()
-</code></pre><p>&lt;/pr</p></div><div><a class="read-more button" href=/post/2020-12-18-to-sleep-or-not-to-sleep/>read more →</a></div></article><div class=pagination><div class=pagination__buttons><a href=/posts/page/4/ class="button previous"><span class=button__icon>←</span>
+</code></pre><p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266’s deep
+sleep mode (assuming we have wired things properly):</p></div><div><a class="read-more button" href=/post/2020-12-18-to-sleep-or-not-to-sleep/>read more →</a></div></article><div class=pagination><div class=pagination__buttons><a href=/posts/page/4/ class="button previous"><span class=button__icon>←</span>
 <span class=button__text>Newer posts</span>
 </a><a href=/posts/page/6/ class="button next"><span class=button__text>Older posts</span>
 <span class=button__icon>→</span></a></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>

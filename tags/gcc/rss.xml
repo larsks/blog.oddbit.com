@@ -13,7 +13,11 @@ PORTB &amp;amp;= ~LED_BUILTIN; // turn off led
 _delay_ms(1000); // delay 1s
 }
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>You have a Makefile that compiles that into an object (&lt;code>.o&lt;/code>) file like this:&lt;/p>
+&lt;pre>&lt;code>avr-gcc -mmcu=atmega328p -DF_CPU=16000000 -Os -c blink.c
+&lt;/code>&lt;/pre>
+&lt;p>If you were to forget to set the device type when compiling your &lt;code>.c&lt;/code> file into an object file (&lt;code>.o&lt;/code>), you would get a warning:&lt;/p></description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
 &lt;pre>&lt;code>#include &amp;lt;avr/io.h&amp;gt;
 #include &amp;lt;util/delay.h&amp;gt;
 #define LED_BUILTIN _BV(PORTB5)

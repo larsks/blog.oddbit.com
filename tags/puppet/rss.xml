@@ -6,7 +6,8 @@ the &lt;code>docker build&lt;/code> process. As a test case, I used the
 &lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
 &lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
 &lt;pre>&lt;code>class { 'ssh': }
-&lt;/code>&lt;/pr</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+&lt;/code>&lt;/pre>
+&lt;p>And a Dockerfile like this:&lt;/p></description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
 complex system configuration&amp;hellip;and Dockerfiles are basically giant
 shell scripts.&lt;/p>
 &lt;p>I was curious whether or not it would be possible to use Puppet during
@@ -180,7 +181,18 @@ mode =&amp;gt; 600,
 }
 }
 &lt;/code>&lt;/pre>
-&lt;p>And you use it like this:&lt;/p></description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
+&lt;p>And you use it like this:&lt;/p>
+&lt;pre>&lt;code>class bar {
+include foo
+file { '/tmp/myfile': }
+}
+&lt;/code>&lt;/pre>
+&lt;p>Then /tmp/myfile will not be created. But if instead you do this:&lt;/p>
+&lt;pre>&lt;code>class bar inherits foo {
+file { '/tmp/myfile': }
+}
+&lt;/code>&lt;/pre>
+&lt;p>It will be created with mode 0600. In other words, if you use inherits then definitions in the parent class are available in the scope of your subclass. If you include, then definitions in he included class are &amp;ldquo;below&amp;rdquo; the scope of the including class.&lt;/p></description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
 &lt;p>If you have a Puppet class like this:&lt;/p>
 &lt;pre>&lt;code>class foo {
 File { ensure =&amp;gt; file,

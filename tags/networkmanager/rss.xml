@@ -251,7 +251,9 @@ can result in the creation of several virtual interfaces, this results
 in a lot of:&lt;/p>
 &lt;pre>&lt;code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt;
 Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
-&lt;/code>&lt;/pr</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+&lt;/code>&lt;/pre>
+&lt;p>You can disable this behavior by adding the following to
+&lt;code>/etc/NetworkManager/NetworkManager.conf&lt;/code>:&lt;/p></description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
 and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
 &lt;h2 id="networkmanager">NetworkManager&lt;/h2>
 &lt;p>By default, NetworkManager attempts to start a DHCP client on every

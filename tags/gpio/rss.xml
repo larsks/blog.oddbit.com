@@ -4,7 +4,19 @@ button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
 but constraints of the project made it necessary to implement
 something in C with minimal dependencies. I didn&amp;rsquo;t want to write
-something that was tied closely to my project&amp;hellip;&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
+something that was tied closely to my project&amp;hellip;&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;figure class="left" >
+&lt;img src="http://imgs.xkcd.com/comics/the_general_problem.png" />
+&lt;/figure>
+&lt;p>&amp;hellip;so I ended up writing &lt;a href="https://github.com/larsks/gpio-watch">gpio-watch&lt;/a>, a simple tool for connecting
+shell scripts (or any other executable) to GPIO events. There are a
+few ways to interact with GPIO on the Raspberry Pi. For the fastest
+possible performance, you will need to interact directly with the
+underlying hardware using, e.g., something like &lt;a href="http://hertaville.com/2014/07/07/rpimmapgpio/">direct register
+access&lt;/a>. Since I was only responding to button presses I opted
+to take advantage of the &lt;a href="https://www.kernel.org/doc/Documentation/gpio/sysfs.txt">GPIO sysfs interface&lt;/a>, which exposes
+the GPIO pins via the filesystem.&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
 a &lt;a href="http://raspberrypi.org/">Raspberry Pi&lt;/a> and have some code execute in response to the
 button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,

@@ -343,7 +343,20 @@ OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/co
 external connectivity and for making services available to OpenStack
 instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
 which caused a variety of problems.&lt;/p>
-&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p>
+&lt;pre>&lt;code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+BOOTPROT=static
+IPADDR=192.168.200.1
+NETMASK=255.255.255.0
+ONBOOT=yes
+NM_CONTROLLED=no
+ZONE=openstack
+&lt;/code>&lt;/pre>
+&lt;p>Running &lt;code>ifup br-ex&lt;/code> would also fail to configure the interface, but
+running &lt;code>ifdown br-ex; ifup br-ex&lt;/code> would configure things
+appropriately.&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack

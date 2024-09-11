@@ -2,7 +2,10 @@
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>

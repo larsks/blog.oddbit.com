@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/docker/</link><description>Recent content in Docker on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 20 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/docker/rss.xml" rel="self" type="application/rss+xml"/><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
-&lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p></description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
+&lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
+&lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
+&lt;p>A default Traefik configuration will already have a listener on port 80, but if we want to accept connections on port 9090 we need to create a new listener: what Traefik calls an &lt;a href="https://doc.traefik.io/traefik/routing/entrypoints/">entrypoint&lt;/a>. We do this using the &lt;code>--entrypoints.&amp;lt;name&amp;gt;.address&lt;/code> option. For example, &lt;code>--entrypoints.ep1.address=80&lt;/code> creates an entrypoint named &lt;code>ep1&lt;/code> on port 80, while &lt;code>--entrypoints.ep2.address=9090&lt;/code> creates an entrypoint named &lt;code>ep2&lt;/code> on port 9090. Those names are important because we&amp;rsquo;ll use them for mapping containers to the appropriate listener later on.&lt;/p></description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
 &lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
 &lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
 &lt;p>A default Traefik configuration will already have a listener on port 80, but if we want to accept connections on port 9090 we need to create a new listener: what Traefik calls an &lt;a href="https://doc.traefik.io/traefik/routing/entrypoints/">entrypoint&lt;/a>. We do this using the &lt;code>--entrypoints.&amp;lt;name&amp;gt;.address&lt;/code> option. For example, &lt;code>--entrypoints.ep1.address=80&lt;/code> creates an entrypoint named &lt;code>ep1&lt;/code> on port 80, while &lt;code>--entrypoints.ep2.address=9090&lt;/code> creates an entrypoint named &lt;code>ep2&lt;/code> on port 9090. Those names are important because we&amp;rsquo;ll use them for mapping containers to the appropriate listener later on.&lt;/p>
@@ -833,7 +835,10 @@ ENTRYPOINT [&amp;quot;ntpd&amp;quot;]
 &lt;/code>&lt;/pre>
 &lt;p>I&amp;rsquo;m using the &lt;code>alpine&lt;/code> image as my starting point because it&amp;rsquo;s very
 small, which makes this whole process go a little faster. I&amp;rsquo;m
-installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
+installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p>
+&lt;p>By setting an &lt;code>ENTRYPOINT&lt;/code> here, the &lt;code>ntpd&lt;/code> binary will be started by
+default, and any arguments passed to &lt;code>docker run&lt;/code> after the image name
+will be passed to &lt;code>ntpd&lt;/code>.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
 so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple
 &lt;code>Dockerfile&lt;/code>:&lt;/p>
 &lt;pre>&lt;code>FROM alpine
@@ -1048,7 +1053,16 @@ to start containers. That&amp;rsquo;s been around for a long time in various
 forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
 party was a convenient method of building and distributing the
 filesystems necessary for running containers. Suddenly, it was easy
-to build a containerized service &lt;em>and&lt;/em> to share it with other people.&lt;/p></description><content>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
+to build a containerized service &lt;em>and&lt;/em> to share it with other people.&lt;/p>
+&lt;p>I was taking a closer at the &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> command, which it
+seems has been developing it&amp;rsquo;s own set of container-related
+superpowers recently, including a number of options for setting up the
+network environment of a container. Like Docker, &lt;code>systemd-nspawn&lt;/code>
+needs a filesystem on which to operate, but &lt;em>unlike&lt;/em> Docker, there is
+no convenient distribution mechanism and no ecosystem of existing
+images. In fact, the official documentation seems to assume that
+you&amp;rsquo;ll be building your own from scratch. Ain&amp;rsquo;t nobody got time for
+that&amp;hellip;&lt;/p></description><content>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
 to start containers. That&amp;rsquo;s been around for a long time in various
 forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
 party was a convenient method of building and distributing the
@@ -1174,7 +1188,12 @@ under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/
 one is using &lt;a href="http://devstack.org/">devstack&lt;/a> and the upstream sources.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>We&amp;rsquo;ll be using the &lt;a href="https://cloud-images.ubuntu.com/trusty/current/">Ubuntu 14.04 cloud image&lt;/a> (because my test
-environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p>
+&lt;p>First, let&amp;rsquo;s install a few prerequisites:&lt;/p>
+&lt;pre>&lt;code>$ sudo apt-get update
+$ sudo apt-get -y install git git-review python-pip python-dev
+&lt;/code>&lt;/pre>
+&lt;p>And generally make sure things are up-to-date:&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
 how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
 under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
 21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this
@@ -1506,7 +1525,11 @@ successfully be re-assigned on another node.&lt;/p></content></item><item><title
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
 installing onto OpenStack and the cloud images include
-some features that are useful in this environment.&lt;/p></description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+some features that are useful in this environment.&lt;/p>
+&lt;p>We&amp;rsquo;ll be using OpenStack packages from the &lt;a href="https://repos.fedorapeople.org/repos/openstack/openstack-juno/">RDO Juno&lt;/a> repository.
+Because there is often some skew between the RDO packages and the
+current Fedora selinux policy, we&amp;rsquo;re going to start by putting SELinux
+into permissive mode (sorry, Dan):&lt;/p></description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
 installing onto OpenStack and the cloud images include
@@ -1678,7 +1701,16 @@ tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one
 of the images provided by the major distributions. For example, if
 you need an image that provides &lt;code>tcpdump&lt;/code> for use on your &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>
-host, you might do something like:&lt;/p></description><content>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
+host, you might do something like:&lt;/p>
+&lt;pre>&lt;code>FROM fedora
+RUN yum -y install tcpdump
+&lt;/code>&lt;/pre>
+&lt;p>And while this will work, you end up consuming 250MB for &lt;code>tcpdump&lt;/code>.
+In theory, the layering mechanism that Docker uses to build images
+will reduce the practical impact of this (because other images based on
+the &lt;code>fedora&lt;/code> image will share the common layers), but in practice the
+size is noticeable, especially if you often find yourself pulling this
+image into a fresh environment with no established cache.&lt;/p></description><content>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
 images for dynamically linked ELF binaries, and then at &lt;a href="https://github.com/larsks/dockerize">a
 tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one
@@ -1852,7 +1884,11 @@ utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
 namespace for the executed processes and mounts private &lt;code>/tmp&lt;/code> and
 &lt;code>/var/tmp&lt;/code> directories inside it that is not shared by processes outside
 of the namespace&amp;rdquo;. This is a great idea from a &lt;a href="https://danwalsh.livejournal.com/51459.html">security
-perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p></description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p>
+&lt;h2 id="the-problem-in-a-nutshell">The problem in a nutshell&lt;/h2>
+&lt;ol>
+&lt;li>
+&lt;p>Start a Docker container:&lt;/p></description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
 undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
 utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
 &lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
@@ -2541,7 +2577,8 @@ the &lt;code>docker build&lt;/code> process. As a test case, I used the
 &lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
 &lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
 &lt;pre>&lt;code>class { 'ssh': }
-&lt;/code>&lt;/pr</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+&lt;/code>&lt;/pre>
+&lt;p>And a Dockerfile like this:&lt;/p></description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
 complex system configuration&amp;hellip;and Dockerfiles are basically giant
 shell scripts.&lt;/p>
 &lt;p>I was curious whether or not it would be possible to use Puppet during
@@ -2743,7 +2780,12 @@ issues I encountered:&lt;/p>
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -2792,7 +2834,18 @@ issues I encountered:&lt;/p>
 &lt;pre>&lt;code> dns:
 - 8.8.8.8
 - 8.8.4.4
-&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>docker_endopint&lt;/code> : String&lt;/p>
+&lt;p>Docker daemon endpoint. By default the local Docker daemon will
+be used.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> docker_endpoint: tcp://192.168.1.100:2375
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>env&lt;/code> : String&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>
@@ -3923,7 +3976,14 @@ bash-4.2# su -c 'uptime'
 su: System error
 &lt;/code>&lt;/pre>
 &lt;p>Hooking up something (like, say, &lt;code>socat unix-listen:/dev/log -&lt;/code>) to
-&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p>
+&lt;pre>&lt;code>Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted
+&lt;/code>&lt;/pre>
+&lt;p>Downgrading the kernel to 3.14 immediately resolved the problem,
+suggesting that this was at least partly a kernel issue. This seemed
+like a great opportunity to play with the &lt;a href="http://git-scm.com/docs/git-bisect">git bisect&lt;/a> command,
+which uses a binary search to find which commit introduced a
+particular problem.&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
 started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
 containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
 singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Git on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/git/</link><description>Recent content in Git on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 22 Sep 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/git/rss.xml" rel="self" type="application/rss+xml"/><item><title>Delete GitHub workflow runs using the gh cli</title><link>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</link><pubDate>Thu, 22 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</guid><description>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
-&lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p></description><content>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
+&lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gh run list --json databaseId -q &amp;#39;.[].databaseId&amp;#39; |
+xargs -IID gh api \
+&amp;#34;repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID&amp;#34; \
+-X DELETE
+&lt;/code>&lt;/pre>&lt;p>This will delete &lt;em>all&lt;/em> (well, up to 20, or whatever you set in &lt;code>--limit&lt;/code>) your workflow runs. You can add flags to &lt;code>gh run list&lt;/code> to filter runs by workflow or by triggering user.&lt;/p></description><content>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
 &lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p>
 &lt;pre tabindex="0">&lt;code>gh run list --json databaseId -q &amp;#39;.[].databaseId&amp;#39; |
 xargs -IID gh api \
@@ -343,7 +348,7 @@ c43bade Adds api for creating widgets
 deaa962 Adds all get methods for listing widgets
 9de79ab Adds api for showing a widget and simple data model
 8288ab1 Adds api framework for widget service
-&lt;/code>&lt;/pr</description><content>&lt;p>You&amp;rsquo;re working on a pull request. You&amp;rsquo;ve been working on a pull request for a while, and due to lack of sleep or inebriation you&amp;rsquo;ve been merging changes into your feature branch rather than rebasing. You now have a pull request that looks like this (I&amp;rsquo;ve marked merge commits with the text &lt;code>[merge]&lt;/code>):&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>You know that&amp;rsquo;s a mess, so you try to fix it by running &lt;code>git rebase -i master&lt;/code> and squashing everything together&amp;hellip;and you find yourself stuck in an endless maze of merge conflicts. There has to be a better way!&lt;/p></description><content>&lt;p>You&amp;rsquo;re working on a pull request. You&amp;rsquo;ve been working on a pull request for a while, and due to lack of sleep or inebriation you&amp;rsquo;ve been merging changes into your feature branch rather than rebasing. You now have a pull request that looks like this (I&amp;rsquo;ve marked merge commits with the text &lt;code>[merge]&lt;/code>):&lt;/p>
 &lt;pre tabindex="0">&lt;code>7e181479 Adds methods for widget sales
 0487162 [merge] Merge remote-tracking branch &amp;#39;origin/master&amp;#39; into my_feature
 76ee81c [merge] Merge branch &amp;#39;my_feature&amp;#39; of https://github.com/my_user_name/widgets into my_feature
@@ -577,7 +582,9 @@ automatically re-using the existing commit message:&lt;/p>
 &lt;pre>&lt;code>$ vim some/file/somewhere
 $ git add -u
 $ git fix
-&lt;/code>&lt;/pr</description><content>&lt;p>This is a small collection of simple &lt;code>git&lt;/code> tips and tricks I use to
+&lt;/code>&lt;/pre>
+&lt;p>Which I find much more convenient than &lt;code>git commit --amend&lt;/code>, following
+by saving the commit message.&lt;/p></description><content>&lt;p>This is a small collection of simple &lt;code>git&lt;/code> tips and tricks I use to
 make my life easier.&lt;/p>
 &lt;h2 id="quickly-amend-an-existing-commit-with-new-files">Quickly amend an existing commit with new files&lt;/h2>
 &lt;p>I have this alias in place that will amend the current commit while
@@ -721,7 +728,8 @@ First, rewinding head to replay your work on top of it...
 Fast-forwarded master to 0ba18481672964808bbbc4160643387dc931c654.
 &lt;/code>&lt;/pre>
 &lt;p>The first three lines are the result &lt;code>git remote update&lt;/code> operation in
-our cache repository.&lt;/p></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p></description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
+our cache repository.&lt;/p></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
+&lt;p>Many applications allow the user to configure an explicit list of ciphers to consider when negotiating a secure connection. For example, &lt;a href="https://curl.haxx.se/">curl&lt;/a> has the &lt;a href="https://curl.haxx.se/libcurl/c/CURLOPT_SSL_CIPHER_LIST.html">CURLOPT_SSL_CIPHER_LIST&lt;/a> option. This turns out to be especially relevant because git relies on &lt;a href="https://curl.haxx.se/libcurl/">libcurl&lt;/a> for all of its http operations, which means all we need to do is (a) create a new configuration option for git, and then (b) pass that value through to libcurl.&lt;/p></description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
 &lt;p>Many applications allow the user to configure an explicit list of ciphers to consider when negotiating a secure connection. For example, &lt;a href="https://curl.haxx.se/">curl&lt;/a> has the &lt;a href="https://curl.haxx.se/libcurl/c/CURLOPT_SSL_CIPHER_LIST.html">CURLOPT_SSL_CIPHER_LIST&lt;/a> option. This turns out to be especially relevant because git relies on &lt;a href="https://curl.haxx.se/libcurl/">libcurl&lt;/a> for all of its http operations, which means all we need to do is (a) create a new configuration option for git, and then (b) pass that value through to libcurl.&lt;/p>
 &lt;p>I took a look at the code and it turned out to be surprisingly easy. The functional part of the patch ends up being less than 10 lines total:&lt;/p>
 &lt;pre tabindex="0">&lt;code>diff --git a/http.c b/http.c
@@ -764,7 +772,12 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>And now your boss knows why the TPS reports are late. You need
+&lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
+repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
+your git commits so that they appear to have happened within specified
+time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
 implemented poorly, move along!&lt;/p>
 &lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
@@ -802,7 +815,14 @@ bash-4.2# su -c 'uptime'
 su: System error
 &lt;/code>&lt;/pre>
 &lt;p>Hooking up something (like, say, &lt;code>socat unix-listen:/dev/log -&lt;/code>) to
-&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p>
+&lt;pre>&lt;code>Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted
+&lt;/code>&lt;/pre>
+&lt;p>Downgrading the kernel to 3.14 immediately resolved the problem,
+suggesting that this was at least partly a kernel issue. This seemed
+like a great opportunity to play with the &lt;a href="http://git-scm.com/docs/git-bisect">git bisect&lt;/a> command,
+which uses a binary search to find which commit introduced a
+particular problem.&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
 started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
 containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
 singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>
@@ -1417,7 +1437,10 @@ $ git fetch --tags
 &lt;p>Or you can do this:&lt;/p>
 &lt;pre>&lt;code>$ git fetch --tags
 $ git fetch
-&lt;/code>&lt;/pr</description><content>&lt;p>I’ve been playing around with Git, Puppet, and GPG verification of our
+&lt;/code>&lt;/pre>
+&lt;p>What’s the difference? &lt;code>git fetch&lt;/code> will leave &lt;code>FETCH_HEAD&lt;/code> pointing at
+the remote &lt;code>HEAD&lt;/code>, whereas &lt;code>git fetch --tags&lt;/code> will leave &lt;code>FETCH_HEAD&lt;/code>
+pointing at the most recent tag.&lt;/p></description><content>&lt;p>I’ve been playing around with Git, Puppet, and GPG verification of our
 Puppet configuration repository, and these are some random facts about
 Git that have come to light as part of the process.&lt;/p>
 &lt;p>If you want to pull both changes &lt;em>and&lt;/em> new tags from a remote

@@ -884,7 +884,10 @@ Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
 covered the configuration side of it in much more detail than I
 discussed the underlying network architecture. This post addresses
-the architecture side.&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+the architecture side.&lt;/p>
+&lt;h2 id="the-players">The players&lt;/h2>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
 Neutron deployment in detail. Since that article was published,
 Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
@@ -1500,7 +1503,8 @@ OVSBOOTPROTO=dhcp
 OVSDHCPINTERFACES=eth0
 MACADDR=fa:16:3e:ef:91:ec
 OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
-&lt;/code>&lt;/pr</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>OVS_EXTRA&lt;/code> parameter gets passed to the &lt;code>add-br&lt;/code> call like this:&lt;/p></description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
 persistent MAC address on an OVS bridge device. It looks like the
 short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
 &lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
@@ -1525,7 +1529,20 @@ OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/co
 external connectivity and for making services available to OpenStack
 instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
 which caused a variety of problems.&lt;/p>
-&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p>
+&lt;pre>&lt;code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+BOOTPROT=static
+IPADDR=192.168.200.1
+NETMASK=255.255.255.0
+ONBOOT=yes
+NM_CONTROLLED=no
+ZONE=openstack
+&lt;/code>&lt;/pre>
+&lt;p>Running &lt;code>ifup br-ex&lt;/code> would also fail to configure the interface, but
+running &lt;code>ifdown br-ex; ifup br-ex&lt;/code> would configure things
+appropriately.&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack
@@ -1609,7 +1626,10 @@ network plugin for Neutron.&lt;/p>
 &lt;pre>&lt;code>neutron net-create external -- --router:external=true \
 --provider:network_type=flat \
 --provider:physical_network=physnet1
-&lt;/code>&lt;/pr</description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
+&lt;/code>&lt;/pre>
+&lt;p>While this command completed successfully, I was left without any
+connectivity between &lt;code>br-int&lt;/code> and &lt;code>br-ex&lt;/code>, despite having in my
+&lt;code>/etc/neutron/plugins/ml2/ml2_conf.ini&lt;/code>:&lt;/p></description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
 backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant
 reinstalling OpenStack I used this as an excuse to finally move to the ML2
 network plugin for Neutron.&lt;/p>
@@ -1666,7 +1686,8 @@ external_ids : {attached-mac=&amp;quot;fa:16:3e:f7:75:b0&amp;quot;, iface-id=&am
 .
 .
 .
-&lt;/code>&lt;/pr</description><content>&lt;p>This is just here as a reminder for me:&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>Note the information contained here:&lt;/p></description><content>&lt;p>This is just here as a reminder for me:&lt;/p>
 &lt;p>An OVS interface has a variety of attributes associated with it, including an
 &lt;code>external-id&lt;/code> field that can be used to associate resources outside of
 OpenVSwitch with the interface. You can view this field with the following

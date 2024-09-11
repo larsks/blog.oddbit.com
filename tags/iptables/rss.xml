@@ -10,7 +10,8 @@ state == 1 &amp;amp;&amp;amp; $2 != chain {chain=$2; counter=1; printf &amp;quot
 !/^-A/ {state=0}
 state == 1 {printf &amp;quot;[%03d] %s\n&amp;quot;, counter++, $0}
 state == 0 {print}
-&lt;/code>&lt;/pr</description><content>&lt;p>You can list &lt;code>iptables&lt;/code> rules with rule numbers using the
+&lt;/code>&lt;/pre>
+&lt;p>This will produce output along the lines of:&lt;/p></description><content>&lt;p>You can list &lt;code>iptables&lt;/code> rules with rule numbers using the
 &lt;code>--line-numbers&lt;/code> option, but this only works in list (&lt;code>-L&lt;/code>) mode. I
 find it much more convenient to view rules using the output from
 &lt;code>iptables -S&lt;/code> or &lt;code>iptables-save&lt;/code>.&lt;/p>

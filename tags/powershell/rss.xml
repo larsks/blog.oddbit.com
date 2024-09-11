@@ -9,7 +9,10 @@ $Assembly = Add-Type -AssemblyName System.Web
 $password = [System.Web.Security.Membership]::GeneratePassword($length,2)
 return $password
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
+&lt;/code>&lt;/pre>
+&lt;p>While this works, I was unhappy with the generated passwords: they
+were difficult to type or transcribe because they make heavy use of
+punctuation. For example:&lt;/p></description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
 order to set the Administrator password on a Windows instance provisioned in
 &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
 of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),

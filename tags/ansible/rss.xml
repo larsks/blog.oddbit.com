@@ -9,7 +9,8 @@ gather_facts: false
 become: true
 tasks:
 - ping:
-&lt;/code>&lt;/pr</description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
+&lt;/code>&lt;/pre>
+&lt;p>And an inventory like this:&lt;/p></description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
 &lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
 has merged, so you can now use &lt;code>sudo&lt;/code> with the &lt;code>docker&lt;/code> connection driver even when &lt;code>sudo&lt;/code> is configured to require a password.&lt;/p>
 &lt;hr>
@@ -374,7 +375,16 @@ tasks:
 - name: shut down the server
 command: poweroff
 become: true
-&lt;/code>&lt;/pr</description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;but that will actually fail with the following result:&lt;/p>
+&lt;pre>&lt;code>TASK [shut down server] *************************************
+fatal: [myserver]: UNREACHABLE! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;msg&amp;quot;:
+&amp;quot;Failed to connect to the host via ssh: Shared connection to
+10.0.0.103 closed.\r\n&amp;quot;, &amp;quot;unreachable&amp;quot;: true}
+&lt;/code>&lt;/pre>
+&lt;p>This happens because running &lt;code>poweroff&lt;/code> immediately closes Ansible&amp;rsquo;s
+ssh connection. The workaround here is to use a &amp;ldquo;fire-and-forget&amp;rdquo;
+&lt;a href="http://docs.ansible.com/ansible/latest/playbooks_async.html">asynchronous task&lt;/a>:&lt;/p></description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
 shut down a Nova server, wait for it to stop, and then start it up
 again using the &lt;code>openstack&lt;/code> cli. The first part seemed easy:&lt;/p>
 &lt;pre>&lt;code>- hosts: myserver
@@ -1449,7 +1459,10 @@ Identity:
 --sudo, -s
 --become, -b
 --user USER, -u USER
-&lt;/code>&lt;/pr</description><content>&lt;p>When writing &lt;a href="http://www.ansible.com/">Ansible&lt;/a> roles I occasionally want a way to just run a
+&lt;/code>&lt;/pre>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>If you have a role &lt;code>roles/testrole&lt;/code> that contains the following in
+&lt;code>tasks/main.yml&lt;/code>:&lt;/p></description><content>&lt;p>When writing &lt;a href="http://www.ansible.com/">Ansible&lt;/a> roles I occasionally want a way to just run a
 role from the command line, without having to muck about with a
 playbook. I&amp;rsquo;ve seen &lt;a href="https://groups.google.com/forum/#!topic/ansible-project/h-SGLuPDRrs">similar&lt;/a> &lt;a href="https://groups.google.com/forum/#!topic/ansible-devel/GqzZ6zsn6eY">requests&lt;/a> on the mailing lists
 and on irc.&lt;/p>

@@ -5,7 +5,8 @@ Button *button = (Button *)malloc(sizeof(Button));
 // do some initialization stuff
 return button;
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>And when initially writing &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">pipower&lt;/a>, that&amp;rsquo;s exactly what I did. But while thinking about it after the fact, I realized the following:&lt;/p></description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
 &lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
 &lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
 Button *button = (Button *)malloc(sizeof(Button));

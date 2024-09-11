@@ -15,7 +15,9 @@ if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
     lastrun_2 = now
 
 machine.idle()
-</code></pre><p>&lt;/pr</p></div><div><a class="read-more button" href=/post/2020-12-18-to-sleep-or-not-to-sleep/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/>I see you have the machine that goes ping&mldr;</a></h1><div class=post-meta><time class=post-date>2020-03-20 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/arduino/>arduino</a>&nbsp;
+</code></pre><p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266’s deep
+sleep mode (assuming we have wired things properly):</p></div><div><a class="read-more button" href=/post/2020-12-18-to-sleep-or-not-to-sleep/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2020-03-20-i-see-you-have-the-machine-tha/>I see you have the machine that goes ping&mldr;</a></h1><div class=post-meta><time class=post-date>2020-03-20 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/arduino/>arduino</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/esp8266/>esp8266</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/micropython/>micropython</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/python/>python</a>&nbsp;

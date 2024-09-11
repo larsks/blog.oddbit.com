@@ -17,7 +17,7 @@ print &amp;gt;&amp;gt; certfile
 incert=0
 }
 incert==1 { print &amp;gt;&amp;gt; certfile }
-&lt;/code>&lt;/pr</description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
+&lt;/code>&lt;/pre></description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
 certificates as input (such as a collection of CA certificates) and
 produces a collection of numbered files, each containing a single
 certificate.&lt;/p>

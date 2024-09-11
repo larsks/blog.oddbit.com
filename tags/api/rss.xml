@@ -10,7 +10,10 @@ in one step.&lt;/p>
 --data-urlencode text@$tmpfile \
 \
 http://scriptogr.am/api/article/post/
-&lt;/code>&lt;/pr</description><content>&lt;p>Scriptogr.am has a &lt;a href="http://scriptogr.am/dashboard/#api_documentation">very simple api&lt;/a> that allows one to &lt;code>POST&lt;/code> and
+&lt;/code>&lt;/pre>
+&lt;p>This assumes that you&amp;rsquo;ve registered for an application key and that
+you have configured the value into &lt;code>$APP_KEY&lt;/code> and your Scriptogr.am
+user id into &lt;code>$USER_ID&lt;/code>.&lt;/p></description><content>&lt;p>Scriptogr.am has a &lt;a href="http://scriptogr.am/dashboard/#api_documentation">very simple api&lt;/a> that allows one to &lt;code>POST&lt;/code> and
 &lt;code>DELETE&lt;/code> articles. &lt;code>POST&lt;/code>ing an article will place it in the
 appropriate Dropbox directory and make it available on your blog all
 in one step.&lt;/p>

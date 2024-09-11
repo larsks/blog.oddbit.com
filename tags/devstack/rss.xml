@@ -5,7 +5,12 @@ under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/
 one is using &lt;a href="http://devstack.org/">devstack&lt;/a> and the upstream sources.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>We&amp;rsquo;ll be using the &lt;a href="https://cloud-images.ubuntu.com/trusty/current/">Ubuntu 14.04 cloud image&lt;/a> (because my test
-environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p>
+&lt;p>First, let&amp;rsquo;s install a few prerequisites:&lt;/p>
+&lt;pre>&lt;code>$ sudo apt-get update
+$ sudo apt-get -y install git git-review python-pip python-dev
+&lt;/code>&lt;/pre>
+&lt;p>And generally make sure things are up-to-date:&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
 how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
 under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
 21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this

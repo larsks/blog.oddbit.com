@@ -114,7 +114,8 @@ Button *button = (Button *)malloc(sizeof(Button));
 // do some initialization stuff
 return button;
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>And when initially writing &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">pipower&lt;/a>, that&amp;rsquo;s exactly what I did. But while thinking about it after the fact, I realized the following:&lt;/p></description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
 &lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
 &lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
 Button *button = (Button *)malloc(sizeof(Button));
@@ -158,7 +159,10 @@ Data: 29 bytes (5.7% Full)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>__attribute__((optimize(&amp;quot;O0&amp;quot;)))&lt;/code> directive disables all optimizations for this function, which should prevent gcc from optimizing out the reference to &lt;code>malloc()&lt;/code>.&lt;/p></content></item><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
-&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
 &lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -389,7 +393,8 @@ Temporary breakpoint 2, loop () at ../pipower.c:98
 &lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p>
+&lt;p>Using &lt;code>simavr&lt;/code> to collect information about the state of microcontroller pins while our code is running.&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
@@ -730,7 +735,12 @@ main () at ../pipower.c:280
 &lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p></description><content>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p>
+&lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p>
+&lt;p>Using &lt;code>simavr&lt;/code> to collect information about the state of microcontroller pins while our code is running.&lt;/p></description><content>
 &lt;figure class="left" >
 &lt;img src="pipower_trace.png" />
 &lt;/figure>

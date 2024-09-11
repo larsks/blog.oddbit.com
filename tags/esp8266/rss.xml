@@ -17,7 +17,9 @@ if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
 read_sensor_2()
 lastrun_2 = now
 machine.idle()
-&lt;/code>&lt;/pr</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;/code>&lt;/pre>&lt;p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266&amp;rsquo;s deep
+sleep mode (assuming we have &lt;a href="http://docs.micropython.org/en/latest/esp8266/tutorial/powerctrl.html#deep-sleep-mode">wired things properly&lt;/a>):&lt;/p></description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
 &lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
 (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
 to do it as efficiently as possible in terms of power consumption.

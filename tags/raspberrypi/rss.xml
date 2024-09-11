@@ -93,7 +93,13 @@ that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first
 only allows you to configure a single type of gadget at a time, and
-boils down to:&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+boils down to:&lt;/p>
+&lt;ol>
+&lt;li>Enable the dwc2 overlay in &lt;code>/boot/config.txt&lt;/code>&lt;/li>
+&lt;li>Reboot.&lt;/li>
+&lt;li>&lt;code>modprobe g_serial&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>This process is more fully documented &lt;a href="https://learn.adafruit.com/turning-your-raspberry-pi-zero-into-a-usb-gadget/overview">here&lt;/a>.&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
 that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first
@@ -147,7 +153,13 @@ instead, follow these steps.&lt;/p>
 &lt;code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf&lt;/code>.&lt;/p>
 &lt;p>If you already have an appropriate configuration in
 &lt;code>/etc/wpa_supplicant/wpa_supplicant.conf&lt;/code>, you can just symlink the
-file:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+file:&lt;/p>
+&lt;pre>&lt;code> cd /etc/wpa_supplicant
+ln -s wpa_supplicant.conf wpa_supplicant-wlan0.conf
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Enable the &lt;code>wpa_supplicant&lt;/code> service for &lt;code>wlan0&lt;/code>:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
 manage both dynamic and static interface configuration. If you would
 prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
 instead, follow these steps.&lt;/p>
@@ -382,7 +394,12 @@ you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
 containerized environment through the use of private networking, bind
 mounts, capability controls, and a variety of other facilities that
-give you flexible container management.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+give you flexible container management.&lt;/p>
+&lt;p>There are many different ways in which it can be used. I&amp;rsquo;m going to
+focus on one that&amp;rsquo;s a bit of a corner use case that I find
+particularly interesting. In this article we&amp;rsquo;re going to explore how
+we can use &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> to spawn lightweight containers for
+architectures other than that of our host system.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
 but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
 you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
@@ -560,7 +577,19 @@ button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
 but constraints of the project made it necessary to implement
 something in C with minimal dependencies. I didn&amp;rsquo;t want to write
-something that was tied closely to my project&amp;hellip;&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
+something that was tied closely to my project&amp;hellip;&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;figure class="left" >
+&lt;img src="http://imgs.xkcd.com/comics/the_general_problem.png" />
+&lt;/figure>
+&lt;p>&amp;hellip;so I ended up writing &lt;a href="https://github.com/larsks/gpio-watch">gpio-watch&lt;/a>, a simple tool for connecting
+shell scripts (or any other executable) to GPIO events. There are a
+few ways to interact with GPIO on the Raspberry Pi. For the fastest
+possible performance, you will need to interact directly with the
+underlying hardware using, e.g., something like &lt;a href="http://hertaville.com/2014/07/07/rpimmapgpio/">direct register
+access&lt;/a>. Since I was only responding to button presses I opted
+to take advantage of the &lt;a href="https://www.kernel.org/doc/Documentation/gpio/sysfs.txt">GPIO sysfs interface&lt;/a>, which exposes
+the GPIO pins via the filesystem.&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
 a &lt;a href="http://raspberrypi.org/">Raspberry Pi&lt;/a> and have some code execute in response to the
 button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
@@ -699,7 +728,35 @@ interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
 &lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
 will print out pin names as you press the input buttons. Button 3
-will cause the code to exit:&lt;/p></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+will cause the code to exit:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/python
+import pifacecommon.core
+import pifacecommon.interrupts
+import os
+import time
+quit = False
+def print_flag(event):
+print 'You pressed button', event.pin_num, '.'
+def stop_listening(event):
+global quit
+quit = True
+pifacecommon.core.init()
+# GPIOB is the input ports, including the four buttons.
+port = pifacecommon.core.GPIOB
+listener = pifacecommon.interrupts.PortEventListener(port)
+# set up listeners for all buttons
+listener.register(0, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(1, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(2, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(3, pifacecommon.interrupts.IODIR_ON, stop_listening)
+# Start listening for events. This spawns a new thread.
+listener.activate()
+# Hang around until someone presses button 3.
+while not quit:
+time.sleep(1)
+print 'you pressed button 3 (quitting)'
+listener.deactivate()
+&lt;/code>&lt;/pre></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
 I had a rough time finding examples of how to read the input ports via
 interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
@@ -782,7 +839,11 @@ the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire 
 &lt;p>All of them are reasonably easy to use, but the Quick2Wire API
 provides a uniquely useful feature: &lt;code>epoll&lt;/code>-enabled GPIO interrupts.
 This makes it trivial to write code that efficiently waits for and
-responds to things like button presses.&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
+responds to things like button presses.&lt;/p>
+&lt;p>The following simple example waits for a button press attached to
+&lt;code>GPIO1&lt;/code> (but refer to the chart in &lt;a href="https://projects.drogon.net/raspberry-pi/wiringpi/pins/">this document&lt;/a> to see
+exactly what that means; this is pin 12 on a Raspberry Pi v2 board)
+and lights an LED attached to &lt;code>GPIO0&lt;/code> when the button is pressed:&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
 &lt;ul>
 &lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>

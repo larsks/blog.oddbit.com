@@ -399,7 +399,12 @@ events = dict(poll.poll())
 .
 .
 .
-&lt;/code>&lt;/pr</description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
+&lt;/code>&lt;/pre>
+&lt;p>If you were to try this at home, you would find that everything worked
+as described&amp;hellip;but if you were to deploy the same code to OpenShift,
+you would find that the problem we were trying to solve (the server
+holding file descriptors open after a client disconnected) would still
+exist.&lt;/p></description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
 long-poll servers and Python, we investigate the code changes that
 were necessary to make the code work when deployed on OpenShift.&lt;/p>
 &lt;!-- raw HTML omitted -->

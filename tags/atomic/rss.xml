@@ -8,7 +8,10 @@ ENTRYPOINT [&amp;quot;ntpd&amp;quot;]
 &lt;/code>&lt;/pre>
 &lt;p>I&amp;rsquo;m using the &lt;code>alpine&lt;/code> image as my starting point because it&amp;rsquo;s very
 small, which makes this whole process go a little faster. I&amp;rsquo;m
-installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
+installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p>
+&lt;p>By setting an &lt;code>ENTRYPOINT&lt;/code> here, the &lt;code>ntpd&lt;/code> binary will be started by
+default, and any arguments passed to &lt;code>docker run&lt;/code> after the image name
+will be passed to &lt;code>ntpd&lt;/code>.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
 so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple
 &lt;code>Dockerfile&lt;/code>:&lt;/p>
 &lt;pre>&lt;code>FROM alpine

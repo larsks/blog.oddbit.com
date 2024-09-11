@@ -4,7 +4,35 @@ interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
 &lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
 will print out pin names as you press the input buttons. Button 3
-will cause the code to exit:&lt;/p></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+will cause the code to exit:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/python
+import pifacecommon.core
+import pifacecommon.interrupts
+import os
+import time
+quit = False
+def print_flag(event):
+print 'You pressed button', event.pin_num, '.'
+def stop_listening(event):
+global quit
+quit = True
+pifacecommon.core.init()
+# GPIOB is the input ports, including the four buttons.
+port = pifacecommon.core.GPIOB
+listener = pifacecommon.interrupts.PortEventListener(port)
+# set up listeners for all buttons
+listener.register(0, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(1, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(2, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(3, pifacecommon.interrupts.IODIR_ON, stop_listening)
+# Start listening for events. This spawns a new thread.
+listener.activate()
+# Hang around until someone presses button 3.
+while not quit:
+time.sleep(1)
+print 'you pressed button 3 (quitting)'
+listener.deactivate()
+&lt;/code>&lt;/pre></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
 I had a rough time finding examples of how to read the input ports via
 interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>

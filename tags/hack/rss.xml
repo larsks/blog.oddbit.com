@@ -4,7 +4,12 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>And now your boss knows why the TPS reports are late. You need
+&lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
+repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
+your git commits so that they appear to have happened within specified
+time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
 implemented poorly, move along!&lt;/p>
 &lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing

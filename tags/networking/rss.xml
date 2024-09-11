@@ -207,8 +207,8 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;/div></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="854769312" type="checkbox" />
-&lt;label for="854769312">
+&lt;input id="932487561" type="checkbox" />
+&lt;label for="932487561">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -266,11 +266,13 @@ emitPacket(tap_fd);
 close(tap_fd);
 return 0;
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p></description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="854769312" type="checkbox" />
-&lt;label for="854769312">
+&lt;input id="932487561" type="checkbox" />
+&lt;label for="932487561">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -333,8 +335,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="624897315" type="checkbox" />
-&lt;label for="624897315">
+&lt;input id="184792536" type="checkbox" />
+&lt;label for="184792536">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -544,8 +546,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="325871649" type="checkbox" />
-&lt;label for="325871649">
+&lt;input id="695387421" type="checkbox" />
+&lt;label for="695387421">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1795,7 +1797,13 @@ instead, follow these steps.&lt;/p>
 &lt;code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf&lt;/code>.&lt;/p>
 &lt;p>If you already have an appropriate configuration in
 &lt;code>/etc/wpa_supplicant/wpa_supplicant.conf&lt;/code>, you can just symlink the
-file:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+file:&lt;/p>
+&lt;pre>&lt;code> cd /etc/wpa_supplicant
+ln -s wpa_supplicant.conf wpa_supplicant-wlan0.conf
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Enable the &lt;code>wpa_supplicant&lt;/code> service for &lt;code>wlan0&lt;/code>:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
 manage both dynamic and static interface configuration. If you would
 prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
 instead, follow these steps.&lt;/p>
@@ -2031,7 +2039,10 @@ Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
 covered the configuration side of it in much more detail than I
 discussed the underlying network architecture. This post addresses
-the architecture side.&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+the architecture side.&lt;/p>
+&lt;h2 id="the-players">The players&lt;/h2>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
 Neutron deployment in detail. Since that article was published,
 Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
@@ -2758,7 +2769,8 @@ external network per L3 agent. You would run something like this&amp;hellip;&lt;
 &lt;code>external_network_bridge&lt;/code> in &lt;code>/etc/neutron/l3_agent.ini&lt;/code>. If you
 wanted to support more than a single external network, you would need
 to run multiple L3 agents, each with a unique value for
-&lt;code>external_network_bridge&lt;/code>.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
+&lt;code>external_network_bridge&lt;/code>.&lt;/p>
+&lt;p>There is now a better option available.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
 external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
 &lt;pre>&lt;code>$ neutron net-create external --router:external=true
 &lt;/code>&lt;/pre>
@@ -3047,7 +3059,8 @@ OVSBOOTPROTO=dhcp
 OVSDHCPINTERFACES=eth0
 MACADDR=fa:16:3e:ef:91:ec
 OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
-&lt;/code>&lt;/pr</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>OVS_EXTRA&lt;/code> parameter gets passed to the &lt;code>add-br&lt;/code> call like this:&lt;/p></description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
 persistent MAC address on an OVS bridge device. It looks like the
 short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
 &lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
@@ -3072,7 +3085,20 @@ OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/co
 external connectivity and for making services available to OpenStack
 instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
 which caused a variety of problems.&lt;/p>
-&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p>
+&lt;pre>&lt;code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+BOOTPROT=static
+IPADDR=192.168.200.1
+NETMASK=255.255.255.0
+ONBOOT=yes
+NM_CONTROLLED=no
+ZONE=openstack
+&lt;/code>&lt;/pre>
+&lt;p>Running &lt;code>ifup br-ex&lt;/code> would also fail to configure the interface, but
+running &lt;code>ifdown br-ex; ifup br-ex&lt;/code> would configure things
+appropriately.&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack
@@ -3157,7 +3183,9 @@ can result in the creation of several virtual interfaces, this results
 in a lot of:&lt;/p>
 &lt;pre>&lt;code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt;
 Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
-&lt;/code>&lt;/pr</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+&lt;/code>&lt;/pre>
+&lt;p>You can disable this behavior by adding the following to
+&lt;code>/etc/NetworkManager/NetworkManager.conf&lt;/code>:&lt;/p></description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
 and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
 &lt;h2 id="networkmanager">NetworkManager&lt;/h2>
 &lt;p>By default, NetworkManager attempts to start a DHCP client on every
@@ -3299,7 +3327,12 @@ particular OpenStack configuration, specifically:&lt;/p>
 &lt;/ul>
 &lt;p>Much of the document will be relevant to other configurations, but
 details will vary based on your choice of layer 2 connectivity, number
-of running instances, and so forth.&lt;/p></description><content>&lt;blockquote>
+of running instances, and so forth.&lt;/p>
+&lt;p>The examples in this document were generated on a system with Quantum
+networking but will generally match what you see under Neutron as
+well, if you replace &lt;code>quantum&lt;/code> by &lt;code>neutron&lt;/code> in names. The OVS flow
+rules under Neutron are somewhat more complex and I will cover those
+in another post.&lt;/p></description><content>&lt;blockquote>
 &lt;p>I originally posted this article on
 the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
 website.&lt;/p>

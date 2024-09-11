@@ -4,7 +4,10 @@ Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
 covered the configuration side of it in much more detail than I
 discussed the underlying network architecture. This post addresses
-the architecture side.&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+the architecture side.&lt;/p>
+&lt;h2 id="the-players">The players&lt;/h2>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
 Neutron deployment in detail. Since that article was published,
 Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
@@ -535,7 +538,8 @@ external network per L3 agent. You would run something like this&amp;hellip;&lt;
 &lt;code>external_network_bridge&lt;/code> in &lt;code>/etc/neutron/l3_agent.ini&lt;/code>. If you
 wanted to support more than a single external network, you would need
 to run multiple L3 agents, each with a unique value for
-&lt;code>external_network_bridge&lt;/code>.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
+&lt;code>external_network_bridge&lt;/code>.&lt;/p>
+&lt;p>There is now a better option available.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
 external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
 &lt;pre>&lt;code>$ neutron net-create external --router:external=true
 &lt;/code>&lt;/pre>
@@ -733,7 +737,10 @@ network plugin for Neutron.&lt;/p>
 &lt;pre>&lt;code>neutron net-create external -- --router:external=true \
 --provider:network_type=flat \
 --provider:physical_network=physnet1
-&lt;/code>&lt;/pr</description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
+&lt;/code>&lt;/pre>
+&lt;p>While this command completed successfully, I was left without any
+connectivity between &lt;code>br-int&lt;/code> and &lt;code>br-ex&lt;/code>, despite having in my
+&lt;code>/etc/neutron/plugins/ml2/ml2_conf.ini&lt;/code>:&lt;/p></description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
 backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant
 reinstalling OpenStack I used this as an excuse to finally move to the ML2
 network plugin for Neutron.&lt;/p>

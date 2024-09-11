@@ -5,7 +5,22 @@ documentation is somewhat limited, and does not offer examples of many
 of yaql&amp;rsquo;s more advanced features.&lt;/p>
 &lt;p>I am working on a &lt;a href="http://www.fluentd.org/">Fluentd&lt;/a> composable service for &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a>. I
 want to allow each service to specify a logging source configuration
-fragment, for example:&lt;/p></description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+fragment, for example:&lt;/p>
+&lt;pre>&lt;code>parameters:
+NovaAPILoggingSource:
+type: json
+description: Fluentd logging configuration for nova-api.
+default:
+tag: openstack.nova.api
+type: tail
+format: |
+/(?&amp;lt;time&amp;gt;\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+) (?&amp;lt;pid&amp;gt;\d+) (?&amp;lt;priority&amp;gt;\S+) (?&amp;lt;message&amp;gt;.*)/
+path: /var/log/nova/nova-api.log
+pos_file: /var/run/fluentd/openstack.nova.api.pos
+&lt;/code>&lt;/pre>
+&lt;p>This generally works, but several parts of this fragment are going to
+be the same across all OpenStack services. I wanted to reduce the
+above to just the unique attributes, which would look something like:&lt;/p></description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
 intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
 in your Heat templates. Unfortunately, the existing yaql
 documentation is somewhat limited, and does not offer examples of many
@@ -255,7 +270,12 @@ issues I encountered:&lt;/p>
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -304,7 +324,18 @@ issues I encountered:&lt;/p>
 &lt;pre>&lt;code> dns:
 - 8.8.8.8
 - 8.8.4.4
-&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>docker_endopint&lt;/code> : String&lt;/p>
+&lt;p>Docker daemon endpoint. By default the local Docker daemon will
+be used.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> docker_endpoint: tcp://192.168.1.100:2375
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>env&lt;/code> : String&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>

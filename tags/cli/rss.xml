@@ -6,7 +6,8 @@ http://chunk.io/f/76ea98ea081748e19de4507fde3c2c65
 &lt;/code>&lt;/pre>
 &lt;p>When you run this command, you cursor will change into crosshairs.
 Click on a window, and this will grab a png image of that window and
-send it to &lt;a href="http://chunk.io/">chunk.io&lt;/a> using curl.&lt;/p></description><content>&lt;p>Sometimes you want to quickly share a screenshot with someone. Here&amp;rsquo;s
+send it to &lt;a href="http://chunk.io/">chunk.io&lt;/a> using curl.&lt;/p>
+&lt;p>You&amp;rsquo;ll get back a URL that you can use to share the image with people.&lt;/p></description><content>&lt;p>Sometimes you want to quickly share a screenshot with someone. Here&amp;rsquo;s
 my favorite mechanism, which assumes you have installed both &lt;code>curl&lt;/code>
 and the &lt;a href="http://www.imagemagick.org/">ImageMagick&lt;/a> suite.&lt;/p>
 &lt;pre>&lt;code>$ import png:- | curl -T- -s chunk.io

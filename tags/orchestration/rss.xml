@@ -17,7 +17,18 @@
 &lt;pre>&lt;code> dns:
 - 8.8.8.8
 - 8.8.4.4
-&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>docker_endopint&lt;/code> : String&lt;/p>
+&lt;p>Docker daemon endpoint. By default the local Docker daemon will
+be used.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> docker_endpoint: tcp://192.168.1.100:2375
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>env&lt;/code> : String&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>

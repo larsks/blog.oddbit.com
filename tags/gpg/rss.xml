@@ -2,7 +2,10 @@
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
@@ -198,7 +201,11 @@ collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
 enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
 &lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
-everything up and running.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+everything up and running.&lt;/p>
+&lt;h2 id="set-up-gpg">Set up GPG&lt;/h2>
+&lt;p>We encrypt files using GPG, so the first step is making sure that you
+have a GPG keypair and that your public key is published where other
+people can find it.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
 collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 &lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which

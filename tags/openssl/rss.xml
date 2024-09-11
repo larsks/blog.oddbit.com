@@ -129,7 +129,8 @@ mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN
 QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P
 +0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB
 -----END RSA PUBLIC KEY-----
-&lt;/code>&lt;/pr</description><content>&lt;blockquote>
+&lt;/code>&lt;/pre>
+&lt;p>If you have a recent version of OpenSSH (where recent means 5.6 or later), you can just do this:&lt;/p></description><content>&lt;blockquote>
 &lt;p>I&amp;rsquo;ve posted a &lt;a href="http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/">followup&lt;/a> to this article that discusses ssh-agent.&lt;/p>
 &lt;/blockquote>
 &lt;p>For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:&lt;/p>

@@ -822,7 +822,11 @@ collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
 enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
 &lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
-everything up and running.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+everything up and running.&lt;/p>
+&lt;h2 id="set-up-gpg">Set up GPG&lt;/h2>
+&lt;p>We encrypt files using GPG, so the first step is making sure that you
+have a GPG keypair and that your public key is published where other
+people can find it.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
 collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 &lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
@@ -1969,7 +1973,12 @@ events = dict(poll.poll())
 .
 .
 .
-&lt;/code>&lt;/pr</description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
+&lt;/code>&lt;/pre>
+&lt;p>If you were to try this at home, you would find that everything worked
+as described&amp;hellip;but if you were to deploy the same code to OpenShift,
+you would find that the problem we were trying to solve (the server
+holding file descriptors open after a client disconnected) would still
+exist.&lt;/p></description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
 long-poll servers and Python, we investigate the code changes that
 were necessary to make the code work when deployed on OpenShift.&lt;/p>
 &lt;!-- raw HTML omitted -->

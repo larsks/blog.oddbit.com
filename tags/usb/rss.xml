@@ -3,7 +3,13 @@ that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first
 only allows you to configure a single type of gadget at a time, and
-boils down to:&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+boils down to:&lt;/p>
+&lt;ol>
+&lt;li>Enable the dwc2 overlay in &lt;code>/boot/config.txt&lt;/code>&lt;/li>
+&lt;li>Reboot.&lt;/li>
+&lt;li>&lt;code>modprobe g_serial&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>This process is more fully documented &lt;a href="https://learn.adafruit.com/turning-your-raspberry-pi-zero-into-a-usb-gadget/overview">here&lt;/a>.&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
 that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first

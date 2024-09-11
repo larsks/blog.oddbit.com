@@ -13,7 +13,11 @@ PORTB &amp;amp;= ~LED_BUILTIN; // turn off led
 _delay_ms(1000); // delay 1s
 }
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>You have a Makefile that compiles that into an object (&lt;code>.o&lt;/code>) file like this:&lt;/p>
+&lt;pre>&lt;code>avr-gcc -mmcu=atmega328p -DF_CPU=16000000 -Os -c blink.c
+&lt;/code>&lt;/pre>
+&lt;p>If you were to forget to set the device type when compiling your &lt;code>.c&lt;/code> file into an object file (&lt;code>.o&lt;/code>), you would get a warning:&lt;/p></description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
 &lt;pre>&lt;code>#include &amp;lt;avr/io.h&amp;gt;
 #include &amp;lt;util/delay.h&amp;gt;
 #define LED_BUILTIN _BV(PORTB5)
@@ -150,7 +154,9 @@ ae: ff cf rjmp .-2 ; 0xae &amp;lt;__stop_program&amp;gt;
 ...your code here...
 seti();
 &lt;/code>&lt;/pre>
-&lt;p>But it&amp;rsquo;s more than that. If you read &lt;a href="https://www.nongnu.org/avr-libc/user-manual/group__util__atomic.html#gaaaea265b31dabcfb3098bec7685c39e4">the documentation&lt;/a> for the macro, it says:&lt;/p></description><content>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
+&lt;p>But it&amp;rsquo;s more than that. If you read &lt;a href="https://www.nongnu.org/avr-libc/user-manual/group__util__atomic.html#gaaaea265b31dabcfb3098bec7685c39e4">the documentation&lt;/a> for the macro, it says:&lt;/p>
+&lt;blockquote>
+&lt;p>Creates a block of code that is guaranteed to be executed atomically. Upon entering the block the Global Interrupt Status flag in SREG is disabled, and re-enabled upon exiting the block &lt;strong>from any exit path&lt;/strong>.&lt;/p></description><content>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
 &lt;pre>&lt;code>cli();
 ...your code here...
 seti();
@@ -321,7 +327,8 @@ Button *button = (Button *)malloc(sizeof(Button));
 // do some initialization stuff
 return button;
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>And when initially writing &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">pipower&lt;/a>, that&amp;rsquo;s exactly what I did. But while thinking about it after the fact, I realized the following:&lt;/p></description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
 &lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
 &lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
 Button *button = (Button *)malloc(sizeof(Button));
@@ -365,7 +372,10 @@ Data: 29 bytes (5.7% Full)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>__attribute__((optimize(&amp;quot;O0&amp;quot;)))&lt;/code> directive disables all optimizations for this function, which should prevent gcc from optimizing out the reference to &lt;code>malloc()&lt;/code>.&lt;/p></content></item><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
-&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
 &lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -596,7 +606,8 @@ Temporary breakpoint 2, loop () at ../pipower.c:98
 &lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p>
+&lt;p>Using &lt;code>simavr&lt;/code> to collect information about the state of microcontroller pins while our code is running.&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
@@ -937,7 +948,12 @@ main () at ../pipower.c:280
 &lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p></description><content>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p>
+&lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p>
+&lt;p>Using &lt;code>simavr&lt;/code> to collect information about the state of microcontroller pins while our code is running.&lt;/p></description><content>
 &lt;figure class="left" >
 &lt;img src="pipower_trace.png" />
 &lt;/figure>

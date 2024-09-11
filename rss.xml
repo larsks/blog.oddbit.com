@@ -195,8 +195,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="915374268" type="checkbox" />
-&lt;label for="915374268">
+&lt;input id="281647359" type="checkbox" />
+&lt;label for="281647359">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -225,8 +225,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="184265937" type="checkbox" />
-&lt;label for="184265937">
+&lt;input id="671432985" type="checkbox" />
+&lt;label for="671432985">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -253,8 +253,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="693185742" type="checkbox" />
-&lt;label for="693185742">
+&lt;input id="762954831" type="checkbox" />
+&lt;label for="762954831">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -339,8 +339,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="918472653" type="checkbox" />
-&lt;label for="918472653">
+&lt;input id="325697841" type="checkbox" />
+&lt;label for="325697841">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -400,8 +400,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="468379512" type="checkbox" />
-&lt;label for="468379512">
+&lt;input id="913247658" type="checkbox" />
+&lt;label for="913247658">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -674,7 +674,7 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;/div></content></item><item><title>Simple error handling in C</title><link>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</link><pubDate>Fri, 17 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</guid><description>&lt;h2 id="overview">Overview&lt;/h2>
 &lt;p>I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of &lt;code>if&lt;/code> statements and calls to &lt;code>perror&lt;/code>. I ended up implementing a simple &lt;code>must&lt;/code> function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">must&lt;/span>(fd &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;textfile.txt&amp;#34;&lt;/span>, O_RDONLY));
-&lt;/span>&lt;/span>&lt;/code>&lt;/pr</description><content>&lt;h2 id="overview">Overview&lt;/h2>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or:&lt;/p></description><content>&lt;h2 id="overview">Overview&lt;/h2>
 &lt;p>I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of &lt;code>if&lt;/code> statements and calls to &lt;code>perror&lt;/code>. I ended up implementing a simple &lt;code>must&lt;/code> function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">must&lt;/span>(fd &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;textfile.txt&amp;#34;&lt;/span>, O_RDONLY));
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or:&lt;/p>
@@ -685,8 +685,8 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="342581967" type="checkbox" />
-&lt;label for="342581967">
+&lt;input id="978231564" type="checkbox" />
+&lt;label for="978231564">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -702,8 +702,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="963871542" type="checkbox" />
-&lt;label for="963871542">
+&lt;input id="912347685" type="checkbox" />
+&lt;label for="912347685">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -728,8 +728,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="127846359" type="checkbox" />
-&lt;label for="127846359">
+&lt;input id="581623497" type="checkbox" />
+&lt;label for="581623497">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -831,8 +831,8 @@ example.c:24 in main: fd = open(&amp;#34;file-that-does-not-exist.xt&amp;#34;, O
 &lt;p>That is&amp;hellip;completely ridiculous. The &amp;ldquo;Share&amp;rdquo; button in the All Trails app should provide an option to share the GPX version of the route so the above process could be collapsed into a single step. All Trails, why do you hate your users so much?&lt;/p></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="854769312" type="checkbox" />
-&lt;label for="854769312">
+&lt;input id="932487561" type="checkbox" />
+&lt;label for="932487561">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -890,11 +890,13 @@ emitPacket(tap_fd);
 close(tap_fd);
 return 0;
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p></description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="854769312" type="checkbox" />
-&lt;label for="854769312">
+&lt;input id="932487561" type="checkbox" />
+&lt;label for="932487561">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -957,8 +959,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="624897315" type="checkbox" />
-&lt;label for="624897315">
+&lt;input id="184792536" type="checkbox" />
+&lt;label for="184792536">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1168,8 +1170,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="325871649" type="checkbox" />
-&lt;label for="325871649">
+&lt;input id="695387421" type="checkbox" />
+&lt;label for="695387421">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1452,7 +1454,10 @@ default via fe80::7a8a:20ff:febb:5db dev vlan10 proto ra metric 404 pref medium
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-1-create-a-gpg-keypair">Create a GPG key&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2022-11-13-using-keyoxide/#step-2-publish-your-key">Publish the GPG key&lt;/a>&lt;/p></description><content>&lt;p>In today&amp;rsquo;s post, we look at &lt;a href="https://keyoxide.org/">KeyOxide&lt;/a>, a service that allows you to cryptographically assert ownership of online resources using your GPG key. Some aspects of the service are less than obvious; in response to some questions I saw on Mastodon I though I would put together a short guide to making use of the service.&lt;/p>
 &lt;p>We&amp;rsquo;re going to look at the following high-level tasks:&lt;/p>
 &lt;ol>
 &lt;li>
@@ -1643,7 +1648,12 @@ sub cv25519 2022-11-13 [E]
 &lt;/li>
 &lt;/ol>
 &lt;/div></content></item><item><title>Delete GitHub workflow runs using the gh cli</title><link>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</link><pubDate>Thu, 22 Sep 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-09-22-delete-workflow-runs/</guid><description>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
-&lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p></description><content>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
+&lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p>
+&lt;pre tabindex="0">&lt;code>gh run list --json databaseId -q &amp;#39;.[].databaseId&amp;#39; |
+xargs -IID gh api \
+&amp;#34;repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID&amp;#34; \
+-X DELETE
+&lt;/code>&lt;/pre>&lt;p>This will delete &lt;em>all&lt;/em> (well, up to 20, or whatever you set in &lt;code>--limit&lt;/code>) your workflow runs. You can add flags to &lt;code>gh run list&lt;/code> to filter runs by workflow or by triggering user.&lt;/p></description><content>&lt;p>Hello, future me. This is for you next time you want to do this.&lt;/p>
 &lt;p>When setting up the CI for a project I will sometimes end up with a tremendous clutter of workflow runs. Sometimes they have embarrassing mistakes. Who wants to show that to people? I was trying to figure out how to bulk delete workflow runs from the CLI, and I came up with something that works:&lt;/p>
 &lt;pre tabindex="0">&lt;code>gh run list --json databaseId -q &amp;#39;.[].databaseId&amp;#39; |
 xargs -IID gh api \
@@ -1906,7 +1916,9 @@ component: mariadb
 01:57:39 OKAY 0
 01:57:40 OKAY 0
 &lt;/code>&lt;/pre>&lt;p>There is no variability in connection time, and there are no timeouts.&lt;/p></content></item><item><title>Directing different ports to different containers with Traefik</title><link>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</link><pubDate>Mon, 20 Jun 2022 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2022-06-20-traefik-multiple-listeners/</guid><description>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
-&lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p></description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
+&lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
+&lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
+&lt;p>A default Traefik configuration will already have a listener on port 80, but if we want to accept connections on port 9090 we need to create a new listener: what Traefik calls an &lt;a href="https://doc.traefik.io/traefik/routing/entrypoints/">entrypoint&lt;/a>. We do this using the &lt;code>--entrypoints.&amp;lt;name&amp;gt;.address&lt;/code> option. For example, &lt;code>--entrypoints.ep1.address=80&lt;/code> creates an entrypoint named &lt;code>ep1&lt;/code> on port 80, while &lt;code>--entrypoints.ep2.address=9090&lt;/code> creates an entrypoint named &lt;code>ep2&lt;/code> on port 9090. Those names are important because we&amp;rsquo;ll use them for mapping containers to the appropriate listener later on.&lt;/p></description><content>&lt;p>This post is mostly for myself: I find the &lt;a href="https://traefik.io">Traefik&lt;/a> documentation hard to navigate, so having figured this out in response to &lt;a href="https://stackoverflow.com/a/72694677/147356">a question on Stack Overflow&lt;/a>, I&amp;rsquo;m putting it here to help it stick in my head.&lt;/p>
 &lt;p>The question asks essentially how to perform port-based routing of requests to containers, so that a request for &lt;code>http://example.com&lt;/code> goes to one container while a request for &lt;code>http://example.com:9090&lt;/code> goes to a different container.&lt;/p>
 &lt;h2 id="creating-entrypoints">Creating entrypoints&lt;/h2>
 &lt;p>A default Traefik configuration will already have a listener on port 80, but if we want to accept connections on port 9090 we need to create a new listener: what Traefik calls an &lt;a href="https://doc.traefik.io/traefik/routing/entrypoints/">entrypoint&lt;/a>. We do this using the &lt;code>--entrypoints.&amp;lt;name&amp;gt;.address&lt;/code> option. For example, &lt;code>--entrypoints.ep1.address=80&lt;/code> creates an entrypoint named &lt;code>ep1&lt;/code> on port 80, while &lt;code>--entrypoints.ep2.address=9090&lt;/code> creates an entrypoint named &lt;code>ep2&lt;/code> on port 9090. Those names are important because we&amp;rsquo;ll use them for mapping containers to the appropriate listener later on.&lt;/p>
@@ -2959,7 +2971,11 @@ collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
 enables Kustomize to use &lt;a href="https://github.com/mozilla/sops">sops&lt;/a> to encrypt/files using GPG.&lt;/p>
 &lt;p>In this post, I&amp;rsquo;d like to walk through the steps necessary to get
-everything up and running.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
+everything up and running.&lt;/p>
+&lt;h2 id="set-up-gpg">Set up GPG&lt;/h2>
+&lt;p>We encrypt files using GPG, so the first step is making sure that you
+have a GPG keypair and that your public key is published where other
+people can find it.&lt;/p></description><content>&lt;p>&lt;a href="https://kustomize.io/">Kustomize&lt;/a> is a tool for assembling Kubernetes manifests from a
 collection of files. We&amp;rsquo;re making extensive use of Kustomize in the
 &lt;a href="https://www.operate-first.cloud/">operate-first&lt;/a> project. In order to keep secrets stored in our
 configuration repositories, we&amp;rsquo;re using the &lt;a href="https://github.com/viaduct-ai/kustomize-sops">KSOPS&lt;/a> plugin, which
@@ -4180,7 +4196,9 @@ if (lastrun_2 == 0) or (now - lastrun_2 &amp;gt;= 300):
 read_sensor_2()
 lastrun_2 = now
 machine.idle()
-&lt;/code>&lt;/pr</description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
+&lt;/code>&lt;/pre>&lt;p>If we were only reading a single sensor (or multiple sensors at the
+same interval), we could drop the loop and juse use the ESP8266&amp;rsquo;s deep
+sleep mode (assuming we have &lt;a href="http://docs.micropython.org/en/latest/esp8266/tutorial/powerctrl.html#deep-sleep-mode">wired things properly&lt;/a>):&lt;/p></description><content>&lt;p>Let&amp;rsquo;s say you have a couple of sensors attached to an ESP8266 running
 &lt;a href="https://micropython.org/">MicroPython&lt;/a>. You&amp;rsquo;d like to sample them at different frequencies
 (say, one every 60 seconds and one every five minutes), and you&amp;rsquo;d like
 to do it as efficiently as possible in terms of power consumption.
@@ -5625,7 +5643,13 @@ should be able to disable that initial DHCP attempt).&lt;/p></content></item><it
 &lt;/ul>
 &lt;/nav>
 &lt;p>Disclaimer: I am not an expert, just a private individual summarizing available
-information. Please correct me if I&amp;rsquo;ve gotten something wrong.&lt;/p></description><content>&lt;p>[This is a guest post by my partner Alexandra van Geel.]&lt;/p>
+information. Please correct me if I&amp;rsquo;ve gotten something wrong.&lt;/p>
+&lt;h2 id="tldr">TL;DR&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>I suggest: (a) the &lt;a href="https://www.vogmask.com/collections/all">Vogmask valveless mask&lt;/a> or (b) the &lt;a href="https://o2canada.com/products/o2-curve-1-2">O2 Canada Curve
+Respirator&lt;/a>. If (b), make sure you cut some an extra filter into two small
+circles and put the material in the respirator to cover the exhale valves.&lt;/p></description><content>&lt;p>[This is a guest post by my partner Alexandra van Geel.]&lt;/p>
 &lt;nav id="TableOfContents">
 &lt;ul>
 &lt;li>&lt;a href="#tldr">TL;DR&lt;/a>&lt;/li>
@@ -8770,7 +8794,7 @@ c43bade Adds api for creating widgets
 deaa962 Adds all get methods for listing widgets
 9de79ab Adds api for showing a widget and simple data model
 8288ab1 Adds api framework for widget service
-&lt;/code>&lt;/pr</description><content>&lt;p>You&amp;rsquo;re working on a pull request. You&amp;rsquo;ve been working on a pull request for a while, and due to lack of sleep or inebriation you&amp;rsquo;ve been merging changes into your feature branch rather than rebasing. You now have a pull request that looks like this (I&amp;rsquo;ve marked merge commits with the text &lt;code>[merge]&lt;/code>):&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>You know that&amp;rsquo;s a mess, so you try to fix it by running &lt;code>git rebase -i master&lt;/code> and squashing everything together&amp;hellip;and you find yourself stuck in an endless maze of merge conflicts. There has to be a better way!&lt;/p></description><content>&lt;p>You&amp;rsquo;re working on a pull request. You&amp;rsquo;ve been working on a pull request for a while, and due to lack of sleep or inebriation you&amp;rsquo;ve been merging changes into your feature branch rather than rebasing. You now have a pull request that looks like this (I&amp;rsquo;ve marked merge commits with the text &lt;code>[merge]&lt;/code>):&lt;/p>
 &lt;pre tabindex="0">&lt;code>7e181479 Adds methods for widget sales
 0487162 [merge] Merge remote-tracking branch &amp;#39;origin/master&amp;#39; into my_feature
 76ee81c [merge] Merge branch &amp;#39;my_feature&amp;#39; of https://github.com/my_user_name/widgets into my_feature
@@ -9354,7 +9378,8 @@ pool-lb-mode topology
 &lt;ul>
 &lt;li>The documentation for the &lt;a href="https://docs.python.org/3/library/re.html">re&lt;/a> module.&lt;/li>
 &lt;li>The &lt;a href="https://docs.python.org/3/howto/regex.html">Regular expression HOWTO&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>New comment system</title><link>https://blog.oddbit.com/post/2019-05-07-new-comment-system/</link><pubDate>Tue, 07 May 2019 09:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-07-new-comment-system/</guid><description>&lt;p>As long as I&amp;rsquo;m switching site generators, it seems like a good idea to refresh the comment system as well. I&amp;rsquo;ve been using &lt;a href="https://disqus.com">Disqus&lt;/a> for a while, since when I started it was one of the only games in town. There are now alternatives of different sorts, and one in particular caught my eye: &lt;a href="https://utteranc.es/">Utterances&lt;/a> uses GitHub issues for storing comments, which seems like a fantastic idea.&lt;/p></description><content>&lt;p>As long as I&amp;rsquo;m switching site generators, it seems like a good idea to refresh the comment system as well. I&amp;rsquo;ve been using &lt;a href="https://disqus.com">Disqus&lt;/a> for a while, since when I started it was one of the only games in town. There are now alternatives of different sorts, and one in particular caught my eye: &lt;a href="https://utteranc.es/">Utterances&lt;/a> uses GitHub issues for storing comments, which seems like a fantastic idea.&lt;/p>
+&lt;/ul></content></item><item><title>New comment system</title><link>https://blog.oddbit.com/post/2019-05-07-new-comment-system/</link><pubDate>Tue, 07 May 2019 09:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-07-new-comment-system/</guid><description>&lt;p>As long as I&amp;rsquo;m switching site generators, it seems like a good idea to refresh the comment system as well. I&amp;rsquo;ve been using &lt;a href="https://disqus.com">Disqus&lt;/a> for a while, since when I started it was one of the only games in town. There are now alternatives of different sorts, and one in particular caught my eye: &lt;a href="https://utteranc.es/">Utterances&lt;/a> uses GitHub issues for storing comments, which seems like a fantastic idea.&lt;/p>
+&lt;p>That means that comments will finally be stored in the same place as the blog content, which I think is a happy state of affairs.&lt;/p></description><content>&lt;p>As long as I&amp;rsquo;m switching site generators, it seems like a good idea to refresh the comment system as well. I&amp;rsquo;ve been using &lt;a href="https://disqus.com">Disqus&lt;/a> for a while, since when I started it was one of the only games in town. There are now alternatives of different sorts, and one in particular caught my eye: &lt;a href="https://utteranc.es/">Utterances&lt;/a> uses GitHub issues for storing comments, which seems like a fantastic idea.&lt;/p>
 &lt;p>That means that comments will finally be stored in the same place as the blog content, which I think is a happy state of affairs.&lt;/p></content></item><item><title>New static site generator</title><link>https://blog.oddbit.com/post/2019-05-06-new-static-site-generator/</link><pubDate>Mon, 06 May 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-05-06-new-static-site-generator/</guid><description>&lt;p>I&amp;rsquo;ve switched my static site generator from &lt;a href="https://blog.getpelican.com/">Pelican&lt;/a> to &lt;a href="https://gohugo.io/">Hugo&lt;/a>. I&amp;rsquo;ve tried to ensure that all the old links continue to work correctly, but if you notice anything missing or otherwise not working as intended, please let me know by &lt;a href="https://github.com/larsks/blog.oddbit.com/issues">opening an issue&lt;/a>. Thanks!&lt;/p></description><content>&lt;p>I&amp;rsquo;ve switched my static site generator from &lt;a href="https://blog.getpelican.com/">Pelican&lt;/a> to &lt;a href="https://gohugo.io/">Hugo&lt;/a>. I&amp;rsquo;ve tried to ensure that all the old links continue to work correctly, but if you notice anything missing or otherwise not working as intended, please let me know by &lt;a href="https://github.com/larsks/blog.oddbit.com/issues">opening an issue&lt;/a>. Thanks!&lt;/p></content></item><item><title>Adding support for privilege escalation to Ansible's docker connection driver</title><link>https://blog.oddbit.com/post/2019-04-26-adding-support-for-privilege-e/</link><pubDate>Fri, 26 Apr 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-04-26-adding-support-for-privilege-e/</guid><description>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
 &lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
 has merged, so you can now use &lt;code>sudo&lt;/code> with the &lt;code>docker&lt;/code> connection driver even when &lt;code>sudo&lt;/code> is configured to require a password.&lt;/p>
@@ -9366,7 +9391,8 @@ gather_facts: false
 become: true
 tasks:
 - ping:
-&lt;/code>&lt;/pr</description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
+&lt;/code>&lt;/pre>
+&lt;p>And an inventory like this:&lt;/p></description><content>&lt;p>&lt;strong>Update 2019-05-09&lt;/strong> Pull request
 &lt;a href="https://github.com/ansible/ansible/pull/55816" class="pull-request">#55816&lt;/a>
 has merged, so you can now use &lt;code>sudo&lt;/code> with the &lt;code>docker&lt;/code> connection driver even when &lt;code>sudo&lt;/code> is configured to require a password.&lt;/p>
 &lt;hr>
@@ -9670,7 +9696,11 @@ PORTB &amp;amp;= ~LED_BUILTIN; // turn off led
 _delay_ms(1000); // delay 1s
 }
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>You have a Makefile that compiles that into an object (&lt;code>.o&lt;/code>) file like this:&lt;/p>
+&lt;pre>&lt;code>avr-gcc -mmcu=atmega328p -DF_CPU=16000000 -Os -c blink.c
+&lt;/code>&lt;/pre>
+&lt;p>If you were to forget to set the device type when compiling your &lt;code>.c&lt;/code> file into an object file (&lt;code>.o&lt;/code>), you would get a warning:&lt;/p></description><content>&lt;p>Say you have a simple bit of code:&lt;/p>
 &lt;pre>&lt;code>#include &amp;lt;avr/io.h&amp;gt;
 #include &amp;lt;util/delay.h&amp;gt;
 #define LED_BUILTIN _BV(PORTB5)
@@ -9807,7 +9837,9 @@ ae: ff cf rjmp .-2 ; 0xae &amp;lt;__stop_program&amp;gt;
 ...your code here...
 seti();
 &lt;/code>&lt;/pre>
-&lt;p>But it&amp;rsquo;s more than that. If you read &lt;a href="https://www.nongnu.org/avr-libc/user-manual/group__util__atomic.html#gaaaea265b31dabcfb3098bec7685c39e4">the documentation&lt;/a> for the macro, it says:&lt;/p></description><content>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
+&lt;p>But it&amp;rsquo;s more than that. If you read &lt;a href="https://www.nongnu.org/avr-libc/user-manual/group__util__atomic.html#gaaaea265b31dabcfb3098bec7685c39e4">the documentation&lt;/a> for the macro, it says:&lt;/p>
+&lt;blockquote>
+&lt;p>Creates a block of code that is guaranteed to be executed atomically. Upon entering the block the Global Interrupt Status flag in SREG is disabled, and re-enabled upon exiting the block &lt;strong>from any exit path&lt;/strong>.&lt;/p></description><content>&lt;p>The AVR C library, &lt;a href="https://www.nongnu.org/avr-libc/">avr-libc&lt;/a>, provide an &lt;code>ATOMIC_BLOCK&lt;/code> macro that you can use to wrap critical sections of your code to ensure that interrupts are disabled while the code executes. At high level, the &lt;code>ATOMIC_BLOCK&lt;/code> macro (when called using &lt;code>ATOMIC_FORCEON&lt;/code>) does something like this:&lt;/p>
 &lt;pre>&lt;code>cli();
 ...your code here...
 seti();
@@ -9978,7 +10010,8 @@ Button *button = (Button *)malloc(sizeof(Button));
 // do some initialization stuff
 return button;
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>And when initially writing &lt;a href="https://blog.oddbit.com/post/2019-01-19-pipower-a-raspberry-pi-ups/">pipower&lt;/a>, that&amp;rsquo;s exactly what I did. But while thinking about it after the fact, I realized the following:&lt;/p></description><content>&lt;p>Pssst! Hey&amp;hellip;hey, buddy, wanna get an extra KB for cheap?&lt;/p>
 &lt;p>When I write OO-style code in C, I usually start with something like the following, in which I use &lt;code>malloc()&lt;/code> to allocate memory for a variable of a particular type, perform some initialization actions, and then return it to the caller:&lt;/p>
 &lt;pre>&lt;code>Button *button_new(uint8_t pin, uint8_t poll_freq) {
 Button *button = (Button *)malloc(sizeof(Button));
@@ -10022,7 +10055,10 @@ Data: 29 bytes (5.7% Full)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>__attribute__((optimize(&amp;quot;O0&amp;quot;)))&lt;/code> directive disables all optimizations for this function, which should prevent gcc from optimizing out the reference to &lt;code>malloc()&lt;/code>.&lt;/p></content></item><item><title>Debugging attiny85 code, part 1: simavr and gdb</title><link>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</link><pubDate>Tue, 22 Jan 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/</guid><description>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
-&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
+&lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p></description><content>&lt;p>In a case of awful timing, after my &lt;a href="https://blog.oddbit.com/2019/01/19/pipower-a-raspberry-pi-ups/">recent project involving some attiny85 programming&lt;/a> I finally got around to learning how to use &lt;a href="https://github.com/buserror/simavr">simavr&lt;/a> and &lt;code>gdb&lt;/code> to help debug my AVR code. It was too late for me (and I will never get the time back that I spent debugging things with an LED and lots of re-flashing), but maybe this will help someone else!&lt;/p>
 &lt;p>I&amp;rsquo;ve split this into three posts:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -10253,7 +10289,8 @@ Temporary breakpoint 2, loop () at ../pipower.c:98
 &lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p>
+&lt;p>Using &lt;code>simavr&lt;/code> to collect information about the state of microcontroller pins while our code is running.&lt;/p></description><content>&lt;p>This is the second of three posts about using &lt;code>gdb&lt;/code> and &lt;code>simavr&lt;/code> to debug AVR code. The complete series is:&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-1/">Part 1: Using GDB&lt;/a>&lt;/p>
@@ -10594,7 +10631,12 @@ main () at ../pipower.c:280
 &lt;p>A walkthrough of using GDB to manually inspect the behavior of our code.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p></description><content>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-2/">Part 2: Automating GDB with scripts&lt;/a>&lt;/p>
+&lt;p>Creating GDB scripts to automatically test the behavior of our code.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://blog.oddbit.com/post/2019-01-22-debugging-attiny-code-pt-3/">Part 3: Tracing with simavr&lt;/a>&lt;/p>
+&lt;p>Using &lt;code>simavr&lt;/code> to collect information about the state of microcontroller pins while our code is running.&lt;/p></description><content>
 &lt;figure class="left" >
 &lt;img src="pipower_trace.png" />
 &lt;/figure>
@@ -10930,7 +10972,13 @@ that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first
 only allows you to configure a single type of gadget at a time, and
-boils down to:&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
+boils down to:&lt;/p>
+&lt;ol>
+&lt;li>Enable the dwc2 overlay in &lt;code>/boot/config.txt&lt;/code>&lt;/li>
+&lt;li>Reboot.&lt;/li>
+&lt;li>&lt;code>modprobe g_serial&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>This process is more fully documented &lt;a href="https://learn.adafruit.com/turning-your-raspberry-pi-zero-into-a-usb-gadget/overview">here&lt;/a>.&lt;/p></description><content>&lt;p>The Pi Zero (and Zero W) have support for acting as a USB &lt;a href="http://www.linux-usb.org/gadget/">gadget&lt;/a>:
 that means that they can be configured to act as a USB device &amp;ndash; like
 a serial port, an ethernet interface, a mass storage device, etc.&lt;/p>
 &lt;p>There are two different ways of configuring this support. The first
@@ -10984,7 +11032,13 @@ instead, follow these steps.&lt;/p>
 &lt;code>/etc/wpa_supplicant/wpa_supplicant-wlan0.conf&lt;/code>.&lt;/p>
 &lt;p>If you already have an appropriate configuration in
 &lt;code>/etc/wpa_supplicant/wpa_supplicant.conf&lt;/code>, you can just symlink the
-file:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
+file:&lt;/p>
+&lt;pre>&lt;code> cd /etc/wpa_supplicant
+ln -s wpa_supplicant.conf wpa_supplicant-wlan0.conf
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>Enable the &lt;code>wpa_supplicant&lt;/code> service for &lt;code>wlan0&lt;/code>:&lt;/p></description><content>&lt;p>Recent releases of Raspbian have adopted the use of &lt;a href="http://manpages.ubuntu.com/manpages/trusty/man8/dhcpcd5.8.html">dhcpcd&lt;/a> to
 manage both dynamic and static interface configuration. If you would
 prefer to use the traditional &lt;code>/etc/network/interfaces&lt;/code> mechanism
 instead, follow these steps.&lt;/p>
@@ -11571,7 +11625,8 @@ state == 1 &amp;amp;&amp;amp; $2 != chain {chain=$2; counter=1; printf &amp;quot
 !/^-A/ {state=0}
 state == 1 {printf &amp;quot;[%03d] %s\n&amp;quot;, counter++, $0}
 state == 0 {print}
-&lt;/code>&lt;/pr</description><content>&lt;p>You can list &lt;code>iptables&lt;/code> rules with rule numbers using the
+&lt;/code>&lt;/pre>
+&lt;p>This will produce output along the lines of:&lt;/p></description><content>&lt;p>You can list &lt;code>iptables&lt;/code> rules with rule numbers using the
 &lt;code>--line-numbers&lt;/code> option, but this only works in list (&lt;code>-L&lt;/code>) mode. I
 find it much more convenient to view rules using the output from
 &lt;code>iptables -S&lt;/code> or &lt;code>iptables-save&lt;/code>.&lt;/p>
@@ -11819,7 +11874,16 @@ tasks:
 - name: shut down the server
 command: poweroff
 become: true
-&lt;/code>&lt;/pr</description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
+&lt;/code>&lt;/pre>
+&lt;p>&amp;hellip;but that will actually fail with the following result:&lt;/p>
+&lt;pre>&lt;code>TASK [shut down server] *************************************
+fatal: [myserver]: UNREACHABLE! =&amp;gt; {&amp;quot;changed&amp;quot;: false, &amp;quot;msg&amp;quot;:
+&amp;quot;Failed to connect to the host via ssh: Shared connection to
+10.0.0.103 closed.\r\n&amp;quot;, &amp;quot;unreachable&amp;quot;: true}
+&lt;/code>&lt;/pre>
+&lt;p>This happens because running &lt;code>poweroff&lt;/code> immediately closes Ansible&amp;rsquo;s
+ssh connection. The workaround here is to use a &amp;ldquo;fire-and-forget&amp;rdquo;
+&lt;a href="http://docs.ansible.com/ansible/latest/playbooks_async.html">asynchronous task&lt;/a>:&lt;/p></description><content>&lt;p>The other day on &lt;a href="http://docs.ansible.com/ansible/latest/community.html#irc-channel">#ansible&lt;/a>, someone was looking for a way to safely
 shut down a Nova server, wait for it to stop, and then start it up
 again using the &lt;code>openstack&lt;/code> cli. The first part seemed easy:&lt;/p>
 &lt;pre>&lt;code>- hosts: myserver
@@ -12598,7 +12662,22 @@ documentation is somewhat limited, and does not offer examples of many
 of yaql&amp;rsquo;s more advanced features.&lt;/p>
 &lt;p>I am working on a &lt;a href="http://www.fluentd.org/">Fluentd&lt;/a> composable service for &lt;a href="https://wiki.openstack.org/wiki/TripleO">TripleO&lt;/a>. I
 want to allow each service to specify a logging source configuration
-fragment, for example:&lt;/p></description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
+fragment, for example:&lt;/p>
+&lt;pre>&lt;code>parameters:
+NovaAPILoggingSource:
+type: json
+description: Fluentd logging configuration for nova-api.
+default:
+tag: openstack.nova.api
+type: tail
+format: |
+/(?&amp;lt;time&amp;gt;\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+) (?&amp;lt;pid&amp;gt;\d+) (?&amp;lt;priority&amp;gt;\S+) (?&amp;lt;message&amp;gt;.*)/
+path: /var/log/nova/nova-api.log
+pos_file: /var/run/fluentd/openstack.nova.api.pos
+&lt;/code>&lt;/pre>
+&lt;p>This generally works, but several parts of this fragment are going to
+be the same across all OpenStack services. I wanted to reduce the
+above to just the unique attributes, which would look something like:&lt;/p></description><content>&lt;p>The Newton release of &lt;a href="https://wiki.openstack.org/wiki/Heat">Heat&lt;/a> adds support for a &lt;a href="http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#yaql">yaql&lt;/a>
 intrinsic function, which allows you to evaluate &lt;a href="https://yaql.readthedocs.io/en/latest/">yaql&lt;/a> expressions
 in your Heat templates. Unfortunately, the existing yaql
 documentation is somewhat limited, and does not offer examples of many
@@ -12964,7 +13043,9 @@ automatically re-using the existing commit message:&lt;/p>
 &lt;pre>&lt;code>$ vim some/file/somewhere
 $ git add -u
 $ git fix
-&lt;/code>&lt;/pr</description><content>&lt;p>This is a small collection of simple &lt;code>git&lt;/code> tips and tricks I use to
+&lt;/code>&lt;/pre>
+&lt;p>Which I find much more convenient than &lt;code>git commit --amend&lt;/code>, following
+by saving the commit message.&lt;/p></description><content>&lt;p>This is a small collection of simple &lt;code>git&lt;/code> tips and tricks I use to
 make my life easier.&lt;/p>
 &lt;h2 id="quickly-amend-an-existing-commit-with-new-files">Quickly amend an existing commit with new files&lt;/h2>
 &lt;p>I have this alias in place that will amend the current commit while
@@ -13749,7 +13830,12 @@ you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
 containerized environment through the use of private networking, bind
 mounts, capability controls, and a variety of other facilities that
-give you flexible container management.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
+give you flexible container management.&lt;/p>
+&lt;p>There are many different ways in which it can be used. I&amp;rsquo;m going to
+focus on one that&amp;rsquo;s a bit of a corner use case that I find
+particularly interesting. In this article we&amp;rsquo;re going to explore how
+we can use &lt;a href="https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> to spawn lightweight containers for
+architectures other than that of our host system.&lt;/p></description><content>&lt;p>&lt;code>systemd-nspawn&lt;/code> has been called &lt;a href="https://wiki.archlinux.org/index.php/Systemd-nspawn">&amp;ldquo;chroot on steroids&amp;rdquo;&lt;/a>,
 but if you think of it as &lt;a href="http://docker.com">Docker&lt;/a> with a slightly different target
 you wouldn&amp;rsquo;t be far wrong, either. It can be used to spawn containers
 on your host, and has a variety of options for configuring the
@@ -14367,7 +14453,10 @@ Identity:
 --sudo, -s
 --become, -b
 --user USER, -u USER
-&lt;/code>&lt;/pr</description><content>&lt;p>When writing &lt;a href="http://www.ansible.com/">Ansible&lt;/a> roles I occasionally want a way to just run a
+&lt;/code>&lt;/pre>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>If you have a role &lt;code>roles/testrole&lt;/code> that contains the following in
+&lt;code>tasks/main.yml&lt;/code>:&lt;/p></description><content>&lt;p>When writing &lt;a href="http://www.ansible.com/">Ansible&lt;/a> roles I occasionally want a way to just run a
 role from the command line, without having to muck about with a
 playbook. I&amp;rsquo;ve seen &lt;a href="https://groups.google.com/forum/#!topic/ansible-project/h-SGLuPDRrs">similar&lt;/a> &lt;a href="https://groups.google.com/forum/#!topic/ansible-devel/GqzZ6zsn6eY">requests&lt;/a> on the mailing lists
 and on irc.&lt;/p>
@@ -14591,7 +14680,10 @@ ENTRYPOINT [&amp;quot;ntpd&amp;quot;]
 &lt;/code>&lt;/pre>
 &lt;p>I&amp;rsquo;m using the &lt;code>alpine&lt;/code> image as my starting point because it&amp;rsquo;s very
 small, which makes this whole process go a little faster. I&amp;rsquo;m
-installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
+installing the &lt;a href="http://www.openntpd.org/">openntpd&lt;/a> package, which provides the &lt;code>ntpd&lt;/code> binary.&lt;/p>
+&lt;p>By setting an &lt;code>ENTRYPOINT&lt;/code> here, the &lt;code>ntpd&lt;/code> binary will be started by
+default, and any arguments passed to &lt;code>docker run&lt;/code> after the image name
+will be passed to &lt;code>ntpd&lt;/code>.&lt;/p></description><content>&lt;p>Someone asked on IRC about running ntpd in a container on &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>,
 so I&amp;rsquo;ve put together a small example. We&amp;rsquo;ll start with a very simple
 &lt;code>Dockerfile&lt;/code>:&lt;/p>
 &lt;pre>&lt;code>FROM alpine
@@ -14945,7 +15037,10 @@ Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
 covered the configuration side of it in much more detail than I
 discussed the underlying network architecture. This post addresses
-the architecture side.&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
+the architecture side.&lt;/p>
+&lt;h2 id="the-players">The players&lt;/h2>
+&lt;p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:&lt;/p></description><content>&lt;p>In &lt;a href="https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/">Quantum in Too Much Detail&lt;/a>, I discussed the architecture of a
 Neutron deployment in detail. Since that article was published,
 Neutron gained the ability to handle multiple external networks with a
 single L3 agent. While I &lt;a href="https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/">wrote about that&lt;/a> back in 2014, I
@@ -15185,7 +15280,11 @@ try:&lt;/p>
 &lt;/code>&lt;/pre>
 &lt;p>And that says:&lt;/p>
 &lt;pre>&lt;code>Missing arguments: max_number
-&lt;/code>&lt;/pr</description><content>&lt;p>So, the Kilo release notes say:&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>So just for kicks you try:&lt;/p>
+&lt;pre>&lt;code>nova-manage db migrate_flavor_data --max_number 100
+&lt;/code>&lt;/pre>
+&lt;p>And that says:&lt;/p></description><content>&lt;p>So, the Kilo release notes say:&lt;/p>
 &lt;pre>&lt;code>nova-manage migrate-flavor-data
 &lt;/code>&lt;/pre>
 &lt;p>But nova-manage says:&lt;/p>
@@ -15489,7 +15588,8 @@ environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-ku
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
-working with Kubernetes).&lt;/p></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p></description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
+working with Kubernetes).&lt;/p></content></item><item><title>Teach git about GIT_SSL_CIPHER_LIST</title><link>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</link><pubDate>Fri, 08 May 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-05-08-git-ssl-cipher-list/</guid><description>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
+&lt;p>Many applications allow the user to configure an explicit list of ciphers to consider when negotiating a secure connection. For example, &lt;a href="https://curl.haxx.se/">curl&lt;/a> has the &lt;a href="https://curl.haxx.se/libcurl/c/CURLOPT_SSL_CIPHER_LIST.html">CURLOPT_SSL_CIPHER_LIST&lt;/a> option. This turns out to be especially relevant because git relies on &lt;a href="https://curl.haxx.se/libcurl/">libcurl&lt;/a> for all of its http operations, which means all we need to do is (a) create a new configuration option for git, and then (b) pass that value through to libcurl.&lt;/p></description><content>&lt;p>Someone named &lt;a href="https://stackoverflow.com/users/4713895/hithard">hithard&lt;/a> on &lt;a href="https://stackoverflow.com/">StackOverflow&lt;/a> was trying to clone a git repository via https, and was &lt;a href="https://stackoverflow.com/a/30090725/147356">running into an odd error&lt;/a>: &amp;ldquo;Cannot communicate securely with peer: no common encryption algorithm(s).&amp;rdquo;. This was due to the fact that the server (&lt;code>openhatch.org&lt;/code>) was configured to use a cipher suite that was not supported by default in the underlying SSL library (which could be either &lt;a href="https://www.openssl.org/">OpenSSL&lt;/a> or &lt;a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS">NSS&lt;/a>, depending on how git was built).&lt;/p>
 &lt;p>Many applications allow the user to configure an explicit list of ciphers to consider when negotiating a secure connection. For example, &lt;a href="https://curl.haxx.se/">curl&lt;/a> has the &lt;a href="https://curl.haxx.se/libcurl/c/CURLOPT_SSL_CIPHER_LIST.html">CURLOPT_SSL_CIPHER_LIST&lt;/a> option. This turns out to be especially relevant because git relies on &lt;a href="https://curl.haxx.se/libcurl/">libcurl&lt;/a> for all of its http operations, which means all we need to do is (a) create a new configuration option for git, and then (b) pass that value through to libcurl.&lt;/p>
 &lt;p>I took a look at the code and it turned out to be surprisingly easy. The functional part of the patch ends up being less than 10 lines total:&lt;/p>
 &lt;pre tabindex="0">&lt;code>diff --git a/http.c b/http.c
@@ -15590,7 +15690,12 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>And now your boss knows why the TPS reports are late. You need
+&lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
+repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
+your git commits so that they appear to have happened within specified
+time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
 implemented poorly, move along!&lt;/p>
 &lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
@@ -16175,7 +16280,16 @@ to start containers. That&amp;rsquo;s been around for a long time in various
 forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
 party was a convenient method of building and distributing the
 filesystems necessary for running containers. Suddenly, it was easy
-to build a containerized service &lt;em>and&lt;/em> to share it with other people.&lt;/p></description><content>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
+to build a containerized service &lt;em>and&lt;/em> to share it with other people.&lt;/p>
+&lt;p>I was taking a closer at the &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd-nspawn.html">systemd-nspawn&lt;/a> command, which it
+seems has been developing it&amp;rsquo;s own set of container-related
+superpowers recently, including a number of options for setting up the
+network environment of a container. Like Docker, &lt;code>systemd-nspawn&lt;/code>
+needs a filesystem on which to operate, but &lt;em>unlike&lt;/em> Docker, there is
+no convenient distribution mechanism and no ecosystem of existing
+images. In fact, the official documentation seems to assume that
+you&amp;rsquo;ll be building your own from scratch. Ain&amp;rsquo;t nobody got time for
+that&amp;hellip;&lt;/p></description><content>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
 to start containers. That&amp;rsquo;s been around for a long time in various
 forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
 party was a convenient method of building and distributing the
@@ -16301,7 +16415,12 @@ under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/
 one is using &lt;a href="http://devstack.org/">devstack&lt;/a> and the upstream sources.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>We&amp;rsquo;ll be using the &lt;a href="https://cloud-images.ubuntu.com/trusty/current/">Ubuntu 14.04 cloud image&lt;/a> (because my test
-environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
+environment runs on &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>).&lt;/p>
+&lt;p>First, let&amp;rsquo;s install a few prerequisites:&lt;/p>
+&lt;pre>&lt;code>$ sudo apt-get update
+$ sudo apt-get -y install git git-review python-pip python-dev
+&lt;/code>&lt;/pre>
+&lt;p>And generally make sure things are up-to-date:&lt;/p></description><content>&lt;p>This is a long-form response to &lt;a href="https://ask.openstack.org/en/question/60679/installing-docker-on-openstack-with-ubuntu/">this question&lt;/a>, and describes
 how to get the &lt;a href="http://github.com/stackforge/nova-docker/">nova-docker&lt;/a> driver up running with &lt;a href="http://devstack.org/">devstack&lt;/a>
 under Ubuntu 14.04 (Trusty). I wrote a &lt;a href="https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/">similar post&lt;/a> for Fedora
 21, although that one was using the &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> Juno packages, while this
@@ -16633,7 +16752,11 @@ successfully be re-assigned on another node.&lt;/p></content></item><item><title
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
 installing onto OpenStack and the cloud images include
-some features that are useful in this environment.&lt;/p></description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
+some features that are useful in this environment.&lt;/p>
+&lt;p>We&amp;rsquo;ll be using OpenStack packages from the &lt;a href="https://repos.fedorapeople.org/repos/openstack/openstack-juno/">RDO Juno&lt;/a> repository.
+Because there is often some skew between the RDO packages and the
+current Fedora selinux policy, we&amp;rsquo;re going to start by putting SELinux
+into permissive mode (sorry, Dan):&lt;/p></description><content>&lt;p>This post comes about indirectly by a request on IRC in &lt;code>#rdo&lt;/code> for help getting &lt;a href="https://github.com/stackforge/nova-docker">nova-docker&lt;/a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.&lt;/p>
 &lt;h2 id="getting-started">Getting started&lt;/h2>
 &lt;p>I started with the &lt;a href="https://getfedora.org/en/cloud/download/">Fedora 21 Cloud Image&lt;/a>, because I&amp;rsquo;m
 installing onto OpenStack and the cloud images include
@@ -16805,7 +16928,16 @@ tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one
 of the images provided by the major distributions. For example, if
 you need an image that provides &lt;code>tcpdump&lt;/code> for use on your &lt;a href="http://www.projectatomic.io/">Atomic&lt;/a>
-host, you might do something like:&lt;/p></description><content>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
+host, you might do something like:&lt;/p>
+&lt;pre>&lt;code>FROM fedora
+RUN yum -y install tcpdump
+&lt;/code>&lt;/pre>
+&lt;p>And while this will work, you end up consuming 250MB for &lt;code>tcpdump&lt;/code>.
+In theory, the layering mechanism that Docker uses to build images
+will reduce the practical impact of this (because other images based on
+the &lt;code>fedora&lt;/code> image will share the common layers), but in practice the
+size is noticeable, especially if you often find yourself pulling this
+image into a fresh environment with no established cache.&lt;/p></description><content>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
 images for dynamically linked ELF binaries, and then at &lt;a href="https://github.com/larsks/dockerize">a
 tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one
@@ -16977,7 +17109,13 @@ ability to filter the XML used to create Nova instances in libvirt.
 The customer effectively wanted to blacklist a variety of devices (and
 device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now
 and upstream is unlikely to accept patches that implement this
-behavior&amp;rdquo;, but it sounded like an interesting problem, so&amp;hellip;&lt;/p></description><content>&lt;p>I saw a request from a customer float by the other day regarding the
+behavior&amp;rdquo;, but it sounded like an interesting problem, so&amp;hellip;&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/larsks/nova/tree/feature/xmlfilter">https://github.com/larsks/nova/tree/feature/xmlfilter&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>This is a fork of Nova (Juno) that includes support for an extensible
+filtering mechanism that is applied to the generated XML before it
+gets passed to libvirt.&lt;/p></description><content>&lt;p>I saw a request from a customer float by the other day regarding the
 ability to filter the XML used to create Nova instances in libvirt.
 The customer effectively wanted to blacklist a variety of devices (and
 device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now
@@ -17067,7 +17205,11 @@ utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
 namespace for the executed processes and mounts private &lt;code>/tmp&lt;/code> and
 &lt;code>/var/tmp&lt;/code> directories inside it that is not shared by processes outside
 of the namespace&amp;rdquo;. This is a great idea from a &lt;a href="https://danwalsh.livejournal.com/51459.html">security
-perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p></description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
+perspective&lt;/a>, but can cause some unanticipated consequences.&lt;/p>
+&lt;h2 id="the-problem-in-a-nutshell">The problem in a nutshell&lt;/h2>
+&lt;ol>
+&lt;li>
+&lt;p>Start a Docker container:&lt;/p></description><content>&lt;p>While working with Docker &lt;a href="https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/">the other day&lt;/a>, I ran into an
 undesirable interaction between Docker and &lt;a href="http://www.freedesktop.org/wiki/Software/systemd/">systemd&lt;/a> services that
 utilize the &lt;code>PrivateTmp&lt;/code> directive.&lt;/p>
 &lt;p>The &lt;a href="http://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=">PrivateTmp&lt;/a> directive, if &lt;code>true&lt;/code>, &amp;ldquo;sets up a new file system
@@ -17992,7 +18134,14 @@ would attempt to start a service from within a script launched by
 because the service I was attempting to start was dependent on
 &lt;code>cloud-init&lt;/code> finishing first.&lt;/p>
 &lt;p>It turns out that &lt;code>systemctl&lt;/code> has a flag meant exactly for this
-situation:&lt;/p></description><content>&lt;p>Recently, I&amp;rsquo;ve been playing around with &lt;a href="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/">Fedora Atomic and
+situation:&lt;/p>
+&lt;pre>&lt;code> --no-block
+Do not synchronously wait for the requested operation to finish. If
+this is not specified, the job will be verified, enqueued and
+systemctl will wait until it is completed. By passing this
+argument, it is only verified and enqueued.
+&lt;/code>&lt;/pre>
+&lt;p>Replacing &lt;code>systemctl start &amp;lt;service&amp;gt;&lt;/code> with &lt;code>systemctl start --no-block &amp;lt;service&amp;gt;&lt;/code> has solved that particular problem.&lt;/p></description><content>&lt;p>Recently, I&amp;rsquo;ve been playing around with &lt;a href="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/">Fedora Atomic and
 Kubernetes&lt;/a>. I ran into a frustrating problem in which I
 would attempt to start a service from within a script launched by
 &lt;a href="http://cloudinit.readthedocs.org/">cloud-init&lt;/a>, only to have have &lt;code>systemctl&lt;/code> block indefinitely
@@ -18582,7 +18731,8 @@ the &lt;code>docker build&lt;/code> process. As a test case, I used the
 &lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
 &lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
 &lt;pre>&lt;code>class { 'ssh': }
-&lt;/code>&lt;/pr</description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+&lt;/code>&lt;/pre>
+&lt;p>And a Dockerfile like this:&lt;/p></description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
 complex system configuration&amp;hellip;and Dockerfiles are basically giant
 shell scripts.&lt;/p>
 &lt;p>I was curious whether or not it would be possible to use Puppet during
@@ -18902,7 +19052,8 @@ http://chunk.io/f/76ea98ea081748e19de4507fde3c2c65
 &lt;/code>&lt;/pre>
 &lt;p>When you run this command, you cursor will change into crosshairs.
 Click on a window, and this will grab a png image of that window and
-send it to &lt;a href="http://chunk.io/">chunk.io&lt;/a> using curl.&lt;/p></description><content>&lt;p>Sometimes you want to quickly share a screenshot with someone. Here&amp;rsquo;s
+send it to &lt;a href="http://chunk.io/">chunk.io&lt;/a> using curl.&lt;/p>
+&lt;p>You&amp;rsquo;ll get back a URL that you can use to share the image with people.&lt;/p></description><content>&lt;p>Sometimes you want to quickly share a screenshot with someone. Here&amp;rsquo;s
 my favorite mechanism, which assumes you have installed both &lt;code>curl&lt;/code>
 and the &lt;a href="http://www.imagemagick.org/">ImageMagick&lt;/a> suite.&lt;/p>
 &lt;pre>&lt;code>$ import png:- | curl -T- -s chunk.io
@@ -18968,7 +19119,12 @@ issues I encountered:&lt;/p>
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
 issues I encountered:&lt;/p>
@@ -19017,7 +19173,18 @@ issues I encountered:&lt;/p>
 &lt;pre>&lt;code> dns:
 - 8.8.8.8
 - 8.8.4.4
-&lt;/code>&lt;/pr</description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>docker_endopint&lt;/code> : String&lt;/p>
+&lt;p>Docker daemon endpoint. By default the local Docker daemon will
+be used.&lt;/p>
+&lt;p>Example:&lt;/p>
+&lt;pre>&lt;code> docker_endpoint: tcp://192.168.1.100:2375
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>env&lt;/code> : String&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;h2 id="dockerincdockercontainer">DockerInc::Docker::Container&lt;/h2>
 &lt;h3 id="properties">Properties&lt;/h3>
 &lt;ul>
@@ -19888,7 +20055,9 @@ existing system.&lt;/p>
 &lt;p>I came across &lt;a href="http://rwmj.wordpress.com/2014/05/22/using-lvms-new-cache-feature/">Richard Jones&amp;rsquo; article&lt;/a> discussing the recent work to
 integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
 &lt;em>dm-cache&lt;/em> directly, the integration with LVM makes it easy to
-associate devices with an existing logical volume.&lt;/p></description><content>&lt;p>Until recently I had a &lt;a href="http://bcache.evilpiepirate.org/">bcache&lt;/a> based setup on my laptop, but when
+associate devices with an existing logical volume.&lt;/p>
+&lt;p>I have put together a small tool called &lt;a href="https://github.com/larsks/lvcache">lvcache&lt;/a> that simplies the
+process of:&lt;/p></description><content>&lt;p>Until recently I had a &lt;a href="http://bcache.evilpiepirate.org/">bcache&lt;/a> based setup on my laptop, but when
 forced by circumstance to reinstall everything I spent some time
 looking for alternatives that were less disruptive to configure on an
 existing system.&lt;/p>
@@ -20281,7 +20450,19 @@ button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
 but constraints of the project made it necessary to implement
 something in C with minimal dependencies. I didn&amp;rsquo;t want to write
-something that was tied closely to my project&amp;hellip;&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
+something that was tied closely to my project&amp;hellip;&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;figure class="left" >
+&lt;img src="http://imgs.xkcd.com/comics/the_general_problem.png" />
+&lt;/figure>
+&lt;p>&amp;hellip;so I ended up writing &lt;a href="https://github.com/larsks/gpio-watch">gpio-watch&lt;/a>, a simple tool for connecting
+shell scripts (or any other executable) to GPIO events. There are a
+few ways to interact with GPIO on the Raspberry Pi. For the fastest
+possible performance, you will need to interact directly with the
+underlying hardware using, e.g., something like &lt;a href="http://hertaville.com/2014/07/07/rpimmapgpio/">direct register
+access&lt;/a>. Since I was only responding to button presses I opted
+to take advantage of the &lt;a href="https://www.kernel.org/doc/Documentation/gpio/sysfs.txt">GPIO sysfs interface&lt;/a>, which exposes
+the GPIO pins via the filesystem.&lt;/p></description><content>&lt;p>For a small project I&amp;rsquo;m working on I needed to attach a few buttons to
 a &lt;a href="http://raspberrypi.org/">Raspberry Pi&lt;/a> and have some code execute in response to the
 button presses.&lt;/p>
 &lt;p>Normally I would reach for &lt;a href="http://python.org/">Python&lt;/a> for a simple project like this,
@@ -20423,7 +20604,14 @@ bash-4.2# su -c 'uptime'
 su: System error
 &lt;/code>&lt;/pre>
 &lt;p>Hooking up something (like, say, &lt;code>socat unix-listen:/dev/log -&lt;/code>) to
-&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
+&lt;code>/dev/log&lt;/code> revealed that the system was logging:&lt;/p>
+&lt;pre>&lt;code>Jul 19 14:31:18 su: PAM audit_log_acct_message() failed: Operation not permitted
+&lt;/code>&lt;/pre>
+&lt;p>Downgrading the kernel to 3.14 immediately resolved the problem,
+suggesting that this was at least partly a kernel issue. This seemed
+like a great opportunity to play with the &lt;a href="http://git-scm.com/docs/git-bisect">git bisect&lt;/a> command,
+which uses a binary search to find which commit introduced a
+particular problem.&lt;/p></description><content>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
 started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
 containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the
 singularly unhelpful &lt;code>System error&lt;/code> message:&lt;/p>
@@ -21056,7 +21244,8 @@ external network per L3 agent. You would run something like this&amp;hellip;&lt;
 &lt;code>external_network_bridge&lt;/code> in &lt;code>/etc/neutron/l3_agent.ini&lt;/code>. If you
 wanted to support more than a single external network, you would need
 to run multiple L3 agents, each with a unique value for
-&lt;code>external_network_bridge&lt;/code>.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
+&lt;code>external_network_bridge&lt;/code>.&lt;/p>
+&lt;p>There is now a better option available.&lt;/p></description><content>&lt;p>In the old days (so, like, last year), Neutron supported a single
 external network per L3 agent. You would run something like this&amp;hellip;&lt;/p>
 &lt;pre>&lt;code>$ neutron net-create external --router:external=true
 &lt;/code>&lt;/pre>
@@ -21345,7 +21534,8 @@ OVSBOOTPROTO=dhcp
 OVSDHCPINTERFACES=eth0
 MACADDR=fa:16:3e:ef:91:ec
 OVS_EXTRA=&amp;quot;set bridge br-ex other-config:hwaddr=$MACADDR&amp;quot;
-&lt;/code>&lt;/pr</description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>OVS_EXTRA&lt;/code> parameter gets passed to the &lt;code>add-br&lt;/code> call like this:&lt;/p></description><content>&lt;p>In my &lt;a href="https://blog.oddbit.com/2014/05/23/open-vswitch-and-persistent-ma/">previous post&lt;/a> I discussed a problem I was having setting a
 persistent MAC address on an OVS bridge device. It looks like the
 short answer is, &amp;ldquo;don&amp;rsquo;t use &lt;code>ip link set ...&lt;/code>&amp;rdquo; for this purpose.&lt;/p>
 &lt;p>You can set the bridge MAC address via &lt;code>ovs-vsctl&lt;/code> like this:&lt;/p>
@@ -21425,7 +21615,20 @@ OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/co
 external connectivity and for making services available to OpenStack
 instances, but after rebooting, &lt;code>br-ex&lt;/code> was consistently unconfigured,
 which caused a variety of problems.&lt;/p>
-&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
+&lt;p>This is the network configuration file for &lt;code>br-ex&lt;/code> on my system:&lt;/p>
+&lt;pre>&lt;code>DEVICE=br-ex
+DEVICETYPE=ovs
+TYPE=OVSBridge
+BOOTPROT=static
+IPADDR=192.168.200.1
+NETMASK=255.255.255.0
+ONBOOT=yes
+NM_CONTROLLED=no
+ZONE=openstack
+&lt;/code>&lt;/pre>
+&lt;p>Running &lt;code>ifup br-ex&lt;/code> would also fail to configure the interface, but
+running &lt;code>ifdown br-ex; ifup br-ex&lt;/code> would configure things
+appropriately.&lt;/p></description><content>&lt;p>I run OpenStack on my laptop, and I&amp;rsquo;ve been chasing down a pernicious
 problem with OVS bridge interfaces under both F19 and F20. My
 OpenStack environment relies on an OVS bridge device named &lt;code>br-ex&lt;/code> for
 external connectivity and for making services available to OpenStack
@@ -21510,7 +21713,9 @@ can result in the creation of several virtual interfaces, this results
 in a lot of:&lt;/p>
 &lt;pre>&lt;code>May 19 11:58:24 pk115wp-lkellogg NetworkManager[1357]: &amp;lt;info&amp;gt;
 Activation (qvb512640bd-ee) starting connection 'Wired connection 2'
-&lt;/code>&lt;/pr</description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
+&lt;/code>&lt;/pre>
+&lt;p>You can disable this behavior by adding the following to
+&lt;code>/etc/NetworkManager/NetworkManager.conf&lt;/code>:&lt;/p></description><content>&lt;p>These are my notes on making OpenStack play well with &lt;a href="https://fedoraproject.org/wiki/FirewallD">firewalld&lt;/a>
 and &lt;a href="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager&lt;/a>.&lt;/p>
 &lt;h2 id="networkmanager">NetworkManager&lt;/h2>
 &lt;p>By default, NetworkManager attempts to start a DHCP client on every
@@ -21589,7 +21794,10 @@ network plugin for Neutron.&lt;/p>
 &lt;pre>&lt;code>neutron net-create external -- --router:external=true \
 --provider:network_type=flat \
 --provider:physical_network=physnet1
-&lt;/code>&lt;/pr</description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
+&lt;/code>&lt;/pre>
+&lt;p>While this command completed successfully, I was left without any
+connectivity between &lt;code>br-int&lt;/code> and &lt;code>br-ex&lt;/code>, despite having in my
+&lt;code>/etc/neutron/plugins/ml2/ml2_conf.ini&lt;/code>:&lt;/p></description><content>&lt;p>Due to an unfortunate incident involving sleep mode and an overheated
 backpack I had the &amp;ldquo;opportunity&amp;rdquo; to rebuild my laptop. Since this meant
 reinstalling OpenStack I used this as an excuse to finally move to the ML2
 network plugin for Neutron.&lt;/p>
@@ -21678,7 +21886,8 @@ external_ids : {attached-mac=&amp;quot;fa:16:3e:f7:75:b0&amp;quot;, iface-id=&am
 .
 .
 .
-&lt;/code>&lt;/pr</description><content>&lt;p>This is just here as a reminder for me:&lt;/p>
+&lt;/code>&lt;/pre>
+&lt;p>Note the information contained here:&lt;/p></description><content>&lt;p>This is just here as a reminder for me:&lt;/p>
 &lt;p>An OVS interface has a variety of attributes associated with it, including an
 &lt;code>external-id&lt;/code> field that can be used to associate resources outside of
 OpenVSwitch with the interface. You can view this field with the following
@@ -22231,7 +22440,11 @@ introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/">back
 signals targeted at the caller. This provides an alternative to
 the use of a signal handler or sigwaitinfo(2), and has the
 advantage that the file descriptor may be monitored by select(2),
-poll(2), and epoll(7).&lt;/p></description><content>&lt;p>I just recently learned about the &lt;code>signalfd(2)&lt;/code> system call, which was
+poll(2), and epoll(7).&lt;/p>
+&lt;/blockquote>
+&lt;p>The traditional asynchronous delivery mechanism can be tricky to get
+right, whereas this provides a convenient fd interface that integrates
+nicely with your existing event-based code.&lt;/p></description><content>&lt;p>I just recently learned about the &lt;code>signalfd(2)&lt;/code> system call, which was
 introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/">back in 2007&lt;/a>:&lt;/p>
 &lt;blockquote>
 &lt;p>signalfd() creates a file descriptor that can be used to accept
@@ -22745,7 +22958,12 @@ events = dict(poll.poll())
 .
 .
 .
-&lt;/code>&lt;/pr</description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
+&lt;/code>&lt;/pre>
+&lt;p>If you were to try this at home, you would find that everything worked
+as described&amp;hellip;but if you were to deploy the same code to OpenShift,
+you would find that the problem we were trying to solve (the server
+holding file descriptors open after a client disconnected) would still
+exist.&lt;/p></description><content>&lt;p>In this article, a followup to my &lt;a href="https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/">previous post&lt;/a> regarding
 long-poll servers and Python, we investigate the code changes that
 were necessary to make the code work when deployed on OpenShift.&lt;/p>
 &lt;!-- raw HTML omitted -->
@@ -22854,7 +23072,16 @@ sometimes inconsistent.&lt;/p>
 &lt;/li>
 &lt;li>
 &lt;p>The output from the legacy command line tools is not designed to be
-machine parse-able (and yet people &lt;a href="https://github.com/openstack/python-openstackclient">do it anyway&lt;/a>).&lt;/p></description><content>&lt;p>The &lt;a href="https://github.com/openstack/python-openstackclient">python-openstackclient&lt;/a> project, by &lt;a href="https://github.com/dtroyer">Dean Troyer&lt;/a> and
+machine parse-able (and yet people &lt;a href="https://github.com/openstack/python-openstackclient">do it anyway&lt;/a>).&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>The new &lt;code>openstack&lt;/code> CLI framework is implement using the &lt;a href="https://github.com/dreamhost/cliff">cliff&lt;/a>
+module for Python, which will help enforce a consistent interface to
+the various subcommands (because common options can be shared, and
+just having everything in the same codebase will help tremendously).
+Cliff also provides flexible table formatters. It includes a number
+of useful formatters out of the box, and can be extended via
+setuptools entry points.&lt;/p></description><content>&lt;p>The &lt;a href="https://github.com/openstack/python-openstackclient">python-openstackclient&lt;/a> project, by &lt;a href="https://github.com/dtroyer">Dean Troyer&lt;/a> and
 others, is a new command line tool to replace the existing command
 line clients (including commands such as &lt;code>nova&lt;/code>, &lt;code>keystone&lt;/code>, &lt;code>cinder&lt;/code>,
 etc).&lt;/p>
@@ -23088,7 +23315,12 @@ particular OpenStack configuration, specifically:&lt;/p>
 &lt;/ul>
 &lt;p>Much of the document will be relevant to other configurations, but
 details will vary based on your choice of layer 2 connectivity, number
-of running instances, and so forth.&lt;/p></description><content>&lt;blockquote>
+of running instances, and so forth.&lt;/p>
+&lt;p>The examples in this document were generated on a system with Quantum
+networking but will generally match what you see under Neutron as
+well, if you replace &lt;code>quantum&lt;/code> by &lt;code>neutron&lt;/code> in names. The OVS flow
+rules under Neutron are somewhat more complex and I will cover those
+in another post.&lt;/p></description><content>&lt;blockquote>
 &lt;p>I originally posted this article on
 the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail">RDO&lt;/a>
 website.&lt;/p>
@@ -23835,7 +24067,35 @@ interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
 &lt;p>After a little research, &lt;a href="https://gist.github.com/larsks/6161684">here&amp;rsquo;s&lt;/a> some simple code that
 will print out pin names as you press the input buttons. Button 3
-will cause the code to exit:&lt;/p></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
+will cause the code to exit:&lt;/p>
+&lt;pre>&lt;code>#!/usr/bin/python
+import pifacecommon.core
+import pifacecommon.interrupts
+import os
+import time
+quit = False
+def print_flag(event):
+print 'You pressed button', event.pin_num, '.'
+def stop_listening(event):
+global quit
+quit = True
+pifacecommon.core.init()
+# GPIOB is the input ports, including the four buttons.
+port = pifacecommon.core.GPIOB
+listener = pifacecommon.interrupts.PortEventListener(port)
+# set up listeners for all buttons
+listener.register(0, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(1, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(2, pifacecommon.interrupts.IODIR_ON, print_flag)
+listener.register(3, pifacecommon.interrupts.IODIR_ON, stop_listening)
+# Start listening for events. This spawns a new thread.
+listener.activate()
+# Hang around until someone presses button 3.
+while not quit:
+time.sleep(1)
+print 'you pressed button 3 (quitting)'
+listener.deactivate()
+&lt;/code>&lt;/pre></description><content>&lt;p>I recently acquired both a &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> and a &lt;a href="http://www.element14.com/community/docs/DOC-52857/l/piface-digital-for-raspberry-pi">PiFace&lt;/a> IO board.
 I had a rough time finding examples of how to read the input ports via
 interrupts (rather than periodically polling for values), especially
 for the &lt;a href="https://github.com/piface">newer versions&lt;/a> of the PiFace python libraries.&lt;/p>
@@ -24054,7 +24314,7 @@ print &amp;gt;&amp;gt; certfile
 incert=0
 }
 incert==1 { print &amp;gt;&amp;gt; certfile }
-&lt;/code>&lt;/pr</description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
+&lt;/code>&lt;/pre></description><content>&lt;p>&lt;a href="https://gist.github.com/larsks/6008833">This&lt;/a> is a short script that takes a list of concatenated
 certificates as input (such as a collection of CA certificates) and
 produces a collection of numbered files, each containing a single
 certificate.&lt;/p>
@@ -24188,7 +24448,11 @@ the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire 
 &lt;p>All of them are reasonably easy to use, but the Quick2Wire API
 provides a uniquely useful feature: &lt;code>epoll&lt;/code>-enabled GPIO interrupts.
 This makes it trivial to write code that efficiently waits for and
-responds to things like button presses.&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
+responds to things like button presses.&lt;/p>
+&lt;p>The following simple example waits for a button press attached to
+&lt;code>GPIO1&lt;/code> (but refer to the chart in &lt;a href="https://projects.drogon.net/raspberry-pi/wiringpi/pins/">this document&lt;/a> to see
+exactly what that means; this is pin 12 on a Raspberry Pi v2 board)
+and lights an LED attached to &lt;code>GPIO0&lt;/code> when the button is pressed:&lt;/p></description><content>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
 &lt;ul>
 &lt;li>&lt;a href="https://pypi.python.org/pypi/RPi.GPIO">RPi.GPIO&lt;/a>&lt;/li>
@@ -24364,7 +24628,10 @@ init script.&lt;/p>
 &lt;p>I&amp;rsquo;ve created a &lt;a href="http://0pointer.de/blog/projects/instances.html">template service&lt;/a> for ucarp that will let
 you start a specific virtual ip like this:&lt;/p>
 &lt;pre>&lt;code>systemctl start ucarp@001
-&lt;/code>&lt;/pr</description><content>&lt;p>In Fedora 17 there are still a number of services that either have not
+&lt;/code>&lt;/pre>
+&lt;p>This will start ucarp using settings from &lt;code>/etc/ucarp/vip-001.conf&lt;/code>.
+The unit file is &lt;a href="https://gist.github.com/larsks/5009872">on github&lt;/a> and embedded here for your
+reading pleasure:&lt;/p></description><content>&lt;p>In Fedora 17 there are still a number of services that either have not
 been ported over to &lt;code>systemd&lt;/code> or that do not take full advantage of
 &lt;code>systemd&lt;/code>. I&amp;rsquo;ve been investigating some IP failover solutions
 recently, including &lt;a href="http://www.pureftpd.org/project/ucarp">ucarp&lt;/a>, which includes only a System-V style
@@ -24396,7 +24663,9 @@ following error:&lt;/p>
 dhcpcd[492]: version 5.6.4 starting
 dhcpcd[492]: eth0: if_init: Read-only file system
 dhcpcd[492]: eth0: interface not found or invalid
-&lt;/code>&lt;/pr</description><content>&lt;p>I&amp;rsquo;ve been working with &lt;a href="http://www.archlinux.org/">Arch Linux&lt;/a> recently, which uses &lt;a href="http://roy.marples.name/projects/dhcpcd/">dhcpcd&lt;/a>
+&lt;/code>&lt;/pre>
+&lt;p>This happens because &lt;code>dhcpcd&lt;/code> is trying to modify a sysctl value.
+Running &lt;code>dhcpcd&lt;/code> under &lt;code>strace&lt;/code> we see:&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been working with &lt;a href="http://www.archlinux.org/">Arch Linux&lt;/a> recently, which uses &lt;a href="http://roy.marples.name/projects/dhcpcd/">dhcpcd&lt;/a>
 as its default DHCP agent. If you try booting Arch inside an &lt;a href="http://lxc.sourceforge.net/">LXC&lt;/a>
 container, you will find that &lt;code>dhcpcd&lt;/code> is unable to configure your
 network interfaces. Running it by hand you will first see the
@@ -24476,7 +24745,9 @@ lxc-start: Device or resource busy - failed to remove cgroup '/sys/fs/cgroup/sys
 lxc-start: Device or resource busy - failed to remove previous cgroup '/sys/fs/cgroup/systemd/node0'
 lxc-start: failed to spawn 'node0'
 lxc-start: Device or resource busy - failed to remove cgroup '/sys/fs/cgroup/systemd/node0'
-&lt;/code>&lt;/pr</description><content>&lt;p>I spent some time today looking at systemd (44) under Fedora (17).
+&lt;/code>&lt;/pre>
+&lt;p>You can correct the problem manually by removing all the child cgroups
+underneath &lt;code>/sys/fs/cgroup/systemd/&amp;lt;container&amp;gt;&lt;/code>, like this:&lt;/p></description><content>&lt;p>I spent some time today looking at systemd (44) under Fedora (17).
 When stopping an LXC container using &lt;code>lxc-stop&lt;/code>, I would always
 encounter this problem:&lt;/p>
 &lt;pre>&lt;code># lxc-stop -n node0
@@ -24511,7 +24782,8 @@ Last login: Mon Jan 28 16:35:19 on tty1
 /dev/console
 [root@node0 ~]# ls -l /dev/console
 crw------- 1 root tty 136, 12 Jan 28 16:36 /dev/console
-&lt;/code>&lt;/pr</description><content>&lt;p>It took me an unreasonably long time to boot an LXC container with
+&lt;/code>&lt;/pre>
+&lt;p>This is also true when you attach to a container using &lt;code>lxc-console&lt;/code>:&lt;/p></description><content>&lt;p>It took me an unreasonably long time to boot an LXC container with
 working console access. For the record:&lt;/p>
 &lt;p>When you boot an LXC container, the console appears to be attached to
 a &lt;code>pts&lt;/code> device. For example, when booting with the console attached to
@@ -24921,7 +25193,7 @@ it took a while to figure out the exact syntax.&lt;/p>
 &lt;pre>&lt;code>alternatives --install /usr/bin/java java /usr/java/latest/bin/java 2000 \
 --slave /usr/bin/keytool keytool /usr/java/latest/bin/keytool \
 --slave /usr/bin/rmiregistry rmiregistry /usr/java/latest/bin/rmiregistry
-&lt;/code>&lt;/pr</description><content>&lt;p>I needed to replace the native OpenJDK based Java VM with the Oracle
+&lt;/code>&lt;/pre></description><content>&lt;p>I needed to replace the native OpenJDK based Java VM with the Oracle
 Java distribution on one of our CentOS servers. In order to do it
 cleanly I wanted to set up the &lt;code>alternatives&lt;/code> system to handle it, but
 it took a while to figure out the exact syntax.&lt;/p>
@@ -25058,7 +25330,10 @@ in one step.&lt;/p>
 --data-urlencode text@$tmpfile \
 \
 http://scriptogr.am/api/article/post/
-&lt;/code>&lt;/pr</description><content>&lt;p>Scriptogr.am has a &lt;a href="http://scriptogr.am/dashboard/#api_documentation">very simple api&lt;/a> that allows one to &lt;code>POST&lt;/code> and
+&lt;/code>&lt;/pre>
+&lt;p>This assumes that you&amp;rsquo;ve registered for an application key and that
+you have configured the value into &lt;code>$APP_KEY&lt;/code> and your Scriptogr.am
+user id into &lt;code>$USER_ID&lt;/code>.&lt;/p></description><content>&lt;p>Scriptogr.am has a &lt;a href="http://scriptogr.am/dashboard/#api_documentation">very simple api&lt;/a> that allows one to &lt;code>POST&lt;/code> and
 &lt;code>DELETE&lt;/code> articles. &lt;code>POST&lt;/code>ing an article will place it in the
 appropriate Dropbox directory and make it available on your blog all
 in one step.&lt;/p>
@@ -25279,7 +25554,10 @@ $Assembly = Add-Type -AssemblyName System.Web
 $password = [System.Web.Security.Membership]::GeneratePassword($length,2)
 return $password
 }
-&lt;/code>&lt;/pr</description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
+&lt;/code>&lt;/pre>
+&lt;p>While this works, I was unhappy with the generated passwords: they
+were difficult to type or transcribe because they make heavy use of
+punctuation. For example:&lt;/p></description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
 order to set the Administrator password on a Windows instance provisioned in
 &lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
 of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),
@@ -25837,7 +26115,10 @@ $ git fetch --tags
 &lt;p>Or you can do this:&lt;/p>
 &lt;pre>&lt;code>$ git fetch --tags
 $ git fetch
-&lt;/code>&lt;/pr</description><content>&lt;p>I’ve been playing around with Git, Puppet, and GPG verification of our
+&lt;/code>&lt;/pre>
+&lt;p>What’s the difference? &lt;code>git fetch&lt;/code> will leave &lt;code>FETCH_HEAD&lt;/code> pointing at
+the remote &lt;code>HEAD&lt;/code>, whereas &lt;code>git fetch --tags&lt;/code> will leave &lt;code>FETCH_HEAD&lt;/code>
+pointing at the most recent tag.&lt;/p></description><content>&lt;p>I’ve been playing around with Git, Puppet, and GPG verification of our
 Puppet configuration repository, and these are some random facts about
 Git that have come to light as part of the process.&lt;/p>
 &lt;p>If you want to pull both changes &lt;em>and&lt;/em> new tags from a remote
@@ -26196,7 +26477,18 @@ mode =&amp;gt; 600,
 }
 }
 &lt;/code>&lt;/pre>
-&lt;p>And you use it like this:&lt;/p></description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
+&lt;p>And you use it like this:&lt;/p>
+&lt;pre>&lt;code>class bar {
+include foo
+file { '/tmp/myfile': }
+}
+&lt;/code>&lt;/pre>
+&lt;p>Then /tmp/myfile will not be created. But if instead you do this:&lt;/p>
+&lt;pre>&lt;code>class bar inherits foo {
+file { '/tmp/myfile': }
+}
+&lt;/code>&lt;/pre>
+&lt;p>It will be created with mode 0600. In other words, if you use inherits then definitions in the parent class are available in the scope of your subclass. If you include, then definitions in he included class are &amp;ldquo;below&amp;rdquo; the scope of the including class.&lt;/p></description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
 &lt;p>If you have a Puppet class like this:&lt;/p>
 &lt;pre>&lt;code>class foo {
 File { ensure =&amp;gt; file,
@@ -26474,7 +26766,8 @@ mwSXA9VNmhz+PiB+Dml4WWnKW/VHo2ujTXxq7+efMU4H2fny3Se3KYOsFPFGZ1TN
 QSYlFuShWrHPtiLmUdPoP6CV2mML1tk+l7DIIqXrQhLUKDACeM5roMx0kLhUWB8P
 +0uj1CNlNN4JRZlC7xFfqiMbFRU9Z4N6YwIDAQAB
 -----END RSA PUBLIC KEY-----
-&lt;/code>&lt;/pr</description><content>&lt;blockquote>
+&lt;/code>&lt;/pre>
+&lt;p>If you have a recent version of OpenSSH (where recent means 5.6 or later), you can just do this:&lt;/p></description><content>&lt;blockquote>
 &lt;p>I&amp;rsquo;ve posted a &lt;a href="http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/">followup&lt;/a> to this article that discusses ssh-agent.&lt;/p>
 &lt;/blockquote>
 &lt;p>For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:&lt;/p>
@@ -27202,7 +27495,8 @@ Usage: don't use this
 &lt;blockquote>
 &lt;p>&lt;a href="http://www.eot.state.ma.us/developers/realtime/">http://www.eot.state.ma.us/developers/realtime/&lt;/a>&lt;/p>
 &lt;/blockquote>
-&lt;p>The service is provided by &lt;a href="http://www.nextbus.com/">NextBus&lt;/a>, which specializes in real-time location information for public transit organizations. The &lt;a href="http://www.eot.state.ma.us/developers/downloads/MBTA_XML_Feed_Trial_Docs_13Nov09.pdf">API&lt;/a> (sorry, PDF) is very simple and does not require any sort of advance registration.&lt;/p></description><content>&lt;p>The &lt;a href="http://mbta.com/">MBTA&lt;/a> has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:&lt;/p>
+&lt;p>The service is provided by &lt;a href="http://www.nextbus.com/">NextBus&lt;/a>, which specializes in real-time location information for public transit organizations. The &lt;a href="http://www.eot.state.ma.us/developers/downloads/MBTA_XML_Feed_Trial_Docs_13Nov09.pdf">API&lt;/a> (sorry, PDF) is very simple and does not require any sort of advance registration.&lt;/p>
+&lt;p>At the moment, the service only provides coverage for a small number of routes (39, 111, 114, 116, 117). I hope they expand the coverage of this service in the near future!&lt;/p></description><content>&lt;p>The &lt;a href="http://mbta.com/">MBTA&lt;/a> has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:&lt;/p>
 &lt;blockquote>
 &lt;p>&lt;a href="http://www.eot.state.ma.us/developers/realtime/">http://www.eot.state.ma.us/developers/realtime/&lt;/a>&lt;/p>
 &lt;/blockquote>
