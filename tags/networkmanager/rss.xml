@@ -23,26 +23,26 @@ my desktop and the router; you can probably skip this.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th style="text-align: left">&lt;/th>
-&lt;th style="text-align: left">&lt;/th>
+&lt;th>&lt;/th>
+&lt;th>&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td style="text-align: left">Server IPv4 Address&lt;/td>
-&lt;td style="text-align: left">209.51.161.14&lt;/td>
+&lt;td>Server IPv4 Address&lt;/td>
+&lt;td>209.51.161.14&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">Server IPv6 Address&lt;/td>
-&lt;td style="text-align: left">2001:470:1236:1212::1/64&lt;/td>
+&lt;td>Server IPv6 Address&lt;/td>
+&lt;td>2001:470:1236:1212::1/64&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">Client IPv4 Address&lt;/td>
-&lt;td style="text-align: left">1.2.3.4&lt;/td>
+&lt;td>Client IPv4 Address&lt;/td>
+&lt;td>1.2.3.4&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">Client IPv6 Address&lt;/td>
-&lt;td style="text-align: left">2001:470:1236:1212::2/64&lt;/td>
+&lt;td>Client IPv6 Address&lt;/td>
+&lt;td>2001:470:1236:1212::2/64&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -50,14 +50,14 @@ my desktop and the router; you can probably skip this.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th style="text-align: left">&lt;/th>
-&lt;th style="text-align: left">&lt;/th>
+&lt;th>&lt;/th>
+&lt;th>&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td style="text-align: left">Routed /64&lt;/td>
-&lt;td style="text-align: left">2001:470:1237:1212::/64&lt;/td>
+&lt;td>Routed /64&lt;/td>
+&lt;td>2001:470:1237:1212::/64&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>

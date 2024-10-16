@@ -25,26 +25,26 @@ overlays and security groups.&lt;/p>
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th style="text-align: left">Name&lt;/th>
-&lt;th style="text-align: left">MAC address&lt;/th>
-&lt;th style="text-align: left">IP address&lt;/th>
+&lt;th>Name&lt;/th>
+&lt;th>MAC address&lt;/th>
+&lt;th>IP address&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td style="text-align: left">ovn0&lt;/td>
-&lt;td style="text-align: left">de:ca:ff:00:00:64&lt;/td>
-&lt;td style="text-align: left">192.168.122.100&lt;/td>
+&lt;td>ovn0&lt;/td>
+&lt;td>de:ca:ff:00:00:64&lt;/td>
+&lt;td>192.168.122.100&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">ovn1&lt;/td>
-&lt;td style="text-align: left">de:ca:ff:00:00:65&lt;/td>
-&lt;td style="text-align: left">192.168.122.101&lt;/td>
+&lt;td>ovn1&lt;/td>
+&lt;td>de:ca:ff:00:00:65&lt;/td>
+&lt;td>192.168.122.101&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">ovn2&lt;/td>
-&lt;td style="text-align: left">de:ca:ff:00:00:66&lt;/td>
-&lt;td style="text-align: left">192.168.122.102&lt;/td>
+&lt;td>ovn2&lt;/td>
+&lt;td>de:ca:ff:00:00:66&lt;/td>
+&lt;td>192.168.122.102&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -148,22 +148,22 @@ options=&amp;#39;&amp;#34;lease_time&amp;#34;=&amp;#34;3600&amp;#34; &amp;#34;ro
 &lt;table>
 &lt;thead>
 &lt;tr>
-&lt;th style="text-align: left">Name&lt;/th>
-&lt;th style="text-align: left">MAC Address&lt;/th>
+&lt;th>Name&lt;/th>
+&lt;th>MAC Address&lt;/th>
 &lt;/tr>
 &lt;/thead>
 &lt;tbody>
 &lt;tr>
-&lt;td style="text-align: left">port1&lt;/td>
-&lt;td style="text-align: left">c0:ff:ee:00:00:11&lt;/td>
+&lt;td>port1&lt;/td>
+&lt;td>c0:ff:ee:00:00:11&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">port2&lt;/td>
-&lt;td style="text-align: left">c0:ff:ee:00:00:12&lt;/td>
+&lt;td>port2&lt;/td>
+&lt;td>c0:ff:ee:00:00:12&lt;/td>
 &lt;/tr>
 &lt;tr>
-&lt;td style="text-align: left">port3&lt;/td>
-&lt;td style="text-align: left">c0:ff:ee:00:00:13&lt;/td>
+&lt;td>port3&lt;/td>
+&lt;td>c0:ff:ee:00:00:13&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
