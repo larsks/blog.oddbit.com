@@ -1,5 +1,4 @@
-<!doctype html><html lang=en><head><title>Puppet, scope, and inheritance :: blog.oddbit.com</title>
-<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I note this here because it wasn&rsquo;t apparent to me from the Puppet documentation.
+<!doctype html><html lang=en><head><title>Puppet, scope, and inheritance :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I note this here because it wasn&rsquo;t apparent to me from the Puppet documentation.
 If you have a Puppet class like this:
 class foo { File { ensure => file, mode => 600, } } And you use it like this:
 class bar { include foo file { '/tmp/myfile': } } Then /tmp/myfile will not be created. But if instead you do this:

@@ -107,4 +107,5 @@ labels nested under &lt;code>list/internal&lt;/code> to internal company mailing
 &lt;p>The default behavior of &lt;code>bulk-filter&lt;/code> is to operate on 200 messages at
 a time. You can change this using the &lt;code>--size&lt;/code> parameter, for
 example:&lt;/p>
-&lt;pre>&lt;code>gmf bulk-filter --size 50 ...&lt;/code>&lt;/pre></content></item></channel></rss>
+&lt;pre>&lt;code>gmf bulk-filter --size 50 ...
+&lt;/code>&lt;/pre></content></item></channel></rss>

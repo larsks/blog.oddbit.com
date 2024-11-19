@@ -195,8 +195,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="829764153" type="checkbox" />
-&lt;label for="829764153">
+&lt;input id="346281597" type="checkbox" />
+&lt;label for="346281597">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -225,8 +225,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="537684192" type="checkbox" />
-&lt;label for="537684192">
+&lt;input id="416937285" type="checkbox" />
+&lt;label for="416937285">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -253,8 +253,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="359741268" type="checkbox" />
-&lt;label for="359741268">
+&lt;input id="163289457" type="checkbox" />
+&lt;label for="163289457">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -339,8 +339,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="951368742" type="checkbox" />
-&lt;label for="951368742">
+&lt;input id="638742159" type="checkbox" />
+&lt;label for="638742159">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -400,8 +400,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="635921478" type="checkbox" />
-&lt;label for="635921478">
+&lt;input id="198327654" type="checkbox" />
+&lt;label for="198327654">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -685,8 +685,8 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="359784162" type="checkbox" />
-&lt;label for="359784162">
+&lt;input id="852397461" type="checkbox" />
+&lt;label for="852397461">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -702,8 +702,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="947862315" type="checkbox" />
-&lt;label for="947862315">
+&lt;input id="527936481" type="checkbox" />
+&lt;label for="527936481">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -728,8 +728,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="489732165" type="checkbox" />
-&lt;label for="489732165">
+&lt;input id="281753649" type="checkbox" />
+&lt;label for="281753649">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -765,8 +765,8 @@ example.c:24 in main: fd = open(&amp;#34;file-that-does-not-exist.xt&amp;#34;, O
 &lt;/code>&lt;/pre></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="452136798" type="checkbox" />
-&lt;label for="452136798">
+&lt;input id="815267943" type="checkbox" />
+&lt;label for="815267943">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -829,8 +829,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p></description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="452136798" type="checkbox" />
-&lt;label for="452136798">
+&lt;input id="815267943" type="checkbox" />
+&lt;label for="815267943">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -893,8 +893,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="269851734" type="checkbox" />
-&lt;label for="269851734">
+&lt;input id="954263187" type="checkbox" />
+&lt;label for="954263187">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1104,8 +1104,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="284957613" type="checkbox" />
-&lt;label for="284957613">
+&lt;input id="387615492" type="checkbox" />
+&lt;label for="387615492">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -11954,7 +11954,8 @@ labels nested under &lt;code>list/internal&lt;/code> to internal company mailing
 &lt;p>The default behavior of &lt;code>bulk-filter&lt;/code> is to operate on 200 messages at
 a time. You can change this using the &lt;code>--size&lt;/code> parameter, for
 example:&lt;/p>
-&lt;pre>&lt;code>gmf bulk-filter --size 50 ...&lt;/code>&lt;/pre></content></item><item><title>OpenStack, Containers, and Logging</title><link>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</link><pubDate>Wed, 14 Jun 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</guid><description>&lt;p>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.&lt;/p>
+&lt;pre>&lt;code>gmf bulk-filter --size 50 ...
+&lt;/code>&lt;/pre></content></item><item><title>OpenStack, Containers, and Logging</title><link>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</link><pubDate>Wed, 14 Jun 2017 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2017-06-14-openstack-containers-and-loggi/</guid><description>&lt;p>I&amp;rsquo;ve been thinking about logging in the context of OpenStack and containerized service deployments. I&amp;rsquo;d like to lay out some of my thoughts on this topic and see if people think I am talking crazy or not.&lt;/p>
 &lt;p>There are effectively three different mechanisms that an application can use to emit log messages:&lt;/p>
 &lt;ul>
 &lt;li>Via some logging-specific API, such as the legacy syslog API&lt;/li>
@@ -15689,7 +15690,8 @@ that:&lt;/p>
 &lt;pre>&lt;code>hexaddr=$(awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route)
 ipaddr=$(printf &amp;quot;%d.&amp;quot; $(
 echo $hexaddr | sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
-) | sed 's/\.$/\n/')&lt;/code>&lt;/pre></content></item><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>&lt;p>If a picture is worth a thousand words, then code that generates
+) | sed 's/\.$/\n/')
+&lt;/code>&lt;/pre></content></item><item><title>Visualizing Pacemaker resource constraints</title><link>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-24-visualizing-pacemaker-constrai/</guid><description>&lt;p>If a picture is worth a thousand words, then code that generates
 pictures from words is worth&amp;hellip;uh, anyway, I wrote a script that
 produces &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> output from Pacemaker start and colocation
 constraints:&lt;/p>
@@ -16454,7 +16456,8 @@ rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 .
 .
-.&lt;/code>&lt;/pre></content></item><item><title>Creating minimal Docker images from dynamically linked ELF binaries</title><link>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</guid><description>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
+.
+&lt;/code>&lt;/pre></content></item><item><title>Creating minimal Docker images from dynamically linked ELF binaries</title><link>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</guid><description>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
 images for dynamically linked ELF binaries, and then at &lt;a href="https://github.com/larsks/dockerize">a
 tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one

@@ -1,5 +1,4 @@
-<!doctype html><html lang=en><head><title>A passwordless serial console for your Raspberry Pi :: blog.oddbit.com</title>
-<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="legendre on #raspbian asked:
+<!doctype html><html lang=en><head><title>A passwordless serial console for your Raspberry Pi :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="legendre on #raspbian asked:
 How can i config rasp lite to open a shell on the serial uart on boot? Params are 1200-8-N-1 Dont want login running, just straight to sh
 In this article, we&rsquo;ll walk through one way of implementing this configuration.
 Activate the serial port Raspberry Pi OS automatically starts a getty on the serial port if one is available. You should see an agetty process associated with your serial port when you run ps -ef. For example:

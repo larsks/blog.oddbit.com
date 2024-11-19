@@ -1,5 +1,4 @@
-<!doctype html><html lang=en><head><title>Git fetch, tags, remotes, and more :: blog.oddbit.com</title>
-<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I’ve been playing around with Git, Puppet, and GPG verification of our Puppet configuration repository, and these are some random facts about Git that have come to light as part of the process.
+<!doctype html><html lang=en><head><title>Git fetch, tags, remotes, and more :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I’ve been playing around with Git, Puppet, and GPG verification of our Puppet configuration repository, and these are some random facts about Git that have come to light as part of the process.
 If you want to pull both changes and new tags from a remote repository, you can do this:
 $ git fetch $ git fetch --tags Or you can do this:
 $ git fetch --tags $ git fetch What’s the difference? git fetch will leave FETCH_HEAD pointing at the remote HEAD, whereas git fetch --tags will leave FETCH_HEAD pointing at the most recent tag.

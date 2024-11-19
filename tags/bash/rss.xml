@@ -55,4 +55,5 @@ that:&lt;/p>
 &lt;pre>&lt;code>hexaddr=$(awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route)
 ipaddr=$(printf &amp;quot;%d.&amp;quot; $(
 echo $hexaddr | sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
-) | sed 's/\.$/\n/')&lt;/code>&lt;/pre></content></item></channel></rss>
+) | sed 's/\.$/\n/')
+&lt;/code>&lt;/pre></content></item></channel></rss>

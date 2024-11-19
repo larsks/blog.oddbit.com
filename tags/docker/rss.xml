@@ -1048,7 +1048,8 @@ that:&lt;/p>
 &lt;pre>&lt;code>hexaddr=$(awk '$2 == &amp;quot;00000000&amp;quot; {print $3}' /proc/net/route)
 ipaddr=$(printf &amp;quot;%d.&amp;quot; $(
 echo $hexaddr | sed 's/../0x&amp;amp; /g' | tr ' ' '\n' | tac
-) | sed 's/\.$/\n/')&lt;/code>&lt;/pre></content></item><item><title>Unpacking Docker images with Undocker</title><link>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</link><pubDate>Fri, 13 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</guid><description>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
+) | sed 's/\.$/\n/')
+&lt;/code>&lt;/pre></content></item><item><title>Unpacking Docker images with Undocker</title><link>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</link><pubDate>Fri, 13 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-13-unpacking-docker-images/</guid><description>&lt;p>In some ways, the most exciting thing about &lt;a href="http://docker.com/">Docker&lt;/a> isn&amp;rsquo;t the ability
 to start containers. That&amp;rsquo;s been around for a long time in various
 forms, such as &lt;a href="https://linuxcontainers.org/">LXC&lt;/a> or &lt;a href="http://openvz.org/Main_Page">OpenVZ&lt;/a>. What Docker brought to the
 party was a convenient method of building and distributing the
@@ -1695,7 +1696,8 @@ rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 .
 .
-.&lt;/code>&lt;/pre></content></item><item><title>Creating minimal Docker images from dynamically linked ELF binaries</title><link>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</guid><description>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
+.
+&lt;/code>&lt;/pre></content></item><item><title>Creating minimal Docker images from dynamically linked ELF binaries</title><link>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-creating-minimal-docker-images/</guid><description>&lt;p>In this post, we&amp;rsquo;ll look at a method for building minimal Docker
 images for dynamically linked ELF binaries, and then at &lt;a href="https://github.com/larsks/dockerize">a
 tool&lt;/a> for automating this process.&lt;/p>
 &lt;p>It is tempting, when creating a simple Docker image, to start with one

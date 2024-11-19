@@ -229,7 +229,8 @@ rtt min/avg/max/mdev = 0.074/0.182/0.291/0.109 ms
 &amp;lt;title&amp;gt;Your web server is working&amp;lt;/title&amp;gt;
 .
 .
-.&lt;/code>&lt;/pre></content></item><item><title>Filtering libvirt XML in Nova</title><link>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</guid><description>&lt;p>I saw a request from a customer float by the other day regarding the
+.
+&lt;/code>&lt;/pre></content></item><item><title>Filtering libvirt XML in Nova</title><link>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</link><pubDate>Thu, 05 Feb 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-02-05-filtering-libvirt-xml-in-nova/</guid><description>&lt;p>I saw a request from a customer float by the other day regarding the
 ability to filter the XML used to create Nova instances in libvirt.
 The customer effectively wanted to blacklist a variety of devices (and
 device types). The consensus seems to be &amp;ldquo;you can&amp;rsquo;t do this right now
