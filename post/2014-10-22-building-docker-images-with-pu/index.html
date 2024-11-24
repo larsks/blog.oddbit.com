@@ -1,4 +1,5 @@
-<!doctype html><html lang=en><head><title>Building Docker images with Puppet :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I like Docker, but I&rsquo;m not a huge fan of using shell scripts for complex system configuration&mldr;and Dockerfiles are basically giant shell scripts.
+<!doctype html><html lang=en><head><title>Building Docker images with Puppet :: blog.oddbit.com</title>
+<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="I like Docker, but I&rsquo;m not a huge fan of using shell scripts for complex system configuration&mldr;and Dockerfiles are basically giant shell scripts.
 I was curious whether or not it would be possible to use Puppet during the docker build process. As a test case, I used the ssh module included in the openstack-puppet-modules package.
 I started with a manifest like this (in puppet/node.pp):
 class { 'ssh': } And a Dockerfile like this:

@@ -1,4 +1,5 @@
-<!doctype html><html lang=en><head><title>Installing nova-docker with devstack :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is a long-form response to this question, and describes how to get the nova-docker driver up running with devstack under Ubuntu 14.04 (Trusty). I wrote a similar post for Fedora 21, although that one was using the RDO Juno packages, while this one is using devstack and the upstream sources.
+<!doctype html><html lang=en><head><title>Installing nova-docker with devstack :: blog.oddbit.com</title>
+<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is a long-form response to this question, and describes how to get the nova-docker driver up running with devstack under Ubuntu 14.04 (Trusty). I wrote a similar post for Fedora 21, although that one was using the RDO Juno packages, while this one is using devstack and the upstream sources.
 Getting started We&rsquo;ll be using the Ubuntu 14.04 cloud image (because my test environment runs on OpenStack).
 First, let&rsquo;s install a few prerequisites:
 $ sudo apt-get update $ sudo apt-get -y install git git-review python-pip python-dev And generally make sure things are up-to-date:

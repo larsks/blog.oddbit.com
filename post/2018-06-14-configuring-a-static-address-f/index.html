@@ -1,4 +1,5 @@
-<!doctype html><html lang=en><head><title>Configuring a static address for wlan0 on Raspbian Stretch :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
+<!doctype html><html lang=en><head><title>Configuring a static address for wlan0 on Raspbian Stretch :: blog.oddbit.com</title>
+<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Recent releases of Raspbian have adopted the use of dhcpcd to manage both dynamic and static interface configuration. If you would prefer to use the traditional /etc/network/interfaces mechanism instead, follow these steps.
 First, disable dhcpcd and wpa_supplicant.
 systemctl disable --now dhdpcd wpa_supplicant You will need a wpa_supplicant configuration for wlan0 in /etc/wpa_supplicant/wpa_supplicant-wlan0.conf.
 If you already have an appropriate configuration in /etc/wpa_supplicant/wpa_supplicant.conf, you can just symlink the file:
