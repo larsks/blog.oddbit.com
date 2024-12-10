@@ -386,7 +386,7 @@ of the system (assuming it is available).&lt;/li>
 after your first reboot, which throws off Neutron.&lt;/p>
 &lt;h2 id="and-they-all-lived-happily-ever-after">And they all lived happily ever after?&lt;/h2>
 &lt;p>It turns out this bug was reported upstream back in October of 2013 as
-&lt;a href="https://bugs.launchpad.net/cloud-init/+bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
+&lt;a href="https://bugs.launchpad.net/cloud-init/&amp;#43;bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
 been marked as &amp;ldquo;low&amp;rdquo; priority and has been fixed. There are patches
 attached to the bug report that purport to fix the problem.&lt;/p></content></item><item><title>Booting an instance with multiple fixed addresses</title><link>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</link><pubDate>Wed, 28 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-28-booting-an-instance-with-multi/</guid><description>&lt;p>This article expands on my answer to &lt;a href="https://ask.openstack.org/en/question/30690/add-multiple-specific-ips-to-instance/">Add multiple specific IPs to
 instance&lt;/a>, a question posted to &lt;a href="https://ask.openstack.org/">ask.openstack.org&lt;/a>.&lt;/p>
@@ -822,7 +822,7 @@ B -&amp;gt; D
 }
 &lt;/code>&lt;/pre>
 &lt;p>Which would produce output like this:&lt;/p>
-&lt;p>&lt;img alt="Dot output example" src="https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/dot-example.svg">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/dot-example.svg" alt="Dot output example">&lt;/p>
 &lt;p>When run on my laptop, with a simple all-in-one configuration and five
 instances across two networks, the result of running &lt;code>mk-network-dot&lt;/code>
 looks like this:&lt;/p>

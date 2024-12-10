@@ -28,7 +28,7 @@ the syntax looks something like this:</p><pre><code>digraph example {
   C -&gt; D
   B -&gt; D
 }
-</code></pre><p>Which would produce output like this:</p><p><img alt="Dot output example" src=/post/2013-12-23-visualizing-network-with-graph/dot-example.svg></p><p>When run on my laptop, with a simple all-in-one configuration and five
+</code></pre><p>Which would produce output like this:</p><p><img src=/post/2013-12-23-visualizing-network-with-graph/dot-example.svg alt="Dot output example"></p><p>When run on my laptop, with a simple all-in-one configuration and five
 instances across two networks, the result of running <code>mk-network-dot</code>
 looks like this:</p><figure class=left><img src=network.svg></figure><p>There are a few caveats with this tool:</p><ul><li>As of this writing, it doesn&rsquo;t know about either bond interfaces or
 VLAN interfaces.</li><li>It&rsquo;s had only limited testing.</li></ul><p>If you try this out and something doesn&rsquo;t work as you expect, please

@@ -195,8 +195,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="136249785" type="checkbox" />
-&lt;label for="136249785">
+&lt;input id="851273496" type="checkbox" />
+&lt;label for="851273496">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -225,8 +225,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="395861427" type="checkbox" />
-&lt;label for="395861427">
+&lt;input id="568437219" type="checkbox" />
+&lt;label for="568437219">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -253,8 +253,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="473621958" type="checkbox" />
-&lt;label for="473621958">
+&lt;input id="238591476" type="checkbox" />
+&lt;label for="238591476">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -339,8 +339,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="862591734" type="checkbox" />
-&lt;label for="862591734">
+&lt;input id="672541398" type="checkbox" />
+&lt;label for="672541398">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -400,8 +400,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="182547963" type="checkbox" />
-&lt;label for="182547963">
+&lt;input id="731269584" type="checkbox" />
+&lt;label for="731269584">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -466,9 +466,9 @@ assert res[0] == 1
 &lt;p>Keep in mind that in Pytest, a fixture can only reference other fixtures that come from the same or &amp;ldquo;broader&amp;rdquo; scope (so, a &lt;code>function&lt;/code> scoped fixture can use a &lt;code>session&lt;/code> scoped fixture, but the opposite is not true). In particular, that means if we were to make our &lt;code>mariadb_container&lt;/code> fixture &lt;code>session&lt;/code>-scoped, we would need to make the same change to its dependencies (&lt;code>mariadb_dbname&lt;/code>, &lt;code>mariadb_dbpass&lt;/code>, etc).&lt;/p>
 &lt;hr>
 &lt;p>You can find a version of &lt;code>conftest.py&lt;/code> with these changes &lt;a href="https://blog.oddbit.com/post/2023-07-15-pytest-and-containers/ex3/conftest.py">here&lt;/a>.&lt;/p></content></item><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
-&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg" alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p></description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
-&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg" alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;">&lt;/a>&lt;/p>
 &lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
 &lt;h2 id="setting-up-a-lab">Setting up a lab&lt;/h2>
 &lt;p>When investigating this sort of networking question, I find it easiest to reproduce the topology in a virtual environment so that it&amp;rsquo;s easy to test things out. I generally use &lt;a href="https://mininet.org">Mininet&lt;/a> for this, which provides a simple Python API for creating virtual nodes and switches and creating links between them.&lt;/p>
@@ -669,8 +669,7 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p>
 &lt;p>And here&amp;rsquo;s a video that runs through the steps described in this post:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/Kws98JNKcxE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/Kws98JNKcxE?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item><item><title>Simple error handling in C</title><link>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</link><pubDate>Fri, 17 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-17-c-error-handling/</guid><description>&lt;h2 id="overview">Overview&lt;/h2>
 &lt;p>I was recently working with someone else&amp;rsquo;s C source and I wanted to add some basic error checking without mucking up the code with a bunch of &lt;code>if&lt;/code> statements and calls to &lt;code>perror&lt;/code>. I ended up implementing a simple &lt;code>must&lt;/code> function that checks the return value of an expression, and exits with an error if the return value is less than 0. You use it like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">must&lt;/span>(fd &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;textfile.txt&amp;#34;&lt;/span>, O_RDONLY));
@@ -685,8 +684,8 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="974813562" type="checkbox" />
-&lt;label for="974813562">
+&lt;input id="593187426" type="checkbox" />
+&lt;label for="593187426">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -702,8 +701,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="126598437" type="checkbox" />
-&lt;label for="126598437">
+&lt;input id="985436127" type="checkbox" />
+&lt;label for="985436127">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -728,8 +727,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="145387926" type="checkbox" />
-&lt;label for="145387926">
+&lt;input id="987263451" type="checkbox" />
+&lt;label for="987263451">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -831,8 +830,8 @@ example.c:24 in main: fd = open(&amp;#34;file-that-does-not-exist.xt&amp;#34;, O
 &lt;p>That is&amp;hellip;completely ridiculous. The &amp;ldquo;Share&amp;rdquo; button in the All Trails app should provide an option to share the GPX version of the route so the above process could be collapsed into a single step. All Trails, why do you hate your users so much?&lt;/p></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="678129345" type="checkbox" />
-&lt;label for="678129345">
+&lt;input id="689145237" type="checkbox" />
+&lt;label for="689145237">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -895,8 +894,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p></description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="678129345" type="checkbox" />
-&lt;label for="678129345">
+&lt;input id="689145237" type="checkbox" />
+&lt;label for="689145237">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -959,8 +958,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="419538267" type="checkbox" />
-&lt;label for="419538267">
+&lt;input id="219583647" type="checkbox" />
+&lt;label for="219583647">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1170,8 +1169,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="321984756" type="checkbox" />
-&lt;label for="321984756">
+&lt;input id="745268139" type="checkbox" />
+&lt;label for="745268139">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -3210,7 +3209,7 @@ and committer as well as static date, so you every time you generate
 the repository you can identical commit ids.&lt;/p>
 &lt;h2 id="git-dot">git dot&lt;/h2>
 &lt;p>The &lt;a href="https://github.com/larsks/git-snippets/blob/master/git-dot">&lt;code>git dot&lt;/code>&lt;/a> command generates a representation of a repository
-history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
+history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
 into diagrams.&lt;/p>
 &lt;h2 id="putting-it-together">Putting it together&lt;/h2>
 &lt;p>For example, the following history specification:&lt;/p>
@@ -3854,12 +3853,12 @@ available. I figured there must be some sort of caching proxy
 available that would act as a shim between me and PyPi, fetching
 packages from PyPi and caching them if they weren&amp;rsquo;t already available
 locally.&lt;/p>
-&lt;p>I was previously aware of &lt;a href="https://www.jfrog.com/confluence/display/JFROG/PyPI+Repositories">Artifactory&lt;/a>, which I suspected (and
+&lt;p>I was previously aware of &lt;a href="https://www.jfrog.com/confluence/display/JFROG/PyPI&amp;#43;Repositories">Artifactory&lt;/a>, which I suspected (and
 confirmed) was capable of this, but while looking around I came across
 &lt;a href="https://www.devpi.net/">DevPi&lt;/a>, which unlike Artifactory is written exclusively for
 managing Python packages. DevPi itself is hosted on PyPi, and the
 documentation made things look easy to configure.&lt;/p>
-&lt;p>After reading through their &lt;a href="https://devpi.net/docs/devpi/devpi/stable/+doc/quickstart-pypimirror.html">Quickstart: running a pypi mirror on your
+&lt;p>After reading through their &lt;a href="https://devpi.net/docs/devpi/devpi/stable/&amp;#43;doc/quickstart-pypimirror.html">Quickstart: running a pypi mirror on your
 laptop&lt;/a> documentation, I built a containerized service that would
 be easy for me to run on my desktop, laptop, work computer, etc. You
 can find the complete configuration at
@@ -4330,8 +4329,7 @@ described in the previous section, waking once every 60 seconds. If
 &lt;code>use_deepsleep&lt;/code> is &lt;code>False&lt;/code>, this will use a busy loop.&lt;/p></content></item><item><title>Animating a map of Covid in the Northeast US</title><link>https://blog.oddbit.com/post/2020-12-13-animating-a-map-of-covid-in-th/</link><pubDate>Sun, 13 Dec 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-12-13-animating-a-map-of-covid-in-th/</guid><description>&lt;p>I recently put together a short animation showing the spread of Covid
 throughout the Northeast United States:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>I thought it might be interesting to walk through the process I used to
 create the video. The steps described in this article aren&amp;rsquo;t exactly
@@ -4340,8 +4338,7 @@ the interests of simplicity I wanted instructions that can be
 accomplished with just QGIS), but they end up in the same place.&lt;/p></description><content>&lt;p>I recently put together a short animation showing the spread of Covid
 throughout the Northeast United States:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/zGN_zEzd_TE?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>I thought it might be interesting to walk through the process I used to
 create the video. The steps described in this article aren&amp;rsquo;t exactly
@@ -4812,7 +4809,7 @@ patch: |-
 path: /spec/template/spec/securityContext/runAsUser
 &lt;/code>&lt;/pre>&lt;h2 id="conclusion">Conclusion&lt;/h2>
 &lt;p>The changes described here will result in a successful MetalLB deployment
-into your OpenShift environment.&lt;/p></content></item><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+into your OpenShift environment.&lt;/p></content></item><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;amp;kind2=224&amp;amp;kind3=&amp;amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
 past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
@@ -4822,7 +4819,7 @@ different layers on the keyboard.&lt;/p>
 keyboard is really a joy to type on, at least when you&amp;rsquo;re working primarily
 with the alpha keys. I&amp;rsquo;m still figuring out where some of the punctuation
 is, and with a few exceptions I haven&amp;rsquo;t yet spent time trying to remap
-things into more convenient positions.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+things into more convenient positions.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;amp;kind2=224&amp;amp;kind3=&amp;amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
 past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
@@ -5765,12 +5762,12 @@ materials are typically compared to its performance. The &amp;ldquo;N95 FFR desi
 is determined by the CDC&amp;rsquo;s National Institute for Occupational Safety and
 Health (&lt;a href="https://www.cdc.gov/niosh/index.htm">NIOSH&lt;/a>) and indicates a minimum filtration of 95% for particle sizes
 0.022−0.259 μm (count median diameter of 0.075 ± 0.02 μm), according to 42 Code
-of Federal Regulations (CFR) &lt;a href="https://www.ecfr.gov/cgi-bin/text-idx?SID=fdd4020598032b884cbca81cf64c8986&amp;mc=true&amp;node=pt42.1.84&amp;rgn=div5#se42.1.84_110">Part 84.10&lt;/a>. As the [COVID-19] viral aerosols are
+of Federal Regulations (CFR) &lt;a href="https://www.ecfr.gov/cgi-bin/text-idx?SID=fdd4020598032b884cbca81cf64c8986&amp;amp;mc=true&amp;amp;node=pt42.1.84&amp;amp;rgn=div5#se42.1.84_110">Part 84.10&lt;/a>. As the [COVID-19] viral aerosols are
 larger than the ~0.120 μm virus itself, N95 respirators are expected to provide
 suitable protection&amp;rdquo; (&lt;a href="https://pubs.acs.org/doi/10.1021/acs.nanolett.0c02211">Zhao et al. 2020&lt;/a>).&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;/p>
 &lt;p>In short, to be certified by NIOSH, an N95 candidate must pass a specific
 filtration efficiency test, which is performed using a charge-neutralized NaCl
-aerosol (&lt;a href="https://www.ecfr.gov/cgi-bin/text-idx?SID=fdd4020598032b884cbca81cf64c8986&amp;mc=true&amp;node=pt42.1.84&amp;rgn=div5#se42.1.84_1174">42 CFR §84.174&lt;/a>).&lt;/p>
+aerosol (&lt;a href="https://www.ecfr.gov/cgi-bin/text-idx?SID=fdd4020598032b884cbca81cf64c8986&amp;amp;mc=true&amp;amp;node=pt42.1.84&amp;amp;rgn=div5#se42.1.84_1174">42 CFR §84.174&lt;/a>).&lt;/p>
 &lt;p>Until very recently, there was almost no filtration efficiency or differential
 pressure information for more common materials. I speculate that prior to the
 current pandemic, few studies had examined the protectiveness of cloth or
@@ -5782,7 +5779,7 @@ three studies &amp;ndash; all from 2020 &amp;ndash; that attempt to answer these
 study used a different study design and examined different household materials.
 All the studies included N95 masks for comparative purposes. This is important
 particularly as the filtration efficiency testing protocols employed are not
-identical to those required under &lt;a href="https://www.ecfr.gov/cgi-bin/text-idx?SID=fdd4020598032b884cbca81cf64c8986&amp;mc=true&amp;node=pt42.1.84&amp;rgn=div5#se42.1.84_110">42 CFR §84.10&lt;/a>.&lt;/p>
+identical to those required under &lt;a href="https://www.ecfr.gov/cgi-bin/text-idx?SID=fdd4020598032b884cbca81cf64c8986&amp;amp;mc=true&amp;amp;node=pt42.1.84&amp;amp;rgn=div5#se42.1.84_110">42 CFR §84.10&lt;/a>.&lt;/p>
 &lt;!-- raw HTML omitted -->
 &lt;!-- raw HTML omitted -->
 &lt;!-- raw HTML omitted -->
@@ -6235,27 +6232,23 @@ SSID &amp;ndash; but somewhat more difficult to change the BSSID.)&lt;/p>
 at the finished project. When the device detects a target BSSID, it
 rings the bell twice and lights the &lt;code>ALARM&lt;/code> LED:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/cT2JB-aDhTQ?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/cT2JB-aDhTQ?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>After the initial alarm, the bell will ring once every five minutes
 while the alarm persists. Once the BSSID goes offline, the device
 cancels the alarm and extinguishes the &lt;code>ALARM&lt;/code> LED:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/XY6YKFK2qv4?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/XY6YKFK2qv4?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>If the doorbell proves annoying, there&amp;rsquo;s a switch that activates
 silent mode:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/bgM7Asc4FD4?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/bgM7Asc4FD4?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>When silent mode is active, the device will illuminate the &lt;code>ALARM&lt;/code> LED
 without sounding the bell:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/xRxxqKiiYVc?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/xRxxqKiiYVc?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;h2 id="but-wait-theres-more">But wait, there&amp;rsquo;s more!&lt;/h2>
 &lt;p>There&amp;rsquo;s also a web interface that allows one to monitor and configure
@@ -6269,8 +6262,7 @@ the device. The web interface allows one to:&lt;/p>
 &lt;/ul>
 &lt;p>Here&amp;rsquo;s a video of it in action:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/TtDwYMXy-b8?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/TtDwYMXy-b8?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;h2 id="and-thats-not-all">And that&amp;rsquo;s not all!&lt;/h2>
 &lt;p>In order to support the UI, there&amp;rsquo;s a simple HTTP API that permits
@@ -6366,17 +6358,17 @@ are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p>
 &lt;/blockquote>
 &lt;p>In this article, we&amp;rsquo;ll walk through one way of implementing this configuration.&lt;/p>
 &lt;h2 id="activate-the-serial-port">Activate the serial port&lt;/h2>
-&lt;p>Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_(Unix)">&lt;code>getty&lt;/code>&lt;/a> on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p></description><content>&lt;p>&lt;code>legendre&lt;/code> on &lt;code>#raspbian&lt;/code> asked:&lt;/p>
+&lt;p>Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_%28Unix%29">&lt;code>getty&lt;/code>&lt;/a> on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p></description><content>&lt;p>&lt;code>legendre&lt;/code> on &lt;code>#raspbian&lt;/code> asked:&lt;/p>
 &lt;blockquote>
 &lt;p>How can i config rasp lite to open a shell on the serial uart on boot? Params
 are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p>
 &lt;/blockquote>
 &lt;p>In this article, we&amp;rsquo;ll walk through one way of implementing this configuration.&lt;/p>
 &lt;h2 id="activate-the-serial-port">Activate the serial port&lt;/h2>
-&lt;p>Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_(Unix)">&lt;code>getty&lt;/code>&lt;/a> on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p>
+&lt;p>Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_%28Unix%29">&lt;code>getty&lt;/code>&lt;/a> on the serial port if one is available. You should see an &lt;code>agetty&lt;/code> process associated with your serial port when you run &lt;code>ps -ef&lt;/code>. For example:&lt;/p>
 &lt;pre tabindex="0">&lt;code>root@raspberrypi:/etc/systemd/system# ps -fe | grep agetty | grep ttyS0
 root 1138 1 0 00:24 ttyS0 00:00:00 /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220
-&lt;/code>&lt;/pre>&lt;p>If you don&amp;rsquo;t see this process and you&amp;rsquo;re on a Raspberry Pi 3 (or later), you may need to &lt;a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&amp;t=141195">explicitly enable the serial port&lt;/a> by adding &lt;code>enable_uart=1&lt;/code> to &lt;code>/boot/firmware/config.txt&lt;/code>. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.&lt;/p>
+&lt;/code>&lt;/pre>&lt;p>If you don&amp;rsquo;t see this process and you&amp;rsquo;re on a Raspberry Pi 3 (or later), you may need to &lt;a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&amp;amp;t=141195">explicitly enable the serial port&lt;/a> by adding &lt;code>enable_uart=1&lt;/code> to &lt;code>/boot/firmware/config.txt&lt;/code>. If you make this change, reboot your Pi before continuing, then repeat the above test to make sure things are working as expected.&lt;/p>
 &lt;p>Note that your serial port may not always be named &lt;code>ttyS0&lt;/code>. I&amp;rsquo;m going to use the value &lt;code>ttyS0&lt;/code> throughout this article to represent the appropriate device name. The correct device name is the penultimate argument in the above &lt;code>agetty&lt;/code> command.&lt;/p>
 &lt;h2 id="modify-the-serial-gettyttys0-unit">Modify the serial-getty@ttyS0 unit&lt;/h2>
 &lt;p>The &lt;code>agetty&lt;/code> process we saw in the previous section is started by the &lt;code>serial-getty@ttyS0.service&lt;/code> service unit (which is an instance of the &lt;code>serial-getty@.service&lt;/code> &lt;a href="https://fedoramagazine.org/systemd-template-unit-files/">template unit&lt;/a>). We need to modify that service so that it will call &lt;code>agetty&lt;/code> with the &lt;code>--autologin root&lt;/code> option.&lt;/p>
@@ -11210,8 +11202,7 @@ written it imports methods from the &lt;code>time&lt;/code> module. Instead of:&
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With our working &lt;code>utime&lt;/code> module and the modified &lt;code>tm1637&lt;/code> module, we
 are now able to drive our display:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/laH7HY-wlCk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/laH7HY-wlCk?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item><item><title>Multiple 1-Wire Buses on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</link><pubDate>Tue, 27 Mar 2018 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2018-03-27-multiple-1-wire-buses-on-the-/</guid><description>&lt;p>The DS18B20 is a popular temperature sensor that uses the &lt;a href="https://en.wikipedia.org/wiki/1-Wire">1-Wire&lt;/a>
 protocol for communication. Recent versions of the Linux kernel
 include a kernel driver for this protocol, making it relatively
@@ -15573,8 +15564,7 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -15584,8 +15574,7 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -15627,7 +15616,7 @@ init_curl_http_auth(result);
 if (ssl_cert != NULL)
 curl_easy_setopt(result, CURLOPT_SSLCERT, ssl_cert);
 if (has_cert_password())
-&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;m=143100824118409&amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Suggestions for the Docker MAINTAINER directive</title><link>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</link><pubDate>Mon, 27 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</guid><description>&lt;p>Because nobody asked for it, this is my opinion on the use of the
+&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;amp;m=143100824118409&amp;amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Suggestions for the Docker MAINTAINER directive</title><link>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</link><pubDate>Mon, 27 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-27-suggestions-for-the-docker-mai/</guid><description>&lt;p>Because nobody asked for it, this is my opinion on the use of the
 &lt;code>MAINTAINER&lt;/code> directive in your Dockerfiles.&lt;/p>
 &lt;p>The &lt;a href="https://docs.docker.com/reference/builder/#maintainer">documentation&lt;/a> says simply:&lt;/p>
 &lt;pre>&lt;code>The MAINTAINER instruction allows you to set the Author field of the generated images.
@@ -15691,7 +15680,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -15702,7 +15691,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -15712,7 +15701,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -15724,7 +15713,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Booting cloud images with libvirt</title><link>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</link><pubDate>Tue, 10 Mar 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-03-10-booting-cloud-images-with-libv/</guid><description>&lt;p>Most major distributions now provide &amp;ldquo;cloud-enabled&amp;rdquo; images designed
 for use in cloud environments like OpenStack and AWS. These images
 are usually differentiated by (a) being relatively small, and (b) running
@@ -17894,7 +17883,7 @@ via:&lt;/p>
 &lt;/code>&lt;/pre>
 &lt;p>(Or you can grab the above repository from GitHub and build it
 yourself locally).&lt;/p></content></item><item><title>Accessing the serial console of your Nova servers</title><link>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</link><pubDate>Mon, 22 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</guid><description>&lt;p>One of the new features available in the Juno release of OpenStack is
-support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
+support for &lt;a href="https://blueprints.launchpad.net/nova/&amp;#43;spec/serial-ports">serial console access to your Nova
 servers&lt;/a>. This post looks into how to configure the
 serial console feature and then how to access the serial consoles of
 your Nova servers.&lt;/p>
@@ -17908,7 +17897,7 @@ with a command line that includes something like &lt;code>console=tty0 console=t
 messages are available on the serial console. This is a useful
 mechanism for diagnosing problems in the event that you do not have
 network access to a server.&lt;/p></description><content>&lt;p>One of the new features available in the Juno release of OpenStack is
-support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
+support for &lt;a href="https://blueprints.launchpad.net/nova/&amp;#43;spec/serial-ports">serial console access to your Nova
 servers&lt;/a>. This post looks into how to configure the
 serial console feature and then how to access the serial consoles of
 your Nova servers.&lt;/p>
@@ -18128,7 +18117,7 @@ of the system (assuming it is available).&lt;/li>
 after your first reboot, which throws off Neutron.&lt;/p>
 &lt;h2 id="and-they-all-lived-happily-ever-after">And they all lived happily ever after?&lt;/h2>
 &lt;p>It turns out this bug was reported upstream back in October of 2013 as
-&lt;a href="https://bugs.launchpad.net/cloud-init/+bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
+&lt;a href="https://bugs.launchpad.net/cloud-init/&amp;#43;bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
 been marked as &amp;ldquo;low&amp;rdquo; priority and has been fixed. There are patches
 attached to the bug report that purport to fix the problem.&lt;/p></content></item><item><title>Starting systemd services without blocking</title><link>https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/</link><pubDate>Tue, 02 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/</guid><description>&lt;p>Recently, I&amp;rsquo;ve been playing around with &lt;a href="https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/">Fedora Atomic and
 Kubernetes&lt;/a>. I ran into a frustrating problem in which I
@@ -19072,8 +19061,7 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
 can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
 Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
@@ -19081,15 +19069,14 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
 nested stacks. It is possible to introspect these resources (you can
 pass the physical resource id of a nested stack to &lt;code>heat resource-list&lt;/code>, for example)&amp;hellip;&lt;/p>
 &lt;p>&amp;hellip;but I really like visualizing things, so I wrote a quick hack
-called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language output from a
+called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language output from a
 Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Graphviz&lt;/a> to produce output
 like this, in which graph nodes are automatically colorized by
 resource type:&lt;/p></description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
@@ -19098,7 +19085,7 @@ line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo
 nested stacks. It is possible to introspect these resources (you can
 pass the physical resource id of a nested stack to &lt;code>heat resource-list&lt;/code>, for example)&amp;hellip;&lt;/p>
 &lt;p>&amp;hellip;but I really like visualizing things, so I wrote a quick hack
-called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language output from a
+called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language output from a
 Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Graphviz&lt;/a> to produce output
 like this, in which graph nodes are automatically colorized by
 resource type:&lt;/p>
@@ -19117,16 +19104,16 @@ issues I encountered:&lt;/p>
 &lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
 &lt;p>docker plugin fails to delete a container resource in
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
@@ -19134,20 +19121,20 @@ issues I encountered:&lt;/p>
 &lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
 &lt;p>docker plugin fails to delete a container resource in
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364019">https://bugs.launchpad.net/heat/+bug/1364019&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364019">https://bugs.launchpad.net/heat/+bug/1364019&lt;/a>&lt;/p>
 &lt;p>docker plugin does not actually remove containers on delete&lt;/p>
 &lt;/li>
 &lt;/ul>
@@ -20021,7 +20008,7 @@ givin you better support for multi-tenancy and flexible networking
 than you get with Docker by itself.&lt;/p>
 &lt;p>The &lt;a href="https://wiki.openstack.org/wiki/Docker">Docker driver wiki&lt;/a> was mostly sufficient for getting the
 &lt;code>nova-docker&lt;/code> driver installed in my existing OpenStack deployment,
-although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;diff=61664&amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
+although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;amp;diff=61664&amp;amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
 some missing steps. Other than that, the installation was relatively
 simple and I was soon able to spin up Docker containers using &lt;code>nova boot ...&lt;/code>&lt;/p>
 &lt;p>The one problem I encountered is that it is not possible to pass
@@ -20056,7 +20043,7 @@ forced by circumstance to reinstall everything I spent some time
 looking for alternatives that were less disruptive to configure on an
 existing system.&lt;/p>
 &lt;p>I came across &lt;a href="http://rwmj.wordpress.com/2014/05/22/using-lvms-new-cache-feature/">Richard Jones&amp;rsquo; article&lt;/a> discussing the recent work to
-integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
+integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_%28Linux%29">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
 &lt;em>dm-cache&lt;/em> directly, the integration with LVM makes it easy to
 associate devices with an existing logical volume.&lt;/p>
 &lt;p>I have put together a small tool called &lt;a href="https://github.com/larsks/lvcache">lvcache&lt;/a> that simplies the
@@ -20065,7 +20052,7 @@ forced by circumstance to reinstall everything I spent some time
 looking for alternatives that were less disruptive to configure on an
 existing system.&lt;/p>
 &lt;p>I came across &lt;a href="http://rwmj.wordpress.com/2014/05/22/using-lvms-new-cache-feature/">Richard Jones&amp;rsquo; article&lt;/a> discussing the recent work to
-integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
+integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_%28Linux%29">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
 &lt;em>dm-cache&lt;/em> directly, the integration with LVM makes it easy to
 associate devices with an existing logical volume.&lt;/p>
 &lt;p>I have put together a small tool called &lt;a href="https://github.com/larsks/lvcache">lvcache&lt;/a> that simplies the
@@ -21441,13 +21428,11 @@ corresponding &lt;code>.1&lt;/code> address.&lt;/p>
 &lt;p>And you&amp;rsquo;re all set!&lt;/p></content></item><item><title>Video: Configuring OpenStack's external bridge on a single-interface system</title><link>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</link><pubDate>Tue, 27 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-27-configuring-openstacks-externa/</guid><description>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></description><content>&lt;p>I&amp;rsquo;ve just put a video on Youtube that looks at the steps required to
 set up the external bridge (&lt;code>br-ex&lt;/code>) on a single-interface system:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/8zFQG5mKwPk?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item><item><title>Open vSwitch and persistent MAC addresses</title><link>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</link><pubDate>Fri, 23 May 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-05-23-open-vswitch-and-persistent-ma/</guid><description>&lt;p>Normally I like to post solutions, but today&amp;rsquo;s post is about a
 vexing problem to which I have not been able to find a solution.&lt;/p>
 &lt;p>This started as a simple attempt to set up external connectivity on
@@ -21862,16 +21847,14 @@ deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstac
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></description><content>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
 through a simple demonstration of setting up a multinode OpenStack
 deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item><item><title>Show OVS external-ids</title><link>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</link><pubDate>Sun, 19 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-19-show-ovs-externalids/</guid><description>&lt;p>This is just here as a reminder for me:&lt;/p>
 &lt;p>An OVS interface has a variety of attributes associated with it, including an
 &lt;code>external-id&lt;/code> field that can be used to associate resources outside of
@@ -22108,7 +22091,7 @@ B -&amp;gt; D
 }
 &lt;/code>&lt;/pre>
 &lt;p>Which would produce output like this:&lt;/p>
-&lt;p>&lt;img alt="Dot output example" src="https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/dot-example.svg">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-12-23-visualizing-network-with-graph/dot-example.svg" alt="Dot output example">&lt;/p>
 &lt;p>When run on my laptop, with a simple all-in-one configuration and five
 instances across two networks, the result of running &lt;code>mk-network-dot&lt;/code>
 looks like this:&lt;/p>
@@ -24021,7 +24004,7 @@ interfaces on the same network would look like this:&lt;/p>
 &lt;p>Of course, this is only half the solution: having generated a hosts
 file we need to put it somewhere where your system can find it.&lt;/p>
 &lt;h2 id="an-aside-incron">An aside: incron&lt;/h2>
-&lt;p>Both of the following solutions rely on &lt;a href="http://inotify.aiken.cz/?section=incron&amp;page=about&amp;lang=en">incron&lt;/a>, a tool that uses
+&lt;p>Both of the following solutions rely on &lt;a href="http://inotify.aiken.cz/?section=incron&amp;amp;page=about&amp;amp;lang=en">incron&lt;/a>, a tool that uses
 the Linux &lt;a href="http://en.wikipedia.org/wiki/Inotify">inotify&lt;/a> subsystem to trigger scripts in reaction to
 events on file and directories. In this case, we&amp;rsquo;ll be using &lt;code>incron&lt;/code>
 to monitor the dnsmasq &lt;code>default.leases&lt;/code> file and firing off a script
@@ -24032,7 +24015,7 @@ could hook up something to the libvirt events framework.&lt;/p>
 &lt;h2 id="using-etchosts">Using /etc/hosts&lt;/h2>
 &lt;p>If you want to update your &lt;code>/etc/hosts&lt;/code> file, you can place the
 following into a script called &lt;code>update-virt-hosts&lt;/code> (somewhere in
-root&amp;rsquo;s &lt;code>PATH&lt;/code>) and run that via &lt;a href="http://inotify.aiken.cz/?section=incron&amp;page=about&amp;lang=en">incron&lt;/a>:&lt;/p>
+root&amp;rsquo;s &lt;code>PATH&lt;/code>) and run that via &lt;a href="http://inotify.aiken.cz/?section=incron&amp;amp;page=about&amp;amp;lang=en">incron&lt;/a>:&lt;/p>
 &lt;pre>&lt;code>#!/bin/sh
 sed -i '/^# BEGIN VIRT HOSTS/,/^# END VIRT HOSTS/ d' /etc/hosts
 cat &amp;lt;&amp;lt;EOF &amp;gt;&amp;gt;/etc/hosts
@@ -24436,10 +24419,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img alt="Raspberry Pi Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>
@@ -25993,7 +25976,7 @@ the firewall the connection was never successfully established&amp;hellip;and af
 seconds (the default &amp;ldquo;embryonic connection timeout&amp;rdquo;) the connection gets
 dropped by the firewall. The diagram below illustrates exactly what was
 happening:&lt;/p>
-&lt;p>&lt;img alt="assymetric routing" src="https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/asymmetric-routing.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2012-07-30-openstack-idle-connection-time/asymmetric-routing.png" alt="assymetric routing">&lt;/p>
 &lt;p>There are various ways of correcting this situation:&lt;/p>
 &lt;ul>
 &lt;li>
@@ -26150,7 +26133,7 @@ repository (&lt;code>git remote update&lt;/code> also sets &lt;code>FETCH_HEAD&l
 &lt;p>In addition to extracting the XML data, the proxy also logs the complete contents (headers and message content) of the request and the reply to files.&lt;/p>
 &lt;h2 id="how-it-works">How it works&lt;/h2>
 &lt;p>Out of the box, your Envoy configures itself automatically using DHCP. Possibly, you&amp;rsquo;ve configured it statically. In either case, it will typically be configured to connect via your default gateway &amp;ndash; generally, your home router, cable modem, etc. In order to intercept the communication between the Envoy and Enphase, we insert another server between the Envoy and your network gateway. In the foollowing diagram, the dotted line represents the original communication path, while the solid lines represent the new communication path:&lt;/p>
-&lt;p>&lt;img alt="envoy communication" src="https://blog.oddbit.com/post/2012-02-22-capturing-envoy-data/envoy-capture.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2012-02-22-capturing-envoy-data/envoy-capture.png" alt="envoy communication">&lt;/p>
 &lt;p>The intermediate system &amp;ndash; which we&amp;rsquo;ll call the interceptor &amp;ndash; will use a few tricks to redirect traffic destined for Enphase to the local proxy (which will log the data locally and then forward it on to Enphase).&lt;/p>
 &lt;h2 id="assumptions">Assumptions&lt;/h2>
 &lt;p>For the purposes of this article, we&amp;rsquo;ll assume that your Envoy is at address 192.168.1.100, and the address of the interceptor is 192.168.1.200.&lt;/p>
@@ -26854,7 +26837,7 @@ parts[2]]))
 &lt;li>&lt;a href="http://luca.ntop.org/Teaching/Appunti/asn1.html">A Layman&amp;rsquo;s Guide to a Subset of ASN.1, BER, and DER&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;p>Basically, ASN.1 is a standard for describing abstract data types, and DER is a set of rules for transforming an ASN.1 data type into a series of octets.&lt;/p>
-&lt;p>According to the &lt;a href="ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.asn">ASN module for PKCS#1&lt;/a>, a PKCS#1 public key looks like this:&lt;/p>
+&lt;p>According to the &lt;a href="#ZgotmplZ">ASN module for PKCS#1&lt;/a>, a PKCS#1 public key looks like this:&lt;/p>
 &lt;pre>&lt;code>RSAPublicKey ::= SEQUENCE {
 modulus INTEGER, -- n
 publicExponent INTEGER -- e
@@ -27422,7 +27405,7 @@ mail: user2@example.com
 &lt;/code>&lt;/pre>
 &lt;p>This should give you something that looks very much like the contents of backend1.ldif. You can do the same thing for backend2.&lt;/p>
 &lt;h1 id="set-up-meta-database">Set up meta database&lt;/h1>
-&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;apropos=0&amp;sektion=0&amp;manpath=OpenLDAP+2.4-Release&amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
+&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP&amp;#43;2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
 &lt;p>Put the following into a file called slapd-frontend.conf (we&amp;rsquo;ll discuss the details in moment):&lt;/p>
 &lt;pre>&lt;code>database meta
 suffix &amp;quot;dc=example,dc=com&amp;quot;
@@ -27461,7 +27444,7 @@ suffix &amp;quot;dc=example,dc=com&amp;quot;
 &lt;pre>&lt;code>uri &amp;quot;ldap://localhost/ou=backend1,dc=example,dc=com&amp;quot;
 suffixmassage &amp;quot;ou=backend1,dc=example,dc=com&amp;quot; &amp;quot;ou=backend1&amp;quot;
 &lt;/code>&lt;/pre>
-&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;apropos=0&amp;sektion=0&amp;manpath=OpenLDAP+2.4-Release&amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
+&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP&amp;#43;2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
 &lt;p>The suffixmassage statement performs simple rewriting on distinguished names. It directs &lt;em>slapd&lt;/em> to replace ou=backend1,dc=example,dc=com with ou=backend1 when communicating with the backend directory (and vice-versa).&lt;/p>
 &lt;p>You can perform simple rewriting of attribute and object classes with the map statement. For example, if backend1 used a sAMAccountName attribute and our application was expecting a uid attribute, we could add this after the suffixmassage statement:&lt;/p>
 &lt;pre>&lt;code>map attribute uid sAMAccountName

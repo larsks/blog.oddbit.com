@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hardware on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/hardware/</link><description>Recent content in Hardware on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 26 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/hardware/rss.xml" rel="self" type="application/rss+xml"/><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hardware on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/hardware/</link><description>Recent content in Hardware on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 26 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/hardware/rss.xml" rel="self" type="application/rss+xml"/><item><title>Vortex Core Keyboard Review</title><link>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</link><pubDate>Sat, 26 Sep 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-09-26-vortex-core-keyboard-review/</guid><description>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;amp;kind2=224&amp;amp;kind3=&amp;amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
 past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
@@ -8,7 +8,7 @@ different layers on the keyboard.&lt;/p>
 keyboard is really a joy to type on, at least when you&amp;rsquo;re working primarily
 with the alpha keys. I&amp;rsquo;m still figuring out where some of the punctuation
 is, and with a few exceptions I haven&amp;rsquo;t yet spent time trying to remap
-things into more convenient positions.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;kind2=224&amp;kind3=&amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
+things into more convenient positions.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve had my eye on the &lt;a href="http://www.vortexgear.tw/vortex2_2.asp?kind=47&amp;amp;kind2=224&amp;amp;kind3=&amp;amp;kind4=1033">Vortex Core&lt;/a> keyboard for a few months now, and this
 past week I finally broke down and bought one (with Cherry MX Brown switches).
 The Vortex Core is a 40% keyboard, which means it consists primarily of letter
 keys, a few lonely bits of punctuation, and several modifier keys to activate
@@ -169,10 +169,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img alt="Raspberry Pi Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>

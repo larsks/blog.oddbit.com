@@ -3,7 +3,7 @@ forced by circumstance to reinstall everything I spent some time
 looking for alternatives that were less disruptive to configure on an
 existing system.&lt;/p>
 &lt;p>I came across &lt;a href="http://rwmj.wordpress.com/2014/05/22/using-lvms-new-cache-feature/">Richard Jones&amp;rsquo; article&lt;/a> discussing the recent work to
-integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
+integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_%28Linux%29">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
 &lt;em>dm-cache&lt;/em> directly, the integration with LVM makes it easy to
 associate devices with an existing logical volume.&lt;/p>
 &lt;p>I have put together a small tool called &lt;a href="https://github.com/larsks/lvcache">lvcache&lt;/a> that simplies the
@@ -12,7 +12,7 @@ forced by circumstance to reinstall everything I spent some time
 looking for alternatives that were less disruptive to configure on an
 existing system.&lt;/p>
 &lt;p>I came across &lt;a href="http://rwmj.wordpress.com/2014/05/22/using-lvms-new-cache-feature/">Richard Jones&amp;rsquo; article&lt;/a> discussing the recent work to
-integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
+integrate &lt;a href="https://en.wikipedia.org/wiki/Dm-cache">dm-cache&lt;/a> into &lt;a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_%28Linux%29">LVM&lt;/a>. Unlike &lt;em>bcache&lt;/em> and unlike using
 &lt;em>dm-cache&lt;/em> directly, the integration with LVM makes it easy to
 associate devices with an existing logical volume.&lt;/p>
 &lt;p>I have put together a small tool called &lt;a href="https://github.com/larsks/lvcache">lvcache&lt;/a> that simplies the

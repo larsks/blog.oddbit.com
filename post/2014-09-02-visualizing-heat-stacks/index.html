@@ -10,7 +10,7 @@ which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as <code>heat resource-list</code> don&rsquo;t recurse into
 nested stacks. It is possible to introspect these resources (you can
 pass the physical resource id of a nested stack to <code>heat resource-list</code>, for example)&mldr;</p><p>&mldr;but I really like visualizing things, so I wrote a quick hack
-called <a href=http://github.com/larsks/dotstack>dotstack</a> that will generate <a href=http://en.wikipedia.org/wiki/DOT_(graph_description_language)>dot</a> language output from a
+called <a href=http://github.com/larsks/dotstack>dotstack</a> that will generate <a href=http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29>dot</a> language output from a
 Heat stack. You can process this with <a href=http://www.graphviz.org/>Graphviz</a> to produce output
 like this, in which graph nodes are automatically colorized by
 resource type:</p><figure class=left><img src=sample.svg></figure><p>Or like this, in which each node contains information about its

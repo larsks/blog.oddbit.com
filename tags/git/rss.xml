@@ -29,7 +29,7 @@ and committer as well as static date, so you every time you generate
 the repository you can identical commit ids.&lt;/p>
 &lt;h2 id="git-dot">git dot&lt;/h2>
 &lt;p>The &lt;a href="https://github.com/larsks/git-snippets/blob/master/git-dot">&lt;code>git dot&lt;/code>&lt;/a> command generates a representation of a repository
-history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
+history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
 into diagrams.&lt;/p>
 &lt;h2 id="putting-it-together">Putting it together&lt;/h2>
 &lt;p>For example, the following history specification:&lt;/p>
@@ -766,13 +766,13 @@ init_curl_http_auth(result);
 if (ssl_cert != NULL)
 curl_easy_setopt(result, CURLOPT_SSLCERT, ssl_cert);
 if (has_cert_password())
-&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;m=143100824118409&amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
+&lt;/code>&lt;/pre>&lt;p>I &lt;a href="https://marc.info/?l=git&amp;amp;m=143100824118409&amp;amp;w=2">submitted this patch&lt;/a> to the git mailing list, and after some discussion and a few revisions it was accepted. This changed was &lt;a href="https://github.com/git/git/commit/f6f2a9e42d14e61429af418d8038aa67049b3821">committed to git&lt;/a> on May 8, 2015.&lt;/p></content></item><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
 implemented poorly, move along!&lt;/p>
 &lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -783,7 +783,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -793,7 +793,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -805,7 +805,7 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
+&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Tracking down a kernel bug with git bisect</title><link>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</link><pubDate>Mon, 21 Jul 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-07-21-tracking-down-a-kernel-bug-wit/</guid><description>&lt;p>After a recent upgrade of my Fedora 20 system to kernel 3.15.mumble, I
 started running into a problem (&lt;a href="https://bugzilla.redhat.com/show_bug.cgi?id=1121345">BZ 1121345&lt;/a>) with my &lt;a href="https://www.docker.com/">Docker&lt;/a>
 containers. Operations such as &lt;code>su&lt;/code> or &lt;code>runuser&lt;/code> would fail with the

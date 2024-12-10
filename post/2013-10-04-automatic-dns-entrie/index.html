@@ -28,7 +28,7 @@ interfaces on the same network would look like this:</p><pre><code>$ virt-hosts
 192.168.122.221	host0-net0.default.virt host0.default.virt
 192.168.122.110	host0-net1.default.virt
 </code></pre><p>Of course, this is only half the solution: having generated a hosts
-file we need to put it somewhere where your system can find it.</p><h2 id=an-aside-incron>An aside: incron<a href=#an-aside-incron class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Both of the following solutions rely on <a href="http://inotify.aiken.cz/?section=incron&page=about&lang=en">incron</a>, a tool that uses
+file we need to put it somewhere where your system can find it.</p><h2 id=an-aside-incron>An aside: incron<a href=#an-aside-incron class=hanchor arialabel=Anchor>&#8983;</a></h2><p>Both of the following solutions rely on <a href="http://inotify.aiken.cz/?section=incron&amp;page=about&amp;lang=en">incron</a>, a tool that uses
 the Linux <a href=http://en.wikipedia.org/wiki/Inotify>inotify</a> subsystem to trigger scripts in reaction to
 events on file and directories. In this case, we&rsquo;ll be using <code>incron</code>
 to monitor the dnsmasq <code>default.leases</code> file and firing off a script
@@ -36,7 +36,7 @@ when it changes.</p><p>You could accomplish the same thing using the <code>inoti
 from the <a href=https://github.com/rvoicilas/inotify-tools/wiki>inotify-tools</a> package and a small wrapper script, or you
 could hook up something to the libvirt events framework.</p><h2 id=using-etchosts>Using /etc/hosts<a href=#using-etchosts class=hanchor arialabel=Anchor>&#8983;</a></h2><p>If you want to update your <code>/etc/hosts</code> file, you can place the
 following into a script called <code>update-virt-hosts</code> (somewhere in
-root&rsquo;s <code>PATH</code>) and run that via <a href="http://inotify.aiken.cz/?section=incron&page=about&lang=en">incron</a>:</p><pre><code>#!/bin/sh
+root&rsquo;s <code>PATH</code>) and run that via <a href="http://inotify.aiken.cz/?section=incron&amp;page=about&amp;lang=en">incron</a>:</p><pre><code>#!/bin/sh
 
 sed -i '/^# BEGIN VIRT HOSTS/,/^# END VIRT HOSTS/ d' /etc/hosts
 cat &lt;&lt;EOF &gt;&gt;/etc/hosts

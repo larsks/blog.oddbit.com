@@ -11,7 +11,7 @@ I have put together a small tool called lvcache that simplies the process of:
 forced by circumstance to reinstall everything I spent some time
 looking for alternatives that were less disruptive to configure on an
 existing system.</p><p>I came across <a href=http://rwmj.wordpress.com/2014/05/22/using-lvms-new-cache-feature/>Richard Jones&rsquo; article</a> discussing the recent work to
-integrate <a href=https://en.wikipedia.org/wiki/Dm-cache>dm-cache</a> into <a href=http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)>LVM</a>. Unlike <em>bcache</em> and unlike using
+integrate <a href=https://en.wikipedia.org/wiki/Dm-cache>dm-cache</a> into <a href=http://en.wikipedia.org/wiki/Logical_Volume_Manager_%28Linux%29>LVM</a>. Unlike <em>bcache</em> and unlike using
 <em>dm-cache</em> directly, the integration with LVM makes it easy to
 associate devices with an existing logical volume.</p><p>I have put together a small tool called <a href=https://github.com/larsks/lvcache>lvcache</a> that simplies the
 process of:</p><ul><li>Creating and attaching cache volumes</li><li>Detaching and removing cache volumes</li><li>Getting cache statistics for logical volumes</li><li>Listing the cache status of all logical volumes</li></ul><p>With <code>lvcache</code> installed, you can run (as root) the following command

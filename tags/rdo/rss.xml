@@ -420,7 +420,7 @@ of the system (assuming it is available).&lt;/li>
 after your first reboot, which throws off Neutron.&lt;/p>
 &lt;h2 id="and-they-all-lived-happily-ever-after">And they all lived happily ever after?&lt;/h2>
 &lt;p>It turns out this bug was reported upstream back in October of 2013 as
-&lt;a href="https://bugs.launchpad.net/cloud-init/+bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
+&lt;a href="https://bugs.launchpad.net/cloud-init/&amp;#43;bug/1246485">bug 1246485&lt;/a>, and while there are patches available the bug has
 been marked as &amp;ldquo;low&amp;rdquo; priority and has been fixed. There are patches
 attached to the bug report that purport to fix the problem.&lt;/p></content></item><item><title>Heat Hangout</title><link>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</link><pubDate>Fri, 05 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-05-heat-hangout/</guid><description>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
 can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
@@ -429,8 +429,7 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
 can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
 Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
@@ -438,22 +437,19 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item><item><title>Multinode OpenStack with Packstack</title><link>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</link><pubDate>Thu, 27 Feb 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-02-27-multinode-packstack/</guid><description>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
 through a simple demonstration of setting up a multinode OpenStack
 deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></description><content>&lt;p>I was the presenter for this morning&amp;rsquo;s &lt;a href="http://openstack.redhat.com/">RDO&lt;/a> hangout, where I ran
 through a simple demonstration of setting up a multinode OpenStack
 deployment using &lt;a href="https://wiki.openstack.org/wiki/Packstack">packstack&lt;/a>.&lt;/p>
 &lt;p>The slides are online &lt;a href="http://goo.gl/Yvmd0P">here&lt;/a>.&lt;/p>
 &lt;p>Here&amp;rsquo;s the video (also available on the &lt;a href="https://plus.google.com/events/cm9ff549vmsim737lj7hopk4gao">event page&lt;/a>):&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/DGf-ny25OAw?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
 &lt;/div></content></item></channel></rss>

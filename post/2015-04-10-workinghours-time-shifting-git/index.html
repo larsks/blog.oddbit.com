@@ -14,17 +14,17 @@ And now your boss knows why the TPS reports are late. You need workinghours, a t
 implemented poorly, move along!</p><p>You are working on a wonderful open source project&mldr;but you are not
 <em>supposed</em> to be working on that project! You&rsquo;re supposed to be doing
 your <em>real</em> work! Unfortunately, your extra-curricular activity is
-well documented in the git history of your project for all to see:</p><p><img alt="Heatmap of original commit history" src=/post/2015-04-10-workinghours-time-shifting-git/repo-before.png></p><p>And now your boss knows why the TPS reports are late. You need
+well documented in the git history of your project for all to see:</p><p><img src=/post/2015-04-10-workinghours-time-shifting-git/repo-before.png alt="Heatmap of original commit history"></p><p>And now your boss knows why the TPS reports are late. You need
 <a href=https://github.com/larsks/workinghours.git>workinghours</a>, a terrible utility for doing awful things to your
 repository history. <a href=https://github.com/larsks/workinghours.git>Workinghours</a> will programatically time shift
 your git commits so that they appear to have happened within specified
 time intervals (for example, &ldquo;between 7PM and midnight&rdquo;).</p><p>Running <code>workinghours</code> on your repository makes things better:</p><pre><code>workinghours --afterhours | workinghours-apply
-</code></pre><p>And now you have:</p><p><img alt="Heatmap of modified commit history" src=/post/2015-04-10-workinghours-time-shifting-git/repo-after.png></p><p>But that looks suspicious. What are you, some kind of machine?
+</code></pre><p>And now you have:</p><p><img src=/post/2015-04-10-workinghours-time-shifting-git/repo-after.png alt="Heatmap of modified commit history"></p><p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, <code>workinghours</code> has a <code>--drift</code> option that will introduce
 some variety into your start and end times. The syntax is <code>--drift P before after</code>, where for each commit <code>workinghours</code> will with
 probability <em>P</em> extend the beginning of the time interval by a random
 amount between 0 and <em>before</em>
 hours, and the end of the time interval by a random amount between 0
 and <em>after</em> hours.</p><p>Introducing a low probability drift to the beginning of the interval:</p><pre><code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
-</code></pre><p>Gives us:</p><p><img alt="Heatmap of modified commit history" src=/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png></p><p>Congratulations, you are a model employee.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+</code></pre><p>Gives us:</p><p><img src=/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png alt="Heatmap of modified commit history"></p><p>Congratulations, you are a model employee.</p></div></div><script src=https://utteranc.es/client.js repo=larsks/blog.oddbit.com issue-term=pathname label=comment theme=github-light crossorigin=anonymous async></script></article></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
 <span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script><script src=/js/mermaid.min.js></script><script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>
