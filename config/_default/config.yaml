@@ -1,9 +1,11 @@
 baseURL: 'https://blog.oddbit.com'
 languageCode: 'en-us'
-title: 'the oddbit bit blog'
-paginate: 5
+title: 'the oddbit blog'
 enableGitInfo: true
 googleAnalytics: G-G1FYT93ENG
+
+pagination:
+pagerSize: 5
 
 outputFormats:
   RSS:
