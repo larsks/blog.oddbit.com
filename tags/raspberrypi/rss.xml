@@ -824,10 +824,10 @@ Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;
 &lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
 Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
 &lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg" alt="Raspberry Pi Pins">&lt;/p>
+&lt;p>&lt;img alt="Raspberry Pi Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg">&lt;/p>
 &lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
 (&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg" alt="Arduino Uno Pins">&lt;/p>
+&lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
 &lt;p>For information about other boards and about the Arduino I2C API, see
 the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item><item><title>Interrupt driven GPIO with Python</title><link>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</link><pubDate>Fri, 08 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-08-interrupt-driven-gpi/</guid><description>&lt;p>There are several Python libraries out there for interacting with the
 &lt;a href="https://en.wikipedia.org/wiki/General_Purpose_Input/Output">GPIO&lt;/a> pins on a Raspberry Pi:&lt;/p>

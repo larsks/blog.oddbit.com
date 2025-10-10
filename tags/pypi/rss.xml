@@ -17,12 +17,12 @@ available. I figured there must be some sort of caching proxy
 available that would act as a shim between me and PyPi, fetching
 packages from PyPi and caching them if they weren&amp;rsquo;t already available
 locally.&lt;/p>
-&lt;p>I was previously aware of &lt;a href="https://www.jfrog.com/confluence/display/JFROG/PyPI&amp;#43;Repositories">Artifactory&lt;/a>, which I suspected (and
+&lt;p>I was previously aware of &lt;a href="https://www.jfrog.com/confluence/display/JFROG/PyPI+Repositories">Artifactory&lt;/a>, which I suspected (and
 confirmed) was capable of this, but while looking around I came across
 &lt;a href="https://www.devpi.net/">DevPi&lt;/a>, which unlike Artifactory is written exclusively for
 managing Python packages. DevPi itself is hosted on PyPi, and the
 documentation made things look easy to configure.&lt;/p>
-&lt;p>After reading through their &lt;a href="https://devpi.net/docs/devpi/devpi/stable/&amp;#43;doc/quickstart-pypimirror.html">Quickstart: running a pypi mirror on your
+&lt;p>After reading through their &lt;a href="https://devpi.net/docs/devpi/devpi/stable/+doc/quickstart-pypimirror.html">Quickstart: running a pypi mirror on your
 laptop&lt;/a> documentation, I built a containerized service that would
 be easy for me to run on my desktop, laptop, work computer, etc. You
 can find the complete configuration at

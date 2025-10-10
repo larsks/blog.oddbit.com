@@ -1,5 +1,4 @@
-<!doctype html><html lang=en><head><title>Automatic git cache :: blog.oddbit.com</title>
-<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This post is in response to a comment someone made on irc earlier today:
+<!doctype html><html lang=en><head><title>Automatic git cache :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This post is in response to a comment someone made on irc earlier today:
 [I] would really like a git lookaside cache which operated on an upstream repo, but pulled objects locally when they&rsquo;re available
 In this post I present a proof-of-concept solution to this request. Please note that thisand isn&rsquo;t something that has actually been used or tested anywhere!
 If you access a git repository via ssh, it&rsquo;s easy to provide a wrapper for git operations via the command= option in an authorized_keys file. We can take advantage of this to update a a local &ldquo;cache&rdquo; repository prior to responding to a clone/pull/etc. operation.

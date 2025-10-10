@@ -197,7 +197,8 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -207,7 +208,8 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -218,7 +220,8 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
 &lt;/div></description><content>&lt;p>I ran a Google Hangout this morning on &lt;a href="https://plus.google.com/events/c9u4sjn7ksb8jrmma7vd25aok94">Deploying with Heat&lt;/a>. You
 can find the slides for the presentation on line &lt;a href="http://oddbit.com/rdo-hangout-heat-intro/#/">here&lt;/a>, and the
 Heat templates (as well as slide sources) are available &lt;a href="https://github.com/larsks/rdo-hangout-heat-intro/">on
@@ -226,14 +229,15 @@ github&lt;/a>.&lt;/p>
 &lt;p>If you have any questions about the presentation, please feel free to
 ping me on irc (&lt;code>larsks&lt;/code>).&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/qH-qYE1Kmpg?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
 &lt;/div></content></item><item><title>Visualizing Heat stacks</title><link>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</link><pubDate>Tue, 02 Sep 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-09-02-visualizing-heat-stacks/</guid><description>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
 which are incredibly nifty but a little opaque from the Heat command
 line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo;t recurse into
 nested stacks. It is possible to introspect these resources (you can
 pass the physical resource id of a nested stack to &lt;code>heat resource-list&lt;/code>, for example)&amp;hellip;&lt;/p>
 &lt;p>&amp;hellip;but I really like visualizing things, so I wrote a quick hack
-called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language output from a
+called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language output from a
 Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Graphviz&lt;/a> to produce output
 like this, in which graph nodes are automatically colorized by
 resource type:&lt;/p></description><content>&lt;p>I spent some time today learning about Heat &lt;a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">autoscaling groups&lt;/a>,
@@ -242,7 +246,7 @@ line, since commands such as &lt;code>heat resource-list&lt;/code> don&amp;rsquo
 nested stacks. It is possible to introspect these resources (you can
 pass the physical resource id of a nested stack to &lt;code>heat resource-list&lt;/code>, for example)&amp;hellip;&lt;/p>
 &lt;p>&amp;hellip;but I really like visualizing things, so I wrote a quick hack
-called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language output from a
+called &lt;a href="http://github.com/larsks/dotstack">dotstack&lt;/a> that will generate &lt;a href="http://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language output from a
 Heat stack. You can process this with &lt;a href="http://www.graphviz.org/">Graphviz&lt;/a> to produce output
 like this, in which graph nodes are automatically colorized by
 resource type:&lt;/p>
@@ -261,16 +265,16 @@ issues I encountered:&lt;/p>
 &lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
 &lt;p>docker plugin fails to delete a container resource in
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
@@ -278,20 +282,20 @@ issues I encountered:&lt;/p>
 &lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
 &lt;p>docker plugin fails to delete a container resource in
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364019">https://bugs.launchpad.net/heat/+bug/1364019&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364019">https://bugs.launchpad.net/heat/+bug/1364019&lt;/a>&lt;/p>
 &lt;p>docker plugin does not actually remove containers on delete&lt;/p>
 &lt;/li>
 &lt;/ul>

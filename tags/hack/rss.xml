@@ -4,7 +4,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -15,7 +15,7 @@ implemented poorly, move along!&lt;/p>
 &lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
 your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
 well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
 &lt;p>And now your boss knows why the TPS reports are late. You need
 &lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
 repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
@@ -25,7 +25,7 @@ time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt
 &lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png">&lt;/p>
 &lt;p>But that looks suspicious. What are you, some kind of machine?
 Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
 some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
@@ -37,5 +37,5 @@ and &lt;em>after&lt;/em> hours.&lt;/p>
 &lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
 &lt;/code>&lt;/pre>
 &lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png" alt="Heatmap of modified commit history">&lt;/p>
+&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
 &lt;p>Congratulations, you are a model employee.&lt;/p></content></item></channel></rss>

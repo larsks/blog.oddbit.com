@@ -17,7 +17,7 @@ and committer as well as static date, so you every time you generate
 the repository you can identical commit ids.&lt;/p>
 &lt;h2 id="git-dot">git dot&lt;/h2>
 &lt;p>The &lt;a href="https://github.com/larsks/git-snippets/blob/master/git-dot">&lt;code>git dot&lt;/code>&lt;/a> command generates a representation of a repository
-history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_%28graph_description_language%29">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
+history in the &lt;a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot&lt;/a> language, and uses &lt;a href="https://graphviz.org/">Graphviz&lt;/a> to render those
 into diagrams.&lt;/p>
 &lt;h2 id="putting-it-together">Putting it together&lt;/h2>
 &lt;p>For example, the following history specification:&lt;/p>

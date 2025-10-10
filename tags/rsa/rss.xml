@@ -214,7 +214,7 @@ parts[2]]))
 &lt;li>&lt;a href="http://luca.ntop.org/Teaching/Appunti/asn1.html">A Layman&amp;rsquo;s Guide to a Subset of ASN.1, BER, and DER&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;p>Basically, ASN.1 is a standard for describing abstract data types, and DER is a set of rules for transforming an ASN.1 data type into a series of octets.&lt;/p>
-&lt;p>According to the &lt;a href="#ZgotmplZ">ASN module for PKCS#1&lt;/a>, a PKCS#1 public key looks like this:&lt;/p>
+&lt;p>According to the &lt;a href="ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.asn">ASN module for PKCS#1&lt;/a>, a PKCS#1 public key looks like this:&lt;/p>
 &lt;pre>&lt;code>RSAPublicKey ::= SEQUENCE {
 modulus INTEGER, -- n
 publicExponent INTEGER -- e

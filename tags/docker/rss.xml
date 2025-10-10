@@ -917,7 +917,8 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -927,7 +928,8 @@ in a &lt;a href="http://www.projectatomic.io/">Project Atomic&lt;/a> presentatio
 environment, focusing on my &lt;a href="https://github.com/projectatomic/heat-kubernetes/">heat-kubernetes&lt;/a> templates.&lt;/p>
 &lt;p>As part of that presentation, I&amp;rsquo;ve put together a short demonstration video:&lt;/p>
 &lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;amp;controls=1&amp;amp;end=0&amp;amp;loop=0&amp;amp;mute=0&amp;amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video">&lt;/iframe>
+&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/tS5X0qi04ZU?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
+>&lt;/iframe>
 &lt;/div>
 &lt;p>This shows off the autoscaling behavior available with recent versions
 of these templates (and also serves as a very brief introduction to
@@ -2775,16 +2777,16 @@ issues I encountered:&lt;/p>
 &lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
 &lt;p>docker plugin fails to delete a container resource in
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p></description><content>&lt;p>This is a companion to my &lt;a href="https://blog.oddbit.com/post/2014-08-30-docker-plugin-for-openstack-he/">article on the Docker plugin for Heat&lt;/a>.&lt;/p>
 &lt;p>While writing that article, I encountered a number of bugs in the
 Docker plugin and elsewhere. I&amp;rsquo;ve submitted patches for most of the
@@ -2792,20 +2794,20 @@ issues I encountered:&lt;/p>
 &lt;h2 id="bugs-in-the-heat-plugin">Bugs in the Heat plugin&lt;/h2>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364017">https://bugs.launchpad.net/heat/+bug/1364017&lt;/a>&lt;/p>
 &lt;p>docker plugin fails to delete a container resource in
 &lt;code>CREATE_FAILED&lt;/code> state.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364041">https://bugs.launchpad.net/heat/+bug/1364041&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter should be a list.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364039">https://bugs.launchpad.net/heat/+bug/1364039&lt;/a>&lt;/p>
 &lt;p>docker plugin &lt;code>volumes_from&lt;/code> parameter results in an error&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>&lt;a href="https://bugs.launchpad.net/heat/&amp;#43;bug/1364019">https://bugs.launchpad.net/heat/+bug/1364019&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://bugs.launchpad.net/heat/+bug/1364019">https://bugs.launchpad.net/heat/+bug/1364019&lt;/a>&lt;/p>
 &lt;p>docker plugin does not actually remove containers on delete&lt;/p>
 &lt;/li>
 &lt;/ul>
@@ -3641,7 +3643,7 @@ givin you better support for multi-tenancy and flexible networking
 than you get with Docker by itself.&lt;/p>
 &lt;p>The &lt;a href="https://wiki.openstack.org/wiki/Docker">Docker driver wiki&lt;/a> was mostly sufficient for getting the
 &lt;code>nova-docker&lt;/code> driver installed in my existing OpenStack deployment,
-although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;amp;diff=61664&amp;amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
+although I did make a few &lt;a href="https://wiki.openstack.org/w/index.php?title=Docker&amp;diff=61664&amp;oldid=58546">small changes&lt;/a> to the wiki to reflect
 some missing steps. Other than that, the installation was relatively
 simple and I was soon able to spin up Docker containers using &lt;code>nova boot ...&lt;/code>&lt;/p>
 &lt;p>The one problem I encountered is that it is not possible to pass

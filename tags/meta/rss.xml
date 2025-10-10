@@ -127,7 +127,7 @@ mail: user2@example.com
 &lt;/code>&lt;/pre>
 &lt;p>This should give you something that looks very much like the contents of backend1.ldif. You can do the same thing for backend2.&lt;/p>
 &lt;h1 id="set-up-meta-database">Set up meta database&lt;/h1>
-&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP&amp;#43;2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
+&lt;p>We&amp;rsquo;re now going to configure OpenLDAP&amp;rsquo;s meta backend to merge the two directory trees. Complete documentation for the meta backend can be found in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;apropos=0&amp;sektion=0&amp;manpath=OpenLDAP+2.4-Release&amp;format=html">slapd-meta man page&lt;/a>.&lt;/p>
 &lt;p>Put the following into a file called slapd-frontend.conf (we&amp;rsquo;ll discuss the details in moment):&lt;/p>
 &lt;pre>&lt;code>database meta
 suffix &amp;quot;dc=example,dc=com&amp;quot;
@@ -166,7 +166,7 @@ suffix &amp;quot;dc=example,dc=com&amp;quot;
 &lt;pre>&lt;code>uri &amp;quot;ldap://localhost/ou=backend1,dc=example,dc=com&amp;quot;
 suffixmassage &amp;quot;ou=backend1,dc=example,dc=com&amp;quot; &amp;quot;ou=backend1&amp;quot;
 &lt;/code>&lt;/pre>
-&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;amp;apropos=0&amp;amp;sektion=0&amp;amp;manpath=OpenLDAP&amp;#43;2.4-Release&amp;amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
+&lt;p>The uri statement defines the host (and port) serving the target directory tree. The full syntax of the uri statement is described in the &lt;a href="http://www.openldap.org/software/man.cgi?query=slapd-meta&amp;apropos=0&amp;sektion=0&amp;manpath=OpenLDAP+2.4-Release&amp;format=html">slapd-meta man page&lt;/a>; what we have here is a very simple example. The &lt;em>naming context&lt;/em> of the URI must fall within the namespace defined in the suffix statement at the beginning of the database definition.&lt;/p>
 &lt;p>The suffixmassage statement performs simple rewriting on distinguished names. It directs &lt;em>slapd&lt;/em> to replace ou=backend1,dc=example,dc=com with ou=backend1 when communicating with the backend directory (and vice-versa).&lt;/p>
 &lt;p>You can perform simple rewriting of attribute and object classes with the map statement. For example, if backend1 used a sAMAccountName attribute and our application was expecting a uid attribute, we could add this after the suffixmassage statement:&lt;/p>
 &lt;pre>&lt;code>map attribute uid sAMAccountName

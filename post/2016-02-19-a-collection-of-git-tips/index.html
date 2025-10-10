@@ -1,5 +1,4 @@
-<!doctype html><html lang=en><head><title>A collection of git tips :: blog.oddbit.com</title>
-<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is a small collection of simple git tips and tricks I use to make my life easier.
+<!doctype html><html lang=en><head><title>A collection of git tips :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="This is a small collection of simple git tips and tricks I use to make my life easier.
 Quickly amend an existing commit with new files I have this alias in place that will amend the current commit while automatically re-using the existing commit message:
 alias.fix=commit --amend -C HEAD With this in place, fixing a review becomes:
 $ vim some/file/somewhere $ git add -u $ git fix Which I find much more convenient than git commit --amend, following by saving the commit message.

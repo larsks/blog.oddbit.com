@@ -325,7 +325,7 @@ entry_points={
 some cases it doesn&amp;rsquo;t work in all cases, and it&amp;rsquo;s unlikely that I&amp;rsquo;m
 going to update this to work with any future version of Nova. This
 was really just an exercise in curiosity. Enjoy!&lt;/p></content></item><item><title>Accessing the serial console of your Nova servers</title><link>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</link><pubDate>Mon, 22 Dec 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-12-22-accessing-the-serial-console-o/</guid><description>&lt;p>One of the new features available in the Juno release of OpenStack is
-support for &lt;a href="https://blueprints.launchpad.net/nova/&amp;#43;spec/serial-ports">serial console access to your Nova
+support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
 servers&lt;/a>. This post looks into how to configure the
 serial console feature and then how to access the serial consoles of
 your Nova servers.&lt;/p>
@@ -339,7 +339,7 @@ with a command line that includes something like &lt;code>console=tty0 console=t
 messages are available on the serial console. This is a useful
 mechanism for diagnosing problems in the event that you do not have
 network access to a server.&lt;/p></description><content>&lt;p>One of the new features available in the Juno release of OpenStack is
-support for &lt;a href="https://blueprints.launchpad.net/nova/&amp;#43;spec/serial-ports">serial console access to your Nova
+support for &lt;a href="https://blueprints.launchpad.net/nova/+spec/serial-ports">serial console access to your Nova
 servers&lt;/a>. This post looks into how to configure the
 serial console feature and then how to access the serial consoles of
 your Nova servers.&lt;/p>
