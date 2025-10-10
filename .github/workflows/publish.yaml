@@ -5,11 +5,14 @@ on:
     branches:
       - main
   pull_request:
-
-  # republish every morning at 10:00 UTC so that posts with future
+  # republish every day at 10:00 UTC so that posts with future
   # dates are handled automatically.
   schedule:
     - cron: 0 10 * * *
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-image
+  cancel-in-progress: true
 
 jobs:
   publish:
