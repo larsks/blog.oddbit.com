@@ -4,11 +4,16 @@
 &lt;figure class="left" >
 &lt;img src="slow-date.gif" />
 &lt;/figure>
-&lt;p>You&amp;rsquo;re not limited to watching output; you can use Slow to run interactive terminal sessions. Here&amp;rsquo;s &lt;code>vi&lt;/code> at 300 bps:&lt;/p>
+&lt;p>You&amp;rsquo;re not limited to just watching output; you can use Slow to run interactive terminal sessions. Here&amp;rsquo;s &lt;code>vi&lt;/code> at 300 bps:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="slow-vi.gif" />
+&lt;img src="slow-vi-300bps.gif" />
 &lt;/figure>
-&lt;p>(We&amp;rsquo;re using &lt;code>busybox vi&lt;/code> here because many modern text editors spend too much redrawing the screen to be useful at low bitrates.)&lt;/p></content></item><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
+&lt;p>And the same thing at 2400 bps:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="slow-vi-2400bps.gif" />
+&lt;/figure>
+&lt;p>(We&amp;rsquo;re using &lt;code>busybox vi&lt;/code> in these examples because many modern text editors spend too much redrawing the screen to be useful at low bit rates.)&lt;/p>
+&lt;p>Combine this with something like &lt;a href="https://github.com/Swordfish90/cool-retro-term">Cool Retro Term&lt;/a> for a realistic vintage computing experience!&lt;/p></content></item><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>&lt;p>In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric">NGINX Gateway Fabric&lt;/a>.&lt;/p>
 &lt;h2 id="whats-the-nginx-gateway-fabric">What&amp;rsquo;s the NGINX Gateway Fabric?&lt;/h2>
 &lt;p>The NGINX Gateway Fabric is an implementation of the Kubernetes &lt;a href="https://gateway-api.sigs.k8s.io/">Gateway API&lt;/a>.&lt;/p>
 &lt;h2 id="whats-the-gateway-api">What&amp;rsquo;s the Gateway API?&lt;/h2>
@@ -205,8 +210,8 @@ return &amp;#34;hello world&amp;#34;
 mariadb:10
 &lt;/code>&lt;/pre>&lt;p>Looking through the Docker &lt;a href="https://docker-py.readthedocs.io/en/stable/">python API documentation&lt;/a>, a naïve Python equivalent might look like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="395867421" type="checkbox" />
-&lt;label for="395867421">
+&lt;input id="465978123" type="checkbox" />
+&lt;label for="465978123">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -235,8 +240,8 @@ return container
 &lt;p>Let&amp;rsquo;s take care of the biggest problem with the previous implementation and ensure that our containers get cleaned up. We can add cleanup code to a fixture by using a &lt;a href="https://docs.pytest.org/en/6.2.x/fixture.html#yield-fixtures-recommended">yield fixture&lt;/a>; instead of &lt;code>return&lt;/code>-ing a value, we &lt;a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">&lt;code>yield&lt;/code>&lt;/a> a value, and any cleanup code after the &lt;code>yield&lt;/code> statement runs when the fixture is no longer in scope.&lt;/p>
 &lt;p>That might look like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="814652397" type="checkbox" />
-&lt;label for="814652397">
+&lt;input id="518463927" type="checkbox" />
+&lt;label for="518463927">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -263,8 +268,8 @@ container.remove(force=True)
 &lt;/div>
 &lt;p>That&amp;rsquo;s better, but we&amp;rsquo;re not out of the woods yet. How would we use this fixture in a test? Maybe we would try something like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="267819453" type="checkbox" />
-&lt;label for="267819453">
+&lt;input id="128564739" type="checkbox" />
+&lt;label for="128564739">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -349,8 +354,8 @@ server on &amp;#39;172.17.0.2:3306&amp;#39; (111 Connection refused)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cursor&lt;span style="color:#f92672">.&lt;/span>close()
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Putting all of this together gets us a &lt;code>conftest.py&lt;/code> that looks something like:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="274139685" type="checkbox" />
-&lt;label for="274139685">
+&lt;input id="753498162" type="checkbox" />
+&lt;label for="753498162">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -410,8 +415,8 @@ yield cursor
 &lt;/div>
 &lt;p>And &lt;em>that&lt;/em> allows us to dramatically simplify our test:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="549327816" type="checkbox" />
-&lt;label for="549327816">
+&lt;input id="321856497" type="checkbox" />
+&lt;label for="321856497">
 &lt;span class="collapsable-code__language">python&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -695,8 +700,8 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 &lt;h2 id="implementation">Implementation&lt;/h2>
 &lt;p>The implementation starts with a macro defined in &lt;code>must.h&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="218376549" type="checkbox" />
-&lt;label for="218376549">
+&lt;input id="932715864" type="checkbox" />
+&lt;label for="932715864">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -712,8 +717,8 @@ const char *calledFunction, int err);
 &lt;p>The &lt;code>__FILE__&lt;/code>, &lt;code>__LINE__&lt;/code>, and &lt;code>__func__&lt;/code> symbols are standard predefined symbols provided by &lt;code>gcc&lt;/code>; they are documented &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html">here&lt;/a>. The expression &lt;code>#x&lt;/code> is using the &lt;a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html#Stringizing">stringify&lt;/a> operator to convert the macro argument into a string.&lt;/p>
 &lt;p>The above macro transforms a call to &lt;code>must()&lt;/code> into a call to the &lt;code>_must()&lt;/code> function, which is defined in &lt;code>must.c&lt;/code>:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="528716349" type="checkbox" />
-&lt;label for="528716349">
+&lt;input id="365149782" type="checkbox" />
+&lt;label for="365149782">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -738,8 +743,8 @@ exit(1);
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>You can see &lt;code>must()&lt;/code> used in practice in the following example program:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="538761249" type="checkbox" />
-&lt;label for="538761249">
+&lt;input id="942315768" type="checkbox" />
+&lt;label for="942315768">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
 &lt;/label>
@@ -775,8 +780,8 @@ example.c:24 in main: fd = open(&amp;#34;file-that-does-not-exist.xt&amp;#34;, O
 &lt;/code>&lt;/pre></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="865249317" type="checkbox" />
-&lt;label for="865249317">
+&lt;input id="645183729" type="checkbox" />
+&lt;label for="645183729">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -839,8 +844,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p></description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
 &lt;p>The original code looked like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="865249317" type="checkbox" />
-&lt;label for="865249317">
+&lt;input id="645183729" type="checkbox" />
+&lt;label for="645183729">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -903,8 +908,8 @@ return 0;
 &lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
 &lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="152634789" type="checkbox" />
-&lt;label for="152634789">
+&lt;input id="124375869" type="checkbox" />
+&lt;label for="124375869">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
@@ -1114,8 +1119,8 @@ valid_lft forever preferred_lft forever
 &lt;h2 id="finishing-up">Finishing up&lt;/h2>
 &lt;p>The final version of the code looks like this:&lt;/p>
 &lt;div class="collapsable-code">
-&lt;input id="953162874" type="checkbox" />
-&lt;label for="953162874">
+&lt;input id="264319758" type="checkbox" />
+&lt;label for="264319758">
 &lt;span class="collapsable-code__language">c&lt;/span>
 &lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
 &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>

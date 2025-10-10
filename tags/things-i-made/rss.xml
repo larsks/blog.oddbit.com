@@ -4,8 +4,13 @@
 &lt;figure class="left" >
 &lt;img src="slow-date.gif" />
 &lt;/figure>
-&lt;p>You&amp;rsquo;re not limited to watching output; you can use Slow to run interactive terminal sessions. Here&amp;rsquo;s &lt;code>vi&lt;/code> at 300 bps:&lt;/p>
+&lt;p>You&amp;rsquo;re not limited to just watching output; you can use Slow to run interactive terminal sessions. Here&amp;rsquo;s &lt;code>vi&lt;/code> at 300 bps:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="slow-vi.gif" />
+&lt;img src="slow-vi-300bps.gif" />
 &lt;/figure>
-&lt;p>(We&amp;rsquo;re using &lt;code>busybox vi&lt;/code> here because many modern text editors spend too much redrawing the screen to be useful at low bitrates.)&lt;/p></content></item></channel></rss>
+&lt;p>And the same thing at 2400 bps:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="slow-vi-2400bps.gif" />
+&lt;/figure>
+&lt;p>(We&amp;rsquo;re using &lt;code>busybox vi&lt;/code> in these examples because many modern text editors spend too much redrawing the screen to be useful at low bit rates.)&lt;/p>
+&lt;p>Combine this with something like &lt;a href="https://github.com/Swordfish90/cool-retro-term">Cool Retro Term&lt;/a> for a realistic vintage computing experience!&lt;/p></content></item></channel></rss>

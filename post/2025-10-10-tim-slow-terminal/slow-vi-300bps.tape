@@ -70,4 +70,9 @@ Wait+Screen@30s /0%/
 Type "/General" Enter
 Sleep 2s
 Type "cwSpecific" Escape
-Sleep 20s
+Sleep 2s
+Type "1G"
+Sleep 2s
+Type "G"
+Wait+Screen@60s /100%/
+Sleep 5s

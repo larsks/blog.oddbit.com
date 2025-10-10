@@ -4,11 +4,16 @@
 &lt;figure class="left" >
 &lt;img src="slow-date.gif" />
 &lt;/figure>
-&lt;p>You&amp;rsquo;re not limited to watching output; you can use Slow to run interactive terminal sessions. Here&amp;rsquo;s &lt;code>vi&lt;/code> at 300 bps:&lt;/p>
+&lt;p>You&amp;rsquo;re not limited to just watching output; you can use Slow to run interactive terminal sessions. Here&amp;rsquo;s &lt;code>vi&lt;/code> at 300 bps:&lt;/p>
 &lt;figure class="left" >
-&lt;img src="slow-vi.gif" />
+&lt;img src="slow-vi-300bps.gif" />
 &lt;/figure>
-&lt;p>(We&amp;rsquo;re using &lt;code>busybox vi&lt;/code> here because many modern text editors spend too much redrawing the screen to be useful at low bitrates.)&lt;/p></content></item><item><title>A passwordless serial console for your Raspberry Pi</title><link>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</link><pubDate>Mon, 24 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</guid><description>&lt;p>&lt;code>legendre&lt;/code> on &lt;code>#raspbian&lt;/code> asked:&lt;/p>
+&lt;p>And the same thing at 2400 bps:&lt;/p>
+&lt;figure class="left" >
+&lt;img src="slow-vi-2400bps.gif" />
+&lt;/figure>
+&lt;p>(We&amp;rsquo;re using &lt;code>busybox vi&lt;/code> in these examples because many modern text editors spend too much redrawing the screen to be useful at low bit rates.)&lt;/p>
+&lt;p>Combine this with something like &lt;a href="https://github.com/Swordfish90/cool-retro-term">Cool Retro Term&lt;/a> for a realistic vintage computing experience!&lt;/p></content></item><item><title>A passwordless serial console for your Raspberry Pi</title><link>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</link><pubDate>Mon, 24 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</guid><description>&lt;p>&lt;code>legendre&lt;/code> on &lt;code>#raspbian&lt;/code> asked:&lt;/p>
 &lt;blockquote>
 &lt;p>How can i config rasp lite to open a shell on the serial uart on boot? Params
 are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p>
