@@ -1,29 +1,118 @@
-<!doctype html><html lang=en><head><title>Tech :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/categories/tech/><script async src="https://www.googletagmanager.com/gtag/js?id=G-G1FYT93ENG"></script><script>var dnt,doNotTrack=!1;if(!1&&(dnt=navigator.doNotTrack||window.doNotTrack||navigator.msDoNotTrack,doNotTrack=dnt=="1"||dnt=="yes"),!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G1FYT93ENG")}</script><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="website"><meta property="og:title" content="Tech"><meta property="og:description" content><meta property="og:url" content="https://blog.oddbit.com/categories/tech/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><link href=/categories/tech/rss.xml rel=alternate type=application/rss+xml title=blog.oddbit.com></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><div class=posts><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-19-automatic-git-cache/>Automatic git cache</a></h1><div class=post-meta><time class=post-date>2015-10-19 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/git/>git</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-10-19-automatic-git-cache/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-19-stupid-ansible-tricks-running-/>Stupid Ansible Tricks: Running a role from the command line</a></h1><div class=post-meta><time class=post-date>2015-10-19 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;</span><div class=post-content><p>positional arguments:
-role</p><p>optional arguments:
--h, &ndash;help show this help message and exit
-&ndash;verbose, -v
-&ndash;gather, -g
-&ndash;no-gather, -G
-&ndash;extra-vars EXTRA_VARS, -e EXTRA_VARS</p><p>Inventory:
--i INVENTORY, &ndash;inventory INVENTORY
-&ndash;hosts HOSTS, -H HOSTS</p><p>Identity:
-&ndash;sudo, -s
-&ndash;become, -b
-&ndash;user USER, -u USER</p></div><div><a class="read-more button" href=/post/2015-10-19-stupid-ansible-tricks-running-/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-15-bootstrapping-ansible-on-fedor/>Bootstrapping Ansible on Fedora 23</a></h1><div class=post-meta><time class=post-date>2015-10-15 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/fedora/>fedora</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-10-15-bootstrapping-ansible-on-fedor/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/>Ansible 2.0: The Docker connection driver</a></h1><div class=post-meta><time class=post-date>2015-10-13 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
+<!doctype html><html lang=en><head><title>Tech :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/categories/tech/><script async src="https://www.googletagmanager.com/gtag/js?id=G-G1FYT93ENG"></script><script>var dnt,doNotTrack=!1;if(!1&&(dnt=navigator.doNotTrack||window.doNotTrack||navigator.msDoNotTrack,doNotTrack=dnt=="1"||dnt=="yes"),!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G1FYT93ENG")}</script><link rel=stylesheet href=https://blog.oddbit.com/css/buttons.min.86f6b4c106b6c6eb690ae5203d36b442c1f66f718ff4e8164fa86cf6c61ad641.css><link rel=stylesheet href=https://blog.oddbit.com/css/code.min.d529ea4b2fb8d34328d7d31afc5466d5f7bc2f0bc9abdd98b69385335d7baee4.css><link rel=stylesheet href=https://blog.oddbit.com/css/fonts.min.5bb7ed13e1d00d8ff39ea84af26737007eb5051b157b86fc24487c94f3dc8bbe.css><link rel=stylesheet href=https://blog.oddbit.com/css/footer.min.eb8dfc2c6a7eafa36cd3ba92d63e69e849e2200e0002a228d137f236b09ecd75.css><link rel=stylesheet href=https://blog.oddbit.com/css/gist.min.a751e8b0abe1ba8bc53ced52a38b19d8950fe78ca29454ea8c2595cf26aad5c0.css><link rel=stylesheet href=https://blog.oddbit.com/css/header.min.75c7eb0e2872d95ff48109c6647d0223a38db52e2561dd87966eb5fc7c6bdac6.css><link rel=stylesheet href=https://blog.oddbit.com/css/main.min.36833afd348409fc6c3d09d0897c5833d9d5bf1ff31f5e60ea3ee42ce2b1268c.css><link rel=stylesheet href=https://blog.oddbit.com/css/menu.min.3c17467ebeb3d38663dce68f71f519901124fa5cbb4519b2fb0667a21e9aca39.css><link rel=stylesheet href=https://blog.oddbit.com/css/pagination.min.bbb986dbce00a5ce5aca0504b7925fc1c581992a4bf57f163e5d69cc1db7d836.css><link rel=stylesheet href=https://blog.oddbit.com/css/post.min.e6dddd258e64c83e05cec0cd49c05216742d42fc8ecbfbe6b67083412b609bd3.css><link rel=stylesheet href=https://blog.oddbit.com/css/syntax.min.a0773cce9310cb6d8ed23e50f005448facf29a53001b57e038828daa466b25c0.css><link rel=stylesheet href=https://blog.oddbit.com/css/terminal.min.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.css><link rel=stylesheet href=https://blog.oddbit.com/css/terms.min.b81791663c3790e738e571cdbf802312390d30e4b1d8dc9d814a5b5454d0ac11.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/favicon.png><link rel=apple-touch-icon href=https://blog.oddbit.com/apple-touch-icon.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="website"><meta property="og:title" content="Tech"><meta property="og:description" content><meta property="og:url" content="https://blog.oddbit.com/categories/tech/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><link href=/categories/tech/rss.xml rel=alternate type=application/rss+xml title=blog.oddbit.com></head><body><div class="container center"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><h1>Posts for: #Tech</h1><div class=posts><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-19-automatic-git-cache/>Automatic git cache</a></h1><div class=post-meta><time class=post-date>2015-10-19</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/git/>git</a>&nbsp;</span><div class=post-content><p>This post is in response to a comment someone made on irc earlier
+today:</p><blockquote><p>[I] would really like a git lookaside cache which operated on an upstream
+repo, but pulled objects locally when they&rsquo;re available</p></blockquote><p>In this post I present a proof-of-concept solution to this request.
+Please note that thisand isn&rsquo;t something that has actually been used
+or tested anywhere!</p><p>If you access a git repository via <code>ssh</code>, it&rsquo;s easy to provide a
+wrapper for git operations via the <code>command=</code> option in an
+<code>authorized_keys</code> file. We can take advantage of this to update a a
+local &ldquo;cache&rdquo; repository prior to responding to a <code>clone</code>/<code>pull</code>/etc.
+operation.</p></div><div><a class="read-more button inline" href=/post/2015-10-19-automatic-git-cache/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-19-stupid-ansible-tricks-running-/>Stupid Ansible Tricks: Running a role from the command line</a></h1><div class=post-meta><time class=post-date>2015-10-19</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;</span><div class=post-content><p>When writing <a href=http://www.ansible.com/>Ansible</a> roles I occasionally want a way to just run a
+role from the command line, without having to muck about with a
+playbook. I&rsquo;ve seen <a href=https://groups.google.com/forum/#!topic/ansible-project/h-SGLuPDRrs>similar</a> <a href=https://groups.google.com/forum/#!topic/ansible-devel/GqzZ6zsn6eY>requests</a> on the mailing lists
+and on irc.</p><p>I&rsquo;ve thrown together a quick wrapper that will allow you (and me!) to
+do exactly that, called <a href=http://github.com/larsks/ansible-role>ansible-role</a>. The <code>--help</code> output looks
+like this:</p><pre><code>usage: ansible-role [-h] [--verbose] [--gather] [--no-gather]
+                    [--extra-vars EXTRA_VARS] [-i INVENTORY] [--hosts HOSTS]
+                    [--sudo] [--become] [--user USER]
+                    role
+
+positional arguments:
+  role
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --verbose, -v
+  --gather, -g
+  --no-gather, -G
+  --extra-vars EXTRA_VARS, -e EXTRA_VARS
+
+Inventory:
+  -i INVENTORY, --inventory INVENTORY
+  --hosts HOSTS, -H HOSTS
+
+Identity:
+  --sudo, -s
+  --become, -b
+  --user USER, -u USER
+</code></pre><h2 id=example>Example</h2><p>If you have a role <code>roles/testrole</code> that contains the following in
+<code>tasks/main.yml</code>:</p></div><div><a class="read-more button inline" href=/post/2015-10-19-stupid-ansible-tricks-running-/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-15-bootstrapping-ansible-on-fedor/>Bootstrapping Ansible on Fedora 23</a></h1><div class=post-meta><time class=post-date>2015-10-15</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/fedora/>fedora</a>&nbsp;</span><div class=post-content><p>If you&rsquo;ve tried running <a href=http://ansible.com/>Ansible</a> against a <a href=http://fedoraproject.org/>Fedora</a> 23 system,
+you may have run into the following problem:</p><pre><code>fatal: [myserver]: FAILED! =&gt; {&quot;changed&quot;: false, &quot;failed&quot;: true,
+&quot;msg&quot;: &quot;/bin/sh: /usr/bin/python: No such file or directory\r\n&quot;,
+&quot;parsed&quot;: false}
+</code></pre><p>Fedora has recently made the switch to only including Python 3 on the
+base system (at least for the <a href=https://getfedora.org/en/cloud/prerelease/>cloud</a> variant), while Ansible still
+requires Python 2. With Fedora 23, Python 3 is available as
+<code>/usr/bin/python3</code>, and <code>/usr/bin/python</code> is only available if you
+have installed the Python 2 interpreter.</p></div><div><a class="read-more button inline" href=/post/2015-10-15-bootstrapping-ansible-on-fedor/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-13-ansible-20-the-docker-connecti/>Ansible 2.0: The Docker connection driver</a></h1><div class=post-meta><time class=post-date>2015-10-13</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/ansible/>ansible</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/ansible_20_series/>ansible_20_series</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-10-13-ansible-20-the-docker-connecti/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/>Running NTP in a Container</a></h1><div class=post-meta><time class=post-date>2015-10-09 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/atomic/>atomic</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-10-09-running-ntp-in-a-container/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-09-29-migrating-cinder-volumes-betwe/>Migrating Cinder volumes between OpenStack environments using shared NFS storage</a></h1><div class=post-meta><time class=post-date>2015-09-29 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/cinder/>cinder</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-09-29-migrating-cinder-volumes-betwe/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/>Provider external networks (in an appropriate amount of detail)</a></h1><div class=post-meta><time class=post-date>2015-08-13 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/ansible_20_series/>ansible_20_series</a>&nbsp;</span><div class=post-content><p>As the release of <a href=http://ansible.com/>Ansible</a> 2.0 draws closer, I&rsquo;d like to take a
+look at some of the new features that are coming down the pipe. In
+this post, we&rsquo;ll look at the <code>docker</code> connection driver.</p><p>A &ldquo;connection driver&rdquo; is the mechanism by which Ansible connects to
+your target hosts. These days it uses <code>ssh</code> by default (which relies
+on the OpenSSH command line client for connectivity), and it also
+offers the <a href=http://www.paramiko.org/>Paramiko</a> library as an alternative ssh implementation
+(this was in fact the default driver in earlier versions of Ansible).
+Alternative drivers offered by recent versions of ansible included the
+<code>winrm</code> driver, for accessing Windows hosts, the <code>fireball</code> driver, a
+(deprecated) driver that used <a href=http://zeromq.org/>0mq</a> for communication, and <code>jail</code>, a
+driver for connecting to FreeBSD jails.</p></div><div><a class="read-more button inline" href=/post/2015-10-13-ansible-20-the-docker-connecti/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-10-09-running-ntp-in-a-container/>Running NTP in a Container</a></h1><div class=post-meta><time class=post-date>2015-10-09</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/atomic/>atomic</a>&nbsp;</span><div class=post-content><p>Someone asked on IRC about running ntpd in a container on <a href=http://www.projectatomic.io/>Atomic</a>,
+so I&rsquo;ve put together a small example. We&rsquo;ll start with a very simple
+<code>Dockerfile</code>:</p><pre><code>FROM alpine
+RUN apk update
+RUN apk add openntpd
+ENTRYPOINT [&quot;ntpd&quot;]
+</code></pre><p>I&rsquo;m using the <code>alpine</code> image as my starting point because it&rsquo;s very
+small, which makes this whole process go a little faster. I&rsquo;m
+installing the <a href=http://www.openntpd.org/>openntpd</a> package, which provides the <code>ntpd</code> binary.</p><p>By setting an <code>ENTRYPOINT</code> here, the <code>ntpd</code> binary will be started by
+default, and any arguments passed to <code>docker run</code> after the image name
+will be passed to <code>ntpd</code>.</p></div><div><a class="read-more button inline" href=/post/2015-10-09-running-ntp-in-a-container/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-09-29-migrating-cinder-volumes-betwe/>Migrating Cinder volumes between OpenStack environments using shared NFS storage</a></h1><div class=post-meta><time class=post-date>2015-09-29</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/cinder/>cinder</a>&nbsp;</span><div class=post-content><p>Many of the upgrade guides for OpenStack focus on in-place upgrades to
+your OpenStack environment. Some organizations may opt for a less
+risky (but more hardware intensive) option of setting up a parallel
+environment, and then migrating data into the new environment. In
+this article, we look at how to use Cinder backups with a shared NFS
+volume to facilitate the migration of Cinder volumes between two
+different OpenStack environments.</p></div><div><a class="read-more button inline" href=/post/2015-09-29-migrating-cinder-volumes-betwe/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-08-13-provider-external-networks-det/>Provider external networks (in an appropriate amount of detail)</a></h1><div class=post-meta><time class=post-date>2015-08-13</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/neutron/>neutron</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/openvswitch/>openvswitch</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-08-13-provider-external-networks-det/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/>In which we are amazed it doesn&rsquo;t all fall apart</a></h1><div class=post-meta><time class=post-date>2015-07-26 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/rant/>rant</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-07-26-in-which-we-are-amazed-it-does/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-07-16-mapping-local-users-to-kerbero/>Mapping local users to Kerberos principals with SSSD</a></h1><div class=post-meta><time class=post-date>2015-07-16 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/sssd/>sssd</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/kerberos/>kerberos</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-07-16-mapping-local-users-to-kerbero/>read more →</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/>OpenStack Networking without DHCP</a></h1><div class=post-meta><time class=post-date>2015-06-26 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;</span><div class=post-content><p>In <a href=https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/>Quantum in Too Much Detail</a>, I discussed the architecture of a
+Neutron deployment in detail. Since that article was published,
+Neutron gained the ability to handle multiple external networks with a
+single L3 agent. While I <a href=https://blog.oddbit.com/post/2014-05-28-multiple-external-networks-wit/>wrote about that</a> back in 2014, I
+covered the configuration side of it in much more detail than I
+discussed the underlying network architecture. This post addresses
+the architecture side.</p><h2 id=the-players>The players</h2><p>This document describes the architecture that results from a
+particular OpenStack configuration, specifically:</p></div><div><a class="read-more button inline" href=/post/2015-08-13-provider-external-networks-det/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-07-26-in-which-we-are-amazed-it-does/>In which we are amazed it doesn&rsquo;t all fall apart</a></h1><div class=post-meta><time class=post-date>2015-07-26</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/rant/>rant</a>&nbsp;</span><div class=post-content><p>So, the Kilo release notes say:</p><pre><code>nova-manage migrate-flavor-data
+</code></pre><p>But nova-manage says:</p><pre><code>nova-manage db migrate_flavor_data
+</code></pre><p>But that says:</p><pre><code>Missing arguments: max_number
+</code></pre><p>And the help says:</p><pre><code>usage: nova-manage db migrate_flavor_data [-h]
+  [--max-number &lt;number&gt;]
+</code></pre><p>Which indicates that &ndash;max-number is optional, but whatever, so you
+try:</p><pre><code>nova-manage db migrate_flavor_data --max-number 100
+</code></pre><p>And that says:</p><pre><code>Missing arguments: max_number
+</code></pre><p>So just for kicks you try:</p><pre><code>nova-manage db migrate_flavor_data --max_number 100
+</code></pre><p>And that says:</p></div><div><a class="read-more button inline" href=/post/2015-07-26-in-which-we-are-amazed-it-does/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-07-16-mapping-local-users-to-kerbero/>Mapping local users to Kerberos principals with SSSD</a></h1><div class=post-meta><time class=post-date>2015-07-16</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/sssd/>sssd</a>&nbsp;
+#<a href=https://blog.oddbit.com/tags/kerberos/>kerberos</a>&nbsp;</span><div class=post-content><p>I work for an organization that follows the common model of assigning
+people systematically generated user ids. Like most technically
+inclined employees of this organization, I have local accounts on my
+workstation that don&rsquo;t bear any relation to the generated account ids.
+For the most part this isn&rsquo;t a problem, except that our organization
+uses Kerberos to authenticate access to a variety of resources (such
+as the mailserver and a variety of web applications).</p></div><div><a class="read-more button inline" href=/post/2015-07-16-mapping-local-users-to-kerbero/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-06-26-openstack-networking-without-d/>OpenStack Networking without DHCP</a></h1><div class=post-meta><time class=post-date>2015-06-26</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/nova/>nova</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/neutron/>neutron</a>&nbsp;
-#<a href=https://blog.oddbit.com/tags/cloud-init/>cloud-init</a>&nbsp;</span><div class=post-content></div><div><a class="read-more button" href=/post/2015-06-26-openstack-networking-without-d/>read more →</a></div></article><div class=pagination><div class=pagination__buttons><a href=/categories/tech/page/9/ class="button previous"><span class=button__icon>←</span>
-<span class=button__text>Newer posts</span>
-</a><a href=/categories/tech/page/11/ class="button next"><span class=button__text>Older posts</span>
-<span class=button__icon>→</span></a></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+#<a href=https://blog.oddbit.com/tags/cloud-init/>cloud-init</a>&nbsp;</span><div class=post-content><p>In an OpenStack environment, <a href=https://cloudinit.readthedocs.org/en/latest/>cloud-init</a> generally fetches
+information from the metadata service provided by Nova. It also has
+support for reading this information from a <em>configuration drive</em>,
+which under OpenStack means a virtual CD-ROM device attached to your
+instance containing the same information that would normally be
+available via the metadata service.</p><p>It is possible to generate your network configuration from this
+configuration drive, rather than relying on the DHCP server provided
+by your OpenStack environment. In order to do this you will need to
+make the following changes to your Nova configuration:</p></div><div><a class="read-more button inline" href=/post/2015-06-26-openstack-networking-without-d/>[read more]</a></div></article><div class=pagination><div class=pagination__buttons><a href=/categories/tech/page/9/ class="button inline prev">&lt; [<span class=button__text>Newer posts</span>]
+</a>::
+<a href=/categories/tech/page/11/ class="button inline next">[<span class=button__text>Older posts</span>] ></a></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
 <span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script><script src=/js/mermaid.min.js></script><script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>

@@ -1,214 +1,47 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Puppet on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/puppet/</link><description>Recent content in Puppet on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Wed, 22 Oct 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/puppet/rss.xml" rel="self" type="application/rss+xml"/><item><title>Building Docker images with Puppet</title><link>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</link><pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</guid><description>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Puppet on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/puppet/</link><description>Recent content in Puppet on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/puppet/rss.xml" rel="self" type="application/rss+xml"/><item><title>Building Docker images with Puppet</title><link>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</link><pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-10-22-building-docker-images-with-pu/</guid><description>&lt;p&gt;I like &lt;a href="http://docker.com/"&gt;Docker&lt;/a&gt;, but I&amp;rsquo;m not a huge fan of using shell scripts for
 complex system configuration&amp;hellip;and Dockerfiles are basically giant
-shell scripts.&lt;/p>
-&lt;p>I was curious whether or not it would be possible to use Puppet during
-the &lt;code>docker build&lt;/code> process. As a test case, I used the
-&lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
-&lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
-&lt;pre>&lt;code>class { 'ssh': }
-&lt;/code>&lt;/pre>
-&lt;p>And a Dockerfile like this:&lt;/p></description><content>&lt;p>I like &lt;a href="http://docker.com/">Docker&lt;/a>, but I&amp;rsquo;m not a huge fan of using shell scripts for
-complex system configuration&amp;hellip;and Dockerfiles are basically giant
-shell scripts.&lt;/p>
-&lt;p>I was curious whether or not it would be possible to use Puppet during
-the &lt;code>docker build&lt;/code> process. As a test case, I used the
-&lt;a href="https://github.com/saz/puppet-ssh">ssh&lt;/a> module included in the openstack-puppet-modules package.&lt;/p>
-&lt;p>I started with a manifest like this (in &lt;code>puppet/node.pp&lt;/code>):&lt;/p>
-&lt;pre>&lt;code>class { 'ssh': }
-&lt;/code>&lt;/pre>
-&lt;p>And a Dockerfile like this:&lt;/p>
-&lt;pre>&lt;code>FROM larsks/rdo-puppet-base
-COPY puppet /puppet
-RUN cd /puppet; puppet apply \
---modulepath /usr/share/openstack-puppet/modules \
-node.pp
-&lt;/code>&lt;/pre>
-&lt;p>The &lt;code>larsks/rdo-puppet-base&lt;/code> module includes &amp;ldquo;puppet&amp;rdquo; and all the Puppet
-modules required by RDO (installed in
-&lt;code>/usr/share/openstack-puppet/modules&lt;/code>).&lt;/p>
-&lt;p>Running &lt;code>docker build&lt;/code> with this &lt;code>Dockerfile&lt;/code> results in:&lt;/p>
-&lt;pre>&lt;code>Error: Could not run: Could not retrieve facts for
-a9cde05eb735.example.com: no address for
-a9cde05eb735.example.com
-&lt;/code>&lt;/pre>
-&lt;p>Puppet is trying to determine the FQDN of the container, and is then
-trying to determine the canonical ip address of the container. This is
-never going to work, absent some mechanism that automatically
-registers DNS entries when you boot containers (e.g., &lt;a href="https://github.com/crosbymichael/skydock">skydock&lt;/a>).&lt;/p>
-&lt;p>The obvious way to fix this would be to modify &lt;code>/etc/hosts&lt;/code> and add
-the calculated fqdn to the entry for &lt;code>localhost&lt;/code>, but &lt;code>/etc/hosts&lt;/code>
-inside Docker containers is read-only.&lt;/p>
-&lt;p>Since Puppet is using Facter to get information about the host, I
-looked into whether or not it would be possible (and convenient) to
-override Facter generated facts. It turns out that it &lt;a href="http://www.puppetcookbook.com/posts/override-a-facter-fact.html">is relatively
-easy&lt;/a>; just set &lt;code>FACTER_&amp;lt;fact_name&amp;gt;&lt;/code> in the environment.
-For example:&lt;/p>
-&lt;pre>&lt;code>FACTER_fqdn=localhost
-&lt;/code>&lt;/pre>
-&lt;p>I modified the Dockerfile to look like this:&lt;/p>
-&lt;pre>&lt;code>FROM larsks/rdo-puppet-base
-COPY puppet /puppet
-RUN cd /puppet; FACTER_fqdn=localhost puppet apply \
---modulepath=/usr/share/openstack-puppet/modules \
-node.pp
-&lt;/code>&lt;/pre>
-&lt;p>Running this yields:&lt;/p>
-&lt;pre>&lt;code>Error: Could not start Service[sshd]: Execution of '/sbin/service
-sshd start' returned 1: Redirecting to /bin/systemctl start sshd.service
-Failed to get D-Bus connection: No connection to service manager.
-Wrapped exception:
-Execution of '/sbin/service sshd start' returned 1: Redirecting to
-/bin/systemctl start sshd.service
-Failed to get D-Bus connection: No connection to service manager.
-&lt;/code>&lt;/pre>
-&lt;p>This is happening because the Puppet module is trying to manipulate
-the corresponding service resource, but there is no service manager
-(e.g., &amp;ldquo;systemd&amp;rdquo; or &amp;ldquo;upstart&amp;rdquo;, etc) inside the container.&lt;/p>
-&lt;p>Some modules provide a module parameter to disable service management,
-but that solution isn&amp;rsquo;t available in this module. Instead, I created
-a &amp;ldquo;dummy&amp;rdquo; service provider. The &amp;ldquo;code&amp;rdquo; (or lack thereof) looks like
-this:&lt;/p>
-&lt;pre>&lt;code>Puppet::Type.type(:service).provide :dummy, :parent =&amp;gt; :base do
-desc &amp;quot;Dummy service provider&amp;quot;
-def startcmd
-true;
-end
-def stopcmd
-true;
-end
-def restartcmd
-true
-end
-def statuscmd
-true
-end
-end
-&lt;/code>&lt;/pre>
-&lt;p>I dropped this into a &lt;code>dummy_service&lt;/code> puppet module with the
-following structure:&lt;/p>
-&lt;pre>&lt;code>dummy_service/
-lib/
-puppet/
-provider/
-service/
-dummy.rb
-&lt;/code>&lt;/pre>
-&lt;p>I installed the whole thing into &lt;code>/usr/share/puppet/modules&lt;/code> in the
-base image (&lt;code>larsks/rdo-puppet-base&lt;/code>) by adding the following to the
-relevant &lt;code>Dockerfile&lt;/code>:&lt;/p>
-&lt;pre>&lt;code>COPY dummy_service /usr/share/puppet/modules/dummy_service
-&lt;/code>&lt;/pre>
-&lt;p>I modified the &lt;code>Dockerfile&lt;/code> for my ssh image to look like this:&lt;/p>
-&lt;pre>&lt;code>FROM larsks/rdo-puppet-base
-COPY puppet /puppet
-RUN cd /puppet; \
-FACTER_fqdn=localhost \
-puppet apply \
---modulepath=/usr/share/openstack-puppet/modules:/usr/share/puppet/modules \
-node.pp
-&lt;/code>&lt;/pre>
-&lt;p>And finally I modified &lt;code>node.pp&lt;/code> to look like this:&lt;/p>
-&lt;pre>&lt;code>Service {
-provider =&amp;gt; dummy,
-}
-class { 'ssh': }
-&lt;/code>&lt;/pre>
-&lt;p>This sets the default &lt;code>provider&lt;/code> for &lt;code>service&lt;/code> resources to &lt;code>dummy&lt;/code>.&lt;/p>
-&lt;p>With these changes, the &lt;code>docker build&lt;/code> operation completes
-successfully:&lt;/p>
-&lt;pre>&lt;code>Sending build context to Docker daemon 49.15 kB
-Sending build context to Docker daemon
-Step 0 : FROM larsks/rdo-puppet-base
----&amp;gt; 2554b6fb47bb
-Step 1 : COPY puppet /puppet
----&amp;gt; Using cache
----&amp;gt; bf867271fd0f
-Step 2 : RUN cd /puppet; FACTER_fqdn=localhost puppet apply --modulepath=/usr/share/openstack-puppet/modules:/usr/share/puppet/modules node.pp
----&amp;gt; Running in 91b08a7a0ff5
-Notice: Compiled catalog for c6f07ae86c40.redhat.com in environment production in 0.58 seconds
-Notice: /Stage[main]/Ssh::Server::Install/Package[openssh-server]/ensure: created
-Notice: /Stage[main]/Ssh::Client::Config/File[/etc/ssh/ssh_config]/content: content changed '{md5}e233b9bb27ac15b968d8016d7be7d7ce' to '{md5}34815c31785be0c717f766e8d2c8d4d7'
-Notice: Finished catalog run in 47.61 seconds
----&amp;gt; e830e6adce26
-Removing intermediate container 91b08a7a0ff5
-Successfully built e830e6adce26
-&lt;/code>&lt;/pre>
-&lt;p>Obviously, in order to turn this into a functional module you would
-need to add an appropriate &lt;code>CMD&lt;/code> or &lt;code>ENTRYPOINT&lt;/code> script to make it
-generate host keys and start &lt;code>sshd&lt;/code>, but I think this successfully
-demonstrates what is necessary to make a stock Puppet module run
-as part of the &lt;code>docker build&lt;/code> process.&lt;/p></content></item><item><title>Extending Puppet</title><link>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</link><pubDate>Wed, 16 Apr 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</guid><description>&lt;p>I wanted to learn about writing custom Puppet types and providers.
+shell scripts.&lt;/p&gt;
+&lt;p&gt;I was curious whether or not it would be possible to use Puppet during
+the &lt;code&gt;docker build&lt;/code&gt; process. As a test case, I used the
+&lt;a href="https://github.com/saz/puppet-ssh"&gt;ssh&lt;/a&gt; module included in the openstack-puppet-modules package.&lt;/p&gt;
+&lt;p&gt;I started with a manifest like this (in &lt;code&gt;puppet/node.pp&lt;/code&gt;):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class { 'ssh': }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And a Dockerfile like this:&lt;/p&gt;</description></item><item><title>Extending Puppet</title><link>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</link><pubDate>Wed, 16 Apr 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-04-16-article-on-extending-puppet/</guid><description>&lt;p&gt;I wanted to learn about writing custom Puppet types and providers.
 The official documentation is a little sparse, but I finally stumbled
-upon the following series of articles by &lt;a href="http://garylarizza.com/">Gary Larizza&lt;/a> that provide
-a great deal of insight into the process and a bunch of example code:&lt;/p>
-&lt;ul>
-&lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/25/fun-with-providers/">Fun With Puppet Providers&lt;/a>&lt;/li>
-&lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/26/fun-with-providers-part-2/">Who Abstracted My Ruby?&lt;/a>&lt;/li>
-&lt;li>&lt;a href="http://garylarizza.com/blog/2013/12/15/seriously-what-is-this-provider-doing/">Seriously, What Is This Provider Doing?&lt;/a>&lt;/li>
-&lt;/ul></description><content>&lt;p>I wanted to learn about writing custom Puppet types and providers.
-The official documentation is a little sparse, but I finally stumbled
-upon the following series of articles by &lt;a href="http://garylarizza.com/">Gary Larizza&lt;/a> that provide
-a great deal of insight into the process and a bunch of example code:&lt;/p>
-&lt;ul>
-&lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/25/fun-with-providers/">Fun With Puppet Providers&lt;/a>&lt;/li>
-&lt;li>&lt;a href="http://garylarizza.com/blog/2013/11/26/fun-with-providers-part-2/">Who Abstracted My Ruby?&lt;/a>&lt;/li>
-&lt;li>&lt;a href="http://garylarizza.com/blog/2013/12/15/seriously-what-is-this-provider-doing/">Seriously, What Is This Provider Doing?&lt;/a>&lt;/li>
-&lt;/ul></content></item><item><title>A quote about XMLRPC</title><link>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</link><pubDate>Mon, 25 Feb 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</guid><description>&lt;p>I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the
-following:&lt;/p>
-&lt;blockquote>
-&lt;p>XMLRPC was the new hotness when development on Puppet started. Now,
+upon the following series of articles by &lt;a href="http://garylarizza.com/"&gt;Gary Larizza&lt;/a&gt; that provide
+a great deal of insight into the process and a bunch of example code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="http://garylarizza.com/blog/2013/11/25/fun-with-providers/"&gt;Fun With Puppet Providers&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://garylarizza.com/blog/2013/11/26/fun-with-providers-part-2/"&gt;Who Abstracted My Ruby?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://garylarizza.com/blog/2013/12/15/seriously-what-is-this-provider-doing/"&gt;Seriously, What Is This Provider Doing?&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description></item><item><title>A quote about XMLRPC</title><link>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</link><pubDate>Mon, 25 Feb 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-02-25-puppet-xmlrpc-quote/</guid><description>&lt;p&gt;I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the
+following:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;XMLRPC was the new hotness when development on Puppet started. Now,
 XMLRPC is that horrible thing with the XML and the angle brackets and
-the pain and sad.&lt;/p>
-&lt;/blockquote>
-&lt;p>(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/">http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a>)&lt;/p>
-&lt;p>&amp;hellip;which also accurately sums up my feelings when I come across yet
+the pain and sad.&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/"&gt;http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;&amp;hellip;which also accurately sums up my feelings when I come across yet
 another piece of software where someone has decided that XML (or even
-JSON) is a good user-facing configuration syntax.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been reading up on Puppet 3 lately, and came across the
-following:&lt;/p>
-&lt;blockquote>
-&lt;p>XMLRPC was the new hotness when development on Puppet started. Now,
-XMLRPC is that horrible thing with the XML and the angle brackets and
-the pain and sad.&lt;/p>
-&lt;/blockquote>
-&lt;p>(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/">http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a>)&lt;/p>
-&lt;p>&amp;hellip;which also accurately sums up my feelings when I come across yet
-another piece of software where someone has decided that XML (or even
-JSON) is a good user-facing configuration syntax.&lt;/p></content></item><item><title>Puppet, scope, and inheritance</title><link>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</link><pubDate>Tue, 16 Aug 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</guid><description>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
-&lt;p>If you have a Puppet class like this:&lt;/p>
-&lt;pre>&lt;code>class foo {
-File { ensure =&amp;gt; file,
-mode =&amp;gt; 600,
+JSON) is a good user-facing configuration syntax.&lt;/p&gt;</description></item><item><title>Puppet, scope, and inheritance</title><link>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</link><pubDate>Tue, 16 Aug 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-08-16-puppet-scope-and-inheritance/</guid><description>&lt;p&gt;I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p&gt;
+&lt;p&gt;If you have a Puppet class like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class foo {
+ File { ensure =&amp;gt; file,
+ mode =&amp;gt; 600,
+ }
 }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And you use it like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class bar {
+ include foo
+
+ file { '/tmp/myfile': }
 }
-&lt;/code>&lt;/pre>
-&lt;p>And you use it like this:&lt;/p>
-&lt;pre>&lt;code>class bar {
-include foo
-file { '/tmp/myfile': }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then /tmp/myfile will not be created. But if instead you do this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class bar inherits foo {
+ file { '/tmp/myfile': }
 }
-&lt;/code>&lt;/pre>
-&lt;p>Then /tmp/myfile will not be created. But if instead you do this:&lt;/p>
-&lt;pre>&lt;code>class bar inherits foo {
-file { '/tmp/myfile': }
-}
-&lt;/code>&lt;/pre>
-&lt;p>It will be created with mode 0600. In other words, if you use inherits then definitions in the parent class are available in the scope of your subclass. If you include, then definitions in he included class are &amp;ldquo;below&amp;rdquo; the scope of the including class.&lt;/p></description><content>&lt;p>I note this here because it wasn&amp;rsquo;t apparent to me from the Puppet documentation.&lt;/p>
-&lt;p>If you have a Puppet class like this:&lt;/p>
-&lt;pre>&lt;code>class foo {
-File { ensure =&amp;gt; file,
-mode =&amp;gt; 600,
-}
-}
-&lt;/code>&lt;/pre>
-&lt;p>And you use it like this:&lt;/p>
-&lt;pre>&lt;code>class bar {
-include foo
-file { '/tmp/myfile': }
-}
-&lt;/code>&lt;/pre>
-&lt;p>Then /tmp/myfile will not be created. But if instead you do this:&lt;/p>
-&lt;pre>&lt;code>class bar inherits foo {
-file { '/tmp/myfile': }
-}
-&lt;/code>&lt;/pre>
-&lt;p>It will be created with mode 0600. In other words, if you use inherits then definitions in the parent class are available in the scope of your subclass. If you include, then definitions in he included class are &amp;ldquo;below&amp;rdquo; the scope of the including class.&lt;/p></content></item></channel></rss>
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It will be created with mode 0600. In other words, if you use inherits then definitions in the parent class are available in the scope of your subclass. If you include, then definitions in he included class are &amp;ldquo;below&amp;rdquo; the scope of the including class.&lt;/p&gt;</description></item></channel></rss>

@@ -1,128 +1,25 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Powershell on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/powershell/</link><description>Recent content in Powershell on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 04 Nov 2012 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/powershell/rss.xml" rel="self" type="application/rss+xml"/><item><title>Generating random passwords in PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</guid><description>&lt;p>I was looking for PowerShell solutions for generating a random password (in
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Powershell on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/powershell/</link><description>Recent content in Powershell on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/powershell/rss.xml" rel="self" type="application/rss+xml"/><item><title>Generating random passwords in PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-random-passwords/</guid><description>&lt;p&gt;I was looking for PowerShell solutions for generating a random password (in
 order to set the Administrator password on a Windows instance provisioned in
-&lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
-of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),
-along the lines of &lt;a href="https://gist.github.com/4011878">this&lt;/a>:&lt;/p>
-&lt;pre>&lt;code>Function New-RandomComplexPassword ($length=8)
+&lt;a href="http://www.openstack.org/"&gt;OpenStack&lt;/a&gt;), and found several solutions using the GeneratePassword method
+of &lt;code&gt;System.Web.Security.Membership&lt;/code&gt; (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx"&gt;here&lt;/a&gt;),
+along the lines of &lt;a href="https://gist.github.com/4011878"&gt;this&lt;/a&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Function New-RandomComplexPassword ($length=8)
 {
-$Assembly = Add-Type -AssemblyName System.Web
-$password = [System.Web.Security.Membership]::GeneratePassword($length,2)
-return $password
+ $Assembly = Add-Type -AssemblyName System.Web
+ $password = [System.Web.Security.Membership]::GeneratePassword($length,2)
+ return $password
 }
-&lt;/code>&lt;/pre>
-&lt;p>While this works, I was unhappy with the generated passwords: they
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;While this works, I was unhappy with the generated passwords: they
 were difficult to type or transcribe because they make heavy use of
-punctuation. For example:&lt;/p></description><content>&lt;p>I was looking for PowerShell solutions for generating a random password (in
-order to set the Administrator password on a Windows instance provisioned in
-&lt;a href="http://www.openstack.org/">OpenStack&lt;/a>), and found several solutions using the GeneratePassword method
-of &lt;code>System.Web.Security.Membership&lt;/code> (documentation &lt;a href="http://msdn.microsoft.com/en-us/library/system.web.security.membership.generatepassword.aspx">here&lt;/a>),
-along the lines of &lt;a href="https://gist.github.com/4011878">this&lt;/a>:&lt;/p>
-&lt;pre>&lt;code>Function New-RandomComplexPassword ($length=8)
-{
-$Assembly = Add-Type -AssemblyName System.Web
-$password = [System.Web.Security.Membership]::GeneratePassword($length,2)
-return $password
-}
-&lt;/code>&lt;/pre>
-&lt;p>While this works, I was unhappy with the generated passwords: they
-were difficult to type or transcribe because they make heavy use of
-punctuation. For example:&lt;/p>
-&lt;ul>
-&lt;li>&lt;code>(O;RK_wx(IcD;&amp;lt;V&lt;/code>&lt;/li>
-&lt;li>&lt;code>+3N)lkU5r)nHiL#&lt;/code>&lt;/li>
-&lt;/ul>
-&lt;p>These looks more like line noise (remember that? No? Get off my
-lawn&amp;hellip;) than anything else and feel very unnatural to type.&lt;/p>
-&lt;p>I was looking for longer strings consisting primarily of letters and
-digits. Thanks to Hey, Scripting Guy I learned about the Get-Random
-and ForEach-Object methods (and the % alias for the latter), and ended
-up with &lt;a href="https://gist.github.com/4011916">the following&lt;/a>:&lt;/p>
-&lt;pre>&lt;code># Generate a random password
-# Usage: random-password &amp;lt;length&amp;gt;
-Function random-password ($length = 15)
-{
-$punc = 46..46
-$digits = 48..57
-$letters = 65..90 + 97..122
-# Thanks to
-# https://blogs.technet.com/b/heyscriptingguy/archive/2012/01/07/use-pow
-$password = get-random -count $length `
--input ($punc + $digits + $letters) |
-% -begin { $aa = $null } `
--process {$aa += [char]$_} `
--end {$aa}
-return $password
-}
-&lt;/code>&lt;/pre>
-&lt;p>This generates strings of letters and digits (and &amp;ldquo;.&amp;rdquo;) that look something like:&lt;/p>
-&lt;ul>
-&lt;li>&lt;code>2JQ0bW7VMqcm4UB&lt;/code>&lt;/li>
-&lt;li>&lt;code>V4DObnQl0vJX1wC&lt;/code>&lt;/li>
-&lt;/ul>
-&lt;p>I&amp;rsquo;m a lot happier with this.&lt;/p></content></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
+punctuation. For example:&lt;/p&gt;</description></item><item><title>Waiting for networking using PowerShell</title><link>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</link><pubDate>Sun, 04 Nov 2012 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2012-11-04-powershell-wait-for-networking/</guid><description>&lt;p&gt;I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
 into a small problem: I was running a script at system startup, and
 the script was running before the network interface (which was using
-DHCP) was configured.&lt;/p>
-&lt;p>There are a number of common solutions proposed to this problem:&lt;/p>
-&lt;ul>
-&lt;li>
-&lt;p>Just wait for some period of time.&lt;/p>
-&lt;p>This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually
+DHCP) was configured.&lt;/p&gt;
+&lt;p&gt;There are a number of common solutions proposed to this problem:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Just wait for some period of time.&lt;/p&gt;
+&lt;p&gt;This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually
 verify the network state it can result in things breaking if some
-problem prevents Windows from pulling a valid DHCP lease.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve recently been exploring the world of Windows scripting, and I ran
-into a small problem: I was running a script at system startup, and
-the script was running before the network interface (which was using
-DHCP) was configured.&lt;/p>
-&lt;p>There are a number of common solutions proposed to this problem:&lt;/p>
-&lt;ul>
-&lt;li>
-&lt;p>Just wait for some period of time.&lt;/p>
-&lt;p>This can work but it&amp;rsquo;s ugly, and because it doesn&amp;rsquo;t actually
-verify the network state it can result in things breaking if some
-problem prevents Windows from pulling a valid DHCP lease.&lt;/p>
-&lt;/li>
-&lt;li>
-&lt;p>Use ping to verify the availability of some remote host.&lt;/p>
-&lt;p>This works reasonably well if you have a known endpoint you can
-test, but it&amp;rsquo;s hard to make a generic solution using this method.&lt;/p>
-&lt;/li>
-&lt;/ul>
-&lt;p>What I really wanted to do was to have my script wait until a default
-gateway appeared on the system (which would indicate that Windows had
-successfully acquired a DHCP lease and had configured the interface).&lt;/p>
-&lt;p>My first attempts involved traditional batch scripts (&lt;code>.bat&lt;/code>) running
-some variant of &lt;code>route print&lt;/code> and searching the output. This can
-work, but it&amp;rsquo;s ugly, and I was certain there must be a better way. I
-spent some time learning about accessing network configuration
-information using PowerShell, and I came up with &lt;a href="https://gist.github.com/4011808">the following
-code&lt;/a>:&lt;/p>
-&lt;pre>&lt;code># Wait for a DHCP-enabled interface to develop
-# a default gateway.
-#
-# usage: wait-for-network [ &amp;lt;tries&amp;gt; ]
-function wait-for-network ($tries) {
-while (1) {
-# Get a list of DHCP-enabled interfaces that have a
-# non-$null DefaultIPGateway property.
-$x = gwmi -class Win32_NetworkAdapterConfiguration `
--filter DHCPEnabled=TRUE |
-where { $_.DefaultIPGateway -ne $null }
-# If there is (at least) one available, exit the loop.
-if ( ($x | measure).count -gt 0 ) {
-break
-}
-# If $tries &amp;gt; 0 and we have tried $tries times without
-# success, throw an exception.
-if ( $tries -gt 0 -and $try++ -ge $tries ) {
-throw &amp;quot;Network unavaiable after $try tries.&amp;quot;
-}
-# Wait one second.
-start-sleep -s 1
-}
-}
-&lt;/code>&lt;/pre>
-&lt;p>This uses various sort of filtering to get a list of DHCP-enabled
-interfaces that have a default gateway (the &lt;code>DefaultIPGateway&lt;/code>
-attribute). It will poll the state of things once/second up to &lt;code>$tries&lt;/code>
-times, and if nothing is available it will ultimately throw an
-exception.&lt;/p></content></item></channel></rss>
+problem prevents Windows from pulling a valid DHCP lease.&lt;/p&gt;</description></item></channel></rss>

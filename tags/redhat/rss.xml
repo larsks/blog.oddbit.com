@@ -1,11 +1,6 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Redhat on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/redhat/</link><description>Recent content in Redhat on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Mon, 13 Jan 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/redhat/rss.xml" rel="self" type="application/rss+xml"/><item><title>RDO Bug Triage</title><link>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</link><pubDate>Mon, 13 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</guid><description>&lt;p>This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or
-&lt;code>date -d &amp;quot;14:00 UTC&amp;quot;&lt;/code> in your local timezone) I will be helping out
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Redhat on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/redhat/</link><description>Recent content in Redhat on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/redhat/rss.xml" rel="self" type="application/rss+xml"/><item><title>RDO Bug Triage</title><link>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</link><pubDate>Mon, 13 Jan 2014 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2014-01-13-rdo-bug-triage/</guid><description>&lt;p&gt;This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or
+&lt;code&gt;date -d &amp;quot;14:00 UTC&amp;quot;&lt;/code&gt; in your local timezone) I will be helping out
 with the
-&lt;a href="http://openstack.redhat.com/">RDO&lt;/a> &lt;a href="http://openstack.redhat.com/RDO-BugTriage">bug triage day&lt;/a>. We&amp;rsquo;ll be trying to validate all the
-&lt;a href="http://goo.gl/NqW2LN">untriaged bugs&lt;/a> opened against RDO.&lt;/p>
-&lt;p>Feel free to drop by on &lt;code>#rdo&lt;/code> and help out or ask questions.&lt;/p></description><content>&lt;p>This Wednesday, January 15, at 14:00 UTC (that&amp;rsquo;s 9AM US/Eastern, or
-&lt;code>date -d &amp;quot;14:00 UTC&amp;quot;&lt;/code> in your local timezone) I will be helping out
-with the
-&lt;a href="http://openstack.redhat.com/">RDO&lt;/a> &lt;a href="http://openstack.redhat.com/RDO-BugTriage">bug triage day&lt;/a>. We&amp;rsquo;ll be trying to validate all the
-&lt;a href="http://goo.gl/NqW2LN">untriaged bugs&lt;/a> opened against RDO.&lt;/p>
-&lt;p>Feel free to drop by on &lt;code>#rdo&lt;/code> and help out or ask questions.&lt;/p></content></item></channel></rss>
+&lt;a href="http://openstack.redhat.com/"&gt;RDO&lt;/a&gt; &lt;a href="http://openstack.redhat.com/RDO-BugTriage"&gt;bug triage day&lt;/a&gt;. We&amp;rsquo;ll be trying to validate all the
+&lt;a href="http://goo.gl/NqW2LN"&gt;untriaged bugs&lt;/a&gt; opened against RDO.&lt;/p&gt;
+&lt;p&gt;Feel free to drop by on &lt;code&gt;#rdo&lt;/code&gt; and help out or ask questions.&lt;/p&gt;</description></item></channel></rss>

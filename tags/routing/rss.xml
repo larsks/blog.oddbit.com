@@ -1,219 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Routing on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/routing/</link><description>Recent content in Routing on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 19 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/routing/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
-&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
-&lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p></description><content>&lt;p>Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989">Unix &amp;amp; Linux&lt;/a> if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p>
-&lt;p>&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg">&lt;img alt="two networks with the same address range connected by a host named &amp;ldquo;middleman&amp;rdquo;" src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">&lt;/a>&lt;/p>
-&lt;p>&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code>192.168.3.0/24&lt;/code>, and similarly for communication in the other direction?&lt;/p>
-&lt;h2 id="setting-up-a-lab">Setting up a lab&lt;/h2>
-&lt;p>When investigating this sort of networking question, I find it easiest to reproduce the topology in a virtual environment so that it&amp;rsquo;s easy to test things out. I generally use &lt;a href="https://mininet.org">Mininet&lt;/a> for this, which provides a simple Python API for creating virtual nodes and switches and creating links between them.&lt;/p>
-&lt;p>I created the following network topology for this test:&lt;/p>
-&lt;figure class="center" >
-&lt;img src="topology-1.svg" alt="virtual network topology diagram" />
-&lt;/figure>
-&lt;p>In the rest of this post, I&amp;rsquo;ll be referring to these hostnames.&lt;/p>
-&lt;p>See the bottom of this post for a link to the repository that contains the complete test environment.&lt;/p>
-&lt;h2 id="vrf-in-theory">VRF in theory&lt;/h2>
-&lt;p>VRF stands for &amp;ldquo;Virtual Routing and Forwarding&amp;rdquo;. From the &lt;a href="https://en.wikipedia.org/wiki/Virtual_routing_and_forwarding">Wikipedia article on the topic&lt;/a>:&lt;/p>
-&lt;blockquote>
-&lt;p>In IP-based computer networks, virtual routing and forwarding (VRF) is a technology that allows multiple instances of a routing table to co-exist within the same router at the same time. One or more logical or physical interfaces may have a VRF and these VRFs do not share routes therefore the packets are only forwarded between interfaces on the same VRF. VRFs are the TCP/IP layer 3 equivalent of a VLAN. Because the routing instances are independent, the same or overlapping IP addresses can be used without conflicting with each other. Network functionality is improved because network paths can be segmented without requiring multiple routers.&lt;a href="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg">1&lt;/a>&lt;/p>
-&lt;/blockquote>
-&lt;p>In Linux, VRF support is implemented as a &lt;a href="https://docs.kernel.org/networking/vrf.html">special type of network device&lt;/a>. A VRF device sets up an isolated routing domain; network traffic on devices associated with a VRF will use the routing table associated with that VRF, rather than the main routing table, which permits us to connect multiple networks with overlapping address ranges.&lt;/p>
-&lt;p>We can create new VRF devices with the &lt;code>ip link add&lt;/code> command:&lt;/p>
-&lt;pre tabindex="0">&lt;code>ip link add vrf-inner type vrf table 100
-&lt;/code>&lt;/pre>&lt;p>Running the above command results in the following changes:&lt;/p>
-&lt;ul>
-&lt;li>
-&lt;p>It creates a new network device named &lt;code>vrf-inner&lt;/code>&lt;/p>
-&lt;/li>
-&lt;li>
-&lt;p>It adds a new route policy rule (if it doesn&amp;rsquo;t already exist) that looks like:&lt;/p>
-&lt;pre tabindex="0">&lt;code>1000: from all lookup [l3mdev-table]
-&lt;/code>&lt;/pre>&lt;p>This causes route lookups to use the appropriate route table for interfaces associated with a VRF.&lt;/p>
-&lt;/li>
-&lt;/ul>
-&lt;p>After creating a VRF device, we can add interfaces to it like this:&lt;/p>
-&lt;pre tabindex="0">&lt;code>ip link set eth0 master vrf-inner
-&lt;/code>&lt;/pre>&lt;p>This associates the given interface with the VRF device, and it moves all routes associated with the interface out of the &lt;code>local&lt;/code> and &lt;code>main&lt;/code> routing tables and into the VRF-specific routing table.&lt;/p>
-&lt;p>You can see a list of vrf devices by running &lt;code>ip vrf show&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code># ip vrf show
-Name Table
------------------------
-vrf-inner 100
-&lt;/code>&lt;/pre>&lt;p>You can see a list of devices associated with a particular VRF with the &lt;code>ip link&lt;/code> command:&lt;/p>
-&lt;pre tabindex="0">&lt;code># ip -brief link show master vrf-inner
-eth0@if448 UP 72:87:af:d3:b5:f9 &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt;
-&lt;/code>&lt;/pre>&lt;h2 id="vrf-in-practice">VRF in practice&lt;/h2>
-&lt;p>We&amp;rsquo;re going to create two VRF devices on the &lt;code>middleman&lt;/code> host; one associated with the &amp;ldquo;inner&amp;rdquo; network and one associated with the &amp;ldquo;outer&amp;rdquo; network. In our virtual network topology, the &lt;code>middleman&lt;/code> host has two network interfaces:&lt;/p>
-&lt;ul>
-&lt;li>&lt;code>middleman-eth0&lt;/code> is connected to the &amp;ldquo;inner&amp;rdquo; network&lt;/li>
-&lt;li>&lt;code>middleman-eth1&lt;/code> is connected to the &amp;ldquo;outer&amp;rdquo; network&lt;/li>
-&lt;/ul>
-&lt;p>Both devices have the same address (&lt;code>192.168.2.1&lt;/code>):&lt;/p>
-&lt;pre tabindex="0">&lt;code># ip addr show
-2: middleman-eth0@if426: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue master vrf-inner state UP group default qlen 1000
-link/ether 32:9e:01:2e:78:2f brd ff:ff:ff:ff:ff:ff link-netnsid 0
-inet 192.168.2.1/24 brd 192.168.2.255 scope global middleman-eth0
-valid_lft forever preferred_lft forever
-root@mininet-vm:~/unix-735931# ip addr show middleman-eth1
-3: middleman-eth1@if427: &amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue master vrf-outer state UP group default qlen 1000
-link/ether 12:be:9a:09:33:93 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-inet 192.168.2.1/24 brd 192.168.2.255 scope global middleman-eth1
-valid_lft forever preferred_lft forever
-&lt;/code>&lt;/pre>&lt;p>And the main routing table looks like this:&lt;/p>
-&lt;pre tabindex="0">&lt;code># ip route show
-192.168.2.0/24 dev middleman-eth1 proto kernel scope link src 192.168.2.1
-192.168.2.0/24 dev middleman-eth0 proto kernel scope link src 192.168.2.1
-&lt;/code>&lt;/pre>&lt;p>If you&amp;rsquo;re at all familiar with Linux network configuration, that probably looks weird. Right now this isn&amp;rsquo;t a particularly functional network configuration, but we can fix that!&lt;/p>
-&lt;p>To create our two VRF devices, we run the following commands:&lt;/p>
-&lt;pre tabindex="0">&lt;code>ip link add vrf-inner type vrf table 100
-ip link add vrf-outer type vrf table 200
-ip link set vrf-inner up
-ip link set vrf-outer up
-&lt;/code>&lt;/pre>&lt;p>This associates &lt;code>vrf-inner&lt;/code> with route table 100, and &lt;code>vrf-outer&lt;/code> with route table 200. At this point, tables 100 and 200 are empty:&lt;/p>
-&lt;pre tabindex="0">&lt;code># ip route show table 100
-Error: ipv4: FIB table does not exist.
-Dump terminated
-# ip route show table 200
-Error: ipv4: FIB table does not exist.
-Dump terminated
-&lt;/code>&lt;/pre>&lt;p>Next, we add our interfaces to the appropriate VRF devices:&lt;/p>
-&lt;pre tabindex="0">&lt;code>ip link set middleman-eth0 master vrf-inner
-ip link set middleman-eth1 master vrf-outer
-&lt;/code>&lt;/pre>&lt;p>After running these commands, there are no routes left in the main routing table:&lt;/p>
-&lt;pre tabindex="0">&lt;code># ip route show
-&amp;lt;no output&amp;gt;
-&lt;/code>&lt;/pre>&lt;p>And the routes associated with our two physical interfaces are now contained by the appropriate VRF routing tables. Here&amp;rsquo;s table 100:&lt;/p>
-&lt;pre tabindex="0">&lt;code>root@mininet-vm:~/unix-735931# ip route show table 100
-broadcast 192.168.2.0 dev middleman-eth0 proto kernel scope link src 192.168.2.1
-192.168.2.0/24 dev middleman-eth0 proto kernel scope link src 192.168.2.1
-local 192.168.2.1 dev middleman-eth0 proto kernel scope host src 192.168.2.1
-broadcast 192.168.2.255 dev middleman-eth0 proto kernel scope link src 192.168.2.1
-&lt;/code>&lt;/pre>&lt;p>And table 200:&lt;/p>
-&lt;pre tabindex="0">&lt;code>root@mininet-vm:~/unix-735931# ip route show table 200
-broadcast 192.168.2.0 dev middleman-eth1 proto kernel scope link src 192.168.2.1
-192.168.2.0/24 dev middleman-eth1 proto kernel scope link src 192.168.2.1
-local 192.168.2.1 dev middleman-eth1 proto kernel scope host src 192.168.2.1
-broadcast 192.168.2.255 dev middleman-eth1 proto kernel scope link src 192.168.2.1
-&lt;/code>&lt;/pre>&lt;p>This configuration effectively gives us two isolated networks:&lt;/p>
-&lt;figure class="center" >
-&lt;img src="topology-2.svg" alt="virtual network topology diagram" />
-&lt;/figure>
-&lt;p>We can verify that nodes in the &amp;ldquo;inner&amp;rdquo; and &amp;ldquo;outer&amp;rdquo; networks are now able to communicate with &lt;code>middleman&lt;/code>. We can reach &lt;code>middleman&lt;/code> from &lt;code>innernode0&lt;/code>; in this case, we&amp;rsquo;re communicating with interface &lt;code>middleman-eth0&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0# ping -c1 192.168.2.1
-PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
-64 bytes from 192.168.2.1: icmp_seq=1 ttl=64 time=0.126 ms
---- 192.168.2.1 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 0.126/0.126/0.126/0.000 ms
-&lt;/code>&lt;/pre>&lt;p>Similarly, we can reach &lt;code>middleman&lt;/code> from &lt;code>outernode&lt;/code>, but in this case we&amp;rsquo;re communicating with interface &lt;code>middleman-eth1&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code>outernode0# ping -c1 192.168.2.1
-PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
-64 bytes from 192.168.2.1: icmp_seq=1 ttl=64 time=1.02 ms
---- 192.168.2.1 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 1.020/1.020/1.020/0.000 ms
-&lt;/code>&lt;/pre>&lt;h2 id="configure-routing-on-the-nodes">Configure routing on the nodes&lt;/h2>
-&lt;p>Our goal is to let nodes on one side of the network to use the address range &lt;code>192.168.3.0/24&lt;/code> to refer to nodes on the other side of the network. Right now, if we were to try to access &lt;code>192.168.3.10&lt;/code> from &lt;code>innernode0&lt;/code>, the attempt would fail with:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0# ping 192.168.3.10
-ping: connect: Network is unreachable
-&lt;/code>&lt;/pre>&lt;p>The &amp;ldquo;network is unreachable&amp;rdquo; message means that &lt;code>innernode0&lt;/code> has no idea where to send that request. That&amp;rsquo;s because at the moment, the routing table on all the nodes look like:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0# ip route
-192.168.2.0/24 dev outernode0-eth0 proto kernel scope link src 192.168.2.10
-&lt;/code>&lt;/pre>&lt;p>There is neither a default gateway nor a network-specific route appropriate for &lt;code>192.168.3.0/24&lt;/code> addresses. Let&amp;rsquo;s add a network route that will route that address range through &lt;code>middleman&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0# ip route add 192.168.3.0/24 via 192.168.2.1
-innernode0# ip route
-192.168.2.0/24 dev innernode0-eth0 proto kernel scope link src 192.168.2.10
-192.168.3.0/24 via 192.168.2.1 dev innernode0-eth0
-&lt;/code>&lt;/pre>&lt;p>This same change needs to be made on all the &lt;code>innernode*&lt;/code> and &lt;code>outernode*&lt;/code> nodes.&lt;/p>
-&lt;p>With the route in place, attempts to reach &lt;code>192.168.3.10&lt;/code> from &lt;code>innernode0&lt;/code> will still fail, but now they&amp;rsquo;re getting rejected by &lt;code>middleman&lt;/code> because &lt;em>it&lt;/em> doesn&amp;rsquo;t have any appropriate routes:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0# ping -c1 192.168.3.10
-PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
-From 192.168.2.1 icmp_seq=1 Destination Net Unreachable
---- 192.168.3.10 ping statistics ---
-1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
-&lt;/code>&lt;/pre>&lt;p>We need to tell &lt;code>middleman&lt;/code> what to do with these packets.&lt;/p>
-&lt;h2 id="configure-routing-and-nat-on-middleman">Configure routing and NAT on middleman&lt;/h2>
-&lt;p>In order to achieve our desired connectivity, we need to:&lt;/p>
-&lt;ol>
-&lt;li>Map the &lt;code>192.168.3.0/24&lt;/code> destination address to the equivalent &lt;code>192.168.2.0/24&lt;/code> address &lt;em>before&lt;/em> the kernel makes a routing decision.&lt;/li>
-&lt;li>Map the &lt;code>192.168.2.0/24&lt;/code> source address to the equivalent &lt;code>192.168.3.0/24&lt;/code> address &lt;em>after&lt;/em> the kernel makes a routing decision (so that replies will go back to &amp;ldquo;other&amp;rdquo; side).&lt;/li>
-&lt;li>Ensure that the kernel uses the routing table for the &lt;em>target&lt;/em> network when making routing decisions for these connections.&lt;/li>
-&lt;/ol>
-&lt;p>We can achieve (1) and (2) using the netfilter &lt;a href="https://www.netfilter.org/documentation/HOWTO/netfilter-extensions-HOWTO-4.html#ss4.4">&lt;code>NETMAP&lt;/code>&lt;/a> extension by adding the following two rules:&lt;/p>
-&lt;pre tabindex="0">&lt;code>iptables -t nat -A PREROUTING -d 192.168.3.0/24 -j NETMAP --to 192.168.2.0/24
-iptables -t nat -A POSTROUTING -s 192.168.2.0/24 -j NETMAP --to 192.168.3.0/24
-&lt;/code>&lt;/pre>&lt;p>For incoming traffic destined for the 192.168.3.0/24 network, this maps the destination address to the matching &lt;code>192.168.2.0/24&lt;/code> address. For outgoing traffic with a source address on the &lt;code>192.168.2.0/24&lt;/code> network, this maps the source to the equivalent &lt;code>192.168.3.0/24&lt;/code> network (so that the recipient see the traffic as coming from &amp;ldquo;the other side&amp;rdquo;).&lt;/p>
-&lt;p>(For those of you wondering, &amp;ldquo;can we do this using &lt;code>nftables&lt;/code> instead?&amp;rdquo;, as of this writing &lt;a href="https://wiki.nftables.org/wiki-nftables/index.php/Supported_features_compared_to_xtables#NETMAP">&lt;code>nftables&lt;/code> does not appear to have &lt;code>NETMAP&lt;/code> support&lt;/a>, so we have to use &lt;code>iptables&lt;/code> for this step.)&lt;/p>
-&lt;p>With this change in place, re-trying that &lt;code>ping&lt;/code> command on &lt;code>innernode0&lt;/code> will apparently succeed:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0 ping -c1 192.168.3.10
-PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
-64 bytes from 192.168.3.10: icmp_seq=1 ttl=63 time=0.063 ms
---- 192.168.3.10 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 0.063/0.063/0.063/0.000 ms
-&lt;/code>&lt;/pre>&lt;p>However, running &lt;code>tcpdump&lt;/code> on &lt;code>middleman&lt;/code> will show us that we haven&amp;rsquo;t yet achieved our goal:&lt;/p>
-&lt;pre tabindex="0">&lt;code>12:59:52.899054 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo request, id 16520, seq 1, length 64
-12:59:52.899077 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo request, id 16520, seq 1, length 64
-12:59:52.899127 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo reply, id 16520, seq 1, length 64
-12:59:52.899130 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16520, seq 1, length 64
-&lt;/code>&lt;/pre>&lt;p>You can see that our packet is coming on on &lt;code>middleman-eth0&lt;/code>&amp;hellip;and going right back out the same interface. We have thus far achieved a very complicated loopback interface.&lt;/p>
-&lt;p>The missing piece is some logic to have the kernel use the routing table for the &amp;ldquo;other side&amp;rdquo; when making routing decisions for these packets. We&amp;rsquo;re going to do that by:&lt;/p>
-&lt;ol>
-&lt;li>Tagging packets with a mark that indicates the interface on which they were recieved&lt;/li>
-&lt;li>Using this mark to select an appropriate routing table&lt;/li>
-&lt;/ol>
-&lt;p>We add the packet mark by adding these rules to the &lt;code>MANGLE&lt;/code> table &lt;code>PREROUTING&lt;/code> chain:&lt;/p>
-&lt;pre tabindex="0">&lt;code>iptables -t mangle -A PREROUTING -i middleman-eth0 -d 192.168.3.0/24 -j MARK --set-mark 100
-iptables -t mangle -A PREROUTING -i middleman-eth1 -d 192.168.3.0/24 -j MARK --set-mark 200
-&lt;/code>&lt;/pre>&lt;p>And we utilize that mark in route lookups by adding the following two route policy rules:&lt;/p>
-&lt;pre tabindex="0">&lt;code>ip rule add prio 100 fwmark 100 lookup 200
-ip rule add prio 200 fwmark 200 lookup 100
-&lt;/code>&lt;/pre>&lt;p>It is critical that these rules come before (aka &amp;ldquo;have a higher priority than&amp;rdquo;, aka &amp;ldquo;have a lower number than&amp;rdquo;) the &lt;code>l3mdev&lt;/code> rule added when we created the VRF devices.&lt;/p>
-&lt;h2 id="validation-does-it-actually-work">Validation: Does it actually work?&lt;/h2>
-&lt;p>With that last set of changes in place, if we repeat the &lt;code>ping&lt;/code> test from &lt;code>innernode0&lt;/code> to &lt;code>outernode0&lt;/code> and run &lt;code>tcpdump&lt;/code> on &lt;code>middleman&lt;/code>, we see:&lt;/p>
-&lt;pre tabindex="0">&lt;code>13:05:27.667793 middleman-eth0 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo request, id 16556, seq 1, length 64
-13:05:27.667816 middleman-eth1 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo request, id 16556, seq 1, length 64
-13:05:27.667863 middleman-eth1 In IP 192.168.2.10 &amp;gt; 192.168.3.10: ICMP echo reply, id 16556, seq 1, length 64
-13:05:27.667868 middleman-eth0 Out IP 192.168.3.10 &amp;gt; 192.168.2.10: ICMP echo reply, id 16556, seq 1, length 64
-&lt;/code>&lt;/pre>&lt;p>Now we finally see the desired behavior: the request from &lt;code>innernode0&lt;/code> comes in on &lt;code>eth0&lt;/code>, goes out on &lt;code>eth1&lt;/code> with the addresses appropriately mapped and gets delivered to &lt;code>outernode0&lt;/code>. The reply from &lt;code>outernode0&lt;/code> goes through the process in reverse, and arrives back at &lt;code>innernode0&lt;/code>.&lt;/p>
-&lt;h2 id="connection-tracking-or-one-more-thing">Connection tracking (or, &amp;ldquo;One more thing&amp;hellip;&amp;rdquo;)&lt;/h2>
-&lt;p>There is a subtle problem with the configuration we&amp;rsquo;ve implemented so far: the Linux connection tracking mechanism (&amp;quot;&lt;a href="https://arthurchiao.art/blog/conntrack-design-and-implementation/">conntrack&lt;/a>&amp;quot;) by default identifies a connection by the 4-tuple &lt;code>(source_address, source_port, destination_address, destination_port)&lt;/code>. To understand why this is a problem, assume that we&amp;rsquo;re running a web server on port 80 on all the &amp;ldquo;inner&amp;rdquo; and &amp;ldquo;outer&amp;rdquo; nodes.&lt;/p>
-&lt;p>To connect from &lt;code>innernode0&lt;/code> to &lt;code>outernode0&lt;/code>, we could use the following command. We&amp;rsquo;re using the &lt;code>--local-port&lt;/code> option here because we want to control the source port of our connections:&lt;/p>
-&lt;pre tabindex="0">&lt;code>innernode0# curl --local-port 4000 192.168.3.10
-&lt;/code>&lt;/pre>&lt;p>To connect from &lt;code>outernode0&lt;/code> to &lt;code>innernode0&lt;/code>, we would use the same command:&lt;/p>
-&lt;pre tabindex="0">&lt;code>outernode0# curl --local-port 4000 192.168.3.10
-&lt;/code>&lt;/pre>&lt;p>If we look at the connection tracking table on &lt;code>middleman&lt;/code>, we will see a single connection:&lt;/p>
-&lt;pre tabindex="0">&lt;code>middleman# conntrack -L
-tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=4000 [ASSURED] mark=0 use=1
-&lt;/code>&lt;/pre>&lt;p>This happens because the 4-tuple for our two connections is identical. Conflating connections like this can cause traffic to stop flowing if both connections are active at the same time.&lt;/p>
-&lt;p>We need to provide the connection track subsystem with some additional information to uniquely identify these connections. We can do this by using the netfilter &lt;code>CT&lt;/code> module to assign each connection to a unique conntrack origination &amp;ldquo;zone&amp;rdquo;:&lt;/p>
-&lt;pre tabindex="0">&lt;code>iptables -t raw -A PREROUTING -s 192.168.2.0/24 -i middleman-eth0 -j CT --zone-orig 100
-iptables -t raw -A PREROUTING -s 192.168.2.0/24 -i middleman-eth1 -j CT --zone-orig 200
-&lt;/code>&lt;/pre>&lt;p>What is a &amp;ldquo;zone&amp;rdquo;? From &lt;a href="https://lore.kernel.org/all/4B9158F5.5040205@parallels.com/T/">the patch adding this feature&lt;/a>:&lt;/p>
-&lt;blockquote>
-&lt;p>A zone is simply a numerical identifier associated with a network
-device that is incorporated into the various hashes and used to
-distinguish entries in addition to the connection tuples.&lt;/p>
-&lt;/blockquote>
-&lt;p>With these rules in place, if we repeat the test with &lt;code>curl&lt;/code> we will see two distinct connections:&lt;/p>
-&lt;pre tabindex="0">&lt;code>middleman# conntrack -L
-tcp 6 117 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-orig=100 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=26148 [ASSURED] mark=0 use=1
-tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-orig=200 src=192.168.2.10 dst=192.168.3.10 sport=80 dport=4000 [ASSURED] mark=0 use=1
-&lt;/code>&lt;/pre>&lt;h2 id="repository-and-demo">Repository and demo&lt;/h2>
-&lt;p>You can find a complete test environment in &lt;a href="https://github.com/larsks/unix-example-735931-1-1-nat">this repository&lt;/a>; that includes the mininet topology I mentioned at the beginning of this post as well as shell scripts to implement all the address, route, and netfilter configurations.&lt;/p>
-&lt;p>And here&amp;rsquo;s a video that runs through the steps described in this post:&lt;/p>
-&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-&lt;iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/Kws98JNKcxE?autoplay=0&amp;controls=1&amp;end=0&amp;loop=0&amp;mute=0&amp;start=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" title="YouTube video"
->&lt;/iframe>
-&lt;/div></content></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
-&lt;p>The original code looked like this:&lt;/p>
-&lt;div class="collapsable-code">
-&lt;input id="532784916" type="checkbox" />
-&lt;label for="532784916">
-&lt;span class="collapsable-code__language">c&lt;/span>
-&lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
-&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
-&lt;/label>
-&lt;pre class="language-c" >&lt;code>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Routing on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/routing/</link><description>Recent content in Routing on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sat, 18 Feb 2023 17:08:43 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/routing/rss.xml" rel="self" type="application/rss+xml"/><item><title>NAT between identical networks using VRF</title><link>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</link><pubDate>Sun, 19 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/</guid><description>&lt;p&gt;Last week, Oskar Stenberg asked on &lt;a href="https://unix.stackexchange.com/q/735931/4989"&gt;Unix &amp;amp; Linux&lt;/a&gt; if it were possible to configure connectivity between two networks, both using the same address range, without involving network namespaces. That is, given this high level view of the network&amp;hellip;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://excalidraw.com/#json=uuXRRZ2ybaAXiUvbQVkNO,krx3lsbf12c-tDhuWtRjbg"&gt;&lt;img src="https://blog.oddbit.com/post/2023-02-19-vrf-and-nat/the-problem.svg" alt="two networks with the same address range connected by a host named “middleman”"&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&amp;hellip;can we set things up so that hosts on the &amp;ldquo;inner&amp;rdquo; network can communicate with hosts on the &amp;ldquo;outer&amp;rdquo; network using the range &lt;code&gt;192.168.3.0/24&lt;/code&gt;, and similarly for communication in the other direction?&lt;/p&gt;</description></item><item><title>Packet, packet, who's got the packet?</title><link>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</link><pubDate>Tue, 14 Feb 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/</guid><description>&lt;p&gt;In &lt;a href="https://unix.stackexchange.com/q/735522/4989"&gt;this question&lt;/a&gt;, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html"&gt;tun&lt;/a&gt; interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989"&gt;my answer&lt;/a&gt; because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p&gt;
+&lt;p&gt;The original code looked like this:&lt;/p&gt;
+
+
+
+ &lt;div class="collapsable-code"&gt;
+ &lt;input id="374528196" type="checkbox" /&gt;
+ &lt;label for="374528196"&gt;
+ &lt;span class="collapsable-code__language"&gt;c&lt;/span&gt;
+ &lt;span class="collapsable-code__title"&gt;original sendpacket.c&lt;/span&gt;
+ &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽"&gt;&lt;/span&gt;
+ &lt;/label&gt;
+ &lt;pre class="language-c" &gt;&lt;code&gt;
+
 #include &amp;lt;arpa/inet.h&amp;gt;
 #include &amp;lt;fcntl.h&amp;gt;
 #include &amp;lt;linux/if.h&amp;gt;
@@ -227,402 +27,60 @@ tcp 6 115 TIME_WAIT src=192.168.2.10 dst=192.168.3.10 sport=4000 dport=80 zone-o
 #include &amp;lt;sys/stat.h&amp;gt;
 #include &amp;lt;sys/types.h&amp;gt;
 #include &amp;lt;unistd.h&amp;gt;
+
 static int tunAlloc(void) {
-int fd;
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
-fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
-ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr);
-ioctl(fd, TUNSETOWNER, geteuid());
-return fd;
+ int fd;
+ struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+
+ fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
+ ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr);
+ ioctl(fd, TUNSETOWNER, geteuid());
+ return fd;
 }
+
 // this is a test
 static void bringInterfaceUp(void) {
-int sock;
-struct sockaddr_in addr = {.sin_family = AF_INET};
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
-inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
-memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
-sock = socket(AF_INET, SOCK_DGRAM, 0);
-ioctl(sock, SIOCSIFADDR, &amp;amp;ifr);
-ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr);
-ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr);
-close(sock);
+ int sock;
+ struct sockaddr_in addr = {.sin_family = AF_INET};
+ struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
+
+ inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
+ memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
+
+ sock = socket(AF_INET, SOCK_DGRAM, 0);
+ ioctl(sock, SIOCSIFADDR, &amp;amp;ifr);
+ ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr);
+ ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+ ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr);
+ close(sock);
 }
+
 static void emitPacket(int tap_fd) {
-unsigned char packet[] = {
-0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
-172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
-0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
-0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
-0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
-write(tap_fd, packet, sizeof(packet));
+ unsigned char packet[] = {
+ 0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+ 172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
+ 0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+ 0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+ 0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+
+ write(tap_fd, packet, sizeof(packet));
 }
+
 int main() {
-int tap_fd;
-tap_fd = tunAlloc();
-bringInterfaceUp();
-emitPacket(tap_fd);
-close(tap_fd);
-return 0;
+ int tap_fd;
+
+ tap_fd = tunAlloc();
+ bringInterfaceUp();
+ emitPacket(tap_fd);
+ close(tap_fd);
+
+ return 0;
 }
-&lt;/code>&lt;/pre>
-&lt;/div>
-&lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p></description><content>&lt;p>In &lt;a href="https://unix.stackexchange.com/q/735522/4989">this question&lt;/a>, August Vrubel has some C code that sets up a &lt;a href="https://docs.kernel.org/networking/tuntap.html">tun&lt;/a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&amp;rsquo;d like to take a slightly extended look at &lt;a href="https://unix.stackexchange.com/a/735534/4989">my answer&lt;/a> because I think it&amp;rsquo;s a great opportunity for learning a bit more about performing network diagnostics.&lt;/p>
-&lt;p>The original code looked like this:&lt;/p>
-&lt;div class="collapsable-code">
-&lt;input id="532784916" type="checkbox" />
-&lt;label for="532784916">
-&lt;span class="collapsable-code__language">c&lt;/span>
-&lt;span class="collapsable-code__title">original sendpacket.c&lt;/span>
-&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
-&lt;/label>
-&lt;pre class="language-c" >&lt;code>
-#include &amp;lt;arpa/inet.h&amp;gt;
-#include &amp;lt;fcntl.h&amp;gt;
-#include &amp;lt;linux/if.h&amp;gt;
-#include &amp;lt;linux/if_tun.h&amp;gt;
-#include &amp;lt;netinet/in.h&amp;gt;
-#include &amp;lt;poll.h&amp;gt;
-#include &amp;lt;stdio.h&amp;gt;
-#include &amp;lt;string.h&amp;gt;
-#include &amp;lt;sys/ioctl.h&amp;gt;
-#include &amp;lt;sys/socket.h&amp;gt;
-#include &amp;lt;sys/stat.h&amp;gt;
-#include &amp;lt;sys/types.h&amp;gt;
-#include &amp;lt;unistd.h&amp;gt;
-static int tunAlloc(void) {
-int fd;
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
-fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
-ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr);
-ioctl(fd, TUNSETOWNER, geteuid());
-return fd;
-}
-// this is a test
-static void bringInterfaceUp(void) {
-int sock;
-struct sockaddr_in addr = {.sin_family = AF_INET};
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
-inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
-memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
-sock = socket(AF_INET, SOCK_DGRAM, 0);
-ioctl(sock, SIOCSIFADDR, &amp;amp;ifr);
-ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr);
-ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr);
-close(sock);
-}
-static void emitPacket(int tap_fd) {
-unsigned char packet[] = {
-0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
-172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
-0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
-0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
-0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
-write(tap_fd, packet, sizeof(packet));
-}
-int main() {
-int tap_fd;
-tap_fd = tunAlloc();
-bringInterfaceUp();
-emitPacket(tap_fd);
-close(tap_fd);
-return 0;
-}
-&lt;/code>&lt;/pre>
-&lt;/div>
-&lt;p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p>
-&lt;p>In order to resolve those issues, I added some prompts before sending the packet and before tearing down the &lt;code>tun&lt;/code> interface (and also some minimal error checking), giving us:&lt;/p>
-&lt;div class="collapsable-code">
-&lt;input id="513974628" type="checkbox" />
-&lt;label for="513974628">
-&lt;span class="collapsable-code__language">c&lt;/span>
-&lt;span class="collapsable-code__title">sendpacket.c with prompts and error checking&lt;/span>
-&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
-&lt;/label>
-&lt;pre class="language-c" >&lt;code>
-#include &amp;lt;arpa/inet.h&amp;gt;
-#include &amp;lt;fcntl.h&amp;gt;
-#include &amp;lt;linux/if.h&amp;gt;
-#include &amp;lt;linux/if_tun.h&amp;gt;
-#include &amp;lt;netinet/in.h&amp;gt;
-#include &amp;lt;poll.h&amp;gt;
-#include &amp;lt;stdio.h&amp;gt;
-#include &amp;lt;stdlib.h&amp;gt;
-#include &amp;lt;string.h&amp;gt;
-#include &amp;lt;sys/ioctl.h&amp;gt;
-#include &amp;lt;sys/socket.h&amp;gt;
-#include &amp;lt;sys/stat.h&amp;gt;
-#include &amp;lt;sys/types.h&amp;gt;
-#include &amp;lt;unistd.h&amp;gt;
-#define must(x) _must(#x, __FILE__, __LINE__, __func__, (x))
-void _must(const char *call, const char *filename, int line,
-const char *funcname, int err) {
-char buf[1024];
-snprintf(buf, 1023, &amp;#34;%s (@ %s:%d)&amp;#34;, call, filename, line);
-if (err &amp;lt; 0) {
-perror(buf);
-exit(1);
-}
-}
-static int tunAlloc(void) {
-int fd;
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
-fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
-must(ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr));
-must(ioctl(fd, TUNSETOWNER, geteuid()));
-return fd;
-}
-static void bringInterfaceUp(void) {
-int sock;
-struct sockaddr_in addr = {.sin_family = AF_INET};
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
-inet_aton(&amp;#34;172.30.0.1&amp;#34;, &amp;amp;addr.sin_addr);
-memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
-sock = socket(AF_INET, SOCK_DGRAM, 0);
-must(ioctl(sock, SIOCSIFADDR, &amp;amp;ifr));
-must(ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr));
-ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-must(ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr));
-close(sock);
-}
-static void emitPacket(int tap_fd) {
-unsigned char packet[] = {
-0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
-172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
-0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
-0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
-0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
-write(tap_fd, packet, sizeof(packet));
-}
-void prompt(char *promptString) {
-printf(&amp;#34;%s\n&amp;#34;, promptString);
-getchar();
-}
-int main() {
-int tap_fd;
-tap_fd = tunAlloc();
-bringInterfaceUp();
-prompt(&amp;#34;interface is up&amp;#34;);
-emitPacket(tap_fd);
-prompt(&amp;#34;sent packet&amp;#34;);
-close(tap_fd);
-printf(&amp;#34;all done&amp;#34;);
-return 0;
-}
-&lt;/code>&lt;/pre>
-&lt;/div>
-&lt;p>We start by compiling the code:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>gcc -o sendpacket sendpacket.c
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we try running this as a regular user, it will simply fail (which confirms that at least some of our error handling is working correctly):&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ ./sendpacket
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ioctl&lt;span style="color:#f92672">(&lt;/span>fd, TUNSETIFF, &lt;span style="color:#f92672">(&lt;/span>void *&lt;span style="color:#f92672">)&lt;/span>&amp;amp;ifr&lt;span style="color:#f92672">)&lt;/span> &lt;span style="color:#f92672">(&lt;/span>@ sendpacket-pause.c:33&lt;span style="color:#f92672">)&lt;/span>: Operation not permitted
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We need to run it as &lt;code>root&lt;/code>:&lt;/p>
-&lt;pre tabindex="0">&lt;code>$ sudo ./sendpacket
-interface is up
-&lt;/code>&lt;/pre>&lt;p>The &lt;code>interface is up&lt;/code> prompt means that the code has configured the interface but has not yet sent the packet. Let&amp;rsquo;s take a look at the interface configuration:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ ip addr show tun0
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>3390: tun0: &amp;lt;POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP&amp;gt; mtu &lt;span style="color:#ae81ff">1500&lt;/span> qdisc fq_codel state UNKNOWN group default qlen &lt;span style="color:#ae81ff">500&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> link/none
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> inet 172.30.0.1/32 scope global tun0
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> valid_lft forever preferred_lft forever
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> inet6 fe80::c7ca:fe15:5d5c:2c49/64 scope link stable-privacy
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> valid_lft forever preferred_lft forever
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The code will emit a TCP &lt;code>SYN&lt;/code> packet targeting address &lt;code>192.168.255.8&lt;/code>, port &lt;code>10001&lt;/code>. In another terminal, let&amp;rsquo;s watch for that on all interfaces. If we start &lt;code>tcpdump&lt;/code> and press RETURN at the &lt;code>interface is up&lt;/code> prompt, we&amp;rsquo;ll see something like:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># tcpdump -nn -i any port 10001&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>22:36:35.336643 tun0 In IP 172.30.0.1.41626 &amp;gt; 192.168.255.8.10001: Flags &lt;span style="color:#f92672">[&lt;/span>S&lt;span style="color:#f92672">]&lt;/span>, seq 2148230009, win 64240, options &lt;span style="color:#f92672">[&lt;/span>mss 1460,sackOK,TS val &lt;span style="color:#ae81ff">1534484436&lt;/span> ecr 0,nop,wscale 7&lt;span style="color:#f92672">]&lt;/span>, length &lt;span style="color:#ae81ff">0&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And indeed, we see the problem that was described: the packet enters the system on &lt;code>tun0&lt;/code>, but never goes anywhere else. What&amp;rsquo;s going on?&lt;/p>
-&lt;h2 id="introducing-pwru-packet-where-are-you">Introducing pwru (Packet, Where are you?)&lt;/h2>
-&lt;p>&lt;a href="https://github.com/cilium/pwru">&lt;code>pwru&lt;/code>&lt;/a> is a nifty utility written by the folks at Cilium that takes advantage of &lt;a href="https://ebpf.io/">eBPF&lt;/a> to attach traces to hundreds of kernel functions to trace packet processing through the Linux kernel. It&amp;rsquo;s especially useful when packets seem to be getting dropped with no obvious explanation. Let&amp;rsquo;s see what it can tell us!&lt;/p>
-&lt;p>A convenient way to run &lt;code>pwru&lt;/code> is using their official Docker image. We&amp;rsquo;ll run it like this, filtering by protocol and destination port so that we only see results relating to the synthesized packet created by the &lt;code>sendpacket.c&lt;/code> code:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>docker run --privileged --rm -t --pid&lt;span style="color:#f92672">=&lt;/span>host &lt;span style="color:#ae81ff">\
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#ae81ff">&lt;/span> -v /sys/kernel/debug/:/sys/kernel/debug/ &lt;span style="color:#ae81ff">\
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#ae81ff">&lt;/span> cilium/pwru --filter-proto tcp --filter-port &lt;span style="color:#ae81ff">10001&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we run &lt;code>sendpacket&lt;/code> while &lt;code>pwru&lt;/code> is running, the output looks something like this:&lt;/p>
-&lt;pre tabindex="0">&lt;code>2023/02/15 03:42:33 Per cpu buffer size: 4096 bytes
-2023/02/15 03:42:33 Attaching kprobes (via kprobe-multi)...
-1469 / 1469 [-----------------------------------------------------------------------------] 100.00% ? p/s
-2023/02/15 03:42:33 Attached (ignored 0)
-2023/02/15 03:42:33 Listening for events..
-SKB CPU PROCESS FUNC
-0xffff8ce13e987900 6 [sendpacket-orig] netif_receive_skb
-0xffff8ce13e987900 6 [sendpacket-orig] skb_defer_rx_timestamp
-0xffff8ce13e987900 6 [sendpacket-orig] __netif_receive_skb
-0xffff8ce13e987900 6 [sendpacket-orig] __netif_receive_skb_one_core
-0xffff8ce13e987900 6 [sendpacket-orig] ip_rcv
-0xffff8ce13e987900 6 [sendpacket-orig] ip_rcv_core
-0xffff8ce13e987900 6 [sendpacket-orig] kfree_skb_reason(SKB_DROP_REASON_IP_CSUM)
-0xffff8ce13e987900 6 [sendpacket-orig] skb_release_head_state
-0xffff8ce13e987900 6 [sendpacket-orig] sock_wfree
-0xffff8ce13e987900 6 [sendpacket-orig] skb_release_data
-0xffff8ce13e987900 6 [sendpacket-orig] skb_free_head
-0xffff8ce13e987900 6 [sendpacket-orig] kfree_skbmem
-&lt;/code>&lt;/pre>&lt;p>And now we have a big blinking sign that tells us why the packet is being dropped:&lt;/p>
-&lt;pre tabindex="0">&lt;code>0xffff8ce13e987900 6 [sendpacket-orig] kfree_skb_reason(SKB_DROP_REASON_IP_CSUM)
-&lt;/code>&lt;/pre>&lt;h2 id="fixing-the-checksum">Fixing the checksum&lt;/h2>
-&lt;p>It looks like the synthesized packet data includes a bad checksum. We could update the code to correctly calculate the checksum&amp;hellip;or we could just use &lt;a href="https://www.wireshark.org/">Wireshark&lt;/a> and have it tell us the correct values. Because this isn&amp;rsquo;t meant to be an IP networking primer, we&amp;rsquo;ll just use Wireshark, which gives us the following updated code:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">static&lt;/span> &lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">emitPacket&lt;/span>(&lt;span style="color:#66d9ef">int&lt;/span> tap_fd) {
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">uint16_t&lt;/span> cs;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">uint8_t&lt;/span> packet[] &lt;span style="color:#f92672">=&lt;/span> {
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x45&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x3c&lt;/span>, &lt;span style="color:#ae81ff">0xd8&lt;/span>, &lt;span style="color:#ae81ff">0x6f&lt;/span>, &lt;span style="color:#ae81ff">0x40&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x3f&lt;/span>, &lt;span style="color:#ae81ff">0x06&lt;/span>, &lt;span style="color:#ae81ff">0xf7&lt;/span>, &lt;span style="color:#ae81ff">0x7b&lt;/span>,
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">172&lt;/span>, &lt;span style="color:#ae81ff">30&lt;/span>, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#ae81ff">192&lt;/span>, &lt;span style="color:#ae81ff">168&lt;/span>, &lt;span style="color:#ae81ff">255&lt;/span>, &lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#ae81ff">0xa2&lt;/span>, &lt;span style="color:#ae81ff">0x9a&lt;/span>, &lt;span style="color:#ae81ff">0x27&lt;/span>, &lt;span style="color:#ae81ff">0x11&lt;/span>,
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x80&lt;/span>, &lt;span style="color:#ae81ff">0x0b&lt;/span>, &lt;span style="color:#ae81ff">0x63&lt;/span>, &lt;span style="color:#ae81ff">0x79&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0xa0&lt;/span>, &lt;span style="color:#ae81ff">0x02&lt;/span>, &lt;span style="color:#ae81ff">0xfa&lt;/span>, &lt;span style="color:#ae81ff">0xf0&lt;/span>,
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x78&lt;/span>, &lt;span style="color:#ae81ff">0xc3&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x02&lt;/span>, &lt;span style="color:#ae81ff">0x04&lt;/span>, &lt;span style="color:#ae81ff">0x05&lt;/span>, &lt;span style="color:#ae81ff">0xb4&lt;/span>, &lt;span style="color:#ae81ff">0x04&lt;/span>, &lt;span style="color:#ae81ff">0x02&lt;/span>, &lt;span style="color:#ae81ff">0x08&lt;/span>, &lt;span style="color:#ae81ff">0x0a&lt;/span>,
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0x5b&lt;/span>, &lt;span style="color:#ae81ff">0x76&lt;/span>, &lt;span style="color:#ae81ff">0x5f&lt;/span>, &lt;span style="color:#ae81ff">0xd4&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x00&lt;/span>, &lt;span style="color:#ae81ff">0x01&lt;/span>, &lt;span style="color:#ae81ff">0x03&lt;/span>, &lt;span style="color:#ae81ff">0x03&lt;/span>, &lt;span style="color:#ae81ff">0x07&lt;/span>,
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> };
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">write&lt;/span>(tap_fd, packet, &lt;span style="color:#66d9ef">sizeof&lt;/span>(packet));
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If we repeat our invocation of &lt;code>pwru&lt;/code> and run a test with the updated code, we see:&lt;/p>
-&lt;pre tabindex="0">&lt;code>2023/02/15 04:17:29 Per cpu buffer size: 4096 bytes
-2023/02/15 04:17:29 Attaching kprobes (via kprobe-multi)...
-1469 / 1469 [-----------------------------------------------------------------------------] 100.00% ? p/s
-2023/02/15 04:17:29 Attached (ignored 0)
-2023/02/15 04:17:29 Listening for events..
-SKB CPU PROCESS FUNC
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] netif_receive_skb
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_defer_rx_timestamp
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] __netif_receive_skb
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] __netif_receive_skb_one_core
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_rcv
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_rcv_core
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] sock_wfree
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] nf_hook_slow
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] nf_checksum
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] nf_ip_checksum
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] __skb_checksum_complete
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] tcp_v4_early_demux
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_route_input_noref
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_route_input_slow
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] fib_validate_source
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] __fib_validate_source
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_handle_martian_source
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] kfree_skb_reason(SKB_DROP_REASON_NOT_SPECIFIED)
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_release_head_state
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_release_data
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] skb_free_head
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] kfree_skbmem
-&lt;/code>&lt;/pre>&lt;h2 id="dealing-with-martians">Dealing with martians&lt;/h2>
-&lt;p>Looking at the above output, we&amp;rsquo;re no longer seeing the &lt;code>SKB_DROP_REASON_IP_CSUM&lt;/code> error; instead, we&amp;rsquo;re getting dropped by the routing logic:&lt;/p>
-&lt;pre tabindex="0">&lt;code>0xffff8cd8a6c5ef00 9 [sendpacket-chec] fib_validate_source
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] __fib_validate_source
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] ip_handle_martian_source
-0xffff8cd8a6c5ef00 9 [sendpacket-chec] kfree_skb_reason(SKB_DROP_REASON_NOT_SPECIFIED)
-&lt;/code>&lt;/pre>&lt;p>Specifically, the packet is being dropped as a &amp;ldquo;martian source&amp;rdquo;, which means a packet that has a source address that is invalid for the interface on which it is being received. Unlike the previous error, we can actually get kernel log messages about this problem. If we had the &lt;code>log_martians&lt;/code> sysctl enabled for all interfaces:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>sysctl -w net.ipv4.conf.all.log_martians&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or if we enabled it specifically for &lt;code>tun0&lt;/code> after the interface is created:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>sysctl -w net.ipv4.conf.tun0.log_martians&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We would see the following message logged by the kernel:&lt;/p>
-&lt;pre tabindex="0">&lt;code>Feb 14 12:14:03 madhatter kernel: IPv4: martian source 192.168.255.8 from 172.30.0.1, on dev tun0
-&lt;/code>&lt;/pre>&lt;p>We&amp;rsquo;re seeing this particular error because &lt;code>tun0&lt;/code> is configured with address &lt;code>172.30.0.1&lt;/code>, but it claims to be receiving a packet with the same source address from &amp;ldquo;somewhere else&amp;rdquo; on the network. This is a problem because we would never be able to reply to that packet (our replies would get routed to the local host). To deal with this problem, we can either change the source address of the packet, or we can change the IP address assigned to the &lt;code>tun0&lt;/code> interface. Since changing the source address would mean mucking about with checksums again, let&amp;rsquo;s change the address of &lt;code>tun0&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">static&lt;/span> &lt;span style="color:#66d9ef">void&lt;/span> &lt;span style="color:#a6e22e">bringInterfaceUp&lt;/span>(&lt;span style="color:#66d9ef">void&lt;/span>) {
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">int&lt;/span> sock;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">struct&lt;/span> sockaddr_in addr &lt;span style="color:#f92672">=&lt;/span> {.sin_family &lt;span style="color:#f92672">=&lt;/span> AF_INET};
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">struct&lt;/span> ifreq ifr &lt;span style="color:#f92672">=&lt;/span> {.ifr_name &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;tun0&amp;#34;&lt;/span>};
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">inet_aton&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;172.30.0.10&amp;#34;&lt;/span>, &lt;span style="color:#f92672">&amp;amp;&lt;/span>addr.sin_addr);
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">memcpy&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr.ifr_addr, &lt;span style="color:#f92672">&amp;amp;&lt;/span>addr, &lt;span style="color:#66d9ef">sizeof&lt;/span>(&lt;span style="color:#66d9ef">struct&lt;/span> sockaddr));
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> sock &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">socket&lt;/span>(AF_INET, SOCK_DGRAM, &lt;span style="color:#ae81ff">0&lt;/span>);
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">ioctl&lt;/span>(sock, SIOCSIFADDR, &lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr));
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">ioctl&lt;/span>(sock, SIOCGIFFLAGS, &lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr));
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> ifr.ifr_flags &lt;span style="color:#f92672">|=&lt;/span> IFF_UP &lt;span style="color:#f92672">|&lt;/span> IFF_RUNNING;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">must&lt;/span>(&lt;span style="color:#a6e22e">ioctl&lt;/span>(sock, SIOCSIFFLAGS, &lt;span style="color:#f92672">&amp;amp;&lt;/span>ifr));
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">close&lt;/span>(sock);
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>With this change, &lt;code>tun0&lt;/code> now looks like:&lt;/p>
-&lt;pre tabindex="0">&lt;code>3452: tun0: &amp;lt;POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP&amp;gt; mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 500
-link/none
-inet 172.30.0.10/32 scope global tun0
-valid_lft forever preferred_lft forever
-inet6 fe80::bda3:ddc8:e60e:106b/64 scope link stable-privacy
-valid_lft forever preferred_lft forever
-&lt;/code>&lt;/pre>&lt;p>And if we repeat our earlier test in which we use &lt;code>tcpdump&lt;/code> to watch for our synthesized packet on any interface, we now see the desired behavior:&lt;/p>
-&lt;pre tabindex="0">&lt;code># tcpdump -nn -i any port 10001
-23:37:55.897786 tun0 In IP 172.30.0.1.41626 &amp;gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
-23:37:55.897816 eth0 Out IP 172.30.0.1.41626 &amp;gt; 192.168.255.8.10001: Flags [S], seq 2148230009, win 64240, options [mss 1460,sackOK,TS val 1534484436 ecr 0,nop,wscale 7], length 0
-&lt;/code>&lt;/pre>&lt;p>The packet is correctly handled by the kernel and sent out to our default gateway.&lt;/p>
-&lt;h2 id="finishing-up">Finishing up&lt;/h2>
-&lt;p>The final version of the code looks like this:&lt;/p>
-&lt;div class="collapsable-code">
-&lt;input id="893267514" type="checkbox" />
-&lt;label for="893267514">
-&lt;span class="collapsable-code__language">c&lt;/span>
-&lt;span class="collapsable-code__title">working sendpacket.c&lt;/span>
-&lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽">&lt;/span>
-&lt;/label>
-&lt;pre class="language-c" >&lt;code>
-#include &amp;lt;arpa/inet.h&amp;gt;
-#include &amp;lt;fcntl.h&amp;gt;
-#include &amp;lt;linux/if.h&amp;gt;
-#include &amp;lt;linux/if_tun.h&amp;gt;
-#include &amp;lt;netinet/in.h&amp;gt;
-#include &amp;lt;poll.h&amp;gt;
-#include &amp;lt;stdio.h&amp;gt;
-#include &amp;lt;stdlib.h&amp;gt;
-#include &amp;lt;string.h&amp;gt;
-#include &amp;lt;sys/ioctl.h&amp;gt;
-#include &amp;lt;sys/socket.h&amp;gt;
-#include &amp;lt;sys/stat.h&amp;gt;
-#include &amp;lt;sys/types.h&amp;gt;
-#include &amp;lt;unistd.h&amp;gt;
-#define must(x) _must(#x, __FILE__, __LINE__, __func__, (x))
-void _must(const char *call, const char *filename, int line,
-const char *funcname, int err) {
-char buf[1024];
-snprintf(buf, 1023, &amp;#34;%s (@ %s:%d)&amp;#34;, call, filename, line);
-if (err &amp;lt; 0) {
-perror(buf);
-exit(1);
-}
-}
-static int tunAlloc(void) {
-int fd;
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
-fd = open(&amp;#34;/dev/net/tun&amp;#34;, O_RDWR);
-must(ioctl(fd, TUNSETIFF, (void *)&amp;amp;ifr));
-must(ioctl(fd, TUNSETOWNER, geteuid()));
-return fd;
-}
-static void bringInterfaceUp(void) {
-int sock;
-struct sockaddr_in addr = {.sin_family = AF_INET};
-struct ifreq ifr = {.ifr_name = &amp;#34;tun0&amp;#34;};
-inet_aton(&amp;#34;172.30.0.10&amp;#34;, &amp;amp;addr.sin_addr);
-memcpy(&amp;amp;ifr.ifr_addr, &amp;amp;addr, sizeof(struct sockaddr));
-sock = socket(AF_INET, SOCK_DGRAM, 0);
-must(ioctl(sock, SIOCSIFADDR, &amp;amp;ifr));
-must(ioctl(sock, SIOCGIFFLAGS, &amp;amp;ifr));
-ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-must(ioctl(sock, SIOCSIFFLAGS, &amp;amp;ifr));
-close(sock);
-}
-static void emitPacket(int tap_fd) {
-uint16_t cs;
-uint8_t packet[] = {
-0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0xf7, 0x7b,
-172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
-0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
-0x78, 0xc3, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
-0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07,
-};
-write(tap_fd, packet, sizeof(packet));
-}
-void prompt(char *promptString) {
-printf(&amp;#34;%s\n&amp;#34;, promptString);
-getchar();
-}
-int main() {
-int tap_fd;
-tap_fd = tunAlloc();
-bringInterfaceUp();
-prompt(&amp;#34;interface is up&amp;#34;);
-emitPacket(tap_fd);
-prompt(&amp;#34;sent packet&amp;#34;);
-close(tap_fd);
-printf(&amp;#34;all done&amp;#34;);
-return 0;
-}
-&lt;/code>&lt;/pre>
-&lt;/div></content></item></channel></rss>
+
+
+
+&lt;/code&gt;&lt;/pre&gt;
+ &lt;/div&gt;
+
+
+&lt;p&gt;A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&amp;rsquo;s going on.&lt;/p&gt;</description></item></channel></rss>

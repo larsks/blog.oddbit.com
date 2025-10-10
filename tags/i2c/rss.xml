@@ -1,40 +1,16 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>I2c on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/i2c/</link><description>Recent content in I2c on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Tue, 12 Mar 2013 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/i2c/rss.xml" rel="self" type="application/rss+xml"/><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
-&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>I2c on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/i2c/</link><description>Recent content in I2c on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/i2c/rss.xml" rel="self" type="application/rss+xml"/><item><title>I2C on the Raspberry Pi</title><link>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</link><pubDate>Tue, 12 Mar 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/</guid><description>&lt;p&gt;I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/"&gt;Raspberry Pi&lt;/a&gt; to communicate with my &lt;a href="http://www.arduino.cc/"&gt;Arduino&lt;/a&gt; via
+&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C"&gt;I2C&lt;/a&gt;. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
 device. While in general this means that you need to use a level
-converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
+converter when connecting the two devices, &lt;strong&gt;you don&amp;rsquo;t need to use a
 level converter when connecting the Arduino to the Raspberry Pi via
-I2C.&lt;/strong>&lt;/p>
-&lt;p>The design of the I2C bus is such that the only device driving a
+I2C.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The design of the I2C bus is such that the only device driving a
 voltage on the bus is the master (in this case, the Raspberry Pi), via
 pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
 the Pi, which is perfectly safe for the Arduino (and compatible with
 it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
 bus low by connecting it to ground. In other words, slave devices
-&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
+&lt;em&gt;never&lt;/em&gt; drive the bus high. This means that the Raspberry Pi will
 never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
-mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
-Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p></description><content>&lt;p>I&amp;rsquo;ve set up my &lt;a href="http://www.raspberrypi.org/">Raspberry Pi&lt;/a> to communicate with my &lt;a href="http://www.arduino.cc/">Arduino&lt;/a> via
-&lt;a href="http://en.wikipedia.org/wiki/I%C2%B2C">I2C&lt;/a>. The Raspberry Pi is a 3.3v device and the Arduino is a 5v
-device. While in general this means that you need to use a level
-converter when connecting the two devices, &lt;strong>you don&amp;rsquo;t need to use a
-level converter when connecting the Arduino to the Raspberry Pi via
-I2C.&lt;/strong>&lt;/p>
-&lt;p>The design of the I2C bus is such that the only device driving a
-voltage on the bus is the master (in this case, the Raspberry Pi), via
-pull-up resistors. So when &amp;ldquo;idle&amp;rdquo;, the bus is pulled to 3.3v volts by
-the Pi, which is perfectly safe for the Arduino (and compatible with
-it&amp;rsquo;s 5v signaling). To transmit data on the bus, a device brings the
-bus low by connecting it to ground. In other words, slave devices
-&lt;em>never&lt;/em> drive the bus high. This means that the Raspberry Pi will
-never see a 5v signal from the Arduino&amp;hellip;unless, of course, you make a
-mistake and accidentally &lt;code>digitalWrite&lt;/code> a &lt;code>HIGH&lt;/code> value on one of the
-Arduino&amp;rsquo;s &lt;code>I2C&lt;/code> pins. So don&amp;rsquo;t do that.&lt;/p>
-&lt;p>Note that the built-in pull-up resistors are &lt;em>only&lt;/em> available on the
-Pi&amp;rsquo;s I2C pins (Pins 3 (&lt;code>SDA&lt;/code>) and 5 (&lt;code>SCL&lt;/code>), aka BCM &lt;code>GPIO0&lt;/code> and
-&lt;code>GPIO1&lt;/code> on a Rev. 1 board, &lt;code>GPIO2&lt;/code> and &lt;code>GPIOP3&lt;/code> on a Rev. 2 board):&lt;/p>
-&lt;p>&lt;img alt="Raspberry Pi Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/raspberry-pi-i2c-pins.jpg">&lt;/p>
-&lt;p>On the Arduino Uno, the &lt;code>I2C&lt;/code> pins are pins &lt;code>A4&lt;/code> (&lt;code>SDA&lt;/code>) and &lt;code>A5&lt;/code>
-(&lt;code>SCL&lt;/code>):&lt;/p>
-&lt;p>&lt;img alt="Arduino Uno Pins" src="https://blog.oddbit.com/post/2013-03-12-i2c-on-the-raspberry/arduino-i2c-pins.jpg">&lt;/p>
-&lt;p>For information about other boards and about the Arduino I2C API, see
-the documentation for the &lt;a href="http://arduino.cc/en/Reference/Wire">Wire library&lt;/a>.&lt;/p></content></item></channel></rss>
+mistake and accidentally &lt;code&gt;digitalWrite&lt;/code&gt; a &lt;code&gt;HIGH&lt;/code&gt; value on one of the
+Arduino&amp;rsquo;s &lt;code&gt;I2C&lt;/code&gt; pins. So don&amp;rsquo;t do that.&lt;/p&gt;</description></item></channel></rss>

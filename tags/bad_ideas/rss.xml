@@ -1,95 +1,25 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Bad_ideas on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/bad_ideas/</link><description>Recent content in Bad_ideas on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Fri, 10 Apr 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/bad_ideas/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
-implemented poorly, move along!&lt;/p>
-&lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
-&lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
-your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
-well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
-&lt;p>And now your boss knows why the TPS reports are late. You need
-&lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
-repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Bad_ideas on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/bad_ideas/</link><description>Recent content in Bad_ideas on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/bad_ideas/rss.xml" rel="self" type="application/rss+xml"/><item><title>Using tools badly: time shifting git commits with Workinghours</title><link>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</link><pubDate>Fri, 10 Apr 2015 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/</guid><description>&lt;p&gt;This is a terrible hack. If you are easily offended by bad ideas
+implemented poorly, move along!&lt;/p&gt;
+&lt;p&gt;You are working on a wonderful open source project&amp;hellip;but you are not
+&lt;em&gt;supposed&lt;/em&gt; to be working on that project! You&amp;rsquo;re supposed to be doing
+your &lt;em&gt;real&lt;/em&gt; work! Unfortunately, your extra-curricular activity is
+well documented in the git history of your project for all to see:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png" alt="Heatmap of original commit history"&gt;&lt;/p&gt;
+&lt;p&gt;And now your boss knows why the TPS reports are late. You need
+&lt;a href="https://github.com/larsks/workinghours.git"&gt;workinghours&lt;/a&gt;, a terrible utility for doing awful things to your
+repository history. &lt;a href="https://github.com/larsks/workinghours.git"&gt;Workinghours&lt;/a&gt; will programatically time shift
 your git commits so that they appear to have happened within specified
-time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p></description><content>&lt;p>This is a terrible hack. If you are easily offended by bad ideas
-implemented poorly, move along!&lt;/p>
-&lt;p>You are working on a wonderful open source project&amp;hellip;but you are not
-&lt;em>supposed&lt;/em> to be working on that project! You&amp;rsquo;re supposed to be doing
-your &lt;em>real&lt;/em> work! Unfortunately, your extra-curricular activity is
-well documented in the git history of your project for all to see:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of original commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-before.png">&lt;/p>
-&lt;p>And now your boss knows why the TPS reports are late. You need
-&lt;a href="https://github.com/larsks/workinghours.git">workinghours&lt;/a>, a terrible utility for doing awful things to your
-repository history. &lt;a href="https://github.com/larsks/workinghours.git">Workinghours&lt;/a> will programatically time shift
-your git commits so that they appear to have happened within specified
-time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p>
-&lt;p>Running &lt;code>workinghours&lt;/code> on your repository makes things better:&lt;/p>
-&lt;pre>&lt;code>workinghours --afterhours | workinghours-apply
-&lt;/code>&lt;/pre>
-&lt;p>And now you have:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-after.png">&lt;/p>
-&lt;p>But that looks suspicious. What are you, some kind of machine?
-Fortunately, &lt;code>workinghours&lt;/code> has a &lt;code>--drift&lt;/code> option that will introduce
-some variety into your start and end times. The syntax is &lt;code>--drift P before after&lt;/code>, where for each commit &lt;code>workinghours&lt;/code> will with
-probability &lt;em>P&lt;/em> extend the beginning of the time interval by a random
-amount between 0 and &lt;em>before&lt;/em>
-hours, and the end of the time interval by a random amount between 0
-and &lt;em>after&lt;/em> hours.&lt;/p>
-&lt;p>Introducing a low probability drift to the beginning of the interval:&lt;/p>
-&lt;pre>&lt;code>workinghours --afterhours -d 0.2 8 2 | workinghours-apply
-&lt;/code>&lt;/pre>
-&lt;p>Gives us:&lt;/p>
-&lt;p>&lt;img alt="Heatmap of modified commit history" src="https://blog.oddbit.com/post/2015-04-10-workinghours-time-shifting-git/repo-drifted.png">&lt;/p>
-&lt;p>Congratulations, you are a model employee.&lt;/p></content></item><item><title>Fixing RPM with evil magic</title><link>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</link><pubDate>Tue, 26 Jul 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</guid><description>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
-&lt;p>At my office we are developing a deployment mechanism for RPM packages. The
-general workflow looks like this:&lt;/p>
-&lt;ul>
-&lt;li>You build a source rpm on your own machine.&lt;/li>
-&lt;li>You sign the rpm with your GPG key.&lt;/li>
-&lt;li>You submit the source RPM to our buildserver.&lt;/li>
-&lt;li>The buildserver validates your signature and then builds the package.&lt;/li>
-&lt;li>The buildserver signs the package using a master signing key.&lt;/li>
-&lt;/ul>
-&lt;p>The last step in that sequence represents a problem, because the &lt;code>rpmsign&lt;/code>
+time intervals (for example, &amp;ldquo;between 7PM and midnight&amp;rdquo;).&lt;/p&gt;</description></item><item><title>Fixing RPM with evil magic</title><link>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</link><pubDate>Tue, 26 Jul 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-07-26-fixing-rpm-with-evil-magic/</guid><description>&lt;h1 id="fixing-rpmsign-with-evil-magic"&gt;Fixing rpmsign with evil magic&lt;/h1&gt;
+&lt;p&gt;At my office we are developing a deployment mechanism for RPM packages. The
+general workflow looks like this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You build a source rpm on your own machine.&lt;/li&gt;
+&lt;li&gt;You sign the rpm with your GPG key.&lt;/li&gt;
+&lt;li&gt;You submit the source RPM to our buildserver.&lt;/li&gt;
+&lt;li&gt;The buildserver validates your signature and then builds the package.&lt;/li&gt;
+&lt;li&gt;The buildserver signs the package using a master signing key.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The last step in that sequence represents a problem, because the &lt;code&gt;rpmsign&lt;/code&gt;
 command will always, always prompt for a password and read the response from
-&lt;code>/dev/tty&lt;/code>. This means that (a) you can&amp;rsquo;t easily provide the password on stdin,
-and (b) you can&amp;rsquo;t fix the problem using a passwordless key.&lt;/p></description><content>&lt;h1 id="fixing-rpmsign-with-evil-magic">Fixing rpmsign with evil magic&lt;/h1>
-&lt;p>At my office we are developing a deployment mechanism for RPM packages. The
-general workflow looks like this:&lt;/p>
-&lt;ul>
-&lt;li>You build a source rpm on your own machine.&lt;/li>
-&lt;li>You sign the rpm with your GPG key.&lt;/li>
-&lt;li>You submit the source RPM to our buildserver.&lt;/li>
-&lt;li>The buildserver validates your signature and then builds the package.&lt;/li>
-&lt;li>The buildserver signs the package using a master signing key.&lt;/li>
-&lt;/ul>
-&lt;p>The last step in that sequence represents a problem, because the &lt;code>rpmsign&lt;/code>
-command will always, always prompt for a password and read the response from
-&lt;code>/dev/tty&lt;/code>. This means that (a) you can&amp;rsquo;t easily provide the password on stdin,
-and (b) you can&amp;rsquo;t fix the problem using a passwordless key.&lt;/p>
-&lt;p>Other people have &lt;a href="http://jrmonk-techzine.blogspot.com/2010/06/how-to-sign-rpm-files-in-batch-mode.html">solved this problem using expect&lt;/a>, but I&amp;rsquo;ve opted for
-another solution which in some ways seems cleaner and in others seems like a
-terrible idea: function interposition using &lt;code>LD_PRELOAD&lt;/code>.&lt;/p>
-&lt;p>The &lt;code>rpmsign&lt;/code> command prompts for (and reads) a password using the &lt;code>getpass()&lt;/code>
-function call. If you look at the &lt;code>getpass(3)&lt;/code> man page, you&amp;rsquo;ll see that the
-function is defined like this:&lt;/p>
-&lt;pre>&lt;code>#include &amp;lt;unistd.h&amp;gt;
-char *getpass( const char *prompt);
-&lt;/code>&lt;/pre>
-&lt;p>So we start with the following short block of C code:&lt;/p>
-&lt;pre>&lt;code>#include &amp;lt;stdio.h&amp;gt;
-#include &amp;lt;unistd.h&amp;gt;
-char *getpass( const char *prompt) {
-printf(&amp;quot;I ATE YOUR PASSPHRASE.n&amp;quot;);
-return &amp;quot;&amp;quot;;
-}
-&lt;/code>&lt;/pre>
-&lt;p>This &amp;ndash; when properly loaded &amp;ndash; will replace the standard C library &lt;code>getpass()&lt;/code> function with our own version, which simply returns an empty string. This of course means we&amp;rsquo;ll be using a passwordless key, but you could obviously have our replacement function return an actual password instead of an empty string. I would argue that by doing so you would not substantially increase the security of your solution.&lt;/p>
-&lt;p>Next we create a shared library:&lt;/p>
-&lt;pre>&lt;code>$ cc -fPIC -g -c -o getpass.o getpass.c
-$ ld -shared -o getpass.so getpass.o
-&lt;/code>&lt;/pre>
-&lt;p>And now we perform our magic:&lt;/p>
-&lt;pre>&lt;code>$ LD_PRELOAD=$(pwd)/getpass.so rpmsign --addsign some.src.rpm
-I ATE YOUR PASSPHRASE.
-Pass phrase is good.
-&lt;/code>&lt;/pre>
-&lt;p>And &lt;em>voila&lt;/em>! A solution for operating &lt;code>rpmsign&lt;/code> in batch mode.&lt;/p></content></item></channel></rss>
+&lt;code&gt;/dev/tty&lt;/code&gt;. This means that (a) you can&amp;rsquo;t easily provide the password on stdin,
+and (b) you can&amp;rsquo;t fix the problem using a passwordless key.&lt;/p&gt;</description></item></channel></rss>

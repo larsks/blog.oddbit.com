@@ -1,49 +1,10 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Userscripts on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/userscripts/</link><description>Recent content in Userscripts on blog.oddbit.com</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Sun, 05 Sep 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/userscripts/rss.xml" rel="self" type="application/rss+xml"/><item><title>A pair of userscripts for cleaning up Stack Exchange sites</title><link>https://blog.oddbit.com/post/2021-09-05-sx-question-filters/</link><pubDate>Sun, 05 Sep 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-09-05-sx-question-filters/</guid><description>&lt;p>I&amp;rsquo;ve been a regular visitor to &lt;a href="https://stackoverflow.com">Stack Overflow&lt;/a> and other &lt;a href="https://stackexchange.com">Stack
-Exchange&lt;/a> sites over the years, and while I&amp;rsquo;ve mostly enjoyed the
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Userscripts on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/userscripts/</link><description>Recent content in Userscripts on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/userscripts/rss.xml" rel="self" type="application/rss+xml"/><item><title>A pair of userscripts for cleaning up Stack Exchange sites</title><link>https://blog.oddbit.com/post/2021-09-05-sx-question-filters/</link><pubDate>Sun, 05 Sep 2021 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2021-09-05-sx-question-filters/</guid><description>&lt;p&gt;I&amp;rsquo;ve been a regular visitor to &lt;a href="https://stackoverflow.com"&gt;Stack Overflow&lt;/a&gt; and other &lt;a href="https://stackexchange.com"&gt;Stack
+Exchange&lt;/a&gt; sites over the years, and while I&amp;rsquo;ve mostly enjoyed the
 experience, I&amp;rsquo;ve been frustrated by the lack of control I have over
 what questions I see. I&amp;rsquo;m not really interested in looking at
 questions that have already been closed, or that have a negative
 score, but there&amp;rsquo;s no native facility for filtering questions like
-this.&lt;/p>
-&lt;p>I finally spent the time learning just enough JavaScript ~~~to hurt
+this.&lt;/p&gt;
+&lt;p&gt;I finally spent the time learning just enough JavaScript ~~~to hurt
 myself~~~ to put together a pair of scripts that let me present the
-questions that way I want:&lt;/p></description><content>&lt;p>I&amp;rsquo;ve been a regular visitor to &lt;a href="https://stackoverflow.com">Stack Overflow&lt;/a> and other &lt;a href="https://stackexchange.com">Stack
-Exchange&lt;/a> sites over the years, and while I&amp;rsquo;ve mostly enjoyed the
-experience, I&amp;rsquo;ve been frustrated by the lack of control I have over
-what questions I see. I&amp;rsquo;m not really interested in looking at
-questions that have already been closed, or that have a negative
-score, but there&amp;rsquo;s no native facility for filtering questions like
-this.&lt;/p>
-&lt;p>I finally spent the time learning just enough JavaScript ~~~to hurt
-myself~~~ to put together a pair of scripts that let me present the
-questions that way I want:&lt;/p>
-&lt;h2 id="sx-hide-questions">sx-hide-questions&lt;/h2>
-&lt;p>The &lt;a href="https://github.com/larsks/sx-question-filter/raw/master/sx-hide-questions.user.js">sx-hide-questions&lt;/a> script will hide:&lt;/p>
-&lt;ul>
-&lt;li>Questions that are closed&lt;/li>
-&lt;li>Questions that are marked as a duplicate&lt;/li>
-&lt;li>Questions that have a score below 0&lt;/li>
-&lt;/ul>
-&lt;p>Because I wanted it to be obvious that the script was actually doing
-something, hidden questions don&amp;rsquo;t just disappear; they fade out.&lt;/p>
-&lt;p>These behaviors (including the fading) can all be controlled
-individually by a set of global variables at the top of the script.&lt;/p>
-&lt;figure class="left" >
-&lt;img src="fading.gif" />
-&lt;/figure>
-&lt;h2 id="sx-reorder-questions">sx-reorder questions&lt;/h2>
-&lt;p>The &lt;a href="https://github.com/larsks/sx-question-filter/raw/master/sx-reorder-questions.user.js">sx-reorder-questions&lt;/a> script will sort questions such that
-anything that has an answer will be at the bottom, and questions that
-have not yet been answered appear at the top.&lt;/p>
-&lt;h2 id="installation">Installation&lt;/h2>
-&lt;p>If you are using the &lt;a href="https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en">Tampermonkey&lt;/a> extension, you should be able to
-click on the links to the script earlier in this post and be taken
-directly to the installation screen. If you&amp;rsquo;re &lt;em>not&lt;/em> running
-Tampermonkey, than either (a) install it, or (b) you&amp;rsquo;re on your own.&lt;/p>
-&lt;p>You can find both of these scripts in my &lt;a href="https://github.com/larsks/sx-question-filter">sx-question-filter&lt;/a>
-repository.&lt;/p>
-&lt;h2 id="caveats">Caveats&lt;/h2>
-&lt;p>These scripts rely on the CSS classes and layout of the Stack Exchange
-websites. If these change, the scripts will need updating. If you
-notice that something no longer works as advertised, please feel free
-to submit pull request with the necessary corrections!&lt;/p></content></item></channel></rss>
+questions that way I want:&lt;/p&gt;</description></item></channel></rss>

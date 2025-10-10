@@ -1,48 +1,77 @@
-<!doctype html><html lang=en><head><title>Ebpf :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/tags/ebpf/><script async src="https://www.googletagmanager.com/gtag/js?id=G-G1FYT93ENG"></script><script>var dnt,doNotTrack=!1;if(!1&&(dnt=navigator.doNotTrack||window.doNotTrack||navigator.msDoNotTrack,doNotTrack=dnt=="1"||dnt=="yes"),!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G1FYT93ENG")}</script><link rel=stylesheet href=https://blog.oddbit.com/styles.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/img/theme-colors/orange.png><link rel=apple-touch-icon href=https://blog.oddbit.com/img/theme-colors/orange.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="website"><meta property="og:title" content="Ebpf"><meta property="og:description" content><meta property="og:url" content="https://blog.oddbit.com/tags/ebpf/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/img/favicon/orange.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><link href=/tags/ebpf/rss.xml rel=alternate type=application/rss+xml title=blog.oddbit.com></head><body class=orange><div class="container center headings--one-size"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><div class=posts><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/>Packet, packet, who&rsquo;s got the packet?</a></h1><div class=post-meta><time class=post-date>2023-02-14 ::</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/kernel/>kernel</a>&nbsp;
+<!doctype html><html lang=en><head><title>Ebpf :: blog.oddbit.com</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://blog.oddbit.com/tags/ebpf/><script async src="https://www.googletagmanager.com/gtag/js?id=G-G1FYT93ENG"></script><script>var dnt,doNotTrack=!1;if(!1&&(dnt=navigator.doNotTrack||window.doNotTrack||navigator.msDoNotTrack,doNotTrack=dnt=="1"||dnt=="yes"),!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G1FYT93ENG")}</script><link rel=stylesheet href=https://blog.oddbit.com/css/buttons.min.86f6b4c106b6c6eb690ae5203d36b442c1f66f718ff4e8164fa86cf6c61ad641.css><link rel=stylesheet href=https://blog.oddbit.com/css/code.min.d529ea4b2fb8d34328d7d31afc5466d5f7bc2f0bc9abdd98b69385335d7baee4.css><link rel=stylesheet href=https://blog.oddbit.com/css/fonts.min.5bb7ed13e1d00d8ff39ea84af26737007eb5051b157b86fc24487c94f3dc8bbe.css><link rel=stylesheet href=https://blog.oddbit.com/css/footer.min.eb8dfc2c6a7eafa36cd3ba92d63e69e849e2200e0002a228d137f236b09ecd75.css><link rel=stylesheet href=https://blog.oddbit.com/css/gist.min.a751e8b0abe1ba8bc53ced52a38b19d8950fe78ca29454ea8c2595cf26aad5c0.css><link rel=stylesheet href=https://blog.oddbit.com/css/header.min.75c7eb0e2872d95ff48109c6647d0223a38db52e2561dd87966eb5fc7c6bdac6.css><link rel=stylesheet href=https://blog.oddbit.com/css/main.min.36833afd348409fc6c3d09d0897c5833d9d5bf1ff31f5e60ea3ee42ce2b1268c.css><link rel=stylesheet href=https://blog.oddbit.com/css/menu.min.3c17467ebeb3d38663dce68f71f519901124fa5cbb4519b2fb0667a21e9aca39.css><link rel=stylesheet href=https://blog.oddbit.com/css/pagination.min.bbb986dbce00a5ce5aca0504b7925fc1c581992a4bf57f163e5d69cc1db7d836.css><link rel=stylesheet href=https://blog.oddbit.com/css/post.min.e6dddd258e64c83e05cec0cd49c05216742d42fc8ecbfbe6b67083412b609bd3.css><link rel=stylesheet href=https://blog.oddbit.com/css/syntax.min.a0773cce9310cb6d8ed23e50f005448facf29a53001b57e038828daa466b25c0.css><link rel=stylesheet href=https://blog.oddbit.com/css/terminal.min.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.css><link rel=stylesheet href=https://blog.oddbit.com/css/terms.min.b81791663c3790e738e571cdbf802312390d30e4b1d8dc9d814a5b5454d0ac11.css><link rel=stylesheet href=https://blog.oddbit.com/style.css><link rel="shortcut icon" href=https://blog.oddbit.com/favicon.png><link rel=apple-touch-icon href=https://blog.oddbit.com/apple-touch-icon.png><meta name=twitter:card content="summary"><meta property="og:locale" content="en"><meta property="og:type" content="website"><meta property="og:title" content="Ebpf"><meta property="og:description" content><meta property="og:url" content="https://blog.oddbit.com/tags/ebpf/"><meta property="og:site_name" content="blog.oddbit.com"><meta property="og:image" content="https://blog.oddbit.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="627"><link href=/tags/ebpf/rss.xml rel=alternate type=application/rss+xml title=blog.oddbit.com></head><body><div class="container center"><header class=header><div class=header__inner><div class=header__logo><a href=/><div class=logo>the odd bit blog</div></a></div><ul class="menu menu--mobile"><li class=menu__trigger>Menu&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></div><nav class=navigation-menu><ul class="navigation-menu__inner menu--desktop"><li><a href=/>/</a></li><li><a href=https://oddbit.com>/about</a></li><li><a href=/posts>/posts</a></li><li><a href=/tags>/tags</a></li><li><a href=/archive>/archive</a></li><li><a href=/rss.xml>/feed</a></li><li><ul class=menu><li class=menu__trigger>&nbsp;▾</li><li><ul class=menu__dropdown><li><a href=https://github.com/larsks>→Github</a></li><li><a href=https://hachyderm.io/@larsks>→Mastodon</a></li><li><a href=https://twitter.com/larsks>→Twitter</a></li></ul></li></ul></li></ul></nav></header><div class=content><h1>Posts for: #Ebpf</h1><div class=posts><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2023-02-14-whos-got-the-packet/>Packet, packet, who&rsquo;s got the packet?</a></h1><div class=post-meta><time class=post-date>2023-02-14</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/kernel/>kernel</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/routing/>routing</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/ebpf/>ebpf</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/pwru/>pwru</a>&nbsp;
-</span><img src=/post/2023-02-14-whos-got-the-packet/cover.jpg class=post-cover alt="Packet, packet, who's got the packet?" title="Cover Image"><div class=post-content><p>#include &lt;arpa/inet.h>
-#include &lt;fcntl.h>
-#include &lt;linux/if.h>
-#include &lt;linux/if_tun.h>
-#include &lt;netinet/in.h>
-#include &lt;poll.h>
-#include &lt;stdio.h>
-#include &lt;string.h>
-#include &lt;sys/ioctl.h>
-#include &lt;sys/socket.h>
-#include &lt;sys/stat.h>
-#include &lt;sys/types.h>
-#include &lt;unistd.h></p><p>static int tunAlloc(void) {
-int fd;
-struct ifreq ifr = {.ifr_name = "tun0", .ifr_flags = IFF_TUN | IFF_NO_PI};</p><p>fd = open("/dev/net/tun", O_RDWR);
-ioctl(fd, TUNSETIFF, (void *)&amp;ifr);
-ioctl(fd, TUNSETOWNER, geteuid());
-return fd;
-}</p><p>// this is a test
+</span><img src=/post/2023-02-14-whos-got-the-packet/cover.jpg class=post-cover alt="Packet, packet, who's got the packet?" title="Cover Image"><div class=post-content><p>In <a href=https://unix.stackexchange.com/q/735522/4989>this question</a>, August Vrubel has some C code that sets up a <a href=https://docs.kernel.org/networking/tuntap.html>tun</a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&rsquo;d like to take a slightly extended look at <a href=https://unix.stackexchange.com/a/735534/4989>my answer</a> because I think it&rsquo;s a great opportunity for learning a bit more about performing network diagnostics.</p><p>The original code looked like this:</p><div class=collapsable-code><input id=419587236 type=checkbox>
+<label for=419587236><span class=collapsable-code__language>c</span>
+<span class=collapsable-code__title>original sendpacket.c</span>
+<span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
+
+#include &lt;arpa/inet.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;linux/if.h&gt;
+#include &lt;linux/if_tun.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;poll.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/ioctl.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+static int tunAlloc(void) {
+  int fd;
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;, .ifr_flags = IFF_TUN | IFF_NO_PI};
+
+  fd = open(&#34;/dev/net/tun&#34;, O_RDWR);
+  ioctl(fd, TUNSETIFF, (void *)&amp;ifr);
+  ioctl(fd, TUNSETOWNER, geteuid());
+  return fd;
+}
+
+// this is a test
 static void bringInterfaceUp(void) {
-int sock;
-struct sockaddr_in addr = {.sin_family = AF_INET};
-struct ifreq ifr = {.ifr_name = "tun0"};</p><p>inet_aton("172.30.0.1", &amp;addr.sin_addr);
-memcpy(&amp;ifr.ifr_addr, &amp;addr, sizeof(struct sockaddr));</p><p>sock = socket(AF_INET, SOCK_DGRAM, 0);
-ioctl(sock, SIOCSIFADDR, &amp;ifr);
-ioctl(sock, SIOCGIFFLAGS, &amp;ifr);
-ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-ioctl(sock, SIOCSIFFLAGS, &amp;ifr);
-close(sock);
-}</p><p>static void emitPacket(int tap_fd) {
-unsigned char packet[] = {
-0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
-172, 30, 0, 1, 192, 168, 255, 8, 0xa2, 0x9a, 0x27, 0x11,
-0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
-0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
-0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};</p><p>write(tap_fd, packet, sizeof(packet));
-}</p><p>int main() {
-int tap_fd;</p><p>tap_fd = tunAlloc();
-bringInterfaceUp();
-emitPacket(tap_fd);
-close(tap_fd);</p><p>return 0;
-}</p><p></p></div><div><a class="read-more button" href=/post/2023-02-14-whos-got-the-packet/>read more →</a></div></article><div class=pagination><div class=pagination__buttons></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+  int sock;
+  struct sockaddr_in addr = {.sin_family = AF_INET};
+  struct ifreq ifr = {.ifr_name = &#34;tun0&#34;};
+
+  inet_aton(&#34;172.30.0.1&#34;, &amp;addr.sin_addr);
+  memcpy(&amp;ifr.ifr_addr, &amp;addr, sizeof(struct sockaddr));
+
+  sock = socket(AF_INET, SOCK_DGRAM, 0);
+  ioctl(sock, SIOCSIFADDR, &amp;ifr);
+  ioctl(sock, SIOCGIFFLAGS, &amp;ifr);
+  ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+  ioctl(sock, SIOCSIFFLAGS, &amp;ifr);
+  close(sock);
+}
+
+static void emitPacket(int tap_fd) {
+  unsigned char packet[] = {
+      0x45, 0x00, 0x00, 0x3c, 0xd8, 0x6f, 0x40, 0x00, 0x3f, 0x06, 0x08, 0x91,
+      172,  30,   0,    1,    192,  168,  255,  8,    0xa2, 0x9a, 0x27, 0x11,
+      0x80, 0x0b, 0x63, 0x79, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x02, 0xfa, 0xf0,
+      0x89, 0xd8, 0x00, 0x00, 0x02, 0x04, 0x05, 0xb4, 0x04, 0x02, 0x08, 0x0a,
+      0x5b, 0x76, 0x5f, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07};
+
+  write(tap_fd, packet, sizeof(packet));
+}
+
+int main() {
+  int tap_fd;
+
+  tap_fd = tunAlloc();
+  bringInterfaceUp();
+  emitPacket(tap_fd);
+  close(tap_fd);
+
+  return 0;
+}
+
+
+
+</code></pre></div><p>A problem with the original code is that it creates the interface, sends the packet, and tears down the interface with no delays, making it very difficult to inspect the interface configuration, perform packet captures, or otherwise figure out what&rsquo;s going on.</p></div><div><a class="read-more button inline" href=/post/2023-02-14-whos-got-the-packet/>[read more]</a></div></article><div class=pagination><div class=pagination__buttons></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
 <span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script><script src=/js/mermaid.min.js></script><script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>
