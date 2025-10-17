@@ -60,7 +60,8 @@ introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/"&gt;b
 signals targeted at the caller. This provides an alternative to
 the use of a signal handler or sigwaitinfo(2), and has the
 advantage that the file descriptor may be monitored by select(2),
-poll(2), and epoll(7).&lt;/p&gt;&lt;/blockquote&gt;
+poll(2), and epoll(7).&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;The traditional asynchronous delivery mechanism can be tricky to get
 right, whereas this provides a convenient fd interface that integrates
 nicely with your existing event-based code.&lt;/p&gt;</description></item><item><title>Long polling with Javascript and Python</title><link>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</guid><description>&lt;p&gt;In this post I&amp;rsquo;m going to step through an example web chat system

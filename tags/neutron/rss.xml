@@ -78,7 +78,8 @@ that a network controller has three physical interfaces:&lt;/p&gt;
 &lt;p&gt;Before you start, set up a machine to be a dedicated network node.
 Dedicated network nodes should have the following NICs: the
 management NIC (called MGMT_INTERFACE), the data NIC (called
-DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p&gt;&lt;/blockquote&gt;
+DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;People occasionally ask, &amp;ldquo;why three interfaces? What if I only have
 two?&amp;rdquo;, so I wanted to provide an extended answer that might help
 people understand what the interfaces are for and what trade-offs are

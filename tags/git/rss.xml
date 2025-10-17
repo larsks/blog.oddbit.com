@@ -65,7 +65,8 @@ by saving the commit message.&lt;/p&gt;</description></item><item><title>Automat
 today:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;[I] would really like a git lookaside cache which operated on an upstream
-repo, but pulled objects locally when they&amp;rsquo;re available&lt;/p&gt;&lt;/blockquote&gt;
+repo, but pulled objects locally when they&amp;rsquo;re available&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;In this post I present a proof-of-concept solution to this request.
 Please note that thisand isn&amp;rsquo;t something that has actually been used
 or tested anywhere!&lt;/p&gt;

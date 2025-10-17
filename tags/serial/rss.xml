@@ -2,7 +2,8 @@
 &lt;p&gt;Slow lets you run commands with a reduced output character rate. For example, we can ask for the date at speeds of 50, 75, and 110 bps:&lt;/p&gt;</description></item><item><title>A passwordless serial console for your Raspberry Pi</title><link>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</link><pubDate>Mon, 24 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</guid><description>&lt;p&gt;&lt;code&gt;legendre&lt;/code&gt; on &lt;code&gt;#raspbian&lt;/code&gt; asked:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;How can i config rasp lite to open a shell on the serial uart on boot? Params
-are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p&gt;&lt;/blockquote&gt;
+are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;In this article, we&amp;rsquo;ll walk through one way of implementing this configuration.&lt;/p&gt;
 &lt;h2 id="activate-the-serial-port"&gt;Activate the serial port&lt;/h2&gt;
 &lt;p&gt;Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_%28Unix%29"&gt;&lt;code&gt;getty&lt;/code&gt;&lt;/a&gt; on the serial port if one is available. You should see an &lt;code&gt;agetty&lt;/code&gt; process associated with your serial port when you run &lt;code&gt;ps -ef&lt;/code&gt;. For example:&lt;/p&gt;</description></item></channel></rss>

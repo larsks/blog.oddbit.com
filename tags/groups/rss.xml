@@ -7,5 +7,7 @@
 &lt;li&gt;A 32 bit numeric user identifier (what you&amp;rsquo;d see in the UNIX /etc/passwd file)&lt;/li&gt;
 &lt;li&gt;A 32 bit primary numeric group identifier (ditto)&lt;/li&gt;
 &lt;li&gt;A variable length list of up to 16 32-bit numeric supplemental group identifiers (what&amp;rsquo;d you see in the /etc/group file)&lt;/li&gt;
-&lt;/ul&gt;&lt;/blockquote&gt;&lt;/blockquote&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;We ran into this today while diagnosing a weird permissions issue. Who knew?&lt;/p&gt;</description></item></channel></rss>

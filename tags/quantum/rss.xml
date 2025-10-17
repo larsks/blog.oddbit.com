@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Quantum on blog.oddbit.com</title><link>https://blog.oddbit.com/tags/quantum/</link><description>Recent content in Quantum on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><lastBuildDate>Thu, 16 Feb 2023 10:58:10 -0500</lastBuildDate><atom:link href="https://blog.oddbit.com/tags/quantum/rss.xml" rel="self" type="application/rss+xml"/><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</guid><description>&lt;blockquote&gt;
 &lt;p&gt;I originally posted this article on
 the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail"&gt;RDO&lt;/a&gt;
-website.&lt;/p&gt;&lt;/blockquote&gt;
+website.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;h1 id="the-players"&gt;The players&lt;/h1&gt;
 &lt;p&gt;This document describes the architecture that results from a
 particular OpenStack configuration, specifically:&lt;/p&gt;
@@ -12,4 +13,9 @@ particular OpenStack configuration, specifically:&lt;/p&gt;
 &lt;/ul&gt;
 &lt;p&gt;Much of the document will be relevant to other configurations, but
 details will vary based on your choice of layer 2 connectivity, number
-of running instances, and so forth.&lt;/p&gt;</description></item></channel></rss>
+of running instances, and so forth.&lt;/p&gt;
+&lt;p&gt;The examples in this document were generated on a system with Quantum
+networking but will generally match what you see under Neutron as
+well, if you replace &lt;code&gt;quantum&lt;/code&gt; by &lt;code&gt;neutron&lt;/code&gt; in names. The OVS flow
+rules under Neutron are somewhat more complex and I will cover those
+in another post.&lt;/p&gt;</description></item></channel></rss>

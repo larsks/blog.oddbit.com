@@ -33,7 +33,11 @@ the <a href=http://openstack.redhat.com/Networking_in_too_much_detail>RDO</a>
 website.</p></blockquote><h1 id=the-players>The players</h1><p>This document describes the architecture that results from a
 particular OpenStack configuration, specifically:</p><ul><li>Quantum networking using GRE tunnels;</li><li>A dedicated network controller;</li><li>A single instance running on a compute host</li></ul><p>Much of the document will be relevant to other configurations, but
 details will vary based on your choice of layer 2 connectivity, number
-of running instances, and so forth.</p></div><div><a class="read-more button inline" href=/post/2013-11-14-quantum-in-too-much-detail/>[read more]</a></div></article><article class="post on-list"><h2 class=post-title><a href=https://blog.oddbit.com/post/2013-11-13-moving-to-github/>Moving to GitHub</a></h2><div class=post-meta><time class=post-date>2013-11-13</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/blog/>blog</a>&nbsp;</span><div class=post-content><p>This blog has been hosted on <a href=http://scriptogr.am/>scriptogram</a> for the past year or so.
+of running instances, and so forth.</p><p>The examples in this document were generated on a system with Quantum
+networking but will generally match what you see under Neutron as
+well, if you replace <code>quantum</code> by <code>neutron</code> in names. The OVS flow
+rules under Neutron are somewhat more complex and I will cover those
+in another post.</p></div><div><a class="read-more button inline" href=/post/2013-11-14-quantum-in-too-much-detail/>[read more]</a></div></article><article class="post on-list"><h2 class=post-title><a href=https://blog.oddbit.com/post/2013-11-13-moving-to-github/>Moving to GitHub</a></h2><div class=post-meta><time class=post-date>2013-11-13</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/blog/>blog</a>&nbsp;</span><div class=post-content><p>This blog has been hosted on <a href=http://scriptogr.am/>scriptogram</a> for the past year or so.
 Unfortunately, while I like the publish-via-Dropbox mechanism, there
 have been enough problems recently that I&rsquo;ve finally switched over to
 using <a href=http://pages.github.com/>GitHub Pages</a> for hosting. I&rsquo;ve been thinking about doing

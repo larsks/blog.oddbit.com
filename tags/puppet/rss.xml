@@ -20,7 +20,8 @@ following:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;XMLRPC was the new hotness when development on Puppet started. Now,
 XMLRPC is that horrible thing with the XML and the angle brackets and
-the pain and sad.&lt;/p&gt;&lt;/blockquote&gt;
+the pain and sad.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/"&gt;http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a&gt;)&lt;/p&gt;
 &lt;p&gt;&amp;hellip;which also accurately sums up my feelings when I come across yet
 another piece of software where someone has decided that XML (or even

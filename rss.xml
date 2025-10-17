@@ -17,8 +17,8 @@
 
 
  &lt;div class="collapsable-code"&gt;
- &lt;input id="761923458" type="checkbox" /&gt;
- &lt;label for="761923458"&gt;
+ &lt;input id="158739624" type="checkbox" /&gt;
+ &lt;label for="158739624"&gt;
  &lt;span class="collapsable-code__language"&gt;c&lt;/span&gt;
  &lt;span class="collapsable-code__title"&gt;original sendpacket.c&lt;/span&gt;
  &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽"&gt;&lt;/span&gt;
@@ -343,7 +343,8 @@ few lines of shell script to send me an email&amp;hellip;but this article isn&am
 about simple solutions!&lt;/p&gt;</description></item><item><title>A passwordless serial console for your Raspberry Pi</title><link>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</link><pubDate>Mon, 24 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-24-a-passwordless-serial-console/</guid><description>&lt;p&gt;&lt;code&gt;legendre&lt;/code&gt; on &lt;code&gt;#raspbian&lt;/code&gt; asked:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;How can i config rasp lite to open a shell on the serial uart on boot? Params
-are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p&gt;&lt;/blockquote&gt;
+are 1200-8-N-1 Dont want login running, just straight to sh&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;In this article, we&amp;rsquo;ll walk through one way of implementing this configuration.&lt;/p&gt;
 &lt;h2 id="activate-the-serial-port"&gt;Activate the serial port&lt;/h2&gt;
 &lt;p&gt;Raspberry Pi OS automatically starts a &lt;a href="https://en.wikipedia.org/wiki/Getty_%28Unix%29"&gt;&lt;code&gt;getty&lt;/code&gt;&lt;/a&gt; on the serial port if one is available. You should see an &lt;code&gt;agetty&lt;/code&gt; process associated with your serial port when you run &lt;code&gt;ps -ef&lt;/code&gt;. For example:&lt;/p&gt;</description></item><item><title>Configuring Open vSwitch with nmcli</title><link>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</link><pubDate>Sat, 15 Feb 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-02-15-configuring-open-vswitch-with/</guid><description>&lt;p&gt;I recently acquired a managed switch for my home office in order to segment a few devices off onto their own isolated vlan. As part of this, I want to expose these vlans on my desktop using Open vSwitch (OVS), and I wanted to implement the configuration using NetworkManager rather than either relying on the legacy &lt;code&gt;/etc/sysconfig/network-scripts&lt;/code&gt; scripts or rolling my own set of services. These are my notes in case I ever have to do this again.&lt;/p&gt;</description></item><item><title>How long is a cold spell in Boston?</title><link>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</link><pubDate>Thu, 23 Jan 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-01-23-how-long-is-a-cold-spell/</guid><description>&lt;p&gt;We&amp;rsquo;ve had some wacky weather recently. In the space of a week, the temperature went from a high of about 75°F to a low around 15°F. This got me to thinking about what constitutes &amp;ldquo;normal&amp;rdquo; weather here in the Boston area, and in particular, how common it is to have a string of consecutive days in which the high temperature stays below freezing. While this was an interesting question in itself, it also seemed like a great opportunity to learn a little about &lt;a href="https://pandas.pydata.org"&gt;Pandas&lt;/a&gt;, the Python data analysis framework.&lt;/p&gt;</description></item><item><title>Snarl: A tool for literate blogging</title><link>https://blog.oddbit.com/post/2020-01-15-snarl-a-tool-for-literate-blog/</link><pubDate>Wed, 15 Jan 2020 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2020-01-15-snarl-a-tool-for-literate-blog/</guid><description>&lt;p&gt;&lt;a href="https://en.wikipedia.org/wiki/Literate_programming"&gt;Literate programming&lt;/a&gt; is a programming paradigm introduced by Donald Knuth in which a program is combined with its documentation to form a single document. Tools are then used to extract the documentation for viewing or typesetting or to extract the program code so it can be compiled and/or run. While I have never been very enthusiastic about literate programming as a development methodology, I was recently inspired to explore these ideas as they relate to the sort of technical writing I do for this blog.&lt;/p&gt;</description></item><item><title>OVN and DHCP: A minimal example</title><link>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2019-12-19-ovn-and-dhcp/</guid><description>&lt;h1 id="introduction"&gt;Introduction&lt;/h1&gt;
@@ -772,7 +773,8 @@ instance:&lt;/p&gt;</description></item><item><title>Automatic git cache</title>
 today:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;[I] would really like a git lookaside cache which operated on an upstream
-repo, but pulled objects locally when they&amp;rsquo;re available&lt;/p&gt;&lt;/blockquote&gt;
+repo, but pulled objects locally when they&amp;rsquo;re available&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;In this post I present a proof-of-concept solution to this request.
 Please note that thisand isn&amp;rsquo;t something that has actually been used
 or tested anywhere!&lt;/p&gt;
@@ -1510,7 +1512,8 @@ introduced to the Linux kernel &lt;a href="http://lwn.net/Articles/225714/"&gt;b
 signals targeted at the caller. This provides an alternative to
 the use of a signal handler or sigwaitinfo(2), and has the
 advantage that the file descriptor may be monitored by select(2),
-poll(2), and epoll(7).&lt;/p&gt;&lt;/blockquote&gt;
+poll(2), and epoll(7).&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;The traditional asynchronous delivery mechanism can be tricky to get
 right, whereas this provides a convenient fd interface that integrates
 nicely with your existing event-based code.&lt;/p&gt;</description></item><item><title>Long polling with Javascript and Python</title><link>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</link><pubDate>Sat, 23 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-23-long-polling-with-ja/</guid><description>&lt;p&gt;In this post I&amp;rsquo;m going to step through an example web chat system
@@ -1582,7 +1585,8 @@ on the command line to represent the JSON structure. For example, if
 you run:&lt;/p&gt;</description></item><item><title>Quantum in Too Much Detail</title><link>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</link><pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-14-quantum-in-too-much-detail/</guid><description>&lt;blockquote&gt;
 &lt;p&gt;I originally posted this article on
 the &lt;a href="http://openstack.redhat.com/Networking_in_too_much_detail"&gt;RDO&lt;/a&gt;
-website.&lt;/p&gt;&lt;/blockquote&gt;
+website.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;h1 id="the-players"&gt;The players&lt;/h1&gt;
 &lt;p&gt;This document describes the architecture that results from a
 particular OpenStack configuration, specifically:&lt;/p&gt;
@@ -1593,7 +1597,12 @@ particular OpenStack configuration, specifically:&lt;/p&gt;
 &lt;/ul&gt;
 &lt;p&gt;Much of the document will be relevant to other configurations, but
 details will vary based on your choice of layer 2 connectivity, number
-of running instances, and so forth.&lt;/p&gt;</description></item><item><title>Moving to GitHub</title><link>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</link><pubDate>Wed, 13 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</guid><description>&lt;p&gt;This blog has been hosted on &lt;a href="http://scriptogr.am/"&gt;scriptogram&lt;/a&gt; for the past year or so.
+of running instances, and so forth.&lt;/p&gt;
+&lt;p&gt;The examples in this document were generated on a system with Quantum
+networking but will generally match what you see under Neutron as
+well, if you replace &lt;code&gt;quantum&lt;/code&gt; by &lt;code&gt;neutron&lt;/code&gt; in names. The OVS flow
+rules under Neutron are somewhat more complex and I will cover those
+in another post.&lt;/p&gt;</description></item><item><title>Moving to GitHub</title><link>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</link><pubDate>Wed, 13 Nov 2013 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2013-11-13-moving-to-github/</guid><description>&lt;p&gt;This blog has been hosted on &lt;a href="http://scriptogr.am/"&gt;scriptogram&lt;/a&gt; for the past year or so.
 Unfortunately, while I like the publish-via-Dropbox mechanism, there
 have been enough problems recently that I&amp;rsquo;ve finally switched over to
 using &lt;a href="http://pages.github.com/"&gt;GitHub Pages&lt;/a&gt; for hosting. I&amp;rsquo;ve been thinking about doing
@@ -1614,7 +1623,8 @@ that a network controller has three physical interfaces:&lt;/p&gt;
 &lt;p&gt;Before you start, set up a machine to be a dedicated network node.
 Dedicated network nodes should have the following NICs: the
 management NIC (called MGMT_INTERFACE), the data NIC (called
-DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p&gt;&lt;/blockquote&gt;
+DATA_INTERFACE), and the external NIC (called EXTERNAL_INTERFACE).&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;People occasionally ask, &amp;ldquo;why three interfaces? What if I only have
 two?&amp;rdquo;, so I wanted to provide an extended answer that might help
 people understand what the interfaces are for and what trade-offs are
@@ -1759,7 +1769,8 @@ following:&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;XMLRPC was the new hotness when development on Puppet started. Now,
 XMLRPC is that horrible thing with the XML and the angle brackets and
-the pain and sad.&lt;/p&gt;&lt;/blockquote&gt;
+the pain and sad.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;(from &lt;a href="http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/"&gt;http://somethingsinistral.net/blog/the-angry-guide-to-puppet-3/&lt;/a&gt;)&lt;/p&gt;
 &lt;p&gt;&amp;hellip;which also accurately sums up my feelings when I come across yet
 another piece of software where someone has decided that XML (or even
@@ -2050,7 +2061,8 @@ and (b) you can&amp;rsquo;t fix the problem using a passwordless key.&lt;/p&gt;<
 &lt;p&gt;I had originally thought that it might be possible to run the CrashPlan client &amp;ldquo;natively&amp;rdquo; under FreeBSD. CrashPlan is a Java application, so this seemed like a possible solution. Unfortunately, Java under FreeBSD 8 seems to be a lost cause. I finally gave up and just installed Java under Linux.&lt;/p&gt;</description></item><item><title>Signing data with ssh-agent</title><link>https://blog.oddbit.com/post/2011-05-09-signing-data-with-ssh-agent/</link><pubDate>Mon, 09 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-05-09-signing-data-with-ssh-agent/</guid><description>&lt;p&gt;This is follow-up to my previous post, &lt;a href="http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/"&gt;Converting OpenSSH public keys&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;OpenSSH allows one to use an &lt;em&gt;agent&lt;/em&gt; that acts as a proxy to your private key. When using an agent &amp;ndash; particularly with agent forwarding enabled &amp;ndash; this allows you to authenticate to a remote host without having to (a) repeatedly type in your password or (b) expose an unencrypted private key to remote systems.&lt;/p&gt;
 &lt;p&gt;If one is temtped to use SSH keys as authentication credentials outside of ssh, one would ideally be able to take advantage of the ssh agent for these same reasons.&lt;/p&gt;</description></item><item><title>Converting OpenSSH public keys</title><link>https://blog.oddbit.com/post/2011-05-08-converting-openssh-public-keys/</link><pubDate>Sun, 08 May 2011 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2011-05-08-converting-openssh-public-keys/</guid><description>&lt;blockquote&gt;
-&lt;p&gt;I&amp;rsquo;ve posted a &lt;a href="http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/"&gt;followup&lt;/a&gt; to this article that discusses ssh-agent.&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;I&amp;rsquo;ve posted a &lt;a href="http://blog.oddbit.com/2011/05/09/signing-data-with-ssh-agent/"&gt;followup&lt;/a&gt; to this article that discusses ssh-agent.&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;For reasons best left to another post, I wanted to convert an SSH public key into a PKCS#1 PEM-encoded public key. That is, I wanted to go from this:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7EZn/BzP26AWk/Ts2ymjpTXuXRiEWIWn
 HFTilOTcuJ/P1HfOwiy4RHC1rv59Yh/E6jbTx623+OGySJWh1IS3dAEaHhcGKnJaikrBn3c
@@ -2100,7 +2112,8 @@ Usage: don't use this
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Hah.&lt;/p&gt;</description></item><item><title>MBTA realtime XML feed</title><link>https://blog.oddbit.com/post/2010-02-07-mbta-realtime-xml-feed/</link><pubDate>Sun, 07 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-07-mbta-realtime-xml-feed/</guid><description>&lt;p&gt;The &lt;a href="http://mbta.com/"&gt;MBTA&lt;/a&gt; has a trial web service interface that provides access to realtime location information for select MBTA buses, as well as access to route information, arrival prediction, and other features. More information can be found here:&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;&lt;a href="http://www.eot.state.ma.us/developers/realtime/"&gt;http://www.eot.state.ma.us/developers/realtime/&lt;/a&gt;&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;&lt;a href="http://www.eot.state.ma.us/developers/realtime/"&gt;http://www.eot.state.ma.us/developers/realtime/&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;The service is provided by &lt;a href="http://www.nextbus.com/"&gt;NextBus&lt;/a&gt;, which specializes in real-time location information for public transit organizations. The &lt;a href="http://www.eot.state.ma.us/developers/downloads/MBTA_XML_Feed_Trial_Docs_13Nov09.pdf"&gt;API&lt;/a&gt; (sorry, PDF) is very simple and does not require any sort of advance registration.&lt;/p&gt;
 &lt;p&gt;At the moment, the service only provides coverage for a small number of routes (39, 111, 114, 116, 117). I hope they expand the coverage of this service in the near future!&lt;/p&gt;</description></item><item><title>Blocking VNC with iptables</title><link>https://blog.oddbit.com/post/2010-02-04-vnc-blockingrst/</link><pubDate>Thu, 04 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-04-vnc-blockingrst/</guid><description>&lt;p&gt;VNC clients use the &lt;a href="http://www.realvnc.com/docs/rfbproto.pdf"&gt;RFB protocol&lt;/a&gt; to provide virtual display capabilities. The RFB protocol, as implemented by most clients, provides very poor authentication options. While passwords are not actually sent &amp;ldquo;in the clear&amp;rdquo;, it is possible to brute force them based on information available on the wire. The RFB 3.x protocol limits passwords to a maximum of eight characters, so the potential key space is relatively small.&lt;/p&gt;
 &lt;p&gt;It&amp;rsquo;s possible to securely connect to a remote VNC server by tunneling your connection using ssh port forwarding (or setting up some sort of SSL proxy). However, while this ameliorates the password problem, it still leaves a VNC server running that, depending on the local system configuration, may accept connections from all over the world. This leaves open the possibility that someone could brute force the password and gain access to the systsem. The problem is exacerbated if a user is running a passwordless VNC session.&lt;/p&gt;</description></item><item><title>NFS and the 16-group limit</title><link>https://blog.oddbit.com/post/2010-02-02-nfs-and-16-group-limit/</link><pubDate>Tue, 02 Feb 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-02-02-nfs-and-16-group-limit/</guid><description>&lt;p&gt;I learned something new today: it appears that the underlying authorization mechanism used by NFS limits your group membership to 16 groups. From &lt;a href="http://bit.ly/cBhU8N"&gt;http://bit.ly/cBhU8N&lt;/a&gt;:&lt;/p&gt;
@@ -2112,7 +2125,9 @@ Usage: don't use this
 &lt;li&gt;A 32 bit numeric user identifier (what you&amp;rsquo;d see in the UNIX /etc/passwd file)&lt;/li&gt;
 &lt;li&gt;A 32 bit primary numeric group identifier (ditto)&lt;/li&gt;
 &lt;li&gt;A variable length list of up to 16 32-bit numeric supplemental group identifiers (what&amp;rsquo;d you see in the /etc/group file)&lt;/li&gt;
-&lt;/ul&gt;&lt;/blockquote&gt;&lt;/blockquote&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;We ran into this today while diagnosing a weird permissions issue. Who knew?&lt;/p&gt;</description></item><item><title>Cleaning up Subversion with Git</title><link>https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/</link><pubDate>Fri, 29 Jan 2010 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2010-01-29-cleaning-up-subversion-with-gi/</guid><description>&lt;h1 id="overview"&gt;Overview&lt;/h1&gt;
 &lt;p&gt;At my office, we have a crufty &lt;a href="http://subversion.tigris.org/"&gt;Subversion&lt;/a&gt; repository (dating back to early 2006) that contains a jumble of unrelated projects. We would like to split this single repository up into a number of smaller repositories, each following the recommended trunk/tags/branches repository organization.&lt;/p&gt;
 &lt;p&gt;What we want to do is move a project from a path that looks like this:&lt;/p&gt;
