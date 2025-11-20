@@ -1,4 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>blog.oddbit.com</title><link>https://blog.oddbit.com/</link><description>Recent content on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><atom:link href="https://blog.oddbit.com/rss.xml" rel="self" type="application/rss+xml"/><item><title>Things I Made: Slow terminal emulation</title><link>https://blog.oddbit.com/post/2025-10-10-tim-slow-terminal/</link><pubDate>Fri, 10 Oct 2025 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2025-10-10-tim-slow-terminal/</guid><description>&lt;p&gt;Ah, the good old days: when computers were chunky, the Internet was a dream of the future, and you could make a cup of coffee while waiting for a screenful of text to display. If you miss that as much as I do, let me introduce you to &lt;a href="https://github.com/larsks/slow"&gt;Slow&lt;/a&gt;, a low bit rate emulator that lets you travel back in time to those simpler days.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>blog.oddbit.com</title><link>https://blog.oddbit.com/</link><description>Recent content on blog.oddbit.com</description><generator>Hugo</generator><language>en</language><copyright>Lars Kellogg-Stedman</copyright><atom:link href="https://blog.oddbit.com/rss.xml" rel="self" type="application/rss+xml"/><item><title>Things I Made: Fighting words generator</title><link>https://blog.oddbit.com/post/2025-10-11-tim-fightingwords/</link><pubDate>Sat, 11 Oct 2025 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2025-10-11-tim-fightingwords/</guid><description>&lt;p&gt;If you&amp;rsquo;ve ever seen the 1960&amp;rsquo;s live-action Batman TV show, you&amp;rsquo;ll know that one of the defining characteristics of the show was its use of comic-book style words overlaying the action scenes, a technique pioneered in comic books by Roy Crane:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;It was Crane who pioneered the use of onomatopoeic sound effects in comics,
+adding &amp;ldquo;bam,&amp;rdquo; &amp;ldquo;pow&amp;rdquo; and &amp;ldquo;wham&amp;rdquo; to what had previously been an almost entirely
+visual vocabulary. Crane had fun with this, tossing in an occasional
+&amp;ldquo;ker-splash&amp;rdquo; or &amp;ldquo;lickety-wop&amp;rdquo; along with what would become the more standard
+effects. Words as well as images became vehicles for carrying along his
+increasingly fast-paced storylines.&lt;/p&gt;</description></item><item><title>Things I Made: Slow terminal emulation</title><link>https://blog.oddbit.com/post/2025-10-10-tim-slow-terminal/</link><pubDate>Fri, 10 Oct 2025 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2025-10-10-tim-slow-terminal/</guid><description>&lt;p&gt;Ah, the good old days: when computers were chunky, the Internet was a dream of the future, and you could make a cup of coffee while waiting for a screenful of text to display. If you miss that as much as I do, let me introduce you to &lt;a href="https://github.com/larsks/slow"&gt;Slow&lt;/a&gt;, a low bit rate emulator that lets you travel back in time to those simpler days.&lt;/p&gt;
 &lt;p&gt;Slow lets you run commands with a reduced output character rate. For example, we can ask for the date at speeds of 50, 75, and 110 bps:&lt;/p&gt;</description></item><item><title>Applying custom configuration to Nginx Gateway Fabric</title><link>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</link><pubDate>Fri, 17 Nov 2023 00:00:00 +0000</pubDate><guid>https://blog.oddbit.com/post/2023-11-17-nginx-gateway-configuration/</guid><description>&lt;p&gt;In this post, we take a look at how to apply custom Nginx configuration directives when you&amp;rsquo;re using the &lt;a href="https://github.com/nginxinc/nginx-gateway-fabric"&gt;NGINX Gateway Fabric&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id="whats-the-nginx-gateway-fabric"&gt;What&amp;rsquo;s the NGINX Gateway Fabric?&lt;/h2&gt;
 &lt;p&gt;The NGINX Gateway Fabric is an implementation of the Kubernetes &lt;a href="https://gateway-api.sigs.k8s.io/"&gt;Gateway API&lt;/a&gt;.&lt;/p&gt;
@@ -17,8 +24,8 @@
 
 
  &lt;div class="collapsable-code"&gt;
- &lt;input id="521367948" type="checkbox" /&gt;
- &lt;label for="521367948"&gt;
+ &lt;input id="916237485" type="checkbox" /&gt;
+ &lt;label for="916237485"&gt;
  &lt;span class="collapsable-code__language"&gt;c&lt;/span&gt;
  &lt;span class="collapsable-code__title"&gt;original sendpacket.c&lt;/span&gt;
  &lt;span class="collapsable-code__toggle" data-label-expand="△" data-label-collapse="▽"&gt;&lt;/span&gt;
