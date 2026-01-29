@@ -23,7 +23,7 @@ plugin, which means you can run your playbooks in a stock environment
 and see the standard Ansible fail-fast behavior, or you can activate
 the <code>assert</code> plugin from the ansible-assertive project and get
 behavior more useful for infrastructure testing.</p><h2 id=a-simple-example>A simple example<a href=#a-simple-example class=hanchor arialabel=Anchor>#</a></h2><p>Ansible&rsquo;s native <code>assert</code> plugin will trigger a task failure when an
-assertion evaluates to <code>false</code>. Consider the following example:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#f92672>hosts</span>: <span style=color:#ae81ff>localhost</span>
+assertion evaluates to <code>false</code>. Consider the following example:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#f92672>hosts</span>: <span style=color:#ae81ff>localhost</span>
 </span></span><span style=display:flex><span>  <span style=color:#f92672>vars</span>:
 </span></span><span style=display:flex><span>    <span style=color:#f92672>fruits</span>:
 </span></span><span style=display:flex><span>      - <span style=color:#ae81ff>oranges</span>
@@ -136,7 +136,7 @@ trigger some action in the event there are failed tests, or&mldr;)? You
 can ask the <code>assertive</code> plugin to write a YAML format document with
 this information by adding the following to your <code>ansible.cfg</code>:</p><pre><code>[assertive]
 results = testresult.yml
-</code></pre><p>After running our playbook, this file would contain:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#f92672>groups</span>:
+</code></pre><p>After running our playbook, this file would contain:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#f92672>groups</span>:
 </span></span><span style=display:flex><span>- <span style=color:#f92672>hosts</span>:
 </span></span><span style=display:flex><span>    <span style=color:#f92672>localhost</span>:
 </span></span><span style=display:flex><span>      <span style=color:#f92672>stats</span>:
