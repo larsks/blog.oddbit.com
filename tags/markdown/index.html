@@ -4,5 +4,10 @@
 <a href=http://milianw.de/projects/markdownify/>Markdownify</a>. It&rsquo;s a slick site with a nice API, but the backend
 wasn&rsquo;t able to correctly render <code>&lt;pre></code> blocks. Since I&rsquo;m often
 writing about code, my posts are filled with things like embedded
-XML and <code>#include &lt;stdio.h></code>, so this was a problem.</p></div><div><a class="read-more button inline" href=/post/2012-11-06-convert-html-to-markdown/>[read more]</a></div></article><div class=pagination><div class=pagination__buttons></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
+XML and <code>#include &lt;stdio.h></code>, so this was a problem.</p></li><li><p><a href=http://johnmacfarlane.net/pandoc/>Pandoc</a>. This is a general purpose tool that can convert between
+a variety of markup formats. Unfortunately, it <em>also</em> had similar
+problems with <code>&lt;pre></code> blocks.</p></li><li><p><a href=https://github.com/aaronsw/html2text>html2text</a>. This a Python tool that converts HTML to Markdown.
+It seems to do a better job at handling the <code>&lt;pre></code> blocks, although
+it doesn&rsquo;t always get the indent level correct when the <code>&lt;pre></code>
+blocks are embedded in lists.</p></li></ul></div><div><a class="read-more button inline" href=/post/2012-11-06-convert-html-to-markdown/>[read more]</a></div></article><div class=pagination><div class=pagination__buttons></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user"><span>Lars Kellogg-Stedman</span>
 <span>:: <a href=https://github.com/panr/hugo-theme-terminal target=_blank>Theme</a> made by <a href=https://github.com/panr target=_blank>panr</a></span></div></div></footer><script type=text/javascript src=/bundle.min.js></script><script src=/js/mermaid.min.js></script><script>mermaid.initialize({startOnLoad:!0})</script></div></body></html>

@@ -27,7 +27,32 @@ utilize the <code>PrivateTmp</code> directive.</p><p>The <a href="http://www.fre
 namespace for the executed processes and mounts private <code>/tmp</code> and
 <code>/var/tmp</code> directories inside it that is not shared by processes outside
 of the namespace&rdquo;. This is a great idea from a <a href=https://danwalsh.livejournal.com/51459.html>security
-perspective</a>, but can cause some unanticipated consequences.</p><h2 id=the-problem-in-a-nutshell>The problem in a nutshell</h2><ol><li><p>Start a Docker container:</p></div><div><a class="read-more button inline" href=/post/2015-01-18-docker-vs-privatetmp/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/>Starting systemd services without blocking</a></h1><div class=post-meta><time class=post-date>2014-12-02</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/systemd/>systemd</a>&nbsp;</span><div class=post-content><p>Recently, I&rsquo;ve been playing around with <a href=https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/>Fedora Atomic and
+perspective</a>, but can cause some unanticipated consequences.</p><h2 id=the-problem-in-a-nutshell>The problem in a nutshell</h2><ol><li><p>Start a Docker container:</p><pre><code> # cid=$(docker run -d larsks/thttpd)
+ # echo $cid
+ e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62
+</code></pre></li><li><p>See the <code>devicemapper</code> mountpoint created by Docker for the
+container:</p><pre><code> # grep devicemapper/mnt /proc/mounts
+ /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>Now restart a service &ndash; any service! &ndash; that has
+<code>PrivateTmp=true</code>:</p><pre><code> # systemctl restart systemd-machined
+</code></pre></li><li><p>Get the PID for that service:</p><pre><code> # systemctl status systemd-machined | grep PID
+  Main PID: 18698 (systemd-machine
+</code></pre></li><li><p>And see that the mount created by the Docker &ldquo;devicemapper&rdquo; storage
+driver is visible inside the mount namespace for this process:</p><pre><code> # grep devicemapper/mnt /proc/18698/mounts
+ /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>Attempt to destroy the container:</p><pre><code> # docker rm -f $cid
+</code></pre></li><li><p>Watch Docker fail to destroy the container because it is unable to
+remove the mountpoint directory:</p><pre><code> Jan 17 22:43:03 pk115wp-lkellogg docker-1.4.1-dev[18239]:
+ time=&quot;2015-01-17T22:43:03-05:00&quot; level=&quot;error&quot; msg=&quot;Handler for DELETE
+ /containers/{name:.*} returned error: Cannot destroy container e68df3f45d61:
+ Driver devicemapper failed to remove root filesystem
+ e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62: Device is
+ Busy&quot;
+</code></pre></li><li><p>Because while that mount is gone from the global namespace:</p><pre><code> # grep devicemapper/mnt /proc/mounts
+</code></pre></li><li><p>It still exists inside the mount namespace for the service we restarted:</p><pre><code># grep devicemapper/mnt /proc/18698/mounts
+/dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>To resolve this problem, restart the service holding the mount open:</p><pre><code># systemctl restart systemd-machined
+</code></pre></li></ol></div><div><a class="read-more button inline" href=/post/2015-01-18-docker-vs-privatetmp/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2014-12-02-starting-systemd-services-with/>Starting systemd services without blocking</a></h1><div class=post-meta><time class=post-date>2014-12-02</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/systemd/>systemd</a>&nbsp;</span><div class=post-content><p>Recently, I&rsquo;ve been playing around with <a href=https://blog.oddbit.com/post/2014-11-24-fedora-atomic-openstack-and-ku/>Fedora Atomic and
 Kubernetes</a>. I ran into a frustrating problem in which I
 would attempt to start a service from within a script launched by
 <a href=http://cloudinit.readthedocs.org/>cloud-init</a>, only to have have <code>systemctl</code> block indefinitely

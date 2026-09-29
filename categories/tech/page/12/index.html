@@ -29,7 +29,11 @@ hosted services. Kubernetes provides two solutions to this problem,
 neither of which is particularly attractive out of the box:</p><ol><li><p>There is a field <code>createExternalLoadBalancer</code> that can be set in a
 service description. This is meant to integrate with load
 balancers provided by your local cloud environment, but at the
-moment there is only support for this when running under <a href=https://cloud.google.com/compute/>GCE</a>.</p></div><div><a class="read-more button inline" href=/post/2015-02-10-external-networking-for-kubern/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/>Installing nova-docker on Fedora 21/RDO Juno</a></h1><div class=post-meta><time class=post-date>2015-02-06</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
+moment there is only support for this when running under <a href=https://cloud.google.com/compute/>GCE</a>.</p></li><li><p>A service description can have a list of public IP addresses
+associated with it in the <code>publicIPS</code> field. This will cause
+<code>kube-proxy</code> to create rules in the <code>KUBE-PROXY</code> chain of your
+<code>nat</code> table to direct traffic inbound to those addresses to the
+appropriate local <code>kube-proxy</code> port.</p></li></ol></div><div><a class="read-more button inline" href=/post/2015-02-10-external-networking-for-kubern/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-02-06-installing-nova-docker-on-fedo/>Installing nova-docker on Fedora 21/RDO Juno</a></h1><div class=post-meta><time class=post-date>2015-02-06</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/nova/>nova</a>&nbsp;</span><div class=post-content><p>This post comes about indirectly by a request on IRC in <code>#rdo</code> for help getting <a href=https://github.com/stackforge/nova-docker>nova-docker</a> installed on Fedora 21. I ran through the process from start to finish and decided to write everything down for posterity.</p><h2 id=getting-started>Getting started</h2><p>I started with the <a href=https://getfedora.org/en/cloud/download/>Fedora 21 Cloud Image</a>, because I&rsquo;m
 installing onto OpenStack and the cloud images include
@@ -64,7 +68,32 @@ utilize the <code>PrivateTmp</code> directive.</p><p>The <a href="http://www.fre
 namespace for the executed processes and mounts private <code>/tmp</code> and
 <code>/var/tmp</code> directories inside it that is not shared by processes outside
 of the namespace&rdquo;. This is a great idea from a <a href=https://danwalsh.livejournal.com/51459.html>security
-perspective</a>, but can cause some unanticipated consequences.</p><h2 id=the-problem-in-a-nutshell>The problem in a nutshell</h2><ol><li><p>Start a Docker container:</p></div><div><a class="read-more button inline" href=/post/2015-01-18-docker-vs-privatetmp/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/>Running nova-libvirt and nova-docker on the same host</a></h1><div class=post-meta><time class=post-date>2015-01-17</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
+perspective</a>, but can cause some unanticipated consequences.</p><h2 id=the-problem-in-a-nutshell>The problem in a nutshell</h2><ol><li><p>Start a Docker container:</p><pre><code> # cid=$(docker run -d larsks/thttpd)
+ # echo $cid
+ e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62
+</code></pre></li><li><p>See the <code>devicemapper</code> mountpoint created by Docker for the
+container:</p><pre><code> # grep devicemapper/mnt /proc/mounts
+ /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>Now restart a service &ndash; any service! &ndash; that has
+<code>PrivateTmp=true</code>:</p><pre><code> # systemctl restart systemd-machined
+</code></pre></li><li><p>Get the PID for that service:</p><pre><code> # systemctl status systemd-machined | grep PID
+  Main PID: 18698 (systemd-machine
+</code></pre></li><li><p>And see that the mount created by the Docker &ldquo;devicemapper&rdquo; storage
+driver is visible inside the mount namespace for this process:</p><pre><code> # grep devicemapper/mnt /proc/18698/mounts
+ /dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>Attempt to destroy the container:</p><pre><code> # docker rm -f $cid
+</code></pre></li><li><p>Watch Docker fail to destroy the container because it is unable to
+remove the mountpoint directory:</p><pre><code> Jan 17 22:43:03 pk115wp-lkellogg docker-1.4.1-dev[18239]:
+ time=&quot;2015-01-17T22:43:03-05:00&quot; level=&quot;error&quot; msg=&quot;Handler for DELETE
+ /containers/{name:.*} returned error: Cannot destroy container e68df3f45d61:
+ Driver devicemapper failed to remove root filesystem
+ e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62: Device is
+ Busy&quot;
+</code></pre></li><li><p>Because while that mount is gone from the global namespace:</p><pre><code> # grep devicemapper/mnt /proc/mounts
+</code></pre></li><li><p>It still exists inside the mount namespace for the service we restarted:</p><pre><code># grep devicemapper/mnt /proc/18698/mounts
+/dev/mapper/docker-253:6-98310-e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 /var/lib/docker/devicemapper/mnt/e68df3f45d6151259ce84a0e467a3117840084e99ef3bbc654b33f08d2d6dd62 ext4 rw,context=&quot;system_u:object_r:svirt_sandbox_file_t:s0:c261,c1018&quot;,relatime,discard,stripe=16,data=ordered 0 0
+</code></pre></li><li><p>To resolve this problem, restart the service holding the mount open:</p><pre><code># systemctl restart systemd-machined
+</code></pre></li></ol></div><div><a class="read-more button inline" href=/post/2015-01-18-docker-vs-privatetmp/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2015-01-17-running-novalibvirt-and-novado/>Running nova-libvirt and nova-docker on the same host</a></h1><div class=post-meta><time class=post-date>2015-01-17</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/openstack/>openstack</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;</span><div class=post-content><p>I regularly use <a href=http://www.openstack.org/>OpenStack</a> on my laptop with <a href=http://www.libvirt.org/>libvirt</a> as my
 hypervisor. I was interested in experimenting with recent versions of
 the <a href=https://github.com/stackforge/nova-docker>nova-docker</a> driver, but I didn&rsquo;t have a spare system available

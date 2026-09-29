@@ -9,8 +9,8 @@
 #<a href=https://blog.oddbit.com/tags/routing/>routing</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/ebpf/>ebpf</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/pwru/>pwru</a>&nbsp;
-</span><img src=/post/2023-02-14-whos-got-the-packet/cover.jpg class=post-cover alt="Packet, packet, who's got the packet?" title="Cover Image"><div class=post-content><p>In <a href=https://unix.stackexchange.com/q/735522/4989>this question</a>, August Vrubel has some C code that sets up a <a href=https://docs.kernel.org/networking/tuntap.html>tun</a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&rsquo;d like to take a slightly extended look at <a href=https://unix.stackexchange.com/a/735534/4989>my answer</a> because I think it&rsquo;s a great opportunity for learning a bit more about performing network diagnostics.</p><p>The original code looked like this:</p><div class=collapsable-code><input id=639751824 type=checkbox>
-<label for=639751824><span class=collapsable-code__language>c</span>
+</span><img src=/post/2023-02-14-whos-got-the-packet/cover.jpg class=post-cover alt="Packet, packet, who's got the packet?" title="Cover Image"><div class=post-content><p>In <a href=https://unix.stackexchange.com/q/735522/4989>this question</a>, August Vrubel has some C code that sets up a <a href=https://docs.kernel.org/networking/tuntap.html>tun</a> interface and then injects a packet, but the packet seemed to disappear into the ether. In this post, I&rsquo;d like to take a slightly extended look at <a href=https://unix.stackexchange.com/a/735534/4989>my answer</a> because I think it&rsquo;s a great opportunity for learning a bit more about performing network diagnostics.</p><p>The original code looked like this:</p><div class=collapsable-code><input id=637548129 type=checkbox>
+<label for=637548129><span class=collapsable-code__language>c</span>
 <span class=collapsable-code__title>original sendpacket.c</span>
 <span class=collapsable-code__toggle data-label-expand=△ data-label-collapse=▽></span></label><pre class=language-c><code>
 
@@ -116,7 +116,28 @@ instead, follow these steps.</p><ol><li><p>First, disable <code>dhcpcd</code> an
 <code>/etc/wpa_supplicant/wpa_supplicant.conf</code>, you can just symlink the
 file:</p><pre><code>  cd /etc/wpa_supplicant
   ln -s wpa_supplicant.conf wpa_supplicant-wlan0.conf
-</code></pre></li><li><p>Enable the <code>wpa_supplicant</code> service for <code>wlan0</code>:</p></div><div><a class="read-more button inline" href=/post/2018-06-14-configuring-a-static-address-f/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/>Using Docker macvlan networks</a></h1><div class=post-meta><time class=post-date>2018-03-12</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
+</code></pre></li><li><p>Enable the <code>wpa_supplicant</code> service for <code>wlan0</code>:</p><pre><code> systemctl enable --now wpa_supplicant@wlan0
+</code></pre></li><li><p>Create an appropriate configuration in
+<code>/etc/network/interfaces.d/wlan0</code>. For example:</p><pre><code> allow-hotplug wlan0
+
+ iface wlan0 inet static
+ address 192.168.2.100
+ netmask 255.255.255.0
+
+ iface wlan0 inet6 static
+ address 2607:f0d0:2001:000a:0000:0000:0000:0010
+ netmask 64
+</code></pre></li><li><p>Reboot to make sure everything comes up as expected. With the
+above configuration, after rebooting you should see:</p><pre><code> root@raspberrypi:~# ip addr show wlan0
+ 3: wlan0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+     link/ether 00:e1:b0:67:98:67 brd ff:ff:ff:ff:ff:ff
+     inet 192.168.2.100/24 brd 192.168.2.255 scope global wlan0
+        valid_lft forever preferred_lft forever
+     inet6 2607:f0d0:2001:a::10/64 scope global
+        valid_lft forever preferred_lft forever
+     inet6 fe80::2e1:b0ff:fe67:9867/64 scope link
+        valid_lft forever preferred_lft forever
+</code></pre></li></ol></div><div><a class="read-more button inline" href=/post/2018-06-14-configuring-a-static-address-f/>[read more]</a></div></article><article class="post on-list"><h1 class=post-title><a href=https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/>Using Docker macvlan networks</a></h1><div class=post-meta><time class=post-date>2018-03-12</time></div><span class=post-tags>#<a href=https://blog.oddbit.com/tags/networking/>networking</a>&nbsp;
 #<a href=https://blog.oddbit.com/tags/docker/>docker</a>&nbsp;</span><div class=post-content><p>A question that crops up regularly on <a href=https://docs.docker.com/opensource/ways/#docker-users>#docker</a> is &ldquo;How do I attach
 a container directly to my local network?&rdquo; One possible answer to that
 question is the <a href=https://docs.docker.com/network/macvlan/>macvlan</a> network type, which lets you create
